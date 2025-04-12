@@ -1,4 +1,4 @@
-# DRCA 项目安装指南
+# NPU-SIM 项目安装指南
 
 ## 1. 安装 SystemC
 
