@@ -1,0 +1,338 @@
+#include <atomic>
+#include <vector>
+
+#include "monitor/config_helper_core.h"
+#include "monitor/config_helper_gpu.h"
+#include "monitor/mem_interface.h"
+#include "prims/comp_prims.h"
+#include "prims/norm_prims.h"
+#include "utils/file_utils.h"
+#include "utils/msg_utils.h"
+#include "utils/prim_utils.h"
+
+MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine, const char *config_name, const char *font_ttf) : event_engine(event_engine) {
+    host_data_sent_i = new sc_in<bool>[GRID_X];
+    host_data_sent_o = new sc_out<bool>[GRID_X];
+
+    host_channel_i = new sc_in<sc_bv<256>>[GRID_X];
+    host_channel_o = new sc_out<sc_bv<256>>[GRID_X];
+
+    host_channel_avail_i = new sc_in<bool>[GRID_X];
+
+    cout << "SIMULATION MODE: " << SYSTEM_MODE << endl;
+
+    if (SYSTEM_MODE == SIM_DATAFLOW)
+        config_helper = new Config_helper_core(config_name, font_ttf);
+    else if (SYSTEM_MODE == SIM_GPU)
+        config_helper = new Config_helper_gpu(config_name, font_ttf);
+
+    write_buffer = new queue<Msg>[GRID_X];
+
+    phase = PRO_CONF;
+
+    g_recv_ack_cnt = 0;
+    g_recv_done_cnt = 0;
+
+    SC_THREAD(write_helper);
+    sensitive << ev_write;
+    dont_initialize();
+
+    SC_THREAD(distribute_config);
+    sensitive << start_i.pos();
+    dont_initialize();
+
+    SC_THREAD(distribute_data)
+    sensitive << ev_dis_data;
+    dont_initialize();
+
+    SC_THREAD(distribute_start_data);
+    sensitive << ev_dis_start;
+    dont_initialize();
+
+    SC_THREAD(recv_helper);
+    for (int i = 0; i < GRID_X; i++) {
+        sensitive << host_data_sent_i[i].pos();
+    }
+    sensitive << ev_recv_helper;
+    dont_initialize();
+
+    SC_THREAD(recv_ack);
+    sensitive << ev_recv_ack;
+    dont_initialize();
+
+    SC_THREAD(recv_done);
+    sensitive << ev_recv_done;
+    dont_initialize();
+
+    SC_THREAD(switch_phase);
+    sensitive << ev_switch_phase;
+    dont_initialize();
+    flow_id = 0;
+}
+
+MemInterface::~MemInterface() {
+    delete[] host_data_sent_i;
+    delete[] host_data_sent_o;
+    delete[] host_channel_avail_i;
+    delete[] host_channel_i;
+    delete[] host_channel_o;
+
+    delete[] write_buffer;
+
+    delete config_helper;
+}
+
+
+void MemInterface::end_of_simulation() {
+
+    // 美观的打印输出
+    print_bar(40);
+    std::cout << "| " << std::left << std::setw(20) << "CoreConfig"
+              << "| " << std::right << std::setw(15) << "Util.   (Byte) |\n";
+    print_bar(40);
+    for (int i = 0; i < config_helper->coreconfigs.size(); i++) {
+        CoreConfig *c = &config_helper->coreconfigs[i];
+        int total_utilization = 0;
+        for (auto work : c->worklist) {
+            for (auto prim : work.prims_in_loop) {
+                if (prim) { // 确保指针非空
+                    total_utilization += prim->sram_utilization(prim->datatype);
+                }
+            }
+        }
+        // 打印当前CoreConfig的总SRAM利用率
+        print_row("CoreConfig " + std::to_string(i), total_utilization);
+    }
+    print_bar(40);
+}
+void MemInterface::end_of_elaboration() {
+
+    // 辅助函数：打印条形条
+    // set signals
+    for (int i = 0; i < GRID_X; i++) {
+        host_data_sent_o[i].write(false);
+    }
+}
+
+void MemInterface::distribute_config() {
+    while (true) {
+        // send
+        // 组装write buffer
+        clear_write_buffer();
+        event_engine->add_event(this->name(), "Sending Config", "B", Trace_event_util());
+
+        config_helper->fill_queue_config(write_buffer);
+
+        // 发送开始书写信号
+        ev_write.notify(0, SC_NS);
+        wait(write_done.posedge_event());
+        cout << sc_time_stamp() << ": Mem Interface: config sent done.\n";
+        event_engine->add_event(this->name(), "Sending Config", "E", Trace_event_util());
+        // 使用唯一的flow ID替换名称
+        flow_id++;
+        std::string flow_name = "flow_" + std::to_string(flow_id);
+        event_engine->add_event(this->name(), "Sending Config", "s", Trace_event_util(flow_name), sc_time(0, SC_NS), 100);
+        // event_engine->add_event(this->name(), "Sending Config", "s", {},
+        // sc_time(0, SC_NS), 100);
+        wait();
+    }
+}
+
+void MemInterface::distribute_data() {
+    while (true) {
+        // 组装write buffer
+        clear_write_buffer();
+        event_engine->add_event(this->name(), "Send Weight Data", "B", Trace_event_util());
+        config_helper->fill_queue_data(write_buffer);
+
+        // 发送开始书写信号
+        ev_write.notify(0, SC_NS);
+        wait(write_done.posedge_event());
+        event_engine->add_event(this->name(), "Send Weight Data", "E", Trace_event_util());
+        // 使用唯一的flow ID替换名称
+        flow_id++;
+        std::string flow_name = "flow_" + std::to_string(flow_id);
+        event_engine->add_event(this->name(), "Send Weight Data", "s", Trace_event_util(flow_name), sc_time(0, SC_NS), 100);
+        // event_engine->add_event(this->name(), "Send Weight Data", "s", {},
+        // sc_time(0, SC_NS), 100);
+        cout << "Mem Interface: data sent done.\n";
+
+        wait();
+    }
+}
+
+void MemInterface::distribute_start_data() {
+    while (true) {
+        clear_write_buffer();
+        event_engine->add_event(this->name(), "Send Input Data", "B", Trace_event_util());
+        config_helper->fill_queue_start(write_buffer);
+
+        ev_write.notify(0, SC_NS);
+        wait(write_done.posedge_event());
+        event_engine->add_event(this->name(), "Send Input Data", "E", Trace_event_util());
+
+        cout << "Mem Interface: start data sent done.\n";
+        wait();
+    }
+}
+
+void MemInterface::recv_helper() {
+    while (true) {
+        for (int i = 0; i < GRID_X; i++) {
+            if (host_data_sent_i[i].read()) {
+                sc_bv<256> d = host_channel_i[i].read();
+                Msg m = deserialize_msg(d);
+
+                if (m.msg_type == ACK) {
+                    ev_recv_ack.notify(CYCLE, SC_NS);
+                } else if (m.msg_type == DONE) {
+                    ev_recv_done.notify(CYCLE, SC_NS);
+                }
+
+                ev_recv_helper.notify(CYCLE, SC_NS);
+            }
+        }
+
+        wait();
+    }
+}
+
+void MemInterface::recv_ack() {
+    while (true) {
+        // recv, 在收到所有的ack包之后，发送config配置结束的消息
+        event_engine->add_event(this->name(), "Waiting Recv Ack", "B", Trace_event_util());
+
+        for (int i = 0; i < GRID_X; i++) {
+            if (host_data_sent_i[i].read()) {
+                sc_bv<256> d = host_channel_i[i].read();
+                Msg m = deserialize_msg(d);
+
+                int cid = m.source;
+                cout << sc_time_stamp() << ": i = " << i << endl;
+                cout << sc_time_stamp() << ": Mem Interface: received ack packet from " << cid << ". total " << g_recv_ack_cnt + 1 << "/" << config_helper->coreconfigs.size() << ".\n";
+                g_recv_ack_cnt++;
+            }
+        }
+
+        event_engine->add_event(this->name(), "Waiting Recv Ack", "E", Trace_event_util());
+
+        if (g_recv_ack_cnt >= config_helper->coreconfigs.size()) {
+            ev_switch_phase.notify(CYCLE, SC_NS);
+
+            // 使用唯一的flow ID替换名称
+            std::string flow_name = "flow_" + std::to_string(flow_id);
+            event_engine->add_event(this->name(), "Waiting Recv Ack", "f", Trace_event_util(flow_name), sc_time(0, SC_NS), 100, "e");
+            cout << "Mem Interface: received all ack packets.\n";
+
+            g_recv_ack_cnt = 0;
+        }
+
+        wait();
+    }
+}
+
+void MemInterface::recv_done() {
+    while (true) {
+        event_engine->add_event(this->name(), "Waiting Core busy", "B", Trace_event_util());
+
+        for (int i = 0; i < GRID_X; i++) {
+            if (host_data_sent_i[i].read()) {
+                sc_bv<256> d = host_channel_i[i].read();
+                Msg m = deserialize_msg(d);
+                if (m.msg_type != DONE)
+                    continue;
+
+                int cid = m.source;
+                cout << sc_time_stamp() << ": Mem Interface: received done packet from " << cid << ", total " << g_recv_done_cnt + 1 << ".\n";
+                g_recv_done_cnt++;
+
+                cout << sc_time_stamp() << ": end_cores: " << config_helper->end_cores << endl;
+
+                if (g_recv_done_cnt / config_helper->end_cores == 0) {
+                    cout << sc_time_stamp() << ": Mem Interface: pipeline procedure " << g_recv_done_cnt / config_helper->end_cores << "done.\n";
+                }
+            }
+        }
+
+        event_engine->add_event(this->name(), "Waiting Core busy", "E", Trace_event_util());
+
+        if (g_recv_done_cnt >= config_helper->end_cores * config_helper->pipeline) {
+            if (!config_helper->sequential || config_helper->seq_index == config_helper->source_info.size()) {
+                cout << "Mem Interface: all work done, end_core: " << config_helper->end_cores << ", recv_cnt: " << g_recv_done_cnt << endl;
+
+                g_recv_done_cnt = 0;
+                wait(CYCLE, SC_NS);
+                sc_stop();
+            } else {
+                cout << "Mem Interface: one work done. " << config_helper->seq_index << " of " << config_helper->source_info.size() << ".\n";
+
+                g_recv_done_cnt = 0;
+                ev_switch_phase.notify(CYCLE, SC_NS);
+            }
+        }
+
+        wait();
+    }
+}
+// 从write_buffer里面取出数据，发送到host
+void MemInterface::write_helper() {
+    while (true) {
+        write_done.write(false);
+        cout << "Mem Interface: start to write\n";
+
+        while (true) {
+            bool stop_flag = true;
+            for (int i = 0; i < GRID_X; i++) {
+                host_data_sent_o[i].write(false);
+                if (!write_buffer[i].size())
+                    continue;
+
+                stop_flag = false;
+                if (host_channel_avail_i[i].read() == false)
+                    continue;
+
+                // send data
+                Msg t = write_buffer[i].front();
+                write_buffer[i].pop();
+                host_channel_o[i].write(serialize_msg(t));
+                host_data_sent_o[i].write(true);
+
+                // cout << "Write helper: send to " << t.des << ", seq_id: " <<
+                // t.seq_id << endl;
+            }
+
+            if (stop_flag)
+                break;
+            wait(CYCLE, SC_NS);
+        }
+
+        write_done.write(true);
+        wait();
+    }
+}
+
+void MemInterface::switch_phase() {
+    while (true) {
+        if (phase == PRO_CONF) {
+            phase = PRO_DATA;
+            cout << sc_time_stamp() << ": Mem Interface: switch to P_DATA.\n";
+            ev_dis_data.notify(0, SC_NS);
+        } else if (phase == PRO_DATA) {
+            phase = PRO_START;
+            cout << sc_time_stamp() << ": Mem Interface: switch to P_START.\n";
+            ev_dis_start.notify(0, SC_NS);
+        } else if (phase == PRO_START) {
+            cout << sc_time_stamp() << ": Mem Interface: continue P_START.\n";
+            ev_dis_start.notify(0, SC_NS);
+        }
+        wait();
+    }
+}
+
+
+void MemInterface::clear_write_buffer() {
+    for (int i = 0; i < GRID_X; i++) {
+        while (!write_buffer[i].empty())
+            write_buffer[i].pop();
+    }
+}

@@ -1,0 +1,295 @@
+{
+  "vars": {
+    "B": 4,
+    "T": 4,
+    "C": 4,
+    "NH": 4,
+    "L": 1,
+    "3C": 12,
+    "4C": 16,
+    "BTC": 64,
+    "2BTC": 128,
+    "3BTC": 192,
+    "4BTC": 256,
+    "BTC+2C": 72,
+    "BTC+3CC+3C": 124,
+    "3BTC+2BNHTT": 704,
+    "BTC+CC+C": 84,
+    "BTC+4CC+4C": 144,
+    "4BTC+4CC+C": 324
+  },
+  "source": [
+    {
+      "dest": 0,
+      "size": "BTC"
+    },
+    {
+      "dest": 4,
+      "size": "BTC"
+    }
+  ],
+  "chips": [
+    {
+      "chip_id": 0,
+      "GridX": 4,
+      "GridY": 4,
+      "cores": [
+        {
+          "id": 0,
+          "cast": [
+            {
+              "dest": 1
+            }
+          ],
+          "recv_cnt": 1,
+          "loop": "L",
+          "prims": [
+            {
+              "type": "Layernorm_f",
+              "B": "B",
+              "T": "T",
+              "C": "C",
+              "sram_addr": 0,
+              "address": {
+                "input": 0,
+                "data": "BTC",
+                "out": "BTC+2C"
+              }
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "cast": [
+            {
+              "dest": 2
+            }
+          ],
+          "recv_cnt": 1,
+          "loop": "L",
+          "prims": [
+            {
+              "type": "Matmul_f",
+              "B": "B",
+              "T": "T",
+              "C": "C",
+              "OC": "3C",
+              "sram_addr": 24,
+              "address": {
+                "input": 0,
+                "data": "BTC",
+                "out": "BTC+3CC+3C"
+              }
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "cast": [
+            {
+              "dest": 3
+            }
+          ],
+          "recv_cnt": 1,
+          "loop": "L",
+          "prims": [
+            {
+              "type": "Attention_f",
+              "B": "B",
+              "T": "T",
+              "C": "C",
+              "NH": "NH",
+              "sram_addr": 0,
+              "address": {
+                "input": 0,
+                "data": "3BTC",
+                "out": "3BTC+2BNHTT"
+              }
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "cast": [
+            {
+              "dest": 4
+            }
+          ],
+          "recv_cnt": 1,
+          "loop": "L",
+          "prims": [
+            {
+              "type": "Matmul_f",
+              "B": "B",
+              "T": "T",
+              "C": "C",
+              "OC": "C",
+              "sram_addr": 0,
+              "address": {
+                "input": 0,
+                "data": "BTC",
+                "out": "BTC+CC+C"
+              }
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "cast": [
+            {
+              "dest": 5,
+              "weight": 1
+            },
+            {
+              "dest": 9,
+              "weight": 1
+            }
+          ],
+          "recv_cnt": 2,
+          "loop": "L",
+          "prims": [
+            {
+              "type": "Residual_f",
+              "N": "BTC",
+              "sram_addr": 0,
+              "address": {
+                "input": 0,
+                "data": -1,
+                "out": "2BTC"
+              }
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "cast": [
+            {
+              "dest": 6
+            }
+          ],
+          "recv_cnt": 1,
+          "loop": "L",
+          "prims": [
+            {
+              "type": "Layernorm_f",
+              "B": "B",
+              "T": "T",
+              "C": "C",
+              "sram_addr": 0,
+              "address": {
+                "input": 0,
+                "data": "BTC",
+                "out": "BTC+2C"
+              }
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "cast": [
+            {
+              "dest": 7
+            }
+          ],
+          "recv_cnt": 1,
+          "loop": "L",
+          "prims": [
+            {
+              "type": "Matmul_f",
+              "B": "B",
+              "T": "T",
+              "C": "C",
+              "OC": "4C",
+              "sram_addr": 0,
+              "address": {
+                "input": 0,
+                "data": "BTC",
+                "out": "BTC+4CC+4C"
+              }
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "cast": [
+            {
+              "dest": 8
+            }
+          ],
+          "recv_cnt": 1,
+          "loop": "L",
+          "prims": [
+            {
+              "type": "Gelu_f",
+              "N": "4BTC",
+              "sram_addr": 0,
+              "address": {
+                "input": 0,
+                "data": -1,
+                "out": "4BTC"
+              }
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "cast": [
+            {
+              "dest": 9
+            }
+          ],
+          "recv_cnt": 1,
+          "loop": "L",
+          "prims": [
+            {
+              "type": "Matmul_f",
+              "B": "B",
+              "T": "T",
+              "C": "4C",
+              "OC": "C",
+              "sram_addr": 0,
+              "address": {
+                "input": 0,
+                "data": "4BTC",
+                "out": "4BTC+4CC+C"
+              }
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "cast": [
+            {
+              "dest": -1,
+              "loopout": "true"
+            },
+            {
+              "dest": 0,
+              "weight": 1,
+              "loopout": "false"
+            },
+            {
+              "dest": 4,
+              "weight": 1,
+              "loopout": "false"
+            }
+          ],
+          "recv_cnt": 2,
+          "loop": "L",
+          "prims": [
+            {
+              "type": "Residual_f",
+              "N": "BTC",
+              "sram_addr": 0,
+              "address": {
+                "input": 0,
+                "data": -1,
+                "out": "2BTC"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

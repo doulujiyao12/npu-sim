@@ -1,0 +1,14 @@
+*.run
+*.txt
+*.pyc
+*.bin
+*.tsv
+*.out
+*.log
+*.vscode
+batch.sh
+
+/build/*
+
+!**/CMakeLists.txt
+!CMakeLists.txt
