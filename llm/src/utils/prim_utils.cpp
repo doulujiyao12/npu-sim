@@ -90,7 +90,7 @@ prim_base *new_prim(string type) {
 // 打印枚举的变量名
 std::string get_send_type_name(SEND_TYPE type) {
     const std::unordered_map<SEND_TYPE, std::string> SEND_TYPE_NAMES = {
-        {SEND_ACK, "SEND_ACK"}, {SEND_REQ, "SEND_REQ"}, {SEND_DRAM, "SEND_DRAM"}, {SEND_SRAM, "SEND_SRAM"}, {SEND_DONE, "SEND_DONE"},
+        {SEND_ACK, "SEND_ACK"}, {SEND_REQ, "SEND_REQ"}, {SEND_DATA, "SEND_DATA"}, {SEND_SRAM, "SEND_SRAM"}, {SEND_DONE, "SEND_DONE"},
     };
 
     auto it = SEND_TYPE_NAMES.find(type);
@@ -103,7 +103,7 @@ std::string get_send_type_name(SEND_TYPE type) {
 // 获取枚举的名称
 std::string get_recv_type_name(RECV_TYPE type) {
     const std::unordered_map<RECV_TYPE, std::string> RECV_TYPE_NAMES = {
-        {RECV_TYPE::RECV_CONF, "RECV_CONF"}, {RECV_TYPE::RECV_ACK, "RECV_ACK"}, {RECV_TYPE::RECV_REQ, "RECV_REQ"}, {RECV_TYPE::RECV_DRAM, "RECV_DRAM"}, {RECV_TYPE::RECV_SRAM, "RECV_SRAM"},
+        {RECV_TYPE::RECV_CONF, "RECV_CONF"}, {RECV_TYPE::RECV_ACK, "RECV_ACK"}, {RECV_TYPE::RECV_FLAG, "RECV_FLAG"}, {RECV_TYPE::RECV_DATA, "RECV_DATA"}, {RECV_TYPE::RECV_SRAM, "RECV_SRAM"},
     };
 
     auto it = RECV_TYPE_NAMES.find(type);

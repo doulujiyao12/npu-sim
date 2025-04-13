@@ -361,8 +361,8 @@
 //     if (is_end) end_cores++;
 
 //     // 先生成loop中的原语
-//     // 首先是recv，对应 RECV_DRAM
-//     c->prims_in_loop.push_back(new Recv_prim(RECV_DRAM, c->recv_tag,
+//     // 首先是recv，对应 RECV_DATA
+//     c->prims_in_loop.push_back(new Recv_prim(RECV_DATA, c->recv_tag,
 //     c->recv_cnt));
 
 //     // 然后是comp，直接推c中的对应队列即可
@@ -381,11 +381,11 @@
 
 //         c->prims_in_loop.push_back(new Send_prim(SEND_REQ, dest, tag));
 //         c->prims_in_loop.push_back(new Recv_prim(RECV_ACK));
-//         c->prims_in_loop.push_back(new Send_prim(SEND_DRAM, dest, tag));
+//         c->prims_in_loop.push_back(new Send_prim(SEND_DATA, dest, tag));
 //     }
 
 //     // 再生成最后一个loop的原语
-//     c->prims_last_loop.push_back(new Recv_prim(RECV_DRAM, c->recv_tag,
+//     c->prims_last_loop.push_back(new Recv_prim(RECV_DATA, c->recv_tag,
 //     c->recv_cnt));
 // map<int, int> delta_offset; // 用于记录每一个核的接收地址偏移
 
@@ -407,7 +407,7 @@
 
 //         c->prims_last_loop.push_back(new Send_prim(SEND_REQ, dest, tag));
 //         c->prims_last_loop.push_back(new Recv_prim(RECV_ACK));
-//         c->prims_last_loop.push_back(new Send_prim(SEND_DRAM, dest, tag));
+//         c->prims_last_loop.push_back(new Send_prim(SEND_DATA, dest, tag));
 //     }
 // }
 
@@ -483,7 +483,7 @@
 //         for (auto &prim : (*v)) {
 //             if (typeid(*prim) == typeid(Send_prim)) {
 //                 Send_prim *temp = (Send_prim *) prim;
-//                 if (temp->type != SEND_DRAM) continue;
+//                 if (temp->type != SEND_DATA) continue;
 
 //                 int weight = coreconfigs[i].cast[index].weight;
 //                 int slice_size = (output_size%weight) ?

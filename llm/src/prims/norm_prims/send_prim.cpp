@@ -12,8 +12,8 @@ void Send_prim::print_self(string prefix) {
         type_s = "SEND_ACK";
     if (type == SEND_REQ)
         type_s = "SEND_REQ";
-    if (type == SEND_DRAM)
-        type_s = "SEND_DRAM";
+    if (type == SEND_DATA)
+        type_s = "SEND_DATA";
     if (type == SEND_SRAM)
         type_s = "SEND_SRAM";
     if (type == SEND_DONE)

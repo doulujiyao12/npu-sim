@@ -2,19 +2,29 @@
 
 // send原语的类型
 enum SEND_TYPE {
+    // 向RECV核发送握手信号
     SEND_ACK = 0,
+    // 向RECV核发送数据请求信号
     SEND_REQ,
-    SEND_DRAM,
+    // 向RECV核发送数据
+    SEND_DATA,
+    // DEPRECATED
     SEND_SRAM,
+    // 最后一个核执行完所有指令后 向HOST发送DONE信号
     SEND_DONE,
 };
 
 // recv原语的类型
 enum RECV_TYPE {
+    // 接受HOST下发的原语
     RECV_CONF = 0,
+    // SEND CORE 接受 RECV CORE 的握手信号
     RECV_ACK,
-    RECV_REQ,
-    RECV_DRAM,
+    // DEPRECATED
+    RECV_FLAG,
+    // 接受SEND核发送过来的路由数据
+    RECV_DATA,
+    // DEPRECATED
     RECV_SRAM,
 };
 

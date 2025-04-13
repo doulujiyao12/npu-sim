@@ -122,7 +122,7 @@ void Config_helper_gpu::generate_prims(int i) {
     CoreConfig *c = &coreconfigs[i];
 
     auto &work = c->worklist[0];
-    work.prims_in_loop.push_back(new Recv_prim(RECV_TYPE::RECV_DRAM, work.recv_tag, work.recv_cnt));
+    work.prims_in_loop.push_back(new Recv_prim(RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt));
 
     work.prims_last_loop.push_back(new Send_prim(SEND_TYPE::SEND_DONE));
 }

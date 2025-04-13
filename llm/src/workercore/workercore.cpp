@@ -153,7 +153,7 @@ void WorkerCoreExecutor::worker_core_execute() {
                 wait(CYCLE, SC_NS);
             }
 
-            while ((typeid(*p) == typeid(Recv_prim) && ((Recv_prim *)p)->type == RECV_ACK) || (typeid(*p) == typeid(Send_prim) && ((Send_prim *)p)->type == SEND_DRAM) ||
+            while ((typeid(*p) == typeid(Recv_prim) && ((Recv_prim *)p)->type == RECV_ACK) || (typeid(*p) == typeid(Send_prim) && ((Send_prim *)p)->type == SEND_DATA) ||
                    (typeid(*p) == typeid(Send_prim) && ((Send_prim *)p)->type == SEND_REQ) || (typeid(*p) == typeid(Send_prim) && ((Send_prim *)p)->type == SEND_DONE)) {
                 prim_queue.pop_front();
                 send_para_queue.push(p);
@@ -358,8 +358,8 @@ void WorkerCoreExecutor::send_logic() {
             if (job_done)
                 break;
 
-            // SEND_DRAM, SEND_ACK, SEND_REQ
-            if (prim->type == SEND_DRAM) {
+            // SEND_DATA, SEND_ACK, SEND_REQ
+            if (prim->type == SEND_DATA) {
                 // DTODO
                 // [发送方] 正常发送数据，数据从DRAM中获取
                 if (channel_avail_i.read()) {
@@ -497,8 +497,8 @@ void WorkerCoreExecutor::send_para_logic() {
                 if (job_done)
                     break;
 
-                // SEND_DRAM, SEND_ACK, SEND_REQ
-                if (typeid(*prim) == typeid(Send_prim) && ((Send_prim *)prim)->type == SEND_DRAM) {
+                // SEND_DATA, SEND_ACK, SEND_REQ
+                if (typeid(*prim) == typeid(Send_prim) && ((Send_prim *)prim)->type == SEND_DATA) {
                     // [发送方] 正常发送数据，数据从DRAM中获取
                     Send_prim *s_prim = (Send_prim *)prim;
                     // if (cid == 20) cout << sc_time_stamp() << " core " << cid
@@ -599,7 +599,7 @@ void WorkerCoreExecutor::send_para_logic() {
 
                 else if (typeid(*prim) == typeid(Recv_prim) && ((Recv_prim *)prim)->type == RECV_ACK) {
                     // [发送方] 接收来自接收方的ack包，收到之后结束此原语，进入
-                    // SEND_DRAM 或 SEND_SRAM
+                    // SEND_DATA 或 SEND_SRAM
                     if (ack_buffer.size()) {
                         // 接收到数据包
                         Msg m = ack_buffer.front();
@@ -659,7 +659,7 @@ void WorkerCoreExecutor::recv_logic() {
 
             if (prim->type == RECV_ACK) {
                 // [发送方] 接收来自接收方的ack包，收到之后结束此原语，进入
-                // SEND_DRAM 或 SEND_SRAM
+                // SEND_DATA 或 SEND_SRAM
                 if (ack_buffer.size()) {
                     // 接收到数据包
                     Msg m = ack_buffer.front();
@@ -673,7 +673,7 @@ void WorkerCoreExecutor::recv_logic() {
                 }
             }
 
-            else if (prim->type == RECV_DRAM) {
+            else if (prim->type == RECV_DATA) {
                 // [接收方]
                 // 接收消息，但是途中如果有新的REQ包进入，需要判断是否要回发ACK包
 

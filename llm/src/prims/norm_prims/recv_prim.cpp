@@ -14,10 +14,10 @@ void Recv_prim::print_self(string prefix) {
         type_s = "RECV_CONF";
     if (type == RECV_ACK)
         type_s = "RECV_ACK";
-    if (type == RECV_REQ)
-        type_s = "RECV_REQ";
-    if (type == RECV_DRAM)
-        type_s = "RECV_DRAM";
+    if (type == RECV_FLAG)
+        type_s = "RECV_FLAG";
+    if (type == RECV_DATA)
+        type_s = "RECV_DATA";
     if (type == RECV_SRAM)
         type_s = "RECV_SRAM";
 

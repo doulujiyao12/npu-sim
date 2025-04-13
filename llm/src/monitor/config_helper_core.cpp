@@ -268,8 +268,8 @@ void Config_helper_core::generate_prims(int i) {
             end_cores++;
 
         // 先生成loop中的原语
-        // 首先是recv，对应 RECV_DRAM
-        work.prims_in_loop.push_back(new Recv_prim(RECV_TYPE::RECV_DRAM, work.recv_tag, work.recv_cnt));
+        // 首先是recv，对应 RECV_DATA
+        work.prims_in_loop.push_back(new Recv_prim(RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt));
 
         // 然后是comp，直接推c中的对应队列即可
         for (auto prim : work.prims) {
@@ -309,11 +309,11 @@ void Config_helper_core::generate_prims(int i) {
 
             work.prims_in_loop.push_back(new Send_prim(SEND_TYPE::SEND_REQ, dest, tag));
             work.prims_in_loop.push_back(new Recv_prim(RECV_TYPE::RECV_ACK));
-            work.prims_in_loop.push_back(new Send_prim(SEND_TYPE::SEND_DRAM, dest, tag));
+            work.prims_in_loop.push_back(new Send_prim(SEND_TYPE::SEND_DATA, dest, tag));
         }
 
         // 再生成最后一个loop的原语
-        work.prims_last_loop.push_back(new Recv_prim(RECV_TYPE::RECV_DRAM, work.recv_tag, work.recv_cnt));
+        work.prims_last_loop.push_back(new Recv_prim(RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt));
 
         for (auto prim : work.prims) {
             // 在set_sram里面复制一份计算原语的datapass_label
@@ -346,7 +346,7 @@ void Config_helper_core::generate_prims(int i) {
 
             work.prims_last_loop.push_back(new Send_prim(SEND_TYPE::SEND_REQ, dest, tag));
             work.prims_last_loop.push_back(new Recv_prim(RECV_TYPE::RECV_ACK));
-            work.prims_last_loop.push_back(new Send_prim(SEND_TYPE::SEND_DRAM, dest, tag));
+            work.prims_last_loop.push_back(new Send_prim(SEND_TYPE::SEND_DATA, dest, tag));
         }
 
         // 清理sram
@@ -397,7 +397,7 @@ void Config_helper_core::calculate_address(bool do_loop) {
             for (auto &prim : (*v)) {
                 if (typeid(*prim) == typeid(Send_prim)) {
                     Send_prim *temp = (Send_prim *)prim;
-                    if (temp->type != SEND_DRAM)
+                    if (temp->type != SEND_DATA)
                         continue;
 
                     int weight = work.cast[index].weight;

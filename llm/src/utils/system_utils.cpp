@@ -36,8 +36,8 @@ string send_prim_type_to_string(int type) {
         return "SEND_ACK";
     case SEND_DONE:
         return "SEND_DONE";
-    case SEND_DRAM:
-        return "SEND_DRAM";
+    case SEND_DATA:
+        return "SEND_DATA";
     case SEND_SRAM:
         return "SEND_SRAM";
     case SEND_REQ:
@@ -53,10 +53,10 @@ string recv_prim_type_to_string(int type) {
         return "RECV_ACK";
     case RECV_CONF:
         return "RECV_CONF";
-    case RECV_DRAM:
-        return "RECV_DRAM";
-    case RECV_REQ:
-        return "RECV_REQ";
+    case RECV_DATA:
+        return "RECV_DATA";
+    case RECV_FLAG:
+        return "RECV_FLAG";
     case RECV_SRAM:
         return "RECV_SRAM";
     default:
