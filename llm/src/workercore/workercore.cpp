@@ -677,6 +677,65 @@ void WorkerCoreExecutor::recv_logic() {
                 }
             }
 
+            else if (prim->type == RECV_WEIGHT) {
+                // [接收方]
+                // 接收消息，但是途中如果有新的REQ包进入，需要判断是否要回发ACK包
+
+                // 如果recv_cnt等于0,说明无需接收包裹，直接开始comp即可
+            
+
+
+                // 按照prim的tag进行判断。如果tag等同于cid，则优先查看start
+                // data buffer，再查看recv buffer
+                // 如果tag不等同于id，则不允许查看start data buffer
+
+                Msg temp;
+                // 表示 当前周期该核有需要处理的msg 的recv包
+                bool has_msg = false;
+
+                if (recv_buffer.size()) {
+                    temp = recv_buffer.front();
+
+                    if (prim->tag_id != cid && temp.tag_id != prim->tag_id) {
+                        cout << "[WARN] Core " << cid << " gets incompatible tag id: prim tag " << prim->tag_id << " with buffer top msg tag " << temp.tag_id << endl;
+                        sc_stop();
+                    }
+
+                    recv_buffer.pop();
+                    has_msg = true;
+                }
+
+                if (has_msg) {
+                    // 复制到SRAM中
+
+
+
+                    // 如果是end包，则将recv_index归零，表示开始接收下一个core传来的数据（如果有的话）
+                    if (temp.is_end) {
+                        
+                        while (!atomic_helper_lock(sc_time_stamp(), 3)) {
+                            wait(CYCLE, SC_NS);
+                        }
+
+                        // 这里是针对host data 和 start 包
+                        cout << sc_time_stamp() << ": Worker " << cid << ": received all prepare data.\n";
+
+                        // 向host发送一个ack包
+                        send_buffer = Msg(MSG_TYPE::ACK, GRID_SIZE, prim->tag_id, cid);
+
+                        ev_send_helper.notify(0, SC_NS);
+
+                        job_done = true;
+                        
+
+
+                        cout << sc_time_stamp() << ": Worker " << cid << " receive end packet: end_cnt " << end_cnt << ", recv_cnt " << recv_cnt << ", max_recv " << max_recv << endl;
+
+                    }
+                }
+                
+            }
+
             else if (prim->type == RECV_DATA) {
                 // [接收方]
                 // 接收消息，但是途中如果有新的REQ包进入，需要判断是否要回发ACK包
@@ -785,9 +844,11 @@ void WorkerCoreExecutor::recv_logic() {
 
                         // 如果是end包，则将recv_index归零，表示开始接收下一个core传来的数据（如果有的话）
                         if (temp.is_end) {
+                            // 来自上一个核的传输数据的end包
                             if (temp.tag_id == prim->tag_id || temp.source != GRID_SIZE) {
                                 end_cnt++;
                             } else {
+                                // 来自 HOST P_DATA的end包弃用
                                 while (!atomic_helper_lock(sc_time_stamp(), 3)) {
                                     wait(CYCLE, SC_NS);
                                 }

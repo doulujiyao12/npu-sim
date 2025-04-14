@@ -26,6 +26,8 @@ enum RECV_TYPE {
     RECV_DATA,
     // DEPRECATED
     RECV_SRAM,
+    // 接收HOST下发的WEIGHT数据
+    RECV_WEIGHT,
 };
 
 // 路由方向
