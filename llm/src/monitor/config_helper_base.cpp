@@ -84,6 +84,9 @@ void config_helper_base::fill_queue_data(queue<Msg> *q) {
 
         // HOST DATA END 包
         sc_bv<128> d(0x1);
+        // Msg(bool e, MSG_TYPE m, int seq, int des, int offset, int tag, int length, sc_bv<128> d) : is_end(e), msg_type(m), seq_id(seq), des(des), offset(offset), tag_id(tag), length(length), data(d) {}
+        // (1 << M_D_TAG_ID) - 1 已被弃用 P_DATA 包的 tag 不会被用于router中的lock，默认最大tag_id
+        // (1 << 16) - 1 end 包的 offset 弃用
         Msg m = Msg(true, MSG_TYPE::P_DATA, pkg_index + 1, config.id, (1 << 16) - 1, (1 << M_D_TAG_ID) - 1, 0, d);
         m.source = GRID_SIZE;
         q[index].push(m);

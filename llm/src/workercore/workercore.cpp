@@ -152,7 +152,7 @@ void WorkerCoreExecutor::worker_core_execute() {
             while (!send_done) {
                 wait(CYCLE, SC_NS);
             }
-
+            // send 模块处理的四条指令
             while ((typeid(*p) == typeid(Recv_prim) && ((Recv_prim *)p)->type == RECV_ACK) || (typeid(*p) == typeid(Send_prim) && ((Send_prim *)p)->type == SEND_DATA) ||
                    (typeid(*p) == typeid(Send_prim) && ((Send_prim *)p)->type == SEND_REQ) || (typeid(*p) == typeid(Send_prim) && ((Send_prim *)p)->type == SEND_DONE)) {
                 prim_queue.pop_front();
@@ -162,6 +162,7 @@ void WorkerCoreExecutor::worker_core_execute() {
                 }
                 if (!prim_queue.size())
                     break;
+                // 这里会pop出来RECV_ACK
                 p = prim_queue.front();
                 cout << "Core " << cid << " push!!!!\n";
             }
@@ -353,6 +354,8 @@ void WorkerCoreExecutor::send_logic() {
         while (true) {
             send_helper_write = false;
             // 根据 send_helper_write 选择是否向 Router 发送一个包
+            // 如果不考虑send recv的并行的话，每次通过手动调整 send_helper_write
+            // 如果后面都不需要send，则默认这里拉低
             ev_send_helper.notify(0, SC_NS);
 
             if (job_done)
@@ -503,6 +506,7 @@ void WorkerCoreExecutor::send_para_logic() {
                     Send_prim *s_prim = (Send_prim *)prim;
                     // if (cid == 20) cout << sc_time_stamp() << " core " << cid
                     // << " try to get status 1" << endl;
+                    // atomic_helper_lock 其实是为了表示上锁
                     if (channel_avail_i.read() && atomic_helper_lock(sc_time_stamp(), 1)) {
                         ev_send_helper.notify(0, SC_NS);
 
@@ -711,6 +715,7 @@ void WorkerCoreExecutor::recv_logic() {
                     // 如果tag不等同于id，则不允许查看start data buffer
 
                     Msg temp;
+                    // 表示 当前周期该核有需要处理的msg 的recv包
                     bool has_msg = false;
                     if (prim->tag_id == cid && start_data_buffer.size()) {
                         temp = start_data_buffer.front();
@@ -763,6 +768,7 @@ void WorkerCoreExecutor::recv_logic() {
                         if (temp.msg_type != MSG_TYPE::P_DATA) {
                             if (temp.seq_id == 1 && SYSTEM_MODE == SIM_DATAFLOW) {
                                 // 在pos locator中添加一个kv，label是input_label
+                                // 对于每一个核的第一算子的input来自与send 核的输出，并且已经会由router保存在sram上
                                 SramPosKey inp_key = SramPosKey(*sram_addr, 0);
                                 char format_label[100];
                                 sprintf(format_label, "%s#%d", INPUT_LABEL, loop_cnt);
@@ -826,7 +832,7 @@ void WorkerCoreExecutor::recv_logic() {
 
             else if (prim->type == RECV_CONF) {
                 // [所有人]
-                // 在模拟开始时接收配置，接收完毕之后发送一个ACK包给host，此原语需要对prim_queue进行压入，此原语执行完毕之后，进入RECV_DRAM
+                // 在模拟开始时接收配置，接收完毕之后发送一个ACK包给host，此原语需要对prim_queue进行压入，此原语执行完毕之后，进入RECV_DATA
                 if (wait_send && atomic_helper_lock(sc_time_stamp(), 3)) {
                     // 正在等待向host发送ack包
                     send_buffer = Msg(MSG_TYPE::ACK, GRID_SIZE, prim->tag_id, cid);
@@ -884,7 +890,8 @@ void WorkerCoreExecutor::task_logic() {
 
 #if USE_NB_DRAMSYS == 1
         NB_dcachecore *nb_dcache = this->nb_dcache_socket; // 实例化或获取 NB_dcachecore 对象
-#else
+#else/root/fdh/npu-sim/npu-sim/llm/include/workercore/workercore.h
+
         DcacheCore *wc = this->dcache_socket; // 实例化或获取 DcacheCore 对象
 #endif
         sc_event *s_nbdram = this->start_nb_dram_event;                // 实例化或获取 start_nb_dram_event 对象
@@ -974,6 +981,14 @@ void WorkerCoreExecutor::task_logic() {
     }
 }
 
+/*
+ 在workercore executor中添加了一把锁，用于lock住write helper，
+ 因为同时运行send和recv原语会在同一个时钟周期内access write helper函数
+ 0是在 send 的时，起到修改present_time的作用，并且如果当前没有锁的情况下（没有其他模块需要使用），默认拉低(当前模块也不需要使用)
+ 1表示拿到锁但是等待send原语的sram读，2表示send原语的sram读完可以发送
+ 3表示不需要读取sram的其他信号的发送，比如ack 和 done信号
+ 2和3都是可以发送 0和1不行
+*/
 bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status) {
     // if (cid == 20 && status >= 1) cout << sc_time_stamp() << "core " << cid
     // << " try - pres & status & helper signal " << try_time << "-" <<
@@ -1019,7 +1034,7 @@ bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status) {
 
     if (try_time > present_time) {
         present_time = try_time;
-
+        // status 1 不会进入到这里，因为status 1 之前肯定会有 status 0 修改了 present_time
         if (status == 2) { // send ready
             if (send_helper_write == 1) {
                 send_helper_write = 2;
@@ -1028,6 +1043,7 @@ bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status) {
                 res = false;
             }
         } else {
+            // 这里应该只会进 status 0, 1 和 3 (除了返回给host ack 因为while循环) 都会在0后处理，且不会有延迟，所以pre=try_time 
             if (send_helper_write == 1)
                 res = false;
             else {
@@ -1043,6 +1059,7 @@ bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status) {
 }
 
 // 因为 send 模块和 receive 模块都需要触发
+// 只要data_sent_o = true 就能发送
 void WorkerCoreExecutor::send_helper() {
     while (true) {
         // if (cid <= 1) cout << sc_time_stamp() << ": core " << cid << "
