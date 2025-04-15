@@ -103,7 +103,7 @@ std::string get_send_type_name(SEND_TYPE type) {
 // 获取枚举的名称
 std::string get_recv_type_name(RECV_TYPE type) {
     const std::unordered_map<RECV_TYPE, std::string> RECV_TYPE_NAMES = {
-        {RECV_TYPE::RECV_CONF, "RECV_CONF"}, {RECV_TYPE::RECV_ACK, "RECV_ACK"}, {RECV_TYPE::RECV_FLAG, "RECV_FLAG"}, {RECV_TYPE::RECV_DATA, "RECV_DATA"}, {RECV_TYPE::RECV_SRAM, "RECV_SRAM"},
+        {RECV_TYPE::RECV_CONF, "RECV_CONF"}, {RECV_TYPE::RECV_ACK, "RECV_ACK"}, {RECV_TYPE::RECV_FLAG, "RECV_FLAG"}, {RECV_TYPE::RECV_DATA, "RECV_DATA"}, {RECV_TYPE::RECV_SRAM, "RECV_SRAM"}, {RECV_TYPE::RECV_WEIGHT, "RECV_WEIGHT"},
     };
 
     auto it = RECV_TYPE_NAMES.find(type);

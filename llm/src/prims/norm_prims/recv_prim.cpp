@@ -20,6 +20,8 @@ void Recv_prim::print_self(string prefix) {
         type_s = "RECV_DATA";
     if (type == RECV_SRAM)
         type_s = "RECV_SRAM";
+    if (type == RECV_WEIGHT)
+        type_s = "RECV_WEIGHT";
 
     cout << prefix << "\t[" << type_s << "] > tag_id: " << tag_id << ", recv_cnt: " << recv_cnt << endl;
 }

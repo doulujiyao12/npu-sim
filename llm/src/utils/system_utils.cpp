@@ -59,6 +59,8 @@ string recv_prim_type_to_string(int type) {
         return "RECV_FLAG";
     case RECV_SRAM:
         return "RECV_SRAM";
+    case RECV_WEIGHT:
+        return "RECV_WEIGHT";
     default:
         return "UNKNOWN type: " + to_string(type);
     }

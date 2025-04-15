@@ -89,7 +89,7 @@ public:
     vector<Msg> request_buffer;
 
     /* ----------------SendHelper------------------- */
-    sc_time present_time;
+    sc_time present_time = sc_time(0, SC_NS);   
     int send_helper_write; // 用于指示send
                            // helper是要向data_sent_o写入true还是false
 

@@ -265,6 +265,9 @@ void Config_helper_core::generate_prims(int i) {
     // 处理单个核的原语，将其放入Coreconfig.prims中
     CoreConfig *c = &coreconfigs[i];
 
+    c->worklist[0].prims_in_loop.push_back(new Recv_prim(RECV_TYPE::RECV_WEIGHT, c->worklist[0].recv_tag, 0));
+
+
     for (int w = 0; w < c->worklist.size(); w++) {
         auto &work = c->worklist[w];
         bool is_end = judge_is_end_work(work); // 是不是计算图中的汇节点
