@@ -3,7 +3,7 @@
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
-Config_helper_gpu::Config_helper_gpu(string filename, string font_ttf) {
+Config_helper_gpu::Config_helper_gpu(string filename, string font_ttf, int config_chip_id) {
     cout << "Loading config file " << filename << endl;
     json j;
     // plot_dataflow(filename, font_ttf);
@@ -16,7 +16,7 @@ Config_helper_gpu::Config_helper_gpu(string filename, string font_ttf) {
         vtable.push_back(make_pair(var.key(), var.value()));
     }
 
-    auto config_streams = j["streams"];
+    auto config_streams = j["chips"][0]["streams"];
     if (config_streams.size() != 1) {
         cout << "[ERROR] more than 1 stream is not supported." << endl;
         sc_stop();
@@ -81,6 +81,7 @@ Config_helper_gpu::Config_helper_gpu(string filename, string font_ttf) {
 
     print_self();
 }
+
 
 void Config_helper_gpu::fill_queue_config(queue<Msg> *q) {
     for (auto config : coreconfigs) {

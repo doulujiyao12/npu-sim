@@ -8,8 +8,7 @@ using namespace std;
 
 class Config_helper_core : public config_helper_base {
 public:
-    Config_helper_core(string filename, string font_ttf);
-    Config_helper_core(string filename, string font_ttf, int config_chip_id);
+    Config_helper_core(string filename, string font_ttf, int config_chip_id = 0);
     Config_helper_core* clone() const override {
         return new Config_helper_core(*this);
     }

@@ -3,7 +3,7 @@
 
 class Config_helper_gpu : public config_helper_base {
 public:
-    Config_helper_gpu(string filename, string font_ttf);
+    Config_helper_gpu(string filename, string font_ttf, int config_chip_id = 0);
     Config_helper_gpu* clone() const override {
         return new Config_helper_gpu(*this);
     }

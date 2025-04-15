@@ -34,6 +34,7 @@ void ChipConfig::load_json(const json &j) {
     if(j.contains("core_type")){
         if(j.at("core_type") == "dataflow"){
             //TODO
+            chip = new Config_helper_core(top_config->filename, top_config->font_ttf, id);
         }
         else if(j.at("core_type") == "gpu"){
             //TODO
@@ -41,7 +42,6 @@ void ChipConfig::load_json(const json &j) {
         }
     } else{
         if(SYSTEM_MODE == SIM_DATAFLOW){
-            //TODO
             chip = new Config_helper_core(top_config->filename, top_config->font_ttf, id);
         } 
         else if(SYSTEM_MODE == SIM_GPU){

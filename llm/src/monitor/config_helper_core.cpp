@@ -26,7 +26,7 @@ void Config_helper_core::print_self() {
 
         cout << "\tCore prims: \n";
         for (auto work : core.worklist) {
-            for (auto prim : work.prims_last_loop) {
+            for (auto pri在·m : work.prims_last_loop) {
                 prim->print_self("\t\t");
             }
         }
@@ -221,10 +221,6 @@ Config_helper_core::Config_helper_core(string filename, string font_ttf, int con
     calculate_address(false);
 
     print_self();
-}
-
-Config_helper_core::Config_helper_core(string filename, string font_ttf) {
-    Config_helper_core(filename, font_ttf, 0);
 }
 
 void Config_helper_core::fill_queue_config(queue<Msg> *q) {
@@ -440,7 +436,6 @@ void Config_helper_core::calculate_address(bool do_loop) {
     }
 }
 
-// 下发input数据
 void Config_helper_core::fill_queue_start(queue<Msg> *q) {
     for (int pipe = 0; pipe < pipeline; pipe++) {
         if (sequential == false) {
