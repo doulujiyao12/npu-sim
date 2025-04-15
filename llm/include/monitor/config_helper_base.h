@@ -30,4 +30,6 @@ public:
     void calculate_address(bool do_loop);
 
     virtual void print_self() = 0;
+    virtual config_helper_base* clone() const = 0;
+    virtual ~config_helper_base() = default;
 };
