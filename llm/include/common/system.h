@@ -44,7 +44,7 @@ public:
     DcacheCore *wc;
 #endif
 #if USE_L1L2_CACHE == 1
-    tlm_utils::simple_initiator_socket<Processor> *cache_socket;
+    // tlm_utils::simple_initiator_socket<Processor> *cache_socket;
 #endif
 #if USE_NB_DRAMSYS == 1
     // 构造函数

@@ -217,7 +217,7 @@ void WorkerCoreExecutor::switch_prim_block() {
              SC_NS); // 等待一个时钟周期后立刻将prim_block置为true，由于没有对其上升沿的检测，所以是可行的
     }
 }
-
+// 指令被 RECV_CONF发送过来后，会在本地核实例化对应的指令类
 prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     prim_base *task = nullptr;
     int type = buffer.range(7, 0).to_uint64();
