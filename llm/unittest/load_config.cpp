@@ -62,14 +62,28 @@ int sc_main(int argc, char *argv[]){
 
     init_grid(g_flag_config_file.c_str());
     init_global_members();
+    init_dram_areas();
+    initialize_cache_structures();
     init_perf_counters();
+    
     TopConfig *top_config = new TopConfig(g_flag_config_file.c_str(), g_flag_ttf.c_str());
     // TopConfig top_config(g_flag_config_file.c_str());
     top_config->print_self();
 
     Event_engine *event_engine = new Event_engine("event-engine");
     TopMonitor *top_monitor = new TopMonitor("top_monitor", event_engine, top_config, g_flag_ttf.c_str());
+    sc_trace_file *tf = sc_create_vcd_trace_file("Cchip_1");    
+    sc_clock clk("clk", CYCLE, SC_NS);
 
+    sc_start();
+    
+    // destroy_dram_areas();
+    // destroy_cache_structures();
+    // sc_close_vcd_trace_file(tf);
+    // system_cleanup();
+    
+
+    delete event_engine;
     delete top_config;
     return 0;
 }
