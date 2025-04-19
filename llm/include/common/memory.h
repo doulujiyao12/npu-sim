@@ -65,8 +65,11 @@ public:
     }
 
     SramPosKey(int pos, int size) : pos(pos), size(size) {
+        // valid = true; 表示没有被spill的过
         valid = true;
+        // 表示被重复使用的次数
         record = 0;
+        // 表示被spill到dram中的数据的大小
         spill_size = 0;
     }
 };
@@ -85,7 +88,7 @@ public:
     }
 
     void addPair(const std::string &key, SramPosKey value, TaskCoreContext &context, u_int64_t &dram_time);
-    void addPair(const std::string &key, SramPosKey value);
+    // void addPair(const std::string &key, SramPosKey value);
 
     int findPair(std::string &key, int &result);
     int findPair(std::string &key, SramPosKey &result);

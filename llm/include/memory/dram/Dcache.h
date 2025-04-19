@@ -31,7 +31,7 @@ public:
     // 模拟的配置
     ::DRAMSys::Config::Configuration testConfig;
     tlm_utils::simple_initiator_socket<DCache> initiatorSocket;
-    // tlm_utils::peq_with_cb_and_phase<NB_dcachecore> payloadEventQueue;
+    // tlm_utils::peq_with_cb_and_phase<NB_DcacheIF> payloadEventQueue;
 
     u_int64_t time_fetched = 0;
     u_int64_t time_prefetched = 0;

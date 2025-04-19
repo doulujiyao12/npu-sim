@@ -246,7 +246,7 @@ int Matmul_f_prefill::task_core(TaskCoreContext &context) {
         w_key = SramPosKey(*sram_addr, data_byte * data_size_weight);
         sram_pos_locator->addPair(label_weight, w_key, context, dram_time);
     } else if (flag > 0) {
-        sram_first_write_generic(context, data_byte * flag, inp_global_addr, dram_time, dram_start);
+        sram_first_write_generic(context, flag, inp_global_addr, dram_time, dram_start);
         w_key.size = data_byte * data_size_weight;
         w_key.spill_size = 0;
         sram_pos_locator->addPair(label_weight, w_key, context, dram_time);

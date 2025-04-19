@@ -132,7 +132,7 @@ int Gelu_f::task_core(TaskCoreContext &context) {
             printf("[ERROR] Gelu_f: sram_pos_locator cannot find the label: %s\n", datapass_label.indata[0].c_str());
             sc_stop();
         } else if (flag > 0) {
-            sram_first_write_generic(context, data_byte * flag, inp_global_addr, dram_time, dram_start);
+            sram_first_write_generic(context, flag, inp_global_addr, dram_time, dram_start);
             inp_key.size = data_byte * data_size_input;
             inp_key.spill_size = 0;
             sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context, dram_time);

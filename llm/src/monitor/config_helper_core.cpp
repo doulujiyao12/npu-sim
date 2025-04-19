@@ -280,6 +280,7 @@ void Config_helper_core::generate_prims(int i) {
             // << std::endl; 在set_sram里面复制一份计算原语的datapass_label
             prim_base *p = new_prim("Set_Sram");
             auto label = ((Set_Sram *)p)->datapass_label;
+            // set_sram 的label 指向其后面的那条原语
             for (int i = 0; i < MAX_SPLIT_NUM; i++) {
                 label->indata[i] = ((comp_base *)prim)->datapass_label.indata[i];
             }

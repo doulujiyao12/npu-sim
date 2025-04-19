@@ -41,6 +41,7 @@ void SramPosLocator::addPair(const std::string &key, SramPosKey value, TaskCoreC
     int used = 0;
     for (auto pair : data_map) {
         // cout << "[Traverse SRAM]: " << pair.first << endl;
+        // valid = true 表示还没有被spill过
         if (pair.second.valid)
             used += pair.second.size;
         else
@@ -65,7 +66,7 @@ void SramPosLocator::addPair(const std::string &key, SramPosKey value, TaskCoreC
             if (pair.first == key)
                 continue; // 不能spill自己
             if (!pair.second.valid && pair.second.spill_size == pair.second.size)
-                continue; // invalid的数据可能还可以spill
+                continue; // 已经全部spill到dram中去了
             if (pair.first == ETERNAL_PREFIX + string(KVCACHE_PREFIX) + string("k") || pair.first == ETERNAL_PREFIX + string(KVCACHE_PREFIX) + string("v"))
                 continue; // 简单策略：不spill kvcache
 
@@ -94,6 +95,7 @@ void SramPosLocator::addPair(const std::string &key, SramPosKey value, TaskCoreC
         data_map[min_label].valid = false;
 
         int delta_space = used - max_sram_size;
+        // 表示已经被放到dram中的数据大小
         int spill_size = min(int(delta_space), upper_spill_limit);
         used -= spill_size;
         data_map[min_label].spill_size += spill_size;
@@ -105,16 +107,16 @@ void SramPosLocator::addPair(const std::string &key, SramPosKey value, TaskCoreC
         cout << "[SRAM SPILL] After spill: used: " << used << ", max sram size: " << max_sram_size << endl;
     }
 
-    // 重排
+    // 重排 每次addPair后都需要重排sram_addr地址，保证最前面的一块是连续使用的，sram指向最前面空闲的
     *(context.sram_addr) = rearrangeAll(context);
 }
 
-void SramPosLocator::addPair(const std::string &key, SramPosKey value) {
-    // 先放入sram
-    visit += 1;
-    value.record = visit;
-    data_map[key] = value;
-}
+// void SramPosLocator::addPair(const std::string &key, SramPosKey value) {
+//     // 先放入sram
+//     visit += 1;
+//     value.record = visit;
+//     data_map[key] = value;
+// }
 
 int SramPosLocator::findPair(std::string &key, int &result) {
     visit += 1;

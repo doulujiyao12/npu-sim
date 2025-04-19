@@ -9,25 +9,20 @@
 #include "macros/macros.h"
 #include "memory/MemoryManager_v2.h"
 #include "trace/Event_engine.h"
+#include "memory/dram/utils.h"
 
-// 定义 Request 结构体
-struct Request {
-    uint64_t address;
-    enum Command { Read, Write, Invalid } command;
-    int length;
-    sc_core::sc_time delay;
-};
+
 
 // DMA Producer SystemC Module
-class NB_dcachecore : public sc_core::sc_module {
+class NB_DcacheIF : public sc_core::sc_module {
 public:
-    SC_HAS_PROCESS(NB_dcachecore);
+    SC_HAS_PROCESS(NB_DcacheIF);
     // TLM Initiator Socket
-    tlm_utils::simple_initiator_socket<NB_dcachecore> socket;
+    tlm_utils::simple_initiator_socket<NB_DcacheIF> socket;
     sc_event *start_nb_dram_event; // 非阻塞sram访存开始标志
     sc_event *end_nb_dram_event;
     sc_event *next_dram_event;
-    tlm_utils::peq_with_cb_and_phase<NB_dcachecore> payloadEventQueue;
+    tlm_utils::peq_with_cb_and_phase<NB_DcacheIF> payloadEventQueue;
     sc_core::sc_time lastEndRequest = sc_core::sc_max_time();
     MemoryManager_v2 mm;
 
@@ -45,11 +40,11 @@ public:
 
 
     // Constructor
-    NB_dcachecore(sc_core::sc_module_name name, sc_event *start_nb_dram_event, sc_event *end_nb_dram_event, Event_engine *event_engine)
+    NB_DcacheIF(sc_core::sc_module_name name, sc_event *start_nb_dram_event, sc_event *end_nb_dram_event, Event_engine *event_engine)
         : sc_module(name),
           start_nb_dram_event(start_nb_dram_event),
           end_nb_dram_event(end_nb_dram_event),
-          payloadEventQueue(this, &NB_dcachecore::peqCallback),
+          payloadEventQueue(this, &NB_DcacheIF::peqCallback),
           mm(false),
           maxPendingReadRequests(5),
           maxPendingWriteRequests(5),
@@ -59,7 +54,7 @@ public:
         // Register the main process
         SC_THREAD(generateRequests);
         next_dram_event = new sc_event();
-        socket.register_nb_transport_bw(this, &NB_dcachecore::nb_transport_bw);
+        socket.register_nb_transport_bw(this, &NB_DcacheIF::nb_transport_bw);
     }
 
     // Reconfigure the DMA producer
