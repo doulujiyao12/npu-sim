@@ -29,28 +29,57 @@ include_directories(
     ./llm/include
 )
 
-# 搜索所有.cpp文件
-file(GLOB_RECURSE SRC_FILES ./llm/*.cpp)# Remove 'a.cpp' from the list of sources
-list(FILTER SRC_FILES EXCLUDE REGEX ".*/test_dramsys\\.cpp$")
+
 add_subdirectory(DRAMSys)
-# 定义生成的目标
-message(STATUS "Source files: ${SRC_FILES}")
+
+# 搜索所有.cpp文件
+file(GLOB_RECURSE SRC_FILES ./llm/*.cpp)
+list(FILTER SRC_FILES EXCLUDE REGEX ".*/unittest/.*")
+# Remove 'test_dramsys.cpp' from the list of sources
+list(FILTER SRC_FILES EXCLUDE REGEX ".*/test_dramsys\\.cpp$")
+# # 定义生成的目标
+# message(STATUS "Source files: ${SRC_FILES}")
 
 # find_package(Cairo REQUIRED)
 # include_directories(${CAIRO_INCLUDE_DIRS})
 
+function(add_test_executable target_name test_main_file)
+    add_executable(${target_name} ${SRC_FILES} ${test_main_file})
+    target_link_libraries(${target_name}
+        PUBLIC
+            systemc 
+            cairo 
+            sfml-graphics 
+            sfml-system 
+            sfml-window 
+            m 
+            pthread
+            DRAMSys::libdramsys
+            DRAMSys::util
+            DRAMSys::config
+    )
+    target_compile_options(${target_name} PRIVATE 
+        -Ofast 
+        -Wno-unused-result 
+        -Wno-ignored-pragmas 
+        -Wno-unknown-attributes 
+        -DBROAD_W=16
+    )
+endfunction()
+
+add_test_executable(npusim       "./llm/unittest/npusim.cpp")
+add_test_executable(load_config  "./llm/unittest/load_config.cpp")
 
 
-add_executable(npusim ${SRC_FILES})
-target_link_libraries(npusim
-    PUBLIC
-    systemc cairo sfml-graphics sfml-system sfml-window m pthread
-        DRAMSys::libdramsys
-        DRAMSys::util
-        DRAMSys::config
-)
-target_compile_options(npusim PRIVATE -Ofast -Wno-unused-result -Wno-ignored-pragmas -Wno-unknown-attributes -DBROAD_W=16)
-
+# add_executable(npusim ${SRC_FILES})
+# target_link_libraries(npusim
+#     PUBLIC
+#     systemc cairo sfml-graphics sfml-system sfml-window m pthread
+#         DRAMSys::libdramsys
+#         DRAMSys::util
+#         DRAMSys::config
+# )
+# target_compile_options(npusim PRIVATE -Ofast -Wno-unused-result -Wno-ignored-pragmas -Wno-unknown-attributes -DBROAD_W=16)
 
 # # 调试版本
 # add_executable(npusim_debug ${SRC_FILES})

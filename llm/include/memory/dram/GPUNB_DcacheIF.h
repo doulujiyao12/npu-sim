@@ -9,14 +9,11 @@
 #include "macros/macros.h"
 #include "memory/MemoryManager_v2.h"
 #include "trace/Event_engine.h"
+#include "memory/dram/utils.h"
+
 
 // 定义 Request 结构体
-struct Request {
-    uint64_t address;
-    enum Command { Read, Write, Invalid } command;
-    int length;
-    sc_core::sc_time delay;
-};
+
 
 // DMA Producer SystemC Module
 class GPUNB_dcacheIF : public sc_core::sc_module {

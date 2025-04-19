@@ -1,0 +1,55 @@
+#include "link/config_chip.h"
+#include "link/config_base.h"
+
+#include "utils/system_utils.h"
+#include "nlohmann/json.hpp"
+#include <string>
+#include <vector>
+
+using json = nlohmann::json;
+
+ChipConfig::ChipConfig() {
+}
+
+
+ChipConfig::~ChipConfig() {
+}
+
+void ChipConfig::print_self() { 
+    // chip->print_self(); 
+    std::cout << "chip_id: " << id << std::endl;
+    std::cout << "GridX: " << GridX << std::endl;
+    std::cout << "GridY: " << GridY << std::endl;
+}
+
+void ChipConfig::load_json(const json &j) {
+    // std::cout << "load_json" << std::endl;
+    if (j.contains("cores_copy")) { assert(0 && "cores_copy should not be called here");}
+
+    j.at("chip_id").get_to(id);
+    j.at("GridX").get_to(GridX);
+    j.at("GridY").get_to(GridY);
+
+    //如果设置了Config的Type，则按照Config的Type来初始化
+    if(j.contains("core_type")){
+        if(j.at("core_type") == "dataflow"){
+            //TODO
+            chip = new Config_helper_core(top_config->filename, top_config->font_ttf, id);
+        }
+        else if(j.at("core_type") == "gpu"){
+            //TODO
+            assert(0 && "GPU mode is not supported yet");
+        }
+    } else{
+        if(SYSTEM_MODE == SIM_DATAFLOW){
+            chip = new Config_helper_core(top_config->filename, top_config->font_ttf, id);
+        } 
+        else if(SYSTEM_MODE == SIM_GPU){
+            assert(0 && "GPU mode is not supported yet");
+        }
+    }
+}
+
+// 读取json文件
+void from_json(const json &j, ChipConfig &c) {
+}

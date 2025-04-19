@@ -129,7 +129,7 @@ void Config_helper_core::random_core(string font_ttf) {
     plot_dataflow(cores, source_ids, font_ttf);
 }
 
-Config_helper_core::Config_helper_core(string filename, string font_ttf) {
+Config_helper_core::Config_helper_core(string filename, string font_ttf, int config_chip_id) {
     cout << "Loading config file " << filename << endl;
     json j;
     // cout << "Loading config file3 " << filename << endl;
@@ -157,7 +157,7 @@ Config_helper_core::Config_helper_core(string filename, string font_ttf) {
     }
 
     // 初步处理核信息
-    auto config_cores = j["chips"][0]["cores"];
+    auto config_cores = j["chips"][config_chip_id]["cores"];
     for (int i = 0; i < config_cores.size(); i++) {
         // 调用 config_helper_base中的from_json
         CoreConfig core = config_cores[i]; // 这里不直接转化prims
@@ -437,7 +437,6 @@ void Config_helper_core::calculate_address(bool do_loop) {
     }
 }
 
-// 下发input数据
 void Config_helper_core::fill_queue_start(queue<Msg> *q) {
     for (int pipe = 0; pipe < pipeline; pipe++) {
         if (sequential == false) {

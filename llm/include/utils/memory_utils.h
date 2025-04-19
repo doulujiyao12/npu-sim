@@ -17,6 +17,6 @@ bool is_dirty(u_int64_t tag);
 int check_dcache(int tX, int tY, u_int64_t array, u_int64_t timer, u_int64_t &time_fetched, u_int64_t &time_prefetched, u_int64_t &prefetch_tag, bool prefetch);
 
 #if USE_L1L2_CACHE == 1
-void gpu_read_generic(tlm_utils::simple_initiator_socket<Processor> *cache_socket, uint64_t addr, int size, int &mem_time);
-void gpu_write_generic(tlm_utils::simple_initiator_socket<Processor> *cache_socket, uint64_t addr, int size, int &mem_time);
+void gpu_read_generic(GPUNB_dcacheIF *gpunb_dcache_if, uint64_t addr, int size, int &mem_time);
+void gpu_write_generic(GPUNB_dcacheIF *gpunb_dcache_if, uint64_t addr, int size, int &mem_time);
 #endif

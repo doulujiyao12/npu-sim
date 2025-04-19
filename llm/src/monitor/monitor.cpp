@@ -11,11 +11,11 @@ Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine, const char
 #if USE_L1L2_CACHE == 1
     // GPU
     vector<L1Cache *> l1caches;
-    vector<Processor *> processors;
+    vector<GPUNB_dcacheIF *> processors;
     for (int i = 0; i < GRID_SIZE; i++) {
         l1caches.push_back(workerCores[i]->executor->core_lv1_cache);
-        processors.push_back(workerCores[i]->executor->cache_processor);
-        processors[i]->cache_socket;
+        processors.push_back(workerCores[i]->executor->gpunb_dcache_if);
+
     }
     cacheSystem = new L1L2CacheSystem("l1l2-cache_system", GRID_SIZE, l1caches, processors);
 #else

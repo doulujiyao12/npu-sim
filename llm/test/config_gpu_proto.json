@@ -16,25 +16,25 @@
       "chip_id": 0,
       "GridX": 4,
       "GridY": 4,
-      "core_per_sm": 32
-    }
-  ],
-  "streams": [
-    {
-      "id": 0,
-      "prims": [
+      "core_per_sm": 32,
+      "streams": [
         {
-          "type": "Matmul_f_gpu",
-          "compose": {
-            "grid_x": 4,
-            "grid_y": 4,
-            "block_x": 4,
-            "block_y": 4
-          },
-          "B": "B",
-          "T": "T",
-          "C": "C",
-          "OC": "3C"
+          "id": 0,
+          "prims": [
+            {
+              "type": "Matmul_f_gpu",
+              "compose": {
+                "grid_x": 4,
+                "grid_y": 4,
+                "block_x": 4,
+                "block_y": 4
+              },
+              "B": "B",
+              "T": "T",
+              "C": "C",
+              "OC": "3C"
+            }
+          ]
         }
       ]
     }

@@ -4,9 +4,8 @@
 #include <tlm_utils/simple_initiator_socket.h>
 #include <tlm_utils/simple_target_socket.h>
 
-#include "../dramsys/dramsys_wrapper.h"
-#include "../mem/multiport_ram_array.h"
-#include "../trace_engine/Event_engine.h"
+#include "memory/dramsys_wrapper.h"
+#include "trace/Event_engine.h"
 #include "nlohmann/json.hpp"
 
 
