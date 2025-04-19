@@ -11,6 +11,72 @@
 #include "utils/prim_utils.h"
 
 MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine, const char *config_name, const char *font_ttf) : event_engine(event_engine) {
+    // host_data_sent_i = new sc_in<bool>[GRID_X];
+    // host_data_sent_o = new sc_out<bool>[GRID_X];
+
+    // host_channel_i = new sc_in<sc_bv<256>>[GRID_X];
+    // host_channel_o = new sc_out<sc_bv<256>>[GRID_X];
+
+    // host_channel_avail_i = new sc_in<bool>[GRID_X];
+
+    cout << "SIMULATION MODE: " << SYSTEM_MODE << endl;
+
+    if (SYSTEM_MODE == SIM_DATAFLOW)
+        config_helper = new Config_helper_core(config_name, font_ttf);
+    else if (SYSTEM_MODE == SIM_GPU)
+        config_helper = new Config_helper_gpu(config_name, font_ttf);
+
+
+    init();
+    // write_buffer = new queue<Msg>[GRID_X];
+
+    // phase = PRO_CONF;
+
+    // g_recv_ack_cnt = 0;
+    // g_recv_done_cnt = 0;
+
+    // SC_THREAD(write_helper);
+    // sensitive << ev_write;
+    // dont_initialize();
+
+    // SC_THREAD(distribute_config);
+    // sensitive << start_i.pos();
+    // dont_initialize();
+
+    // SC_THREAD(distribute_data)
+    // sensitive << ev_dis_data;
+    // dont_initialize();
+
+    // SC_THREAD(distribute_start_data);
+    // sensitive << ev_dis_start;
+    // dont_initialize();
+
+    // SC_THREAD(recv_helper);
+    // for (int i = 0; i < GRID_X; i++) {
+    //     sensitive << host_data_sent_i[i].pos();
+    // }
+    // sensitive << ev_recv_helper;
+    // dont_initialize();
+
+    // SC_THREAD(recv_ack);
+    // sensitive << ev_recv_ack;
+    // dont_initialize();
+
+    // SC_THREAD(recv_done);
+    // sensitive << ev_recv_done;
+    // dont_initialize();
+
+    // SC_THREAD(switch_phase);
+    // sensitive << ev_switch_phase;
+    // dont_initialize();
+    // flow_id = 0;
+}
+
+MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine, config_helper_base *input_config) : event_engine(event_engine), config_helper(input_config) {
+    init();
+}
+
+void MemInterface::init(){
     host_data_sent_i = new sc_in<bool>[GRID_X];
     host_data_sent_o = new sc_out<bool>[GRID_X];
 
@@ -20,11 +86,6 @@ MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine, 
     host_channel_avail_i = new sc_in<bool>[GRID_X];
 
     cout << "SIMULATION MODE: " << SYSTEM_MODE << endl;
-
-    if (SYSTEM_MODE == SIM_DATAFLOW)
-        config_helper = new Config_helper_core(config_name, font_ttf);
-    else if (SYSTEM_MODE == SIM_GPU)
-        config_helper = new Config_helper_gpu(config_name, font_ttf);
 
     write_buffer = new queue<Msg>[GRID_X];
 
@@ -68,7 +129,7 @@ MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine, 
     sensitive << ev_switch_phase;
     dont_initialize();
     flow_id = 0;
-}
+};
 
 MemInterface::~MemInterface() {
     delete[] host_data_sent_i;

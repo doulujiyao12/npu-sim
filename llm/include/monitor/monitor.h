@@ -6,7 +6,8 @@
 #include "monitor/gpu_cache_system.h"
 #include "monitor/mem_interface.h"
 #include "trace/Event_engine.h"
-// #include "../link/global_memory.h"
+#include "link/chip_global_memory.h"
+#include "monitor/config_helper_base.h"
 using namespace std;
 
 class Monitor : public sc_module {
@@ -34,6 +35,7 @@ public:
     RouterMonitor *routerMonitor;
     WorkerCore **workerCores;
     MemInterface *memInterface;
+    ChipGlobalMemory *chipGlobalMemory;
 
 #if USE_L1L2_CACHE == 1
     L1L2CacheSystem *cacheSystem;
@@ -44,7 +46,11 @@ public:
 
     SC_HAS_PROCESS(Monitor);
     Monitor(const sc_module_name &n, Event_engine *event_engine, const char *config_name, const char *font_ttf);
+    Monitor(const sc_module_name &n, Event_engine *event_engine, config_helper_base *input_config);
     ~Monitor();
 
     void start_simu();
+
+private:
+    void init();
 };

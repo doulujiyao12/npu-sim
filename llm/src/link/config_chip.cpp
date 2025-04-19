@@ -1,5 +1,7 @@
 #include "link/config_chip.h"
 #include "link/config_base.h"
+#include "monitor/config_helper_core.h"
+#include "monitor/config_helper_gpu.h"
 
 #include "utils/system_utils.h"
 #include "nlohmann/json.hpp"
@@ -31,25 +33,24 @@ void ChipConfig::load_json(const json &j) {
     j.at("GridY").get_to(GridY);
 
     //如果设置了Config的Type，则按照Config的Type来初始化
+    //[MYONIE] TODO ：这里的初始化方式不太好，回头再看看
     if(j.contains("core_type")){
         if(j.at("core_type") == "dataflow"){
-            //TODO
             chip = new Config_helper_core(top_config->filename, top_config->font_ttf, id);
         }
         else if(j.at("core_type") == "gpu"){
-            //TODO
-            assert(0 && "GPU mode is not supported yet");
+            chip = new Config_helper_gpu(top_config->filename, top_config->font_ttf, id);
         }
     } else{
         if(SYSTEM_MODE == SIM_DATAFLOW){
             chip = new Config_helper_core(top_config->filename, top_config->font_ttf, id);
         } 
         else if(SYSTEM_MODE == SIM_GPU){
-            assert(0 && "GPU mode is not supported yet");
+            chip = new Config_helper_gpu(top_config->filename, top_config->font_ttf, id);
         }
     }
 }
 
-// 读取json文件
 void from_json(const json &j, ChipConfig &c) {
+    assert(0 && "not implemented yet");
 }

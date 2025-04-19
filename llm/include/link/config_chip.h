@@ -2,7 +2,7 @@
 
 #include <optional>
 #include <vector>
-#include <utility> // for std::pair
+#include <utility>
 
 #include "nlohmann/json.hpp"
 #include "systemc.h"
@@ -18,7 +18,7 @@ class TopConfig;
 class ChipConfig : public BaseConfig {
 public:
     int id;
-    int GridX, GridY;
+    int GridX, GridY; //[MYONIE] TODO : 现在GridX和GridY都是全局变量
     BaseConfig *parent_config;
     TopConfig *top_config;
     std::vector<std::pair<int, int>> source_info;
@@ -30,6 +30,7 @@ public:
 
     ChipConfig(TopConfig *top_config) : top_config(top_config) {}
     // virtual ~ChipConfig(){};
+
     ChipConfig(TopConfig *top_config, BaseConfig *parent_config) : top_config(top_config), parent_config(parent_config) {}
 
     ChipConfig* deep_copy() const {

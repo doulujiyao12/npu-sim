@@ -1,3 +1,4 @@
+#pragma once
 #include "systemc.h"
 
 #include "memory/gpu/GPU_L1L2_Cache.h"
