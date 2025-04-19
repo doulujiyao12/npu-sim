@@ -6,6 +6,7 @@
 #include "utils/file_utils.h"
 #include "utils/simple_flags.h"
 #include "utils/system_utils.h"
+#include "link/monitor_top.h"
 #include <iostream>
 
 #include "link/config_top.h"
@@ -62,9 +63,12 @@ int sc_main(int argc, char *argv[]){
     init_grid(g_flag_config_file.c_str());
     init_global_members();
     init_perf_counters();
-    BaseConfig *top_config = new TopConfig(g_flag_config_file.c_str(), g_flag_ttf.c_str());
+    TopConfig *top_config = new TopConfig(g_flag_config_file.c_str(), g_flag_ttf.c_str());
     // TopConfig top_config(g_flag_config_file.c_str());
     top_config->print_self();
+
+    Event_engine *event_engine = new Event_engine("event-engine");
+    TopMonitor *top_monitor = new TopMonitor("top_monitor", event_engine, top_config, g_flag_ttf.c_str());
 
     delete top_config;
     return 0;

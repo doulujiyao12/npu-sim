@@ -70,6 +70,32 @@ endfunction()
 add_test_executable(npusim       "./llm/unittest/npusim.cpp")
 add_test_executable(load_config  "./llm/unittest/load_config.cpp")
 
+function(add_debug_executable target_name test_main_file)
+    add_executable(${target_name}_debug ${SRC_FILES} ${test_main_file})
+    target_link_libraries(${target_name}_debug
+        PUBLIC
+            systemc 
+            cairo 
+            sfml-graphics 
+            sfml-system 
+            sfml-window 
+            m 
+            pthread
+            DRAMSys::libdramsys
+            DRAMSys::util
+            DRAMSys::config
+    )
+    target_compile_options(${target_name}_debug PRIVATE 
+        -g -O0 -Wall -Wextra -DBROAD_W=16 -DDEBUG
+    )
+endfunction()
+
+# 添加Debug构建目标
+# add_debug_executable(npusim       "./llm/unittest/npusim.cpp")
+add_debug_executable(load_config  "./llm/unittest/load_config.cpp")
+
+# 更新清理目标
+set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "npusim;npusim_debug;load_config;load_config_debug")
 
 # add_executable(npusim ${SRC_FILES})
 # target_link_libraries(npusim

@@ -7,7 +7,6 @@
 
 using json = nlohmann::json;
 
-
 TopConfig::TopConfig(std::string filename, std::string font_ttf) : filename(filename), font_ttf(font_ttf) {
     std::cout << "Loading Top config from " << filename << std::endl;
     std::ifstream file(filename);
@@ -45,7 +44,7 @@ TopConfig::TopConfig(std::string filename, std::string font_ttf) : filename(file
 
     auto config_chips = j["chips"];
     for (int i = 0; i < config_chips.size(); i++) {
-        // TODO : 可以考虑换成unique_ptr
+        //[MYONIE] TODO : 可以考虑换成unique_ptr
         json j = config_chips[i];
         if(j.contains("cores_copy")){
             int cores_copy = j.at("cores_copy");
@@ -53,17 +52,17 @@ TopConfig::TopConfig(std::string filename, std::string font_ttf) : filename(file
             // json j_copy = config_chips[i];
             auto chip_ptr = chip_[cores_copy]->deep_copy();
             // auto chip_ptr = new ChipConfig(*chip_[cores_copy]);
-            chip_.push_back(chip_ptr);
             chip_ptr->id = j.at("chip_id");
+            chip_.push_back(chip_ptr);
+            component_.push_back(chip_ptr);
         }
         else{
             auto chip_ptr = new ChipConfig(this, this);
             chip_ptr->load_json(j);
             chip_.push_back(chip_ptr);
+            component_.push_back(chip_ptr);
         }
     }
-
-    // 没写完 TODO
 }
 
 
@@ -90,5 +89,7 @@ void TopConfig::print_self(){
     for (auto chip_ptr : chip_) {
         chip_ptr->print_self();
     }
-
+    for (auto component_ptr : component_) {
+        component_ptr->print_self();
+    }
 }

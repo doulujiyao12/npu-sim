@@ -19,6 +19,6 @@ public:
 
     virtual Type getType() const = 0;
 
-    virtual void print_self() {};
+    virtual void print_self() = 0;
     virtual ~BaseConfig() {};
 };

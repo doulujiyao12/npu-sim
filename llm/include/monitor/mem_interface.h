@@ -51,6 +51,7 @@ public:
 
     SC_HAS_PROCESS(MemInterface);
     MemInterface(const sc_module_name &n, Event_engine *event_engine, const char *config_name, const char *font_ttf);
+    MemInterface(const sc_module_name &n, Event_engine *event_engine, config_helper_base *input_config);
     ~MemInterface();
 
     void distribute_config();
@@ -68,4 +69,7 @@ public:
 
     void end_of_elaboration();
     void end_of_simulation() override;
+
+private:
+    void init();
 };

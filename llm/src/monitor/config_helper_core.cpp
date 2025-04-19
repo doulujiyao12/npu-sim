@@ -26,7 +26,7 @@ void Config_helper_core::print_self() {
 
         cout << "\tCore prims: \n";
         for (auto work : core.worklist) {
-            for (auto pri在·m : work.prims_last_loop) {
+            for (auto prim : work.prims_last_loop) {
                 prim->print_self("\t\t");
             }
         }
