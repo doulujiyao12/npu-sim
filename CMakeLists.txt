@@ -43,6 +43,8 @@ list(FILTER SRC_FILES EXCLUDE REGEX ".*/test_dramsys\\.cpp$")
 # find_package(Cairo REQUIRED)
 # include_directories(${CAIRO_INCLUDE_DIRS})
 
+option(BUILD_DEBUG_TARGETS "Build debug versions of executables" OFF)
+
 function(add_test_executable target_name test_main_file)
     add_executable(${target_name} ${SRC_FILES} ${test_main_file})
     target_link_libraries(${target_name}
@@ -65,10 +67,37 @@ function(add_test_executable target_name test_main_file)
         -Wno-unknown-attributes 
         -DBROAD_W=16
     )
+    
+    # 如果启用了调试版本构建选项，则添加调试版本
+    if(BUILD_DEBUG_TARGETS)
+        add_executable(${target_name}_debug ${SRC_FILES} ${test_main_file})
+        target_link_libraries(${target_name}_debug
+            PUBLIC
+                systemc 
+                cairo 
+                sfml-graphics 
+                sfml-system 
+                sfml-window 
+                m 
+                pthread
+                DRAMSys::libdramsys
+                DRAMSys::util
+                DRAMSys::config
+        )
+        target_compile_options(${target_name}_debug PRIVATE 
+            -g 
+            -Ofast 
+            -Wno-unused-result 
+            -Wno-ignored-pragmas 
+            -Wno-unknown-attributes  
+            -DBROAD_W=16
+        )
+    endif()
 endfunction()
 
 add_test_executable(npusim       "./llm/unittest/npusim.cpp")
 add_test_executable(load_config  "./llm/unittest/load_config.cpp")
+
 
 
 # add_executable(npusim ${SRC_FILES})
@@ -96,8 +125,7 @@ add_test_executable(load_config  "./llm/unittest/load_config.cpp")
 
 # 清理目标的功能
 # set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "npusim;npusim_debug")
-set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "npusim")
-# add_library(systemc INTERFACE)
+set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "npusim;npusim_debug;load_config;load_config_debug")# add_library(systemc INTERFACE)
 
 # add_library(SystemC::systemc ALIAS systemc)
 
