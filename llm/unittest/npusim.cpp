@@ -734,7 +734,6 @@ int sc_main(int argc, char *argv[]) {
 
     comp_util = g_flag_comp_util;
 
-
     tile_exu.x_dims = g_flag_mac_size;
     tile_exu.y_dims = g_flag_mac_size;
     tile_sfu.x_dims = g_flag_mac_size * 16;

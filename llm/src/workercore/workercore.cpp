@@ -102,6 +102,7 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid, Event
     SC_THREAD(poll_buffer_i);
     sram_addr = new int(0);
     send_done = true;
+    send_last_packet = false;
     loop_cnt = 1;
     start_nb_dram_event = new sc_event();
     start_nb_gpu_dram_event = new sc_event();
@@ -202,9 +203,21 @@ void WorkerCoreExecutor::worker_core_execute()
         }
         else
         {
+            // 检查队列中p的下一个原语是否还是计算原语
+            bool last_comp = false;
+            if (prim_queue.size() >= 2 && !is_comp_prim(prim_queue[1])) {
+                last_comp = true;
+            }
+
             ev_comp.notify(CYCLE, SC_NS);
             event_engine->add_event("Core " + toHexString(cid), "Comp_prim", "B", Trace_event_util(p->name));
             wait(prim_block.negedge_event());
+
+            // 发送信号让send发送最后一个包
+            if (last_comp) {
+                send_last_packet = true;
+            }
+
             event_engine->add_event("Core " + toHexString(cid), "Comp_prim", "E", Trace_event_util(p->name));
         }
 
@@ -579,6 +592,11 @@ void WorkerCoreExecutor::send_para_logic()
                         if (is_end_packet)
                         {
                             length = s_prim->end_length;
+                            while (!send_last_packet) {
+                                wait(CYCLE, SC_NS);
+                            }
+
+                            send_last_packet = false;
                         }
 
                         int delay = 0;

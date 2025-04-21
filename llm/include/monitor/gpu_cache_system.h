@@ -25,7 +25,6 @@ public:
 
         // 连接组件
         for (int i = 0; i < numProcessors; i++) {
-            cout << "r" << i << endl;
             processors[i]->socket.bind(l1caches[i]->cpu_socket);
             l1caches[i]->bus_socket.bind(*bus->l1_sockets[i]);
             bus->addL1Cache(l1caches[i]);

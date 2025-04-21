@@ -15,6 +15,7 @@ public:
     int out_size;
 
     bool mock;
+    int req_sm;
 
     void parse_compose(json j);
 

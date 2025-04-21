@@ -27,7 +27,8 @@
                 "grid_x": 4,
                 "grid_y": 4,
                 "block_x": 4,
-                "block_y": 4
+                "block_y": 4,
+                "require_sm": 4
               },
               "B": "B",
               "T": "T",
