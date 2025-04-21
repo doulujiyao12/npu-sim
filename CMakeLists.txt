@@ -69,6 +69,7 @@ endfunction()
 
 add_test_executable(npusim       "./llm/unittest/npusim.cpp")
 add_test_executable(load_config  "./llm/unittest/load_config.cpp")
+# add_test_executable(global_chip_test  "./llm/unittest/global_chip_test.cpp")
 
 function(add_debug_executable target_name test_main_file)
     add_executable(${target_name}_debug ${SRC_FILES} ${test_main_file})
@@ -92,7 +93,8 @@ endfunction()
 
 # 添加Debug构建目标
 # add_debug_executable(npusim       "./llm/unittest/npusim.cpp")
-add_debug_executable(load_config  "./llm/unittest/load_config.cpp")
+# add_debug_executable(load_config  "./llm/unittest/load_config.cpp")
+# add_debug_executable(global_chip_test  "./llm/unittest/global_chip_test.cpp")
 
 # 更新清理目标
 set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "npusim;npusim_debug;load_config;load_config_debug")
