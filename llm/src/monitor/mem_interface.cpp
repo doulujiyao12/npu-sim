@@ -128,6 +128,7 @@ void MemInterface::init(){
     SC_THREAD(switch_phase);
     sensitive << ev_switch_phase;
     dont_initialize();
+    
     flow_id = 0;
 };
 
@@ -179,14 +180,18 @@ void MemInterface::distribute_config() {
     while (true) {
         // send
         // 组装write buffer
+        cout << "2323\n";
         clear_write_buffer();
+        cout << "2324\n";
         event_engine->add_event(this->name(), "Sending Config", "B", Trace_event_util());
 
         config_helper->fill_queue_config(write_buffer);
 
         // 发送开始书写信号
         ev_write.notify(0, SC_NS);
+        cout << "1111\n";
         wait(write_done.posedge_event());
+        cout << "1112\n";
         cout << sc_time_stamp() << ": Mem Interface: config sent done.\n";
         event_engine->add_event(this->name(), "Sending Config", "E", Trace_event_util());
         // 使用唯一的flow ID替换名称

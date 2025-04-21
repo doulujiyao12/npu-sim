@@ -17,7 +17,7 @@
 #define USE_NB_DRAMSYS 1
 #define USE_L1L2_CACHE 1
 #define FAST_WARMUP 1
-#define SR_PARA 1
+#define SR_PARA 0
 
 // 数据包占位
 #define M_D_IS_END 1

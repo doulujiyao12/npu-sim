@@ -155,7 +155,7 @@
                   "dim": 2,
                   "slice": 2,
                   "sram_address": {
-                    "indata": "input_label matmul2_out",
+                    "indata": "_input_label matmul2_out",
                     "outdata": "merge_matmul1_out"
                   },
                   "dram_address": {}
@@ -178,7 +178,7 @@
                   "T": "T",
                   "C": "C",
                   "sram_address": {
-                    "indata": "residual1_out",
+                    "indata": "_residual1_out",
                     "outdata": "layernorm2_out"
                   },
                   "dram_address": {

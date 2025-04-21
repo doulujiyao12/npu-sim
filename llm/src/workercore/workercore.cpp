@@ -205,7 +205,7 @@ void WorkerCoreExecutor::worker_core_execute()
         {
             // 检查队列中p的下一个原语是否还是计算原语
             bool last_comp = false;
-            if (prim_queue.size >= 2 && !is_comp_prim(prim_queue[1])) {
+            if (prim_queue.size() >= 2 && !is_comp_prim(prim_queue[1])) {
                 last_comp = true;
             }
 
