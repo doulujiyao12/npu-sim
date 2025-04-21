@@ -9,25 +9,22 @@
 #include "macros/macros.h"
 #include "memory/MemoryManager_v2.h"
 #include "trace/Event_engine.h"
+#include "memory/dram/utils.h"
+
 
 // 定义 Request 结构体
-struct Request {
-    uint64_t address;
-    enum Command { Read, Write, Invalid } command;
-    int length;
-    sc_core::sc_time delay;
-};
+
 
 // DMA Producer SystemC Module
-class NB_dcachecore : public sc_core::sc_module {
+class GPUNB_dcacheIF : public sc_core::sc_module {
 public:
-    SC_HAS_PROCESS(NB_dcachecore);
+    SC_HAS_PROCESS(GPUNB_dcacheIF);
     // TLM Initiator Socket
-    tlm_utils::simple_initiator_socket<NB_dcachecore> socket;
+    tlm_utils::simple_initiator_socket<GPUNB_dcacheIF> socket;
     sc_event *start_nb_dram_event; // 非阻塞sram访存开始标志
     sc_event *end_nb_dram_event;
     sc_event *next_dram_event;
-    tlm_utils::peq_with_cb_and_phase<NB_dcachecore> payloadEventQueue;
+    tlm_utils::peq_with_cb_and_phase<GPUNB_dcacheIF> payloadEventQueue;
     sc_core::sc_time lastEndRequest = sc_core::sc_max_time();
     MemoryManager_v2 mm;
 
@@ -45,33 +42,33 @@ public:
 
 
     // Constructor
-    NB_dcachecore(sc_core::sc_module_name name, sc_event *start_nb_dram_event, sc_event *end_nb_dram_event, Event_engine *event_engine)
+    GPUNB_dcacheIF(sc_core::sc_module_name name, sc_event *start_nb_dram_event, sc_event *end_nb_dram_event, Event_engine *event_engine)
         : sc_module(name),
           start_nb_dram_event(start_nb_dram_event),
           end_nb_dram_event(end_nb_dram_event),
-          payloadEventQueue(this, &NB_dcachecore::peqCallback),
+          payloadEventQueue(this, &GPUNB_dcacheIF::peqCallback),
           mm(false),
           maxPendingReadRequests(5),
           maxPendingWriteRequests(5),
-          socket("NB_Dcache_socket"),
+          socket("GPUNB_Dcache_socket"),
           current_request(0),
           config_updated(false) {
         // Register the main process
         SC_THREAD(generateRequests);
         next_dram_event = new sc_event();
-        socket.register_nb_transport_bw(this, &NB_dcachecore::nb_transport_bw);
+        socket.register_nb_transport_bw(this, &GPUNB_dcacheIF::nb_transport_bw);
     }
 
     // Reconfigure the DMA producer
-    void reconfigure(uint64_t base_addr, int dma_read_cnt, int cache_cnt, int line_size) {
+    void reconfigure(uint64_t base_addr, int cache_cnt, int line_size, bool read_or_write) {
         // sc_core::sc_mutex_lock lock(config_mutex); // Protect configuration
         // variables
         base_address = base_addr;
-        total_requests = dma_read_cnt * cache_cnt;
-        cache_lines = line_size;
+        total_requests = cache_cnt;
         data_length = line_size / 8;     // 假设每行按8字节分块
         current_request = 0;             // Reset request counter
         config_updated = true;           // Notify the main process
+        read_or_write = read_or_write;   // 读写标志位 0 是 读 1 是 写
         (*start_nb_dram_event).notify(); // Trigger reconfiguration
     }
 
@@ -80,7 +77,8 @@ private:
     uint64_t base_address; // 起始地址
     int total_requests;    // 总请求数 = dma_read_count * cache_count
     int current_request;   // 已生成请求计数
-    int cache_lines;       // 地址步进值（字节）
+    // int cache_lines;       // 地址步进值（字节）
+    bool read_or_write;     // 读写标志位 0 是 读 1 是 写
     int data_length;       // 传输长度单位
 
     // Synchronization
@@ -106,20 +104,7 @@ private:
     }
 
     void peqCallback(tlm::tlm_generic_payload &payload, const tlm::tlm_phase &phase) {
-        // 打印phase类型
-        // 打印当前时间戳
-        // std::cout << "Current time: " << sc_core::sc_time_stamp() <<
-        // std::endl; std::cout << "Phase: "; if (phase == tlm::BEGIN_REQ) {
-        //     std::cout << "BEGIN_REQ" << std::endl;
-        // } else if (phase == tlm::END_REQ) {
-        //     std::cout << "END_REQ" << std::endl;
-        // } else if (phase == tlm::BEGIN_RESP) {
-        //     std::cout << "BEGIN_RESP" << std::endl;
-        // } else if (phase == tlm::END_RESP) {
-        //     std::cout << "END_RESP" << std::endl;
-        // } else {
-        //     std::cout << "UNKNOWN" << std::endl;
-        // }
+  
         if (phase == tlm::END_REQ) {
             lastEndRequest = sc_core::sc_time_stamp();
 
@@ -196,25 +181,10 @@ private:
             wait(*start_nb_dram_event);
             if (total_requests > 0) {
                 while (current_request < total_requests) {
-                    // Wait for configuration to be set
-                    // if (current_request >= total_requests || config_updated)
-                    // {
-                    //     wait(config_event); // Wait for reconfiguration
-                    //     config_updated = false; // Reset the flag
-                    // }
-                    // 打印当前请求信息
-                    // std::cout << "Request " << current_request + 1 << " of "
-                    // << total_requests
-                    //         << ": address=0x" << std::hex << (base_address +
-                    //         current_request * cache_lines)
-                    //         << ", length=" << std::dec << data_length
-                    //         << ", command=Read" << std::endl;
-                    // std::cout << "Event: Before notified at time " <<
-                    // sc_core::sc_time_stamp() << std::endl; Create a new
-                    // request
+                    
                     Request request;
-                    request.address = base_address + current_request * cache_lines;
-                    request.command = Request::Command::Read; // Fixed as Read
+                    request.address = base_address + current_request * data_length;
+                    request.command = (read_or_write == 0) ? Request::Command::Read : Request::Command::Write; // Fixed as Read
                     request.length = data_length;
                     request.delay = sc_core::SC_ZERO_TIME;
 

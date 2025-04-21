@@ -19,6 +19,8 @@
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 #include "workercore/workercore.h"
+#include "memory/dram/GPUNB_DcacheIF.h"
+
 
 using namespace std;
 
@@ -103,17 +105,20 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid, Event
     send_last_packet = false;
     loop_cnt = 1;
     start_nb_dram_event = new sc_event();
+    // start_nb_gpu_dram_event = new sc_event();
     end_nb_dram_event = new sc_event();
+    // end_nb_gpu_dram_event = new sc_event();
     next_datapass_label = new SramDatapassLabel();
     sram_pos_locator = new SramPosLocator(s_cid);
 #if USE_NB_DRAMSYS == 1
-    nb_dcache_socket = new NB_dcachecore(sc_gen_unique_name("nb_dcache"), start_nb_dram_event, end_nb_dram_event, event_engine);
+    nb_dcache_socket = new NB_DcacheIF(sc_gen_unique_name("nb_dcache"), start_nb_dram_event, end_nb_dram_event, event_engine);
 #else
     dcache_socket = new DcacheCore(sc_gen_unique_name("dcache"), event_engine);
 #endif
 #if USE_L1L2_CACHE == 1
     core_lv1_cache = new L1Cache(("l1_cache_" + to_string(cid)).c_str(), cid, 8192, 64, 4, 8);
-    cache_processor = new Processor(("processor_" + to_string(cid)).c_str(), cid * 1000);
+    gpunb_dcache_if = new GPUNB_dcacheIF(sc_gen_unique_name("nb_dcache_if"), start_nb_dram_event, end_nb_dram_event, event_engine);
+    // cache_processor = new Processor(("processor_" + to_string(cid)).c_str(), cid * 1000);
 #else
 #endif
     mem_access_port = new mem_access_unit(sc_gen_unique_name("mem_access_unit"), event_engine);
@@ -253,9 +258,8 @@ void WorkerCoreExecutor::switch_prim_block()
              SC_NS); // 等待一个时钟周期后立刻将prim_block置为true，由于没有对其上升沿的检测，所以是可行的
     }
 }
-
-prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer)
-{
+// 指令被 RECV_CONF发送过来后，会在本地核实例化对应的指令类
+prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     prim_base *task = nullptr;
     int type = buffer.range(7, 0).to_uint64();
 
@@ -438,7 +442,7 @@ void WorkerCoreExecutor::send_logic()
                     // cout << sc_time_stamp() << ": Before Send Msg \n" ;
 
 #if USE_NB_DRAMSYS == 1
-                    NB_dcachecore *nb_dcache = this->nb_dcache_socket; // 实例化或获取 NB_dcachecore
+                    NB_DcacheIF *nb_dcache = this->nb_dcache_socket; // 实例化或获取 NB_DcacheIF
                                                                        // 对象
 #else
                     DcacheCore *wc = this->dcache_socket; // 实例化或获取 DcacheCore 对象
@@ -600,8 +604,8 @@ void WorkerCoreExecutor::send_para_logic()
                         sc_bv<SRAM_BITWIDTH> msg_data_tmp;
 
 #if USE_NB_DRAMSYS == 1
-                        NB_dcachecore *nb_dcache = this->nb_dcache_socket; // 实例化或获取
-                                                                           // NB_dcachecore 对象
+                        NB_DcacheIF *nb_dcache = this->nb_dcache_socket; // 实例化或获取
+                                                                           // NB_DcacheIF 对象
 #else
                         DcacheCore *wc = this->dcache_socket; // 实例化或获取 DcacheCore 对象
 #endif
@@ -902,7 +906,7 @@ void WorkerCoreExecutor::recv_logic()
 
                     sc_bv<SRAM_BITWIDTH> msg_data_tmp;
 #if USE_NB_DRAMSYS == 1
-                    NB_dcachecore *nb_dcache = this->nb_dcache_socket; // 实例化或获取 NB_dcachecore
+                    NB_DcacheIF *nb_dcache = this->nb_dcache_socket; // 实例化或获取 NB_DcacheIF
                                                                        // 对象
 #else
                     DcacheCore *wc = this->dcache_socket; // 实例化或获取 DcacheCore 对象
@@ -1076,8 +1080,8 @@ void WorkerCoreExecutor::task_logic()
         sc_bv<SRAM_BITWIDTH> msg_data_tmp;
 
 #if USE_NB_DRAMSYS == 1
-        NB_dcachecore *nb_dcache = this->nb_dcache_socket; // 实例化或获取 NB_dcachecore 对象
-#else / root / fdh / npu - sim / npu - sim / llm / include / workercore / workercore.h
+        NB_DcacheIF *nb_dcache = this->nb_dcache_socket; // 实例化或获取 NB_DcacheIF 对象
+#else 
 
         DcacheCore *wc = this->dcache_socket; // 实例化或获取 DcacheCore 对象
 #endif
@@ -1111,7 +1115,7 @@ void WorkerCoreExecutor::task_logic()
             else if (is_gpu_prim(p))
             {
                 cout << "socket " << cid << endl;
-                context.cache_socket = &(this->cache_processor->cache_socket);
+                context.gpunb_dcache_if = gpunb_dcache_if;
                 cout << "socket2 " << cid << endl;
             }
             else if (typeid(*p) == typeid(Clear_sram))

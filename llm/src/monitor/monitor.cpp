@@ -1,8 +1,40 @@
 #include "monitor/monitor.h"
 
 Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine, const char *config_name, const char *font_ttf) : sc_module(n), event_engine(event_engine) {
-    routerMonitor = new RouterMonitor("router-monitor", this->event_engine);
     memInterface = new MemInterface("mem-interface", this->event_engine, config_name, font_ttf);
+    init();
+}
+
+Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine, config_helper_base *input_config) : sc_module(n), event_engine(event_engine) {
+    memInterface = new MemInterface("mem-interface", this->event_engine, input_config);
+    init();
+}
+
+
+Monitor::~Monitor() {
+    delete[] core_busy;
+    delete[] rc_channel;
+    delete[] rc_data_sent;
+    for (int i = 0; i < DIRECTIONS; i++) {
+        delete[] channel[i];
+        delete[] channel_avail[i];
+        delete[] data_sent[i];
+    }
+
+    delete[] host_channel_avail;
+    delete[] host_data_sent_i;
+    delete[] host_data_sent_o;
+    delete[] host_channel_i;
+    delete[] host_channel_o;
+
+    delete routerMonitor;
+    delete workerCores;
+    delete memInterface;
+}
+
+void Monitor::init(){
+    routerMonitor = new RouterMonitor("router-monitor", this->event_engine);
+    // memInterface = new MemInterface("mem-interface", this->event_engine, config_name, font_ttf);
     workerCores = new WorkerCore *[GRID_SIZE];
     for (int i = 0; i < GRID_SIZE; i++) {
         workerCores[i] = new WorkerCore(sc_gen_unique_name("workercore"), i, this->event_engine);
@@ -11,11 +43,11 @@ Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine, const char
 #if USE_L1L2_CACHE == 1
     // GPU
     vector<L1Cache *> l1caches;
-    vector<Processor *> processors;
+    vector<GPUNB_dcacheIF *> processors;
     for (int i = 0; i < GRID_SIZE; i++) {
         l1caches.push_back(workerCores[i]->executor->core_lv1_cache);
-        processors.push_back(workerCores[i]->executor->cache_processor);
-        processors[i]->cache_socket;
+        processors.push_back(workerCores[i]->executor->gpunb_dcache_if);
+
     }
     cacheSystem = new L1L2CacheSystem("l1l2-cache_system", GRID_SIZE, l1caches, processors);
 #else
@@ -103,27 +135,6 @@ Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine, const char
     cout << "Components initialize complete, prepare to start.\n";
 
     SC_THREAD(start_simu);
-}
-
-Monitor::~Monitor() {
-    delete[] core_busy;
-    delete[] rc_channel;
-    delete[] rc_data_sent;
-    for (int i = 0; i < DIRECTIONS; i++) {
-        delete[] channel[i];
-        delete[] channel_avail[i];
-        delete[] data_sent[i];
-    }
-
-    delete[] host_channel_avail;
-    delete[] host_data_sent_i;
-    delete[] host_data_sent_o;
-    delete[] host_channel_i;
-    delete[] host_channel_o;
-
-    delete routerMonitor;
-    delete workerCores;
-    delete memInterface;
 }
 
 void Monitor::start_simu() {

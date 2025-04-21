@@ -113,13 +113,14 @@ public:
 
     Event_engine *event_engine;
 #if USE_NB_DRAMSYS == 1
-    NB_dcachecore *nb_dcache_socket;
+    NB_DcacheIF *nb_dcache_socket;
 #else
     DcacheCore *dcache_socket;
 #endif
 #if USE_L1L2_CACHE == 1
     L1Cache *core_lv1_cache;
-    Processor *cache_processor;
+    // Processor *cache_processor;
+    GPUNB_dcacheIF * gpunb_dcache_if;
 #else
 #endif
     mem_access_unit *mem_access_port;

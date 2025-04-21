@@ -52,7 +52,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte, i
 
 #if USE_NB_DRAMSYS == 1
 
-    nb_dcache->reconfigure(inp_global_addr, dma_read_count, cache_count, cache_lines);
+    nb_dcache->reconfigure(inp_global_addr, dma_read_count, cache_count, cache_lines, 0);
     sc_time start_nbdram = sc_time_stamp();
     cout << "start nbdram: " << sc_time_stamp().to_string() << endl;
     wait(*e_nbdram);
@@ -116,7 +116,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte, i
     if (single_read_count > 0) {
 
 #if USE_NB_DRAMSYS == 1
-        nb_dcache->reconfigure(inp_global_addr + cache_lines * cache_count * dma_read_count, 1, cache_count, cache_lines);
+        nb_dcache->reconfigure(inp_global_addr + cache_lines * cache_count * dma_read_count, 1, cache_count, cache_lines, 0);
         start_nbdram = sc_time_stamp();
         cout << "start padding nbdram: " << sc_time_stamp().to_string() << endl;
         wait(*e_nbdram);
@@ -220,7 +220,7 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte, in
 
 #if USE_NB_DRAMSYS == 1
 
-    nb_dcache->reconfigure(inp_global_addr, dma_read_count, cache_count, cache_lines);
+    nb_dcache->reconfigure(inp_global_addr, dma_read_count, cache_count, cache_lines, 1);
     sc_time start_nbdram = sc_time_stamp();
     cout << "start nbdram: " << sc_time_stamp().to_string() << endl;
     wait(*e_nbdram);
@@ -245,7 +245,7 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte, in
     if (single_read_count > 0) {
 
 #if USE_NB_DRAMSYS == 1
-        nb_dcache->reconfigure(inp_global_addr + cache_lines * cache_count * dma_read_count, 1, cache_count, cache_lines);
+        nb_dcache->reconfigure(inp_global_addr + cache_lines * cache_count * dma_read_count, 1, cache_count, cache_lines, 1);
         start_nbdram = sc_time_stamp();
         cout << "start padding nbdram: " << sc_time_stamp().to_string() << endl;
         wait(*e_nbdram);
@@ -620,37 +620,78 @@ int check_dcache(int tX, int tY, u_int64_t array, u_int64_t timer, u_int64_t &ti
 }
 
 #if USE_L1L2_CACHE == 1
-void gpu_read_generic(tlm_utils::simple_initiator_socket<Processor> *cache_socket, uint64_t addr, int size, int &mem_time) {
-    tlm::tlm_generic_payload *trans = new tlm::tlm_generic_payload();
-    uint8_t *data = new uint8_t[size];
-    trans->set_command(tlm::TLM_READ_COMMAND);
-    trans->set_address(addr);
-    trans->set_data_ptr(data);
-    trans->set_data_length(size);
+void gpu_read_generic(TaskCoreContext &context, uint64_t global_addr, int data_size_in_byte, int &mem_time) {
+        
+    int inp_global_addr = global_addr;
 
-    cout << "Reading from address " << hex << addr << dec << endl;
 
-    sc_time delay = SC_ZERO_TIME;
-    tlm::tlm_phase phase = tlm::BEGIN_REQ;
-    (*cache_socket)->nb_transport_fw(*trans, phase, delay);
+    auto gpunb_dcache_if = context.gpunb_dcache_if;
 
-    mem_time += delay.to_seconds() * 1e9;
+    auto s_nbdram = context.s_nbdram;
+    auto e_nbdram = context.e_nbdram;
+
+    u_int64_t in_dcacheline = 0;
+    int cache_lines = 1 << (dcache_words_in_line_log2 + 2 + 3);
+    int cache_count = ceiling_division(data_size_in_byte * 8, cache_lines);
+
+
+
+    sc_time start_first_write_time = sc_time_stamp();
+
+
+    cout << "read cache_count: " << cache_count << "cache_lines " << cache_lines << endl;
+
+    gpunb_dcache_if->reconfigure(inp_global_addr, cache_count, cache_lines, 0);
+
+    cout << "start gpu_nbdram: " << sc_time_stamp().to_string() << endl;
+    wait(*e_nbdram);
+
+    cout << "end gpu_nbdram: " << sc_time_stamp().to_string() << endl;
+
+
+    
+#if USE_NB_DRAMSYS
+    sc_time end_first_write_time = sc_time_stamp();
+    mem_time += (end_first_write_time - start_first_write_time).to_seconds() * 1e9;
+
+#endif
 }
 
-void gpu_write_generic(tlm_utils::simple_initiator_socket<Processor> *cache_socket, uint64_t addr, int size, int &mem_time) {
-    tlm::tlm_generic_payload *trans = new tlm::tlm_generic_payload();
-    uint8_t *data = new uint8_t[size];
-    trans->set_command(tlm::TLM_WRITE_COMMAND);
-    trans->set_address(addr);
-    trans->set_data_ptr(data);
-    trans->set_data_length(size);
+void gpu_write_generic(TaskCoreContext &context, uint64_t global_addr, int data_size_in_byte, int &mem_time) {
+    
+    int inp_global_addr = global_addr;
 
-    cout << "Writing from address " << hex << addr << dec << endl;
 
-    sc_time delay = SC_ZERO_TIME;
-    tlm::tlm_phase phase = tlm::BEGIN_REQ;
-    (*cache_socket)->nb_transport_fw(*trans, phase, delay);
+    auto gpunb_dcache_if = context.gpunb_dcache_if;
 
-    mem_time += delay.to_seconds() * 1e9;
+    auto s_nbdram = context.s_nbdram;
+    auto e_nbdram = context.e_nbdram;
+
+    u_int64_t in_dcacheline = 0;
+    int cache_lines = 1 << (dcache_words_in_line_log2 + 2 + 3);
+    int cache_count = ceiling_division(data_size_in_byte * 8, cache_lines);
+
+
+
+    sc_time start_first_write_time = sc_time_stamp();
+
+    cout << "write gpu cache_count: " << cache_count << "cache_lines " << cache_lines << endl;
+
+
+    gpunb_dcache_if->reconfigure(inp_global_addr, cache_count, cache_lines, 1);
+
+    cout << "start gpu_nbdram: " << sc_time_stamp().to_string() << endl;
+    wait(*e_nbdram);
+
+    cout << "end gpu_nbdram: " << sc_time_stamp().to_string() << endl;
+
+
+    
+#if USE_NB_DRAMSYS
+    sc_time end_first_write_time = sc_time_stamp();
+    mem_time += (end_first_write_time - start_first_write_time).to_seconds() * 1e9;
+
+#endif
+
 }
 #endif

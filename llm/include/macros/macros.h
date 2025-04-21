@@ -16,7 +16,7 @@
 #define MAX_SRAM_SIZE 7000000 // byte
 #define USE_NB_DRAMSYS 1
 #define USE_L1L2_CACHE 1
-#define FAST_WARMUP 0
+#define FAST_WARMUP 1
 #define SR_PARA 1
 
 // 数据包占位
@@ -76,7 +76,6 @@
 // obsolete
 #define KVCACHE_MAX_SIZE 10240
 
-
 // // BOARD PARAMETERS
 // BOARD_W <= GRID_X
 
@@ -95,7 +94,6 @@
 #else
 #define PACK_W (BOARD_W)
 #endif
-
 
 #ifndef BOARD_W
 #define BOARD_W (4)

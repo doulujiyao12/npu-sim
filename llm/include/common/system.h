@@ -2,10 +2,11 @@
 #include "defs/const.h"
 #include "defs/enums.h"
 #include "memory/dram/Dcachecore.h"
-#include "memory/dram/NB_dcachecore.h"
+#include "memory/dram/NB_DcacheIF.h"
 #include "memory/gpu/GPU_L1L2_Cache.h"
 #include "memory/sram/High_mem_access_unit.h"
 #include "memory/sram/Mem_access_unit.h"
+#include "memory/dram/GPUNB_DcacheIF.h"
 
 #include <vector>
 
@@ -39,18 +40,19 @@ public:
     sc_event *e_nbdram;
     int loop_cnt;
 #if USE_NB_DRAMSYS == 1
-    NB_dcachecore *nb_dcache;
+    NB_DcacheIF *nb_dcache;
 #else
     DcacheCore *wc;
 #endif
 #if USE_L1L2_CACHE == 1
-    tlm_utils::simple_initiator_socket<Processor> *cache_socket;
+    // tlm_utils::simple_initiator_socket<Processor> *cache_socket;
+    GPUNB_dcacheIF *gpunb_dcache_if;
 #endif
 #if USE_NB_DRAMSYS == 1
     // 构造函数
-    TaskCoreContext(mem_access_unit *mau, high_bw_mem_access_unit *hmau, const sc_bv<SRAM_BITWIDTH> &msg_data, int *sram_addr, sc_event *s_nbdram, sc_event *e_nbdram, NB_dcachecore *nb_dcache)
+    TaskCoreContext(mem_access_unit *mau, high_bw_mem_access_unit *hmau, const sc_bv<SRAM_BITWIDTH> &msg_data, int *sram_addr, sc_event *s_nbdram, sc_event *e_nbdram, NB_DcacheIF *nb_dcache)
         : mau(mau), hmau(hmau), msg_data(msg_data), sram_addr(sram_addr), s_nbdram(s_nbdram), e_nbdram(e_nbdram), nb_dcache(nb_dcache) {}
-    TaskCoreContext(mem_access_unit *mau, high_bw_mem_access_unit *hmau, const sc_bv<SRAM_BITWIDTH> &msg_data, int *sram_addr, sc_event *s_nbdram, sc_event *e_nbdram, NB_dcachecore *nb_dcache,
+    TaskCoreContext(mem_access_unit *mau, high_bw_mem_access_unit *hmau, const sc_bv<SRAM_BITWIDTH> &msg_data, int *sram_addr, sc_event *s_nbdram, sc_event *e_nbdram, NB_DcacheIF *nb_dcache,
                     int loop_cnt)
         : mau(mau), hmau(hmau), msg_data(msg_data), sram_addr(sram_addr), s_nbdram(s_nbdram), e_nbdram(e_nbdram), nb_dcache(nb_dcache), loop_cnt(loop_cnt) {}
 #else
