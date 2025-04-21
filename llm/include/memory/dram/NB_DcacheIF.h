@@ -58,15 +58,16 @@ public:
     }
 
     // Reconfigure the DMA producer
-    void reconfigure(uint64_t base_addr, int dma_read_cnt, int cache_cnt, int line_size) {
+    void reconfigure(uint64_t base_addr, int dma_read_cnt, int cache_cnt, int line_size, bool read_or_write)  {
         // sc_core::sc_mutex_lock lock(config_mutex); // Protect configuration
         // variables
         base_address = base_addr;
         total_requests = dma_read_cnt * cache_cnt;
-        cache_lines = line_size;
+        // cache_lines = line_size;
         data_length = line_size / 8;     // 假设每行按8字节分块
         current_request = 0;             // Reset request counter
         config_updated = true;           // Notify the main process
+        read_or_write = read_or_write;   // 读写标志位
         (*start_nb_dram_event).notify(); // Trigger reconfiguration
     }
 
@@ -75,8 +76,9 @@ private:
     uint64_t base_address; // 起始地址
     int total_requests;    // 总请求数 = dma_read_count * cache_count
     int current_request;   // 已生成请求计数
-    int cache_lines;       // 地址步进值（字节）
+    // int cache_lines;       // 地址步进值（字节）
     int data_length;       // 传输长度单位
+    bool read_or_write;     // 读写标志位 0 是 读 1 是 写
 
     // Synchronization
     sc_core::sc_event config_event; // Event to notify reconfiguration
@@ -208,8 +210,8 @@ private:
                     // sc_core::sc_time_stamp() << std::endl; Create a new
                     // request
                     Request request;
-                    request.address = base_address + current_request * cache_lines;
-                    request.command = Request::Command::Read; // Fixed as Read
+                    request.address = base_address + current_request * data_length;
+                    request.command = (read_or_write == 0) ? Request::Command::Read : Request::Command::Write; // Fixed as Read
                     request.length = data_length;
                     request.delay = sc_core::SC_ZERO_TIME;
 

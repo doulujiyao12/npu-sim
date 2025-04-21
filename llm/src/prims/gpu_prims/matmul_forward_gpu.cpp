@@ -10,22 +10,22 @@ int Matmul_f_gpu::task_core(TaskCoreContext &context) {
         data_byte = 2;
     }
 
-    int data_size_input = B * T * C;
-    int data_size_weight = OC * C;
-    int data_size_bias = OC;
-    int data_size_out = B * T * OC;
+    int data_size_input = B * T * C * data_byte;
+    int data_size_weight = OC * C * data_byte;
+    int data_size_bias = OC * data_byte;
+    int data_size_out = B * T * OC * data_byte;
 
     int mem_time = 0;
-    gpu_read_generic(context.gpunb_dcache_if, 10, data_size_input, mem_time);
+    gpu_read_generic(context, 10, data_size_input, mem_time);
     cout << cid << " [Matmul_f_gpu] after read1: " << mem_time << endl;
-    gpu_read_generic(context.gpunb_dcache_if, 10, data_size_weight, mem_time);
+    gpu_read_generic(context, 10, data_size_weight, mem_time);
     cout << cid << " [Matmul_f_gpu] after read2: " << mem_time << endl;
-    gpu_read_generic(context.gpunb_dcache_if, 10, data_size_bias, mem_time);
+    gpu_read_generic(context, 10, data_size_bias, mem_time);
     cout << cid << " [Matmul_f_gpu] after read3: " << mem_time << endl;
 
     // TODO: 模拟计算cycle数
     int overlap_time = mem_time;
-    gpu_write_generic(context.gpunb_dcache_if, 10, data_size_bias, overlap_time);
+    gpu_write_generic(context, 10, data_size_bias, overlap_time);
 
     cout << "[Matmul_f_gpu] after write: " << overlap_time << endl;
 

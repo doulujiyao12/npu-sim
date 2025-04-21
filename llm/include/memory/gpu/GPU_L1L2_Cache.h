@@ -401,6 +401,7 @@ public:
             // 发送请求
             sc_time delay = SC_ZERO_TIME;
             tlm_phase phase = BEGIN_REQ;
+            cout << "  L1: " << sc_time_stamp() << " L1Cache " << cacheId << " send request to bus: " << req.address << endl;
             bus_socket->nb_transport_fw(*newTrans, phase, delay);
 
             // 等待响应（简化处理）
@@ -429,10 +430,10 @@ public:
                         // 读取数据
                         // memcpy(trans.get_data_ptr(), &line.data[0],
                         // trans.get_data_length());
-                        delay += sc_time(5, SC_NS); // 命中延迟
+                        delay += sc_time(CYCLE, SC_NS); // 命中延迟
 
                         phase = END_RESP;
-                        sc_time bwDelay = sc_core::sc_time(5, sc_core::SC_NS);
+                        sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
                         payloadEventQueue.notify(trans, phase, bwDelay);
                         return TLM_UPDATED;
                     }
@@ -449,7 +450,7 @@ public:
                         mshrEntries[mshrIndex].isPending = true;
                         mshrEntries[mshrIndex].isIssue = false;
                         phase = END_REQ;
-                        sc_time bwDelay = sc_core::sc_time(5, sc_core::SC_NS);
+                        sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
                         payloadEventQueue.notify(trans, phase, bwDelay);
                         mshrevent.notify();
 
@@ -471,10 +472,10 @@ public:
                             // 如果是M状态，直接写入
                             // memcpy(&line.data[0], trans.get_data_ptr(),
                             // trans.get_data_length());
-                            delay += sc_time(5, SC_NS); // 命中延迟
+                            delay += sc_time(CYCLE, SC_NS); // 命中延迟
 
                             phase = END_RESP;
-                            sc_time bwDelay = sc_core::sc_time(5, sc_core::SC_NS);
+                            sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
                             payloadEventQueue.notify(trans, phase, bwDelay);
                             return TLM_UPDATED;
                         } else if (line.state == SHARED) {
@@ -492,7 +493,7 @@ public:
                             tlm_phase busPhase = BEGIN_REQ;
                             bus_socket->nb_transport_fw(*invalidateTrans, busPhase, busDelay);
                             phase = END_RESP;
-                            sc_time bwDelay = sc_core::sc_time(5, sc_core::SC_NS);
+                            sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
                             payloadEventQueue.notify(trans, phase, bwDelay);
                             return TLM_ACCEPTED;
                         }
@@ -511,7 +512,7 @@ public:
                         mshrEntries[mshrIndex].isIssue = false;
 
                         phase = END_REQ;
-                        sc_time bwDelay = sc_core::sc_time(5, sc_core::SC_NS);
+                        sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
                         payloadEventQueue.notify(trans, phase, bwDelay);
                         mshrevent.notify();
                         return TLM_ACCEPTED;
@@ -878,6 +879,7 @@ public:
                 tlm_phase phase = BEGIN_REQ;
                 sc_time delay = SC_ZERO_TIME;
                 tlm::tlm_sync_enum status;
+                cout << "Bus " << sc_time_stamp() << " Bus send request to L2: " << request.address << endl;
                 status = l2_socket->nb_transport_fw(*request.transaction, phase, delay);
                 if (status == TLM_COMPLETED) {
                     wait(CYCLE, SC_NS); // 总线仲裁延迟
@@ -1294,6 +1296,7 @@ public:
             }
 
             delay = sendingTime - sc_core::sc_time_stamp();
+            cout << "L2: Sending request to memory: " << req.address <<  " time stamp"<< sc_time_stamp() << endl;
             mem_socket->nb_transport_fw(*newTrans, phase, delay);
 
             // 等待响应（简化处理）
@@ -1592,10 +1595,10 @@ public:
             //     SC_REPORT_ERROR("Bus", "Missing source ID extension");
 
             // }
-
+            cout << "start main memort !!!!!!!!!" << endl;
             l2_socket->nb_transport_bw(payload, l2Phase, l2Delay);
             tlm_phase l2Phase2 = BEGIN_RESP;
-            sc_time bwDelay = sc_core::sc_time(5, sc_core::SC_NS);
+            sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
             payloadEventQueue_begin_resp.notify(payload, l2Phase2, bwDelay);
         }
     }
@@ -1624,7 +1627,7 @@ public:
             // }
 
             phase = END_REQ;
-            sc_time bwDelay = sc_core::sc_time(5, sc_core::SC_NS);
+            sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
             payloadEventQueue.notify(trans, phase, bwDelay);
 
             return TLM_UPDATED;
@@ -1668,7 +1671,7 @@ public:
 
         if (phase == BEGIN_RESP) {
 
-            sc_time bwDelay = sc_core::sc_time(5, sc_core::SC_NS);
+            sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
             payloadEventQueue.notify(trans, phase, bwDelay);
         }
         return TLM_ACCEPTED;
