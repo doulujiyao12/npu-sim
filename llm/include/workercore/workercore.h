@@ -72,6 +72,7 @@ public:
     queue<Msg> ack_buffer;
 
     bool send_done;                     // 并行策略：send和recv并行
+    bool send_last_packet;
     bool comp_done;                     // 并行策略：comp和send并行
     deque<prim_base *> prim_queue;      // 用于存储所有需要依次执行的原语
     queue<prim_base *> send_para_queue; // 并行策略：send和recv并行
