@@ -49,7 +49,7 @@ void Monitor::init(){
         processors.push_back(workerCores[i]->executor->gpunb_dcache_if);
 
     }
-    cacheSystem = new L1L2CacheSystem("l1l2-cache_system", GRID_SIZE, l1caches, processors);
+    cacheSystem = new L1L2CacheSystem("l1l2-cache_system", GRID_SIZE, l1caches, processors, "../DRAMSys/configs/ddr4-example.json", "../DRAMSys/configs");
 #else
 #endif
 

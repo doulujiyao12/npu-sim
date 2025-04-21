@@ -104,9 +104,9 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid, Event
     send_done = true;
     loop_cnt = 1;
     start_nb_dram_event = new sc_event();
-    // start_nb_gpu_dram_event = new sc_event();
+    start_nb_gpu_dram_event = new sc_event();
     end_nb_dram_event = new sc_event();
-    // end_nb_gpu_dram_event = new sc_event();
+    end_nb_gpu_dram_event = new sc_event();
     next_datapass_label = new SramDatapassLabel();
     sram_pos_locator = new SramPosLocator(s_cid);
 #if USE_NB_DRAMSYS == 1
@@ -116,7 +116,7 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid, Event
 #endif
 #if USE_L1L2_CACHE == 1
     core_lv1_cache = new L1Cache(("l1_cache_" + to_string(cid)).c_str(), cid, 8192, 64, 4, 8);
-    gpunb_dcache_if = new GPUNB_dcacheIF(sc_gen_unique_name("nb_dcache_if"), start_nb_dram_event, end_nb_dram_event, event_engine);
+    gpunb_dcache_if = new GPUNB_dcacheIF(sc_gen_unique_name("nb_dcache_if"), cid, start_nb_gpu_dram_event, end_nb_gpu_dram_event, event_engine);
     // cache_processor = new Processor(("processor_" + to_string(cid)).c_str(), cid * 1000);
 #else
 #endif
@@ -1067,6 +1067,8 @@ void WorkerCoreExecutor::task_logic()
 
         DcacheCore *wc = this->dcache_socket; // 实例化或获取 DcacheCore 对象
 #endif
+        sc_event *end_nb_gpu_dram_event = this->end_nb_gpu_dram_event; // 实例化或获取 end_nb_gpu_dram_event 对象
+        sc_event *start_nb_gpu_dram_event = this->start_nb_gpu_dram_event; // 实例化或获取 start_nb_gpu_dram_event 对象
         sc_event *s_nbdram = this->start_nb_dram_event;                // 实例化或获取 start_nb_dram_event 对象
         sc_event *e_nbdram = this->end_nb_dram_event;                  // 实例化或获取 end_nb_dram_event 对象
         mem_access_unit *mau = this->mem_access_port;                  // 实例化或获取 mem_access_unit 对象
@@ -1074,9 +1076,9 @@ void WorkerCoreExecutor::task_logic()
                                                                        // high_bw_mem_access_unit 对象
         sc_bv<SRAM_BITWIDTH> msg_data = msg_data_tmp;                  // 初始化 msg_data
                                                                        // int* sram_addr = &(p->sram_addr);
-#if USE_NB_DRAMSYS == 1
+#if USE_L1L2_CACHE == 1
         // 创建类实例
-        TaskCoreContext context(mau, hmau, msg_data, sram_addr, s_nbdram, e_nbdram, nb_dcache, loop_cnt);
+        TaskCoreContext context(mau, hmau, msg_data, sram_addr, s_nbdram, e_nbdram, nb_dcache, loop_cnt, start_nb_gpu_dram_event, end_nb_gpu_dram_event);
 #else
         TaskCoreContext context(wc, mau, hmau, msg_data, sram_addr, s_nbdram, e_nbdram, loop_cnt);
 #endif
@@ -1098,6 +1100,8 @@ void WorkerCoreExecutor::task_logic()
             {
                 cout << "socket " << cid << endl;
                 context.gpunb_dcache_if = gpunb_dcache_if;
+                context.cid = &cid;  
+                context.event_engine = event_engine;
                 cout << "socket2 " << cid << endl;
             }
             else if (typeid(*p) == typeid(Clear_sram))
