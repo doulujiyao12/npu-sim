@@ -19,7 +19,7 @@ public:
     std::string filename;
     std::string font_ttf;
     // NodeConfig* node;
-    std::vector<ChipConfig*> chip_;
+    // std::vector<ChipConfig*> chip_;
     std::vector<BaseConfig*> component_;
 
     int seq_index;  
