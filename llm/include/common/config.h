@@ -31,6 +31,12 @@ public:
     int loop;
 
     void print_self();
+    CoreJob() {}
+    CoreJob(int recv_cnt, int recv_tag, int loop) : recv_cnt(recv_cnt), recv_tag(recv_tag), loop(loop) {
+        Cast new_cast;
+        new_cast.dest = -1;
+        cast.push_back(new_cast);
+    }
 };
 
 void from_json(const json &j, CoreJob &c);

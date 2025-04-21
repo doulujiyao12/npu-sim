@@ -22,7 +22,6 @@ Config_helper_gpu::Config_helper_gpu(string filename, string font_ttf, int confi
         sc_stop();
     }
 
-    vector<StreamConfig> streams;
     for (int i = 0; i < config_streams.size(); i++) {
         StreamConfig stream = config_streams[i];
         streams.push_back(stream);
@@ -37,11 +36,6 @@ Config_helper_gpu::Config_helper_gpu(string filename, string font_ttf, int confi
         core.repeat = 1;
         core.loop = 1;
 
-        core.worklist.resize(1);
-        core.worklist[0].recv_cnt = 1;
-        core.worklist[0].recv_tag = i;
-        core.worklist[0].loop = 1;
-
         coreconfigs.push_back(core);
     }
 
@@ -52,20 +46,16 @@ Config_helper_gpu::Config_helper_gpu(string filename, string font_ttf, int confi
 
         for (int j = 0; j < prims.size(); j++) {
             gpu_base *prim = (gpu_base *)prims[j];
-            int sms = prim->grid_x * prim->grid_y / (CORE_PER_SM / (prim->block_x * prim->block_y));
+            int sms = prim->req_sm;
 
-            int cycles = ceiling_division(sms, GRID_SIZE);
-            cout << "sms size, cycle: " << sms << " " << GRID_SIZE << " " << cycles << endl;
-            for (int k = 0; k < GRID_SIZE; k++) {
-                auto core = coreconfigs[k];
-                auto work = core.worklist[0];
+            int cycles = sms / GRID_SIZE;
+            int rest = sms - cycles * GRID_SIZE;
+            for (int c = 0; c < GRID_SIZE; c++) {
+                auto core = coreconfigs[c];
 
-                for (int c = 0; c < cycles; c++) {
-                    auto prim_copy = prim->clone();
-                    prim_copy->mock = c * GRID_SIZE + k < sms;
-
-                    coreconfigs[k].worklist[0].prims.push_back(prim_copy);
-                }
+                CoreJob new_job(1, c, cycles + (c < rest));
+                auto prim_copy = prim->clone();
+                new_job.prims.push_back(prim_copy);
             }
         }
     }
@@ -130,8 +120,11 @@ void Config_helper_gpu::generate_prims(int i) {
 
 void Config_helper_gpu::calculate_address(bool do_loop) {}
 
-void Config_helper_gpu::fill_queue_start(queue<Msg> *q) {
-    for (auto config : coreconfigs) {
+void Config_helper_gpu::fill_queue_start(queue<Msg> *q, int phase_cnt) {
+    int sms = ((gpu_base *)streams[0].prims[phase_cnt])->req_sm;
+
+    for (int i = 0; i < sms; i++) {
+        auto config = coreconfigs[i];
         int index = config.id / GRID_X;
         int pkg_index = 0;
 
@@ -140,6 +133,8 @@ void Config_helper_gpu::fill_queue_start(queue<Msg> *q) {
         m.source = GRID_SIZE;
         q[index].push(m);
     }
+
+    gpu_index++;
 }
 
 void Config_helper_gpu::print_self() {
