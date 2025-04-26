@@ -1,6 +1,6 @@
 #include "trace/Event_engine.h"
 
-Event_engine::Event_engine(const sc_module_name &name) : sc_module(name) {
+Event_engine::Event_engine(const sc_module_name &name, int trace_window) : sc_module(name), trace_window(trace_window) {
     SC_THREAD(engine_run);
     sensitive << sync_events;
     is_first_dump = true;
@@ -22,7 +22,7 @@ void Event_engine::engine_run() {
             this->traced_event_list.push_back(e_temp);
             Trace_event_queue_clock_engine.trace_event_queue.pop();
         }
-        if (traced_event_list.size() > 100) {
+        if (traced_event_list.size() > trace_window) {
             dump_event.notify(SC_ZERO_TIME); // 触发dump_event
         }
     }

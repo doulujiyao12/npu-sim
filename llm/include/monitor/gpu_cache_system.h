@@ -2,6 +2,7 @@
 #include "systemc.h"
 
 #include "memory/gpu/GPU_L1L2_Cache.h"
+#include "memory/dramsys_wrapper.h"
 
 class L1L2CacheSystem : public sc_module {
 public:
@@ -10,11 +11,16 @@ public:
     L2Cache *l2Cache;
     MainMemory *mainMemory;
     Bus *bus;
+    ::DRAMSys::Config::Configuration testConfig;
+    gem5::memory::DRAMSysWrapper *dramSysWrapper;
 
-    L1L2CacheSystem(sc_module_name name, int numProcessors, vector<L1Cache *> l1caches, vector<GPUNB_dcacheIF *> processors) : sc_module(name) {
+    L1L2CacheSystem(sc_module_name name, int numProcessors, vector<L1Cache *> l1caches, vector<GPUNB_dcacheIF *> processors, std::string_view configuration, std::string_view resource_directory) : 
+    sc_module(name), testConfig(::DRAMSys::Config::from_path(configuration, resource_directory))  {
 
         l2Cache = new L2Cache("l2_cache", 65536, 64, 8, 16);
-        mainMemory = new MainMemory("main_memory");
+
+        dramSysWrapper = new gem5::memory::DRAMSysWrapper("DRAMSysWrapper", testConfig, false);
+        // mainMemory = new MainMemory("main_memory");
         bus = new Bus("bus", numProcessors);
 
         // 连接组件
@@ -25,6 +31,6 @@ public:
         }
 
         bus->l2_socket.bind(l2Cache->bus_socket);
-        l2Cache->mem_socket.bind(mainMemory->l2_socket);
+        l2Cache->mem_socket.bind(dramSysWrapper->tSocket);
     }
 };

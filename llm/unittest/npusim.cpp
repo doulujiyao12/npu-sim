@@ -19,6 +19,7 @@ Define_string_opt("--ttf-file", g_flag_ttf, "../font/NotoSansDisplay-Bold.ttf", 
 Define_bool_opt("--use-dramsys", g_flag_dramsys, true, "whether to use DRAMSys");
 Define_float_opt("--comp_util", g_flag_comp_util, 0.7, "computation and memory overlap");
 Define_int64_opt("--MAC_SIZE", g_flag_mac_size, 128, "MAC size");
+Define_int64_opt("--trace_window", g_flag_trace_window, 2, "Trace window size");
 
 // ----------------------------------------------------------------------------
 // all the individual layers' forward and backward passes
@@ -744,7 +745,7 @@ int sc_main(int argc, char *argv[]) {
     initialize_cache_structures();
     init_perf_counters();
 
-    Event_engine *event_engine = new Event_engine("event-engine");
+    Event_engine *event_engine = new Event_engine("event-engine", g_flag_trace_window);
     Monitor monitor("monitor", event_engine, g_flag_config_file.c_str(), g_flag_ttf.c_str());
     sc_trace_file *tf = sc_create_vcd_trace_file("Cchip_1");
     sc_clock clk("clk", CYCLE, SC_NS);

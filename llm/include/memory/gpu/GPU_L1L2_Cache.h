@@ -10,7 +10,7 @@
 #include <tlm_utils/simple_initiator_socket.h>
 #include <tlm_utils/simple_target_socket.h>
 #include <vector>
-
+#include "macros/macros.h"  
 
 using namespace sc_core;
 using namespace tlm;
@@ -25,6 +25,8 @@ using namespace std;
 
 
 /*
+wb 如果不valid不需要wb
+多个相同地址的mshr
 
 四个PHASE
 END RESP 在L1 BUS中
@@ -258,7 +260,9 @@ public:
         if (phase == tlm::END_RESP) {
             tlm_phase l2Phase = END_RESP;
             sc_time l2Delay = SC_ZERO_TIME;
-
+#if GPU_CACHE_DEBUG == 1
+            cout << "L1Cache [" << cacheId <<  "]: END RESP to Processor." << " Time stamp: " << sc_time_stamp() << endl;
+#endif
             cpu_socket->nb_transport_bw(payload, l2Phase, l2Delay);
         } else if (phase == tlm::END_REQ) {
 
@@ -401,7 +405,10 @@ public:
             // 发送请求
             sc_time delay = SC_ZERO_TIME;
             tlm_phase phase = BEGIN_REQ;
-            cout << "  L1: " << sc_time_stamp() << " L1Cache " << cacheId << " send request to bus: " << req.address << endl;
+#if GPU_CACHE_DEBUG == 1
+            cout << "L1Cache [" << cacheId <<  "]: SEND REQ to BUS." << " Time stamp: " << sc_time_stamp() << " Address: " << req.address << endl;
+
+#endif
             bus_socket->nb_transport_fw(*newTrans, phase, delay);
 
             // 等待响应（简化处理）
@@ -427,9 +434,9 @@ public:
                 for (auto &line : sets[setIndex].lines) {
                     if (line.valid && line.tag == tag && (line.state == SHARED || line.state == MODIFIED)) {
                         hit = true;
-                        // 读取数据
-                        // memcpy(trans.get_data_ptr(), &line.data[0],
-                        // trans.get_data_length());
+#if GPU_CACHE_DEBUG == 1
+                        cout << "L1Cache [" << cacheId <<  "]: READ HIT." << " Time stamp: " << sc_time_stamp() << " Address: " << addr << endl;
+#endif
                         delay += sc_time(CYCLE, SC_NS); // 命中延迟
 
                         phase = END_RESP;
@@ -441,6 +448,9 @@ public:
 
                 if (!hit) {
                     // 未命中，放入MSHR
+#if GPU_CACHE_DEBUG == 1
+                    cout << "L1Cache [" << cacheId <<  "]: READ MISS." << " Time stamp: " << sc_time_stamp() << " Address: " << addr << endl;
+#endif
                     int mshrIndex = findFreeMSHR();
                     if (mshrIndex >= 0) {
                         mshrEntries[mshrIndex].address = addr;
@@ -468,6 +478,9 @@ public:
                 for (auto &line : sets[setIndex].lines) {
                     if (line.valid && line.tag == tag) {
                         hit = true;
+#if GPU_CACHE_DEBUG == 1
+                        cout << "L1Cache [" << cacheId <<  "]: WRITE HIT." << " Time stamp: " << sc_time_stamp() << " Address: " << addr << endl;
+#endif
                         if (line.state == MODIFIED) {
                             // 如果是M状态，直接写入
                             // memcpy(&line.data[0], trans.get_data_ptr(),
@@ -503,6 +516,9 @@ public:
                 if (!hit) {
                     // 未命中，放入MSHR
                     int mshrIndex = findFreeMSHR();
+#if GPU_CACHE_DEBUG == 1
+                    cout << "L1Cache [" << cacheId <<  "]: READ MISS." << " Time stamp: " << sc_time_stamp() << " Address: " << addr << endl;
+#endif
                     if (mshrIndex >= 0) {
                         mshrEntries[mshrIndex].address = addr;
                         mshrEntries[mshrIndex].requestType = WRITE;
@@ -527,6 +543,9 @@ public:
 
             sc_time delay = SC_ZERO_TIME;
             tlm_phase phase = END_RESP;
+#if GPU_CACHE_DEBUG == 1
+            cout << "L1Cache [" << cacheId <<  "]: END_RESP TO BUS." << " Time stamp: " << sc_time_stamp()<< endl;
+#endif
             bus_socket->nb_transport_fw(trans, phase, delay);
             return TLM_COMPLETED;
         }
@@ -549,9 +568,13 @@ public:
             uint64_t addr = trans.get_address();
             uint64_t tag, setIndex, offset;
             parseAddress(addr, tag, setIndex, offset);
+#if GPU_CACHE_DEBUG == 1
+            cout << "L1Cache [" << cacheId <<  "]: BEGIN RESP FROM BUS for L1 MSHR." << " Time stamp: " << sc_time_stamp() << " Address: " << addr << endl;
+#endif
 
             // 查找对应的MSHR
             int mshrIndex = findMSHRByAddress(addr);
+            assert(mshrIndex >= 0 && "Addr is not aligned");
             if (mshrIndex >= 0) {
                 if (trans.get_command() == TLM_READ_COMMAND) {
                     // 处理读响应
@@ -590,6 +613,10 @@ public:
                             // 不需要等待写回完成，可以继续处理当前请求
                         }
                     }
+#if GPU_CACHE_DEBUG == 1
+                    cout << "L1Cache [" << cacheId <<  "]: REPLACE INDEX." << " Time stamp: " << sc_time_stamp() << " Address: " << addr << endl;
+                    cout <<  "setIndex "<< setIndex << " replaceIndex " << replaceIndex << " Tag " << tag << endl;
+#endif
 
                     // 更新缓存行
                     sets[setIndex].lines[replaceIndex].tag = tag;
@@ -666,6 +693,10 @@ public:
             uint64_t addr = trans.get_address();
             uint64_t tag, setIndex, offset;
             parseAddress(addr, tag, setIndex, offset);
+#if GPU_CACHE_DEBUG == 1
+            cout << "L1Cache [" << cacheId <<  "]: END RESP FROM L2 HIT FOR L1 MSHR." << " Time stamp: " << sc_time_stamp() << " Address: " << addr << endl;
+#endif
+
 
             // 查找对应的MSHR
             int mshrIndex = findMSHRByAddress(addr);
@@ -782,6 +813,12 @@ public:
             return TLM_UPDATED;
         } else if (op_ext->op == WbL1Op::WB_L1) {
 
+#if GPU_CACHE_DEBUG == 1
+            cout << "L1Cache [" << cacheId <<  "]: END RESP L1 WB." << " Time stamp: " << sc_time_stamp() << endl;
+#endif
+
+
+
             // DAHU 释放L1 WB
         }
 
@@ -879,7 +916,18 @@ public:
                 tlm_phase phase = BEGIN_REQ;
                 sc_time delay = SC_ZERO_TIME;
                 tlm::tlm_sync_enum status;
-                cout << "Bus " << sc_time_stamp() << " Bus send request to L2: " << request.address << endl;
+                SourceIDExtension *id_ext;
+                (*request.transaction).get_extension(id_ext);
+
+                if (!id_ext) {
+                    SC_REPORT_ERROR("Bus", "Missing source ID extension");
+                }
+
+                int targetId = id_ext->get_id();
+#if GPU_CACHE_DEBUG == 1
+                cout << "BUS FROM L1CACHE [" << targetId << "]: BUS SEND REQ TO L2" << " Time stamp: " << sc_time_stamp() << " Address: " << request.address << endl;
+#endif
+
                 status = l2_socket->nb_transport_fw(*request.transaction, phase, delay);
                 if (status == TLM_COMPLETED) {
                     wait(CYCLE, SC_NS); // 总线仲裁延迟
@@ -945,6 +993,9 @@ public:
         } else if (phase == END_RESP) {
             sc_time delay = SC_ZERO_TIME;
             tlm_phase phase = END_RESP;
+#if GPU_CACHE_DEBUG == 1
+            cout << "BUS FROM L1CACHE [" << id << "]: BUS SEND REQ TO L2" << " Time stamp: " << sc_time_stamp() << " Address: " << trans.get_address() << endl;
+#endif
             l2_socket->nb_transport_fw(trans, phase, delay);
             return TLM_COMPLETED;
         }
@@ -966,6 +1017,9 @@ public:
             }
 
             int targetId = id_ext->get_id();
+#if GPU_CACHE_DEBUG == 1
+            cout << "BUS FROM L1CACHE [" << targetId << "]: BUS BEGIN RESP FROM L2" << " Time stamp: " << sc_time_stamp() << " Address: " << trans.get_address() << endl;
+#endif
 
             // 我们需要直接调用 L1 缓存的 nb_transport_bw 方法
             // if (targetId >= 0 && targetId < l1Caches.size()) {
@@ -999,11 +1053,16 @@ public:
             SourceIDExtension *id_ext;
             trans.get_extension(id_ext);
 
+
             if (!id_ext) {
                 SC_REPORT_ERROR("Bus", "Missing source ID extension");
                 return TLM_COMPLETED;
             }
             int targetId = id_ext->get_id();
+#if GPU_CACHE_DEBUG == 1
+            cout << "BUS FROM L1CACHE [" << targetId << "]: BUS END RESP FROM L2 HIT" << " Time stamp: " << sc_time_stamp() << " Address: " << trans.get_address() << endl;
+#endif
+
             sc_time busDelay = SC_ZERO_TIME;
             (*l1_sockets[targetId])->nb_transport_bw(trans, phase, busDelay);
         }
@@ -1084,6 +1143,17 @@ public:
         if (phase == tlm::END_RESP) {
             tlm_phase l2Phase = END_RESP;
             sc_time l2Delay = SC_ZERO_TIME;
+            SourceIDExtension *id_ext;
+            payload.get_extension(id_ext);
+
+
+            if (!id_ext) {
+                SC_REPORT_ERROR("Bus", "Missing source ID extension");
+            }
+            int targetId = id_ext->get_id();
+#if GPU_CACHE_DEBUG == 1
+            cout << "L2CACHE FROM L1CACHE [" << targetId << "]: END RESP For L1CACHE MSHR" << " Time stamp: " << sc_time_stamp() << " Address: " << payload.get_address() << endl;
+#endif
 
             bus_socket->nb_transport_bw(payload, l2Phase, l2Delay);
         } else if (phase == tlm::END_REQ) {
@@ -1117,7 +1187,10 @@ public:
 
     // 修改writeBack方法，将写回请求加入队列
     void writeBack(uint64_t address, int setIndex, int index) {
-        std::cout << "L2: Queueing writeback for 0x" << std::hex << address << std::dec << std::endl;
+#if GPU_CACHE_DEBUG == 1
+        cout << "L2CACHE WB." << " Time stamp: " << sc_time_stamp() << " Address: " << address<< endl;
+#endif
+
 
         // 创建写回请求并加入队列
         WritebackRequest req;
@@ -1279,7 +1352,7 @@ public:
             tlm_phase phase = BEGIN_REQ;
 
             sc_core::sc_time clkPeriod;
-            clkPeriod = sc_core::sc_time(2, sc_core::SC_NS);
+            clkPeriod = sc_core::sc_time(CYCLE, sc_core::SC_NS);
 
             sc_core::sc_time sendingTime = sc_core::sc_time_stamp() + delay;
 
@@ -1296,7 +1369,10 @@ public:
             }
 
             delay = sendingTime - sc_core::sc_time_stamp();
-            cout << "L2: Sending request to memory: " << req.address <<  " time stamp"<< sc_time_stamp() << endl;
+#if GPU_CACHE_DEBUG == 1
+            cout << "L2CACHE SEND REQ TO MEMORY." << " Time stamp: " << sc_time_stamp() << " Address: " << req.address << endl;
+#endif
+
             mem_socket->nb_transport_fw(*newTrans, phase, delay);
 
             // 等待响应（简化处理）
@@ -1337,11 +1413,11 @@ public:
                         // 读取数据
                         // memcpy(trans.get_data_ptr(), &line.data[0],
                         // trans.get_data_length());
-                        delay += sc_time(10, SC_NS); // L2命中延迟
+                        // delay += sc_time(10, SC_NS); // L2命中延迟
 
                         requestMutex.unlock();
                         phase = END_RESP;
-                        sc_time bwDelay = sc_core::sc_time(5, sc_core::SC_NS);
+                        sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
                         payloadEventQueue.notify(trans, phase, bwDelay);
                         return TLM_UPDATED;
                     }
@@ -1360,7 +1436,7 @@ public:
 
                         requestMutex.unlock();
                         phase = END_REQ;
-                        sc_time bwDelay = sc_core::sc_time(5, sc_core::SC_NS);
+                        sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
                         payloadEventQueue.notify(trans, phase, bwDelay);
                         mshrevent.notify();
                         return TLM_ACCEPTED;
@@ -1380,11 +1456,11 @@ public:
                         // 写入数据
                         // memcpy(&line.data[0], trans.get_data_ptr(),
                         // trans.get_data_length());
-                        delay += sc_time(10, SC_NS);
+                        // delay += sc_time(10, SC_NS);
 
                         requestMutex.unlock();
                         phase = END_RESP;
-                        sc_time bwDelay = sc_core::sc_time(5, sc_core::SC_NS);
+                        sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
                         payloadEventQueue.notify(trans, phase, bwDelay);
                         return TLM_UPDATED;
                     }
@@ -1402,7 +1478,7 @@ public:
 
                         requestMutex.unlock();
                         phase = END_REQ;
-                        sc_time bwDelay = sc_core::sc_time(5, sc_core::SC_NS);
+                        sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
                         payloadEventQueue.notify(trans, phase, bwDelay);
                         mshrevent.notify();
                         return TLM_ACCEPTED;
@@ -1418,6 +1494,10 @@ public:
         } else if (phase == END_RESP) {
             sc_time delay = SC_ZERO_TIME;
             tlm_phase phase = END_RESP;
+#if GPU_CACHE_DEBUG == 1
+            cout << "L2CACHE END RESP." << " Time stamp: " << sc_time_stamp() << " Address: " << trans.get_address() << endl;
+#endif
+
             mem_socket->nb_transport_fw(trans, phase, delay);
             return TLM_COMPLETED;
         }
@@ -1440,6 +1520,9 @@ public:
 
         if (phase == END_REQ) {
             end_req_event.notify();
+#if GPU_CACHE_DEBUG == 1
+            cout << "L2CACHE END REQ." << " Time stamp: " << sc_time_stamp() << " Address: " << trans.get_address() << endl;
+#endif
             lastEndRequest = sc_core::sc_time_stamp();
 
             // sc_time busDelay = SC_ZERO_TIME;
@@ -1448,9 +1531,35 @@ public:
             uint64_t addr = trans.get_address();
             uint64_t tag, setIndex, offset;
             parseAddress(addr, tag, setIndex, offset);
+            SourceIDExtension *id_ext;
+            trans.get_extension(id_ext);
 
+
+            if (!id_ext) {
+                SC_REPORT_ERROR("Bus", "Missing source ID extension");
+            }
+            int targetId = id_ext->get_id();
+
+#if GPU_CACHE_DEBUG == 1
+            cout << "L2CACHE FROM L1CACHE [" << targetId << "]: BESP RESP For L1CACHE MSHR" << " Time stamp: " << sc_time_stamp() << " Address: " << trans.get_address() << endl;
+
+            // 打印所有MSHR条目的信息
+            cout << "MSHR Entries Status:" << endl;
+            for (int i = 0; i < numMSHRs; i++) {
+                cout << "MSHR " << i << ": " 
+                    << "Address: " << mshrEntries[i].address
+                    << " Type: " << (mshrEntries[i].requestType == READ ? "READ" : 
+                                    mshrEntries[i].requestType == WRITE ? "WRITE" : "WRITEBACK")
+                    << " Time: " << mshrEntries[i].requestTime 
+                    << " Pending: " << (mshrEntries[i].isPending ? "Yes" : "No")
+                    << " Issue: " << (mshrEntries[i].isIssue?  "Yes" : "No")
+                    << endl;
+            }
+            cout << "address: " << addr << " tag: " << tag << " setIndex: " << setIndex << " offset: " << offset << endl;
+#endif
             // 查找对应的MSHR
             int mshrIndex = findMSHRByAddress(addr);
+            assert(mshrIndex >= 0 && "MSHR not found");
             if (mshrIndex >= 0) {
                 if (trans.get_command() == TLM_READ_COMMAND) {
                     // 处理读响应
@@ -1540,18 +1649,23 @@ public:
         } else if (phase == BEGIN_RESP && op_ext->op == WbOp::WB && opL1_ext->op != WbL1Op::WB_L1) {
 
             // DAHU 释放L2 WB 数据
-
+#if GPU_CACHE_DEBUG == 1
+            cout << "L2CACHE WB." << " Time stamp: " << sc_time_stamp() << " Address: " << trans.get_address() << endl;
+#endif
             phase = END_RESP;
-            sc_time bwDelay = sc_core::sc_time(5, sc_core::SC_NS);
+            sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
             payloadEventQueue_L2WB.notify(trans, phase, bwDelay);
 
 
         } else if (phase == BEGIN_RESP && op_ext->op != WbOp::WB && opL1_ext->op == WbL1Op::WB_L1) {
 
             // DAHU 释放L2 WB 数据
+#if GPU_CACHE_DEBUG == 1
+            cout << "L2CACHE RESP TO L1 WB." << " Time stamp: " << sc_time_stamp() << " Address: " << trans.get_address() << endl;
+#endif
 
             phase = END_RESP;
-            sc_time bwDelay = sc_core::sc_time(5, sc_core::SC_NS);
+            sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
             payloadEventQueue_L2L1WB.notify(trans, phase, bwDelay);
         }
 
@@ -1805,6 +1919,6 @@ public:
 //                 }
 //             }
 //         }
-//         wait(5, SC_NS);
+//         wait(CYCLE, SC_NS);
 //     }
 // }
