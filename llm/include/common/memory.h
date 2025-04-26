@@ -98,3 +98,30 @@ public:
 
     int rearrangeAll(TaskCoreContext &context);
 };
+
+class GpuPosKey {
+public:
+    int pos;
+    int size;
+
+    GpuPosKey() {
+        pos = 0;
+        size = 0;
+    }
+};
+
+class GpuPosLocator { // 默认一个系统只能有一个
+public:
+    std::unordered_map<std::string, GpuPosKey> data_map;
+    int addr_top;
+
+    GpuPosLocator() {
+        addr_top = 1024;
+    }
+
+    void addPair(const std::string &key, GpuPosKey value);
+
+    void findPair(std::string &key, int &result);
+    void findPair(std::string &key, GpuPosKey &result);
+    void clearAll();
+};

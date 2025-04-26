@@ -121,6 +121,7 @@ public:
     L1Cache *core_lv1_cache;
     // Processor *cache_processor;
     GPUNB_dcacheIF * gpunb_dcache_if;
+    GpuPosLocator *gpu_pos_locator;
 #else
 #endif
     mem_access_unit *mem_access_port;

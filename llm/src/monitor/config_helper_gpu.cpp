@@ -3,7 +3,8 @@
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
-Config_helper_gpu::Config_helper_gpu(string filename, string font_ttf, int config_chip_id) {
+Config_helper_gpu::Config_helper_gpu(string filename, string font_ttf, int config_chip_id)
+{
     cout << "Loading config file " << filename << endl;
     json j;
     // plot_dataflow(filename, font_ttf);
@@ -12,23 +13,27 @@ Config_helper_gpu::Config_helper_gpu(string filename, string font_ttf, int confi
 
     // 收集相关参数
     auto config_vars = j["vars"];
-    for (auto var : config_vars.items()) {
+    for (auto var : config_vars.items())
+    {
         vtable.push_back(make_pair(var.key(), var.value()));
     }
 
     auto config_streams = j["chips"][0]["streams"];
-    if (config_streams.size() != 1) {
+    if (config_streams.size() != 1)
+    {
         cout << "[ERROR] more than 1 stream is not supported." << endl;
         sc_stop();
     }
 
-    for (int i = 0; i < config_streams.size(); i++) {
+    for (int i = 0; i < config_streams.size(); i++)
+    {
         StreamConfig stream = config_streams[i];
         streams.push_back(stream);
     }
 
     // 将stream的原语放入coreconfigs中
-    for (int i = 0; i < GRID_SIZE; i++) {
+    for (int i = 0; i < GRID_SIZE; i++)
+    {
         CoreConfig core;
         core.id = i;
         core.prim_refill = false;
@@ -40,28 +45,34 @@ Config_helper_gpu::Config_helper_gpu(string filename, string font_ttf, int confi
     }
 
     // 处理stream的原语
-    for (int i = 0; i < streams.size(); i++) {
+    for (int i = 0; i < streams.size(); i++)
+    {
         auto stream = streams[i];
         auto prims = stream.prims;
 
-        for (int j = 0; j < prims.size(); j++) {
+        for (int j = 0; j < prims.size(); j++)
+        {
             gpu_base *prim = (gpu_base *)prims[j];
             int sms = prim->req_sm;
 
             int cycles = sms / GRID_SIZE;
             int rest = sms - cycles * GRID_SIZE;
-            for (int c = 0; c < GRID_SIZE; c++) {
-                auto core = coreconfigs[c];
+            for (int c = 0; c < GRID_SIZE; c++)
+            {
+                auto &core = coreconfigs[c];
 
                 CoreJob new_job(1, c, cycles + (c < rest));
                 auto prim_copy = prim->clone();
                 new_job.prims.push_back(prim_copy);
+
+                core.worklist.push_back(new_job);
             }
         }
     }
 
     // 处理收发原语（启动）
-    for (int i = 0; i < coreconfigs.size(); i++) {
+    for (int i = 0; i < coreconfigs.size(); i++)
+    {
         generate_prims(i);
     }
 
@@ -72,16 +83,21 @@ Config_helper_gpu::Config_helper_gpu(string filename, string font_ttf, int confi
     print_self();
 }
 
-
-void Config_helper_gpu::fill_queue_config(queue<Msg> *q) {
-    for (auto config : coreconfigs) {
+void Config_helper_gpu::fill_queue_config(queue<Msg> *q)
+{
+    for (auto config : coreconfigs)
+    {
         int index = config.id / GRID_X;
         int prim_seq = 0;
         vector<Msg> single_rep;
 
-        for (auto work : config.worklist) {
+        for (auto work : config.worklist)
+        {
+            cout << "here\n";
             single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, config.id, work.prims_in_loop[0]->serialize()));
-            for (auto lcnt = 0; lcnt < work.loop; lcnt++) {
+            for (auto lcnt = 0; lcnt < work.loop; lcnt++)
+            {
+                cout << "loop\n";
                 for (auto prim : work.prims)
                     single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, config.id, prim->serialize()));
             }
@@ -93,8 +109,10 @@ void Config_helper_gpu::fill_queue_config(queue<Msg> *q) {
         int single_rep_cnt = prim_seq;
         cout << "single size " << single_rep.size() << endl;
 
-        for (int i = 0; i < config.repeat; i++) {
-            for (int j = 1; j <= single_rep.size(); j++) {
+        for (int i = 0; i < config.repeat; i++)
+        {
+            for (int j = 1; j <= single_rep.size(); j++)
+            {
                 Msg m = single_rep[j - 1];
                 m.seq_id = j + prim_seq * i;
 
@@ -109,21 +127,25 @@ void Config_helper_gpu::fill_queue_config(queue<Msg> *q) {
     }
 }
 
-void Config_helper_gpu::generate_prims(int i) {
+void Config_helper_gpu::generate_prims(int i)
+{
     CoreConfig *c = &coreconfigs[i];
 
-    auto &work = c->worklist[0];
-    work.prims_in_loop.push_back(new Recv_prim(RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt));
-
-    work.prims_last_loop.push_back(new Send_prim(SEND_TYPE::SEND_DONE));
+    for (auto &work : c->worklist) {
+        work.prims_in_loop.push_back(new Recv_prim(RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt));
+        work.prims_last_loop.push_back(new Send_prim(SEND_TYPE::SEND_DONE));
+    }
 }
 
 void Config_helper_gpu::calculate_address(bool do_loop) {}
 
-void Config_helper_gpu::fill_queue_start(queue<Msg> *q, int phase_cnt) {
+void Config_helper_gpu::fill_queue_start(queue<Msg> *q, int phase_cnt)
+{
+    cout << "GPU fill start queue, " << ":phase " << phase_cnt << "\n";
     int sms = ((gpu_base *)streams[0].prims[phase_cnt])->req_sm;
+    cout << "sms " << sms << endl;
 
-    for (int i = 0; i < sms; i++) {
+    for (int i = 0; i < min(sms, GRID_SIZE); i++) {
         auto config = coreconfigs[i];
         int index = config.id / GRID_X;
         int pkg_index = 0;
@@ -137,19 +159,25 @@ void Config_helper_gpu::fill_queue_start(queue<Msg> *q, int phase_cnt) {
     gpu_index++;
 }
 
-void Config_helper_gpu::print_self() {
-    for (auto core : coreconfigs) {
+void Config_helper_gpu::print_self()
+{
+    for (auto core : coreconfigs)
+    {
         cout << "[Core " << core.id << "]\n";
 
         cout << "\tCore prims: \n";
-        for (auto work : core.worklist) {
-            for (auto prim : work.prims_in_loop) {
+        for (auto work : core.worklist)
+        {
+            for (auto prim : work.prims_in_loop)
+            {
                 prim->print_self("\t\t");
             }
-            for (auto prim : work.prims) {
+            for (auto prim : work.prims)
+            {
                 prim->print_self("\t\t");
             }
-            for (auto prim : work.prims_last_loop) {
+            for (auto prim : work.prims_last_loop)
+            {
                 prim->print_self("\t\t");
             }
         }
@@ -158,12 +186,15 @@ void Config_helper_gpu::print_self() {
     cout << "\n\n------------------------------------------------------------"
             "\n\n";
 
-    for (auto core : coreconfigs) {
+    for (auto core : coreconfigs)
+    {
         cout << "[Core " << core.id << "]\n";
 
         cout << "\tCore cast: \n";
-        for (auto work : core.worklist) {
-            for (auto cast : work.cast) {
+        for (auto work : core.worklist)
+        {
+            for (auto cast : work.cast)
+            {
                 cout << "\t-> " << cast.dest << ", weight = " << cast.weight << (cast.loopout == FALSE ? (" (loopout: FALSE)") : (cast.loopout == TRUE ? (" (loopout: TRUE)") : (" (loopout: BOTH)")))
                      << endl;
             }

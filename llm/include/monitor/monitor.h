@@ -39,6 +39,7 @@ public:
 
 #if USE_L1L2_CACHE == 1
     L1L2CacheSystem *cacheSystem;
+    GpuPosLocator *gpu_pos_locator;
 #else
 #endif
 

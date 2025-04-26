@@ -348,11 +348,13 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     task->deserialize(buffer);
     task->cid = cid;
 
-    if (is_comp_prim(task))
-    {
+    if (is_comp_prim(task)) {
         comp_base *comp = (comp_base *)task;
         comp->sram_pos_locator = sram_pos_locator;
         comp->sram_pos_locator->cid = cid;
+    } else if (is_gpu_prim(task)) {
+        gpu_base *gpu = (gpu_base *)gpu;
+        gpu->gpu_pos_locator = gpu_pos_locator;
     }
 
     return task;

@@ -83,8 +83,8 @@ void RouterUnit::router_execute() {
         for (int i = 0; i < DIRECTIONS; i++) {
             if (data_sent_i[i].read()) {
                 // move the data into the buffer
-                if (rid >= 20)
-                    cout << sc_time_stamp() << ": Router " << rid << ": get data at " << i << "\n";
+                // if (rid >= 20)
+                //     cout << sc_time_stamp() << ": Router " << rid << ": get data at " << i << "\n";
                 sc_bv<256> temp = channel_i[i].read();
 
                 buffer_i[i].emplace(temp);
@@ -199,6 +199,27 @@ void RouterUnit::router_execute() {
             }
         }
 
+        // [input -> output] REQUEST
+        // 检查req_queue中的所有元素。假设A向B发送req，则检查B->A的输出信道是否上锁。如果不上锁/或上锁且tag相同，且buffer未满，则可以搬运至输出信道。
+        for (auto it = req_queue.begin(); it != req_queue.end();) {
+            auto req = *it;
+            int des = req.des;
+            int source = req.source;
+            Directions next = get_next_hop(des, source);
+            cout << "[INFO] Router " << rid << ", checking req from " << source << endl;
+
+            if (output_lock[next] == 0 || output_lock[next] == req.tag_id) {
+                if (buffer_o[CENTER].size() < MAX_BUFFER_PACKET_SIZE) {
+                    it = req_queue.erase(it);
+                    buffer_o[CENTER].emplace(serialize_msg(req));
+                    flag_trigger = true;
+                    continue;
+                }
+            }
+
+            ++it;
+        }
+
         // FIX input -> output 的仲裁
         // [input -> output] 4方向+core
         for (int i = 0; i < DIRECTIONS; i++) {
@@ -207,33 +228,23 @@ void RouterUnit::router_execute() {
 
             sc_bv<256> temp = buffer_i[i].front();
             Msg m = deserialize_msg(temp);
-
-            Directions out;
-            if (m.msg_type != REQUEST)
-                out = get_next_hop(m.des, rid);
-            else
-                out = get_next_hop_r(m.des, rid);
-
-            // if (rid >= 20) cout << sc_time_stamp() << ": Router " << rid <<
-            // ": " << i << " -> " << out << " " << m.seq_id << endl; if (rid >=
-            // 20) cout << output_lock[out] << " " << m.tag_id << " type: " <<
-            // m.msg_type << endl;
+            Directions out = get_next_hop(m.des, rid);
 
             // 是否能发送 不能发送的情况是上锁了以后，并且tag一样
-            if (m.msg_type == REQUEST) {
-                int source = m.source;
-                int des = m.des;
-                if (out == CENTER) {
-                    Directions tout = get_next_hop(source, des);
-                    if (output_lock[tout] != 0)
-                        continue;
-                }
+            // 注意：REQUEST包若终点为本core，则会优先进入req_buffer；否则按照正常数据流转
+            if (m.msg_type == REQUEST && m.des == rid) {
+                buffer_i[i].pop();
+                req_queue.push_back(m);
+
+                cout << "[REQUEST] Router " << rid << " received REQ from " << m.source << ", put into req_queue.\n";
+                continue;
             }
-            if (m.des != GRID_SIZE && output_lock[out] != 0 && output_lock[out] != m.tag_id)
+            
+            if (m.des != GRID_SIZE && output_lock[out] != 0 && output_lock[out] != m.tag_id) // 如果不发往host，且目标通道上锁，且目标上锁tag不等同于自己的tag：continue
                 continue;
-            if (out == HOST && host_buffer_o->size() >= MAX_BUFFER_PACKET_SIZE)
+            if (out == HOST && host_buffer_o->size() >= MAX_BUFFER_PACKET_SIZE) // 如果发往host，但通道已满：continue
                 continue;
-            else if (out != HOST && buffer_o[out].size() >= MAX_BUFFER_PACKET_SIZE)
+            else if (out != HOST && buffer_o[out].size() >= MAX_BUFFER_PACKET_SIZE) // 如果不发往host，但通道已满：continue
                 continue;
 
             // if (rid >= 20) cout << sc_time_stamp() << ": Router " << rid <<
@@ -281,12 +292,12 @@ void RouterUnit::router_execute() {
             }
 
             // 发送
-            if (out == HOST && host_buffer_o->size() < MAX_BUFFER_PACKET_SIZE) {
+            if (out == HOST) {
                 buffer_i[i].pop();
                 host_buffer_o->emplace(temp);
 
                 flag_trigger = true;
-            } else if (buffer_o[out].size() < MAX_BUFFER_PACKET_SIZE) {
+            } else {
                 if (m.seq_id == 1)
                     cout << sc_time_stamp() << " Router " << rid << " dir " << out << " sent\n";
                 buffer_i[i].pop();
@@ -295,6 +306,10 @@ void RouterUnit::router_execute() {
                 flag_trigger = true;
             }
         }
+
+        // 检查是否有剩余的req，需要重复触发
+        if (req_queue.size())
+            flag_trigger = true;
 
         // [SIGNALS] 4方向
         for (int i = 0; i < DIRECTIONS; i++) {

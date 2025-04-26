@@ -17,6 +17,8 @@ public:
     bool mock;
     int req_sm;
 
+    GpuPosLocator *gpu_pos_locator;
+
     void parse_compose(json j);
 
     virtual void parse_json(json j) = 0;

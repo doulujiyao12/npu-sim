@@ -34,6 +34,20 @@
               "T": "T",
               "C": "C",
               "OC": "3C"
+            },
+            {
+              "type": "Matmul_f_gpu",
+              "compose": {
+                "grid_x": 4,
+                "grid_y": 4,
+                "block_x": 4,
+                "block_y": 4,
+                "require_sm": 100
+              },
+              "B": "B",
+              "T": "T",
+              "C": "C",
+              "OC": "3C"
             }
           ]
         }

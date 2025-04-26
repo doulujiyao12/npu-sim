@@ -1,7 +1,8 @@
 #include "prims/gpu_base.h"
 #include "utils/system_utils.h"
 
-void gpu_base::parse_compose(json j) {
+void gpu_base::parse_compose(json j)
+{
     auto &data_gx = j["grid_x"];
     if (data_gx.is_number_integer())
         grid_x = data_gx;
@@ -25,4 +26,10 @@ void gpu_base::parse_compose(json j) {
         block_y = data_by;
     else
         block_y = find_var(j["block_y"]);
+
+    auto &data_sm = j["require_sm"];
+    if (data_sm.is_number_integer())
+        req_sm = data_sm;
+    else
+        req_sm = find_var(j["require_sm"]);
 }
