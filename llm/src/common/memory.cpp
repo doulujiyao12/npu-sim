@@ -189,6 +189,7 @@ void GpuPosLocator::fetchPair(std::string &key, AddrPosKey &result) {
 }
 
 bool GpuPosLocator::findPair(std::string &key, int &result) {
+    cout << "[GpuPosLocator] try to find key: " << key << endl;
     auto it = data_map.find(key);
     if (it != data_map.end()) {
         result = it->second.pos;

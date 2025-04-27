@@ -16,7 +16,9 @@ bool is_comp_prim(prim_base *p) {
 }
 
 bool is_gpu_prim(prim_base *p) {
-    if (typeid(*p) == typeid(Matmul_f_gpu))
+    if (typeid(*p) == typeid(Matmul_f_gpu) || typeid(*p) == typeid(Attention_f_gpu) ||
+    typeid(*p) == typeid(Gelu_f_gpu) || typeid(*p) == typeid(Residual_f_gpu) || 
+    typeid(*p) == typeid(Layernorm_f_gpu))
         return true;
 
     return false;
