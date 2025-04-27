@@ -359,6 +359,7 @@ void MemInterface::write_helper() {
             wait(CYCLE, SC_NS);
         }
 
+        cout << "Mem Interface: write done\n";
         write_done.write(true);
         wait();
     }

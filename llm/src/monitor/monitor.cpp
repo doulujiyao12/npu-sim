@@ -48,8 +48,8 @@ void Monitor::init(){
     for (int i = 0; i < GRID_SIZE; i++) {
         l1caches.push_back(workerCores[i]->executor->core_lv1_cache);
         processors.push_back(workerCores[i]->executor->gpunb_dcache_if);
-
     }
+
     cacheSystem = new L1L2CacheSystem("l1l2-cache_system", GRID_SIZE, l1caches, processors, "../DRAMSys/configs/ddr4-example.json", "../DRAMSys/configs");
 
     gpu_pos_locator = new GpuPosLocator();
