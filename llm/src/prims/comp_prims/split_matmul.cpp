@@ -141,10 +141,10 @@ int Split_matmul::task_core(TaskCoreContext &context) {
 
         printf("[INFO] Split_matmul_f: read from dram, label: %s\n", datapass_label.indata[0].c_str());
 
-        SramPosKey inp_key = SramPosKey(*sram_addr, data_byte * data_size_input);
+        AddrPosKey inp_key = AddrPosKey(*sram_addr, data_byte * data_size_input);
         sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context, dram_time);
     } else {
-        SramPosKey inp_key;
+        AddrPosKey inp_key;
         int flag = sram_pos_locator->findPair(datapass_label.indata[0], inp_sram_offset);
         printf("[INFO] Split_matmul_f: read from sram, label: %s, value: %d\n", datapass_label.indata[0].c_str(), inp_sram_offset);
         if (flag == -1) {
@@ -220,7 +220,7 @@ int Split_matmul::task_core(TaskCoreContext &context) {
     auto interval = (*sram_addr - temp_out_sram_offset) / out_labels.size();
 
     for (int i = 0; i < out_labels.size(); i++) {
-        SramPosKey out_key = SramPosKey(temp_out_sram_offset + i * interval, data_byte * data_size_output / out_labels.size());
+        AddrPosKey out_key = AddrPosKey(temp_out_sram_offset + i * interval, data_byte * data_size_output / out_labels.size());
         sram_pos_locator->addPair(out_labels[i], out_key, context, dram_time);
     }
 #else

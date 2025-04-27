@@ -19,7 +19,7 @@ public:
 
     // 用于dram和sram的数据搬运，以及原语之间的数据传递
     SramPosLocator *sram_pos_locator;
-    SramDatapassLabel datapass_label;
+    AddrDatapassLabel datapass_label;
 
     virtual void parse_json(json j) = 0;
 

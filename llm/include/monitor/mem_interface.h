@@ -39,6 +39,10 @@ public:
     int g_recv_ack_cnt;
     int g_recv_done_cnt;
 
+#if USE_L1L2_CACHE == 1
+    GpuPosLocator *gpu_pos_locator;
+#endif
+
     /* -----------------Write helper---------------------- */
     // 由write_helper进行统一写入，此信号指示是否开始写
     sc_event ev_write;

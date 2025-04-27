@@ -191,6 +191,14 @@ void MemInterface::distribute_start_data() {
         else if (SYSTEM_MODE == SIM_GPU) {
             auto helper = (Config_helper_gpu *)config_helper;
             helper->fill_queue_start(write_buffer, helper->gpu_index);
+
+            // 填充初始数据
+            for (auto stream : helper->streams) {
+                for (auto source : stream.sources) {
+                    AddrPosKey source_key = AddrPosKey(0, source.second);
+                    gpu_pos_locator->addPair(source.first + "#1", source_key);
+                }
+            }
         }
 
         ev_write.notify(0, SC_NS);

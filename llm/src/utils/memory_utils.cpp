@@ -623,8 +623,10 @@ int check_dcache(int tX, int tY, u_int64_t array, u_int64_t timer, u_int64_t &ti
 void gpu_read_generic(TaskCoreContext &context, uint64_t global_addr, int data_size_in_byte, int &mem_time) {
         
     int inp_global_addr = (global_addr / 32) * 32; // 向下取整到dram 取址的整数倍，这里是32
+    cout << "addr " << inp_global_addr << endl;
     int end_addr = global_addr + data_size_in_byte;
     int end_global_addr = ((end_addr + 31) / 32) * 32; //尾地址向上取整
+    cout << "end addr " << end_global_addr << endl;
 
     int aligned_data_size_in_byte = end_global_addr - inp_global_addr;
 
@@ -667,8 +669,15 @@ void gpu_read_generic(TaskCoreContext &context, uint64_t global_addr, int data_s
 }
 
 void gpu_write_generic(TaskCoreContext &context, uint64_t global_addr, int data_size_in_byte, int &mem_time) {
-    
-    int inp_global_addr = global_addr;
+
+    int inp_global_addr = (global_addr / 32) * 32; // 向下取整到dram 取址的整数倍，这里是32
+    int end_addr = global_addr + data_size_in_byte;
+    int end_global_addr = ((end_addr + 31) / 32) * 32; //尾地址向上取整
+
+    cout << "addr " << inp_global_addr << endl;
+    cout << "end addr " << end_global_addr << endl;
+
+    int aligned_data_size_in_byte = end_global_addr - inp_global_addr;
 
 
     auto gpunb_dcache_if = context.gpunb_dcache_if;
@@ -678,9 +687,7 @@ void gpu_write_generic(TaskCoreContext &context, uint64_t global_addr, int data_
 
     u_int64_t in_dcacheline = 0;
     int cache_lines = 1 << (dcache_words_in_line_log2 + 2 + 3);
-    int cache_count = ceiling_division(data_size_in_byte * 8, cache_lines);
-
-
+    int cache_count = ceiling_division(aligned_data_size_in_byte * 8, cache_lines);
 
     sc_time start_first_write_time = sc_time_stamp();
 #if GPU_CACHE_DEBUG == 1

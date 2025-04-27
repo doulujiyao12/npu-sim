@@ -115,10 +115,10 @@ int Attention_f_decode::task_core(TaskCoreContext &context) {
 
         printf("[INFO] Attention_f_decode: read from dram, label: %s\n", datapass_label.indata[0].c_str());
 
-        SramPosKey inp_key = SramPosKey(*sram_addr, data_byte * data_size_input);
+        AddrPosKey inp_key = AddrPosKey(*sram_addr, data_byte * data_size_input);
         sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context, dram_time);
     } else {
-        SramPosKey inp_key;
+        AddrPosKey inp_key;
         int flag = sram_pos_locator->findPair(datapass_label.indata[0], inp_key);
         if (flag == -1) {
             printf("[ERROR] Attention_f: sram_pos_locator cannot find the "
@@ -147,7 +147,7 @@ int Attention_f_decode::task_core(TaskCoreContext &context) {
 
     // 查找kvcache! 需要使用相应的kvcache label
     for (int batch = 0; batch < B; batch++) {
-        SramPosKey kcache;
+        AddrPosKey kcache;
         char format_label_k[100];
         sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX, batch);
         string label_decode_k = format_label_k;
@@ -160,7 +160,7 @@ int Attention_f_decode::task_core(TaskCoreContext &context) {
             sc_stop();
         }
 
-        SramPosKey vcache;
+        AddrPosKey vcache;
         char format_label_v[100];
         sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX, KVCACHE_PREFIX, batch);
         string label_decode_v = format_label_v;
@@ -186,12 +186,12 @@ int Attention_f_decode::task_core(TaskCoreContext &context) {
 
     // 中间步骤，写回读出preatt和att
     auto label_preatt = ETERNAL_PREFIX + prefix + "_preatt";
-    SramPosKey preatt_key = SramPosKey(*sram_addr, data_byte * data_size_preatt);
+    AddrPosKey preatt_key = AddrPosKey(*sram_addr, data_byte * data_size_preatt);
     sram_pos_locator->addPair(label_preatt, preatt_key, context, dram_time);
     sram_write_append_generic(context, data_byte * data_size_preatt, dram_time);
 
     auto label_att = ETERNAL_PREFIX + prefix + "_att";
-    SramPosKey att_key = SramPosKey(*sram_addr, data_byte * data_size_att);
+    AddrPosKey att_key = AddrPosKey(*sram_addr, data_byte * data_size_att);
     sram_pos_locator->addPair(label_att, att_key, context, dram_time);
     sram_write_append_generic(context, data_byte * data_size_att, dram_time);
 
@@ -247,7 +247,7 @@ int Attention_f_decode::task_core(TaskCoreContext &context) {
 #if USE_SRAM == 1
     // 写入out
     // label kv in sram locator
-    SramPosKey out_key = SramPosKey(*sram_addr, data_byte * data_size_out);
+    AddrPosKey out_key = AddrPosKey(*sram_addr, data_byte * data_size_out);
     sram_pos_locator->addPair(datapass_label.outdata, out_key, context, dram_time);
     sram_write_append_generic(context, data_byte * data_size_out, overlap_time);
 #else

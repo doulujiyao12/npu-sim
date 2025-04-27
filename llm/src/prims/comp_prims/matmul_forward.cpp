@@ -212,10 +212,10 @@ int Matmul_f::task_core(TaskCoreContext &context) {
 
         printf("[INFO] Matmul_f: read from dram, label: %s\n", datapass_label.indata[0].c_str());
 
-        SramPosKey inp_key = SramPosKey(*sram_addr, data_byte * data_size_input);
+        AddrPosKey inp_key = AddrPosKey(*sram_addr, data_byte * data_size_input);
         sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context, dram_time);
     } else {
-        SramPosKey inp_key;
+        AddrPosKey inp_key;
         int flag = sram_pos_locator->findPair(datapass_label.indata[0], inp_sram_offset);
         printf("[INFO] Matmul_f: read from sram, label: %s, value: %d\n", datapass_label.indata[0].c_str(), inp_sram_offset);
         if (flag == -1) {
@@ -241,12 +241,12 @@ int Matmul_f::task_core(TaskCoreContext &context) {
     }
 
     auto label_weight = ETERNAL_PREFIX + prefix + "_w";
-    SramPosKey w_key;
+    AddrPosKey w_key;
     int flag = sram_pos_locator->findPair(label_weight, w_key);
     if (flag == -1) {
         sram_first_write_generic(context, data_byte * data_size_weight, weight_global_addr, dram_time, dram_start);
 
-        w_key = SramPosKey(*sram_addr, data_byte * data_size_weight);
+        w_key = AddrPosKey(*sram_addr, data_byte * data_size_weight);
         sram_pos_locator->addPair(label_weight, w_key, context, dram_time);
     } else if (flag > 0) {
         // 可能有部分已经spill在dram中了
@@ -257,12 +257,12 @@ int Matmul_f::task_core(TaskCoreContext &context) {
     }
 
     auto label_bias = ETERNAL_PREFIX + prefix + "_b";
-    SramPosKey b_key;
+    AddrPosKey b_key;
     flag = sram_pos_locator->findPair(label_bias, b_key);
     if (flag == -1) {
         sram_first_write_generic(context, data_byte * data_size_bias, bias_global_addr, dram_time, dram_start);
 
-        SramPosKey b_key = SramPosKey(*sram_addr, data_byte * data_size_bias);
+        AddrPosKey b_key = AddrPosKey(*sram_addr, data_byte * data_size_bias);
         sram_pos_locator->addPair(label_bias, b_key, context, dram_time);
     } else if (flag > 0) {
         sram_first_write_generic(context, flag, bias_global_addr, dram_time, dram_start);
@@ -321,7 +321,7 @@ int Matmul_f::task_core(TaskCoreContext &context) {
 #if USE_SRAM == 1
     // 写入out
     // label kv in sram locator
-    SramPosKey out_key = SramPosKey(*sram_addr, data_byte * data_size_out);
+    AddrPosKey out_key = AddrPosKey(*sram_addr, data_byte * data_size_out);
     sram_pos_locator->addPair(datapass_label.outdata, out_key, context, dram_time);
     sram_write_append_generic(context, data_byte * data_size_out, overlap_time);
 #else

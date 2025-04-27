@@ -31,6 +31,7 @@ void Gelu_f::parse_json(json j) {
         parse_sram_label(j["sram_address"]);
     }
 }
+
 int Gelu_f::sram_utilization(DATATYPE datatype) {
     int total_sram = 0;
     int data_byte = 0;
@@ -68,6 +69,7 @@ sc_bv<128> Gelu_f::serialize() {
 
     return d;
 }
+
 int Gelu_f::task_core(TaskCoreContext &context) {
 #if USE_NB_DRAMSYS == 0
     auto wc = context.wc;
@@ -123,10 +125,10 @@ int Gelu_f::task_core(TaskCoreContext &context) {
 
         printf("[INFO] Gelu_f: read from dram, label: %s\n", datapass_label.indata[0].c_str());
 
-        SramPosKey inp_key = SramPosKey(*sram_addr, data_byte * data_size_input);
+        AddrPosKey inp_key = AddrPosKey(*sram_addr, data_byte * data_size_input);
         sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context, dram_time);
     } else {
-        SramPosKey inp_key;
+        AddrPosKey inp_key;
         int flag = sram_pos_locator->findPair(datapass_label.indata[0], inp_sram_offset);
         if (flag == -1) {
             printf("[ERROR] Gelu_f: sram_pos_locator cannot find the label: %s\n", datapass_label.indata[0].c_str());
@@ -185,7 +187,7 @@ int Gelu_f::task_core(TaskCoreContext &context) {
 #if USE_SRAM == 1
     // 写入out
     // label kv in sram locator
-    SramPosKey out_key = SramPosKey(*sram_addr, data_byte * data_size_out);
+    AddrPosKey out_key = AddrPosKey(*sram_addr, data_byte * data_size_out);
     sram_pos_locator->addPair(datapass_label.outdata, out_key, context, dram_time);
     sram_write_append_generic(context, data_byte * data_size_out, overlap_time);
 #else

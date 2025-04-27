@@ -80,6 +80,7 @@ public:
     int id;
 
     vector<prim_base *> prims;
+    vector<pair<string, int>> sources;
 };
 
 void from_json(const json &j, StreamConfig &c);

@@ -51,11 +51,12 @@ Config_helper_gpu::Config_helper_gpu(string filename, string font_ttf, int confi
             int cycles = sms / GRID_SIZE;
             int rest = sms - cycles * GRID_SIZE;
             for (int c = 0; c < GRID_SIZE; c++) {
-                auto core = coreconfigs[c];
+                auto &core = coreconfigs[c];
 
                 CoreJob new_job(1, c, cycles + (c < rest));
                 auto prim_copy = prim->clone();
                 new_job.prims.push_back(prim_copy);
+                core.worklist.push_back(new_job);
             }
         }
     }
@@ -80,11 +81,11 @@ void Config_helper_gpu::fill_queue_config(queue<Msg> *q) {
         vector<Msg> single_rep;
 
         for (auto work : config.worklist) {
-            single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, config.id, work.prims_in_loop[0]->serialize()));
-            for (auto lcnt = 0; lcnt < work.loop; lcnt++) {
-                for (auto prim : work.prims)
-                    single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, config.id, prim->serialize()));
-            }
+            // single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, config.id, work.prims_in_loop[0]->serialize()));
+            // for (auto lcnt = 0; lcnt < work.loop; lcnt++) {
+            //     for (auto prim : work.prim_last_loop)
+            //         single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, config.id, prim->serialize()));
+            // }
 
             for (auto prim : work.prims_last_loop)
                 single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, config.id, prim->serialize()));
@@ -111,11 +112,29 @@ void Config_helper_gpu::fill_queue_config(queue<Msg> *q) {
 
 void Config_helper_gpu::generate_prims(int i) {
     CoreConfig *c = &coreconfigs[i];
+    cout << i << endl;
 
-    auto &work = c->worklist[0];
-    work.prims_in_loop.push_back(new Recv_prim(RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt));
+    for (auto &work : c->worklist) {
+        // 不向in_loop推入任何原语，只操作last_loop
+        work.prims_last_loop.push_back(new Recv_prim(RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt));
 
-    work.prims_last_loop.push_back(new Send_prim(SEND_TYPE::SEND_DONE));
+        for (auto prim : work.prims) {
+            prim_base *p = new_prim("Set_addr");
+            auto label = ((Set_addr *)p)->datapass_label;
+
+            // Set_addr 的label 指向其后面的那条原语
+            for (int i = 0; i < MAX_SPLIT_NUM; i++) {
+                label->indata[i] = ((gpu_base *)prim)->datapass_label.indata[i];
+            }
+            label->outdata = ((gpu_base *)prim)->datapass_label.outdata;
+
+            // 这里直接推入字符串形式的label，之后会在序列化的时候转化为整形label
+            work.prims_last_loop.push_back(p);
+            work.prims_last_loop.push_back(prim);
+        }
+
+        work.prims_last_loop.push_back(new Send_prim(SEND_TYPE::SEND_DONE));
+    }
 }
 
 void Config_helper_gpu::calculate_address(bool do_loop) {}

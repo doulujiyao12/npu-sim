@@ -108,7 +108,7 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid, Event
     start_nb_gpu_dram_event = new sc_event();
     end_nb_dram_event = new sc_event();
     end_nb_gpu_dram_event = new sc_event();
-    next_datapass_label = new SramDatapassLabel();
+    next_datapass_label = new AddrDatapassLabel();
     sram_pos_locator = new SramPosLocator(s_cid);
 #if USE_NB_DRAMSYS == 1
     nb_dcache_socket = new NB_DcacheIF(sc_gen_unique_name("nb_dcache"), start_nb_dram_event, end_nb_dram_event, event_engine);
@@ -295,9 +295,6 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     case 0xa:
         task = new Conv_f();
         break;
-    case 0x13:
-        task = new Max_pool();
-        break;
     case 0xb:
         task = new Relu_f();
         break;
@@ -322,6 +319,9 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     case 0x12:
         task = new Attention_f_decode();
         break;
+    case 0x13:
+        task = new Max_pool();
+        break;
     case 0x14:
         task = new Matmul_f_prefill();
         break;
@@ -329,16 +329,25 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
         task = new Dummy_p();
         break;
     case 0xd1:
-    {
-        int sram_addr = buffer.range(31, 8).to_uint64();
-        task = new Set_Sram(this->next_datapass_label);
+        task = new Set_addr(this->next_datapass_label);
         break;
-    }
     case 0xd2:
         task = new Clear_sram();
         break;
     case 0xe0:
         task = new Matmul_f_gpu();
+        break;
+    case 0xe1:
+        task = new Attention_f_gpu();
+        break;
+    case 0xe2:
+        task = new Gelu_f_gpu();
+        break;
+    case 0xe3:
+        task = new Residual_f_gpu();
+        break;
+    case 0xe4:
+        task = new Layernorm_f_gpu();
         break;
     default:
         cout << "Unknown prim: " << type << ".\n";
@@ -353,6 +362,9 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
         comp_base *comp = (comp_base *)task;
         comp->sram_pos_locator = sram_pos_locator;
         comp->sram_pos_locator->cid = cid;
+    } else if (is_gpu_prim(task)) {
+        gpu_base *gpu = (gpu_base *)task;
+        gpu->gpu_pos_locator = gpu_pos_locator;
     }
 
     return task;
@@ -941,7 +953,7 @@ void WorkerCoreExecutor::recv_logic()
                             {
                                 // 在pos locator中添加一个kv，label是input_label
                                 // 对于每一个核的第一算子的input来自与send 核的输出，并且已经会由router保存在sram上
-                                SramPosKey inp_key = SramPosKey(*sram_addr, 0);
+                                AddrPosKey inp_key = AddrPosKey(*sram_addr, 0);
                                 char format_label[100];
                                 sprintf(format_label, "%s#%d", INPUT_LABEL, loop_cnt);
                                 string input_label = format_label;
@@ -994,7 +1006,7 @@ void WorkerCoreExecutor::recv_logic()
                                 // 更新pos_locator中的kv的size
                                 if (SYSTEM_MODE == SIM_DATAFLOW)
                                 {
-                                    SramPosKey inp_key;
+                                    AddrPosKey inp_key;
                                     char format_label[100];
                                     sprintf(format_label, "%s#%d", INPUT_LABEL, loop_cnt);
                                     string input_label = format_label;
@@ -1103,7 +1115,7 @@ void WorkerCoreExecutor::task_logic()
 
         if (!p->use_hw || typeid(*p) != typeid(Matmul_f))
         {
-            if (typeid(*p) == typeid(Set_Sram))
+            if (typeid(*p) == typeid(Set_addr))
             {
                 // set sram 修改标签
                 // 已经在 parse_prim 中设置了 datapass_label，这里do nothing
@@ -1121,6 +1133,9 @@ void WorkerCoreExecutor::task_logic()
                 context.cid = &cid;  
                 context.event_engine = event_engine;
                 cout << "socket2 " << cid << endl;
+
+                gpu_base *gpu = (gpu_base *)p;
+                gpu->datapass_label = *next_datapass_label;
             }
             else if (typeid(*p) == typeid(Clear_sram))
             {

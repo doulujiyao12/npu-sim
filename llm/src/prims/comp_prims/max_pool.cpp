@@ -175,10 +175,10 @@ int Max_pool::task_core(TaskCoreContext &context) {
 
         printf("[INFO] Max_pool: read from dram, label: %s\n", datapass_label.indata[0].c_str());
 
-        SramPosKey inp_key = SramPosKey(*sram_addr, data_byte * data_size_input);
+        AddrPosKey inp_key = AddrPosKey(*sram_addr, data_byte * data_size_input);
         sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context, dram_time);
     } else {
-        SramPosKey inp_key;
+        AddrPosKey inp_key;
         bool flag = sram_pos_locator->findPair(datapass_label.indata[0], inp_sram_offset);
         printf("[INFO] Max_pool: read from sram, label: %s, value: %d\n", datapass_label.indata[0].c_str(), inp_sram_offset);
         if (flag == -1) {
@@ -239,7 +239,7 @@ int Max_pool::task_core(TaskCoreContext &context) {
 #if USE_SRAM == 1
     // 写入out
     // label kv in sram locator
-    SramPosKey out_key = SramPosKey(*sram_addr, data_byte * data_size_out);
+    AddrPosKey out_key = AddrPosKey(*sram_addr, data_byte * data_size_out);
     sram_pos_locator->addPair(datapass_label.outdata, out_key, context, dram_time);
     sram_write_append_generic(context, data_byte * data_size_out, overlap_time);
 #else

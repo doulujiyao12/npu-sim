@@ -1,4 +1,5 @@
 #include "monitor/monitor.h"
+#include "monitor/config_helper_gpu.h"
 
 Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine, const char *config_name, const char *font_ttf) : sc_module(n), event_engine(event_engine) {
     memInterface = new MemInterface("mem-interface", this->event_engine, config_name, font_ttf);
@@ -50,6 +51,12 @@ void Monitor::init(){
 
     }
     cacheSystem = new L1L2CacheSystem("l1l2-cache_system", GRID_SIZE, l1caches, processors, "../DRAMSys/configs/ddr4-example.json", "../DRAMSys/configs");
+
+    gpu_pos_locator = new GpuPosLocator();
+    memInterface->gpu_pos_locator = gpu_pos_locator;
+    for (int i = 0; i < GRID_SIZE; i++) {
+        workerCores[i]->executor->gpu_pos_locator = gpu_pos_locator;
+    }
 #else
 #endif
 

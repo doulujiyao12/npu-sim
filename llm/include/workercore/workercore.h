@@ -121,6 +121,7 @@ public:
     L1Cache *core_lv1_cache;
     // Processor *cache_processor;
     GPUNB_dcacheIF * gpunb_dcache_if;
+    GpuPosLocator *gpu_pos_locator;
 #else
 #endif
     mem_access_unit *mem_access_port;
@@ -133,7 +134,7 @@ public:
     sc_event *start_nb_gpu_dram_event;     // 用于启动非阻塞gpu dram访存
     sc_event *end_nb_gpu_dram_event;       // 非阻塞gpu dram访存结束标志
     SramPosLocator *sram_pos_locator;       // 记录sram中数据的位置，label(string)-int
-    SramDatapassLabel *next_datapass_label; // 记录sram中数据的标签，这个变量由set
+    AddrDatapassLabel *next_datapass_label; // 记录sram中数据的标签，这个变量由set
                                             // sram修改，并由紧接着的comp原语读取并使用
 
     SC_HAS_PROCESS(WorkerCoreExecutor);

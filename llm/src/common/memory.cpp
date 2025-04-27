@@ -6,7 +6,7 @@
 
 using namespace std;
 
-int SramLabelTable::addRecord(const std::string &key) {
+int AddrLabelTable::addRecord(const std::string &key) {
     for (int i = 0; i < table.size(); i++) {
         if (table[i] == key) {
             cout << "LabelTable: Find existing label: " << key << " at " << i << endl;
@@ -20,16 +20,16 @@ int SramLabelTable::addRecord(const std::string &key) {
     return table.size() - 1;
 }
 
-string SramLabelTable::findRecord(int index) const {
+string AddrLabelTable::findRecord(int index) const {
     if (index >= 0 && index < table.size()) {
         return table[index];
     }
     return UNSET_LABEL;
 }
 
-void SramLabelTable::clearAll() { table.clear(); }
+void AddrLabelTable::clearAll() { table.clear(); }
 
-void SramPosLocator::addPair(const std::string &key, SramPosKey value, TaskCoreContext &context, u_int64_t &dram_time) {
+void SramPosLocator::addPair(const std::string &key, AddrPosKey value, TaskCoreContext &context, u_int64_t &dram_time) {
     // 先放入sram
     visit += 1;
     value.record = visit;
@@ -111,13 +111,6 @@ void SramPosLocator::addPair(const std::string &key, SramPosKey value, TaskCoreC
     *(context.sram_addr) = rearrangeAll(context);
 }
 
-// void SramPosLocator::addPair(const std::string &key, SramPosKey value) {
-//     // 先放入sram
-//     visit += 1;
-//     value.record = visit;
-//     data_map[key] = value;
-// }
-
 int SramPosLocator::findPair(std::string &key, int &result) {
     visit += 1;
     auto it = data_map.find(key);
@@ -129,7 +122,7 @@ int SramPosLocator::findPair(std::string &key, int &result) {
     return -1;
 }
 
-int SramPosLocator::findPair(std::string &key, SramPosKey &result) {
+int SramPosLocator::findPair(std::string &key, AddrPosKey &result) {
     visit += 1;
     auto it = data_map.find(key);
     if (it != data_map.end()) {
@@ -145,7 +138,7 @@ void SramPosLocator::deletePair(std::string &key) { data_map.erase(key); }
 void SramPosLocator::clearAll() { data_map.clear(); }
 
 int SramPosLocator::rearrangeAll(TaskCoreContext &context) {
-    vector<pair<string, SramPosKey>> temp_list;
+    vector<pair<string, AddrPosKey>> temp_list;
     for (auto record : data_map)
         temp_list.push_back(record);
 
@@ -160,7 +153,7 @@ int SramPosLocator::rearrangeAll(TaskCoreContext &context) {
         int byte_residue = size * 8 - dma_read_count * (SRAM_BITWIDTH * SRAM_BANKS);
         int single_read_count = ceiling_division(byte_residue, SRAM_BITWIDTH);
 
-        SramPosKey temp_key = SramPosKey(pos, size);
+        AddrPosKey temp_key = AddrPosKey(pos, size);
         int temp_pos = *(context.sram_addr);
         u_int64_t temp_addr = 0;
         addPair(record.first, temp_key, context, temp_addr);
@@ -176,4 +169,49 @@ int SramPosLocator::rearrangeAll(TaskCoreContext &context) {
     }
 
     return pos;
+}
+
+// 以下为GpuPosLocator相关
+void GpuPosLocator::addPair(const std::string &key, AddrPosKey &value) {
+    value.pos = addr_top;
+    data_map[key] = value;
+    addr_top += value.size;
+}
+
+void GpuPosLocator::fetchPair(std::string &key, AddrPosKey &result) {
+    auto it = data_map.find(key);
+    if (it != data_map.end()) {
+        result = it->second;
+        return;
+    }
+
+    addPair(key, result);
+}
+
+bool GpuPosLocator::findPair(std::string &key, int &result) {
+    auto it = data_map.find(key);
+    if (it != data_map.end()) {
+        result = it->second.pos;
+        return true;
+    }
+
+    return false;
+}
+
+bool GpuPosLocator::findPair(std::string &key, AddrPosKey &result) {
+    auto it = data_map.find(key);
+    if (it != data_map.end()) {
+        result = it->second;
+        return true;
+    }
+
+    return false;
+}
+
+void GpuPosLocator::deletePair(std::string &key) {
+    data_map.erase(key);
+}
+
+void GpuPosLocator::clearAll() {
+    data_map.clear();
 }

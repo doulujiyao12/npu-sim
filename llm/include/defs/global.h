@@ -19,8 +19,8 @@ class KVCache;
 extern KVCache KVCache_g;
 
 // one per system，用于config转msg的消息传递
-class SramLabelTable;
-extern SramLabelTable g_sram_label_table;
+class AddrLabelTable;
+extern AddrLabelTable g_addr_label_table;
 
 
 // 记录所有在计算原语中的参数，见test文件夹下的config文件

@@ -25,4 +25,29 @@ void gpu_base::parse_compose(json j) {
         block_y = data_by;
     else
         block_y = find_var(j["block_y"]);
+
+    auto &data_req_sm = j["require_sm"];
+    if (data_req_sm.is_number_integer())
+        req_sm = data_req_sm;
+    else
+        req_sm = find_var(j["require_sm"]);
+}
+
+void gpu_base::parse_addr_label(json j) {
+    string in_label = j["indata"];
+    datapass_label.outdata = j["outdata"];
+
+    std::vector<std::string> in_labels;
+
+    std::istringstream iss(in_label);
+    std::string word;
+
+    // 保证DRAM_LABEL后面跟着另一个label
+    while (iss >> word) {
+        in_labels.push_back(word);
+    }
+
+    for (int i = 0; i < in_labels.size(); i++) {
+        datapass_label.indata[i] = in_labels[i];
+    }
 }

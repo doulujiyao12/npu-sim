@@ -155,10 +155,10 @@ int Merge_matmul::task_core(TaskCoreContext &context) {
 
             printf("[INFO] Merge_matmul_f: read from dram, label: %s\n", datapass_label.indata[i].c_str());
 
-            SramPosKey inp_key = SramPosKey(inp_sram_offset[i], data_byte * data_size_input / in_label_cnt);
+            AddrPosKey inp_key = AddrPosKey(inp_sram_offset[i], data_byte * data_size_input / in_label_cnt);
             sram_pos_locator->addPair(datapass_label.indata[i], inp_key, context, dram_time);
         } else {
-            SramPosKey inp_key;
+            AddrPosKey inp_key;
             int flag = sram_pos_locator->findPair(datapass_label.indata[i], inp_sram_offset[i]);
             printf("[INFO] Merge_matmul_f: read from sram, label: %s, value: %d\n", datapass_label.indata[i].c_str(), inp_sram_offset[i]);
             if (flag == -1) {
@@ -222,7 +222,7 @@ int Merge_matmul::task_core(TaskCoreContext &context) {
 #if USE_SRAM == 1
     // 写入out
     // label kv in sram locator
-    SramPosKey out_key = SramPosKey(*sram_addr, data_byte * data_size_output);
+    AddrPosKey out_key = AddrPosKey(*sram_addr, data_byte * data_size_output);
     sram_pos_locator->addPair(datapass_label.outdata, out_key, context, dram_time);
     sram_write_append_generic(context, data_byte * data_size_output, overlap_time);
 #else

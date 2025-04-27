@@ -69,12 +69,20 @@ prim_base *new_prim(string type) {
         prim = new Matmul_f_decode();
     else if (type == "Matmul_f_prefill")
         prim = new Matmul_f_prefill();
-    else if (type == "Set_Sram")
-        prim = new Set_Sram();
+    else if (type == "Set_addr")
+        prim = new Set_addr();
     else if (type == "Clear_sram")
         prim = new Clear_sram();
     else if (type == "Matmul_f_gpu")
         prim = new Matmul_f_gpu();
+    else if (type == "Attention_f_gpu")
+        prim = new Attention_f_gpu();
+    else if (type == "Gelu_f_gpu")
+        prim = new Gelu_f_gpu();
+    else if (type == "Layernorm_f_gpu")
+        prim = new Layernorm_f_gpu();
+    else if (type == "Residual_f_gpu")
+        prim = new Residual_f_gpu();       
 
     else {
         cout << "Parse config prim: Not Implemented.\n";
