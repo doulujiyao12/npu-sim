@@ -1697,6 +1697,7 @@ public:
             l2_socket->nb_transport_bw(payload, l2Phase, l2Delay);
         }
     }
+    
     void peqCallback(tlm::tlm_generic_payload &payload, const tlm::tlm_phase &phase) {
 
         if (phase == tlm::END_REQ) {
