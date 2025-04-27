@@ -1,331 +1,292 @@
-// #pragma once
-
-// #include "systemc.h"
-// #include <optional>
-// #include <tlm>
-// #include <tlm_utils/peq_with_cb_and_phase.h>
-// #include <tlm_utils/simple_initiator_socket.h>
-// #include <tlm_utils/simple_target_socket.h>
-
-// #include "macros/macros.h"
-// #include "memory/MemoryManager_v2.h"
-// #include "trace/Event_engine.h"
-// #include "memory/dram/utils.h"
-// #include "link/chip_global_memory.h"
-
-// class NB_GlobalMemIF : public sc_core::sc_module {
-// public:
-//     SC_HAS_PROCESS(NB_GlobalMemIF);
-//     tlm_utils::simple_initiator_socket<NB_GlobalMemIF> socket;
-//     sc_event *start_nb_dram_event;
-//     sc_event *end_nb_dram_event;
-//     tlm_utils::peq_with_cb_and_phase<NB_GlobalMemIF> payloadEventQueue;
-//     sc_core::sc_time lastEndRequest = sc_core::sc_max_time();
-//     MemoryManager_v2 mm;
-
-//     bool transactionPostponed = false;
-//     bool finished = false;
-
-//     uint64_t transactionsSent = 0;
-//     uint64_t transactionsReceived = 0;
-//     const std::optional<unsigned int> maxPendingReadRequests;
-//     const std::optional<unsigned int> maxPendingWriteRequests;
-
-//     NB_GlobalMemIF(sc_core::sc_module_name name, sc_event *start_nb_dram_event, sc_event *end_nb_dram_event, Event_engine *event_engine)
-//         : sc_module(name),
-//           start_nb_dram_event(start_nb_dram_event),
-//           end_nb_dram_event(end_nb_dram_event),
-//           payloadEventQueue(this, &NB_GlobalMemIF::peqCallback),
-//           mm(false),
-//           maxPendingReadRequests(5),
-//           maxPendingWriteRequests(5),
-//           socket("NB_GlobalMem_socket"),
-//           current_request(0),
-//           config_updated(false) {
-//         // Register the main process
-//         SC_THREAD(generateRequests);
-//         next_dram_event = new sc_event();
-//         socket.register_nb_transport_bw(this, &NB_GlobalMemIF::nb_transport_bw);
-//     }
-
-
-
-    
-// };
-
-
-// NB_GlobalMemIF.h
 #pragma once
-#include <systemc>
-#include <tlm>
+#include "systemc.h"
 #include <optional>
+#include <tlm>
 #include <tlm_utils/peq_with_cb_and_phase.h>
 #include <tlm_utils/simple_initiator_socket.h>
 #include <tlm_utils/simple_target_socket.h>
 
+#include "macros/macros.h"
 #include "memory/MemoryManager_v2.h"
 #include "trace/Event_engine.h"
 #include "memory/dram/utils.h"
-#include "macros/macros.h"
 
-//---------------------------------------------------------------------
-// 用户可调整的全局宏
-//---------------------------------------------------------------------
-#ifndef NBGMIF_CYCLE_NS      // 时钟周期，用于对齐 BEGIN_REQ
-#define NBGMIF_CYCLE_NS 1    // 1 ns = 1 GHz
-#endif
+//TODO ： 可能改过，要重新比一下
 
-//---------------------------------------------------------------------
-//      NB_GlobalMemIF  ——  通用 DMA 预取 / 写回 发起器
-//---------------------------------------------------------------------
-class NB_GlobalMemIF : public sc_core::sc_module
-{
+// DMA Producer SystemC Module
+class NB_ChipGlobalMemoryIF : public sc_core::sc_module {
 public:
-    // ===== 对外接口 =========================================================
-    tlm_utils::simple_initiator_socket<NB_GlobalMemIF> socket;
+    SC_HAS_PROCESS(NB_ChipGlobalMemoryIF);
+    // TLM Initiator Socket
+    tlm_utils::simple_initiator_socket<NB_ChipGlobalMemoryIF> socket;
+    sc_event *start_nb_dram_event; // 非阻塞sram访存开始标志
+    sc_event *end_nb_dram_event;
+    sc_event *next_dram_event;
+    tlm_utils::peq_with_cb_and_phase<NB_ChipGlobalMemoryIF> payloadEventQueue;
+    sc_core::sc_time lastEndRequest = sc_core::sc_max_time();
+    MemoryManager_v2 mm;
 
-    /** 由外部触发本轮传输 */
-    sc_core::sc_event *start_evt;
-    /** 本轮全部事务完全结束时触发 */
-    sc_core::sc_event *done_evt;
+    bool transactionPostponed = false;
+    bool finished = false;
 
-    // ===== 构造 / 进程注册 ===================================================
-    SC_HAS_PROCESS(NB_GlobalMemIF);
-    NB_GlobalMemIF(sc_core::sc_module_name name,
-                   sc_core::sc_event *start_event,
-                   sc_core::sc_event *done_event)
+    uint64_t transactionsSent = 0;
+    uint64_t transactionsReceived = 0;
+    const std::optional<unsigned int> maxPendingReadRequests;
+    const std::optional<unsigned int> maxPendingWriteRequests;
+
+
+    unsigned int pendingReadRequests = 0;
+    unsigned int pendingWriteRequests = 0;
+
+
+    // Constructor
+    NB_ChipGlobalMemoryIF(sc_core::sc_module_name name, sc_event *start_nb_dram_event, sc_event *end_nb_dram_event, Event_engine *event_engine)
         : sc_module(name),
-          socket("NB_GlobalMemIF_socket"),
-          start_evt(start_event),
-          done_evt(done_event),
-          next_evt(new sc_core::sc_event),
-          peq(this, &NB_GlobalMemIF::peq_cb),
-          mm(/*allow_deallocate=*/false)
-    {
-        socket.register_nb_transport_bw(this, &NB_GlobalMemIF::nb_transport_bw);
-        SC_THREAD(main_thread);
+          start_nb_dram_event(start_nb_dram_event),
+          end_nb_dram_event(end_nb_dram_event),
+          payloadEventQueue(this, &NB_ChipGlobalMemoryIF::peqCallback),
+          mm(false),
+          maxPendingReadRequests(5),
+          maxPendingWriteRequests(5),
+          socket("NB__Dcache_socket"),
+          current_request(0),
+          config_updated(false) {
+        // Register the main process
+        SC_THREAD(generateRequests);
+        next_dram_event = new sc_event();
+        socket.register_nb_transport_bw(this, &NB_ChipGlobalMemoryIF::nb_transport_bw);
     }
 
-    // ===== 支持的简单批量配置接口 ===========================================
-    /** 
-     * 配置一次批量读写  
-     * @param base_addr     起始地址  
-     * @param num_reads     需要读取的行数  
-     * @param num_writes    紧随其后的写行数（可 0）  
-     * @param line_bytes    每行字节数  
-     * @param write_data    当写时使用的填充值（可 nullptr，内部会用 dummy）  
-     */
-    void reconfigure(uint64_t base_addr,
-                     int      num_reads,
-                     int      num_writes,
-                     int      line_bytes,
-                     const unsigned char *write_data = nullptr)
-    {
-        base_address   = base_addr;
-        total_reads    = num_reads;
-        total_writes   = num_writes;
-        line_size      = line_bytes;
-        data_template  = write_data;
-        reads_sent = writes_sent = reads_recv = writes_recv = 0;
-        pendingReadRequests  = 0;
-        pendingWriteRequests = 0;
-        finished_reads  = (total_reads  == 0);
-        finished_writes = (total_writes == 0);
-        (*start_evt).notify();
+    // Reconfigure the DMA producer
+    //[myonie] TODO 这里的Cache_cnt 和 dma_read_cnt要改
+    void reconfigure(uint64_t base_addr, int dma_read_cnt, int cache_cnt, int line_size, bool read_or_write)  {
+        // sc_core::sc_mutex_lock lock(config_mutex); // Protect configuration
+        // variables
+        base_address = base_addr;
+        total_requests = dma_read_cnt * cache_cnt; //dram的burst请求不应该过长，cache_cnt,dma_read_cnt可以先不用太改
+        // cache_lines = line_size;
+        data_length = line_size / 8;     // 假设每行按8字节分块
+        current_request = 0;             // Reset request counter
+        config_updated = true;           // Notify the main process
+        read_or_write = read_or_write;   // 读写标志位
+        (*start_nb_dram_event).notify(); // Trigger reconfiguration
     }
-
-    // -----------------------------------------------------------------
-    // 下面的公有 getter 可按需添加
-    // -----------------------------------------------------------------
 
 private:
-    // ======= 基本数据结构 ====================================================
-    struct Request {
-        enum class Cmd { READ, WRITE };
-        uint64_t        addr   {0};
-        Cmd             cmd    {Cmd::READ};
-        unsigned int    len    {0};
-        sc_core::sc_time delay {sc_core::SC_ZERO_TIME};
-    };
+    // Configuration variables
+    uint64_t base_address; // 起始地址
+    int total_requests;    // 总请求数 = dma_read_count * cache_count
+    int current_request;   // 已生成请求计数
+    // int cache_lines;       // 地址步进值（字节）
+    int data_length;       // 传输长度单位
+    bool read_or_write;     // 读写标志位 0 是 读 1 是 写
 
-    // ======= 配置变量 ========================================================
-    uint64_t base_address   {0};
-    int      total_reads    {0};
-    int      total_writes   {0};
-    int      line_size      {64};
-    const unsigned char *data_template {nullptr};
+    // Synchronization
+    sc_core::sc_event config_event; // Event to notify reconfiguration
+    sc_core::sc_mutex config_mutex; // Mutex to protect configuration
+    bool config_updated;            // Flag to indicate configuration update
 
-    // ======= 统计 / 状态 =====================================================
-    uint64_t reads_sent  {0},  writes_sent  {0};
-    uint64_t reads_recv  {0},  writes_recv  {0};
-
-    unsigned int pendingReadRequests  {0};
-    unsigned int pendingWriteRequests {0};
-    const std::optional<unsigned int> maxPendingReadRequests  {8};
-    const std::optional<unsigned int> maxPendingWriteRequests {8};
-
-    bool finished_reads  {true};
-    bool finished_writes {true};
-
-    // ======= 时序辅助 ========================================================
-    sc_core::sc_event                    *next_evt;  // 控制背压
-    tlm_utils::peq_with_cb_and_phase<NB_GlobalMemIF> peq;
-    MemoryManager_v2                      mm;
-    sc_core::sc_time                      last_end_req {sc_core::sc_max_time()};
-
-    // -----------------------------------------------------------------
-    // 后向路径：把所有 phase 放入 PEQ
-    tlm::tlm_sync_enum nb_transport_bw(tlm::tlm_generic_payload &pl,
-                                       tlm::tlm_phase           &phase,
-                                       sc_core::sc_time         &delay)
-    {
-        peq.notify(pl, phase, delay);
+    tlm::tlm_sync_enum nb_transport_bw(tlm::tlm_generic_payload &payload, tlm::tlm_phase &phase, sc_core::sc_time &bwDelay) {
+        payloadEventQueue.notify(payload, phase, bwDelay); //bwDelay后调用回调函数？
         return tlm::TLM_ACCEPTED;
     }
 
-    // -----------------------------------------------------------------
-    // PEQ 回调
-    void peq_cb(tlm::tlm_generic_payload &pl, const tlm::tlm_phase &phase)
-    {
-        if (phase == tlm::END_REQ)
-        {
-            last_end_req = sc_core::sc_time_stamp();
-            if (can_send_next())  next_evt->notify();
-            else                  txn_postponed = true;
-        }
-        else if (phase == tlm::BEGIN_RESP)
-        {
-            // 马上转 END_RESP
-            tlm::tlm_phase next = tlm::END_RESP;
-            sc_core::sc_time zero = sc_core::SC_ZERO_TIME;
-            socket->nb_transport_fw(pl, next, zero);
-        }
-        else if (phase == tlm::END_RESP)
-        {
-            // 收到最终响应
-            if (pl.get_command() == tlm::TLM_READ_COMMAND) {
-                ++reads_recv;  --pendingReadRequests;
-            } else {
-                ++writes_recv; --pendingWriteRequests;
-            }
-            pl.release();
-
-            if (txn_postponed && can_send_next()) {
-                next_evt->notify();
-                txn_postponed = false;
-            }
-            check_batch_done();
-        }
-        else
-            SC_REPORT_FATAL(name(), "Unknown phase in PEQ");
-    }
-
-    // -----------------------------------------------------------------
-    // 主线程：批量产生事务
-    void main_thread()
-    {
-        while (true)
-        {
-            wait(*start_evt);
-
-            // ========= 先发 READ =========
-            for (int i = 0; i < total_reads; ++i)
-            {
-                wait_for_slot();
-                send_one(Request{base_address + uint64_t(i) * line_size,
-                                 Request::Cmd::READ, unsigned(line_size)});
-                ++reads_sent;
-                ++pendingReadRequests;
-            }
-            finished_reads = true;
-            check_batch_done();   // 可能此时就全结束
-
-            // ========= 再发 WRITE =========
-            for (int j = 0; j < total_writes; ++j)
-            {
-                wait_for_slot();
-                send_one(Request{base_address + uint64_t(total_reads + j) * line_size,
-                                 Request::Cmd::WRITE, unsigned(line_size)});
-                ++writes_sent;
-                ++pendingWriteRequests;
-            }
-            finished_writes = true;
-            check_batch_done();
-        }
-    }
-
-    // -----------------------------------------------------------------
-    // 发送一条 TLM 事务
-    void send_one(const Request &req)
-    {
-        tlm::tlm_generic_payload &gp = mm.allocate(req.len);
-        gp.acquire();
-
-        gp.set_address(req.addr);
-        gp.set_data_length(req.len);
-        gp.set_streaming_width(req.len);
-        gp.set_byte_enable_length(0);
-        gp.set_dmi_allowed(false);
-        gp.set_command(req.cmd == Request::Cmd::READ ?
-                       tlm::TLM_READ_COMMAND : tlm::TLM_WRITE_COMMAND);
-        gp.set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
-
-        // 写操作需要一个合法 data_ptr；简单起见用模板或 dummy
-        static unsigned char dummy[64] {};
-        gp.set_data_ptr(const_cast<unsigned char*>(
-            req.cmd == Request::Cmd::WRITE ?
-            (data_template ? data_template : dummy) : nullptr));
-
-        // === 对齐到时钟边界，避免冲突 ===
-        sc_core::sc_time clk = sc_core::sc_time(NBGMIF_CYCLE_NS, sc_core::SC_NS);
-        sc_core::sc_time send_t = sc_core::sc_time_stamp();
-        bool misaligned = (send_t % clk) != sc_core::SC_ZERO_TIME;
-        if (misaligned) {
-            send_t += clk;
-            send_t -= send_t % clk;
-            wait(send_t - sc_core::sc_time_stamp());
-        }
-        if (send_t == last_end_req) {          // 与上一条 END_REQ 同周期
-            send_t += clk;
-            wait(clk);
-        }
-        sc_core::sc_time delay = send_t - sc_core::sc_time_stamp();
-
-        tlm::tlm_phase ph = tlm::BEGIN_REQ;
-        socket->nb_transport_fw(gp, ph, delay);
-    }
-
-    // -----------------------------------------------------------------
-    // 等待背压 & 配额
-    void wait_for_slot()
-    {
-        if (!can_send_next())
-            wait(*next_evt);
-    }
-
-    bool can_send_next() const
-    {
-        if (this->maxPendingReadRequests  && pendingReadRequests  >= *this->maxPendingReadRequests)
+    bool nextRequestSendable() const {
+        // If either the maxPendingReadRequests or maxPendingWriteRequests
+        // limit is reached, do not send next payload.
+        if (maxPendingReadRequests.has_value() && pendingReadRequests >= maxPendingReadRequests.value())
             return false;
-        if (this->maxPendingWriteRequests && pendingWriteRequests >= *this->maxPendingWriteRequests)
+
+        if (maxPendingWriteRequests.has_value() && pendingWriteRequests >= maxPendingWriteRequests.value())
             return false;
+
         return true;
     }
 
-    // -----------------------------------------------------------------
-    // 判断一批是否结束
-    void check_batch_done()
-    {
-        if (finished_reads && finished_writes &&
-            reads_sent == reads_recv &&
-            writes_sent == writes_recv)
-        {
-            finished_reads = finished_writes = false; // 重置
-            (*done_evt).notify();
+    void peqCallback(tlm::tlm_generic_payload &payload, const tlm::tlm_phase &phase) {
+        // 打印phase类型
+        // 打印当前时间戳
+        // std::cout << "Current time: " << sc_core::sc_time_stamp() <<
+        // std::endl; std::cout << "Phase: "; if (phase == tlm::BEGIN_REQ) {
+        //     std::cout << "BEGIN_REQ" << std::endl;
+        // } else if (phase == tlm::END_REQ) {
+        //     std::cout << "END_REQ" << std::endl;
+        // } else if (phase == tlm::BEGIN_RESP) {
+        //     std::cout << "BEGIN_RESP" << std::endl;
+        // } else if (phase == tlm::END_RESP) {
+        //     std::cout << "END_RESP" << std::endl;
+        // } else {
+        //     std::cout << "UNKNOWN" << std::endl;
+        // }
+        if (phase == tlm::END_REQ) {
+            lastEndRequest = sc_core::sc_time_stamp();
+
+            if (nextRequestSendable())
+                next_dram_event->notify();
+            else
+                transactionPostponed = true;
+        } else if (phase == tlm::BEGIN_RESP) {
+            tlm::tlm_phase nextPhase = tlm::END_RESP;
+            sc_core::sc_time delay = sc_core::SC_ZERO_TIME;
+            socket->nb_transport_fw(payload, nextPhase, delay);
+
+            payload.release();
+
+            // transactionFinished();
+
+            transactionsReceived++;
+
+            if (payload.get_command() == tlm::TLM_READ_COMMAND)
+                pendingReadRequests--;
+            else if (payload.get_command() == tlm::TLM_WRITE_COMMAND)
+                pendingWriteRequests--;
+
+            // If the initiator wasn't able to send the next payload in the
+            // END_REQ phase, do it now.
+            if (transactionPostponed && nextRequestSendable()) {
+                next_dram_event->notify();
+                transactionPostponed = false;
+            }
+
+            // If all answers were received:
+            if (finished && transactionsSent == transactionsReceived) {
+                finished = false;
+                transactionsSent = 0;
+                transactionsReceived = 0;
+                end_nb_dram_event->notify();
+            }
+        } else if (phase == tlm::END_RESP) {
+
+            payload.release();
+
+            // transactionFinished();
+
+            transactionsReceived++;
+
+            if (payload.get_command() == tlm::TLM_READ_COMMAND)
+                pendingReadRequests--;
+            else if (payload.get_command() == tlm::TLM_WRITE_COMMAND)
+                pendingWriteRequests--;
+
+            // If the initiator wasn't able to send the next payload in the
+            // END_REQ phase, do it now.
+            if (nextRequestSendable()) {
+                next_dram_event->notify();
+            } else {
+                transactionPostponed = true;
+            }
+
+            // If all answers were received:
+            if (finished && transactionsSent == transactionsReceived) {
+                finished = false;
+                transactionsSent = 0;
+                transactionsReceived = 0;
+                end_nb_dram_event->notify();
+            }
+        } else {
+            SC_REPORT_FATAL("TrafficInitiator", "PEQ was triggered with unknown phase");
         }
     }
 
-    // -----------------------------------------------------------------
-    // 额外状态
-    bool txn_postponed {false};
+    // Main process to generate requests
+    void generateRequests() {
+        while (true) {
+            wait(*start_nb_dram_event);
+            if (total_requests > 0) {
+                while (current_request < total_requests) {
+                    // Wait for configuration to be set
+                    // if (current_request >= total_requests || config_updated)
+                    // {
+                    //     wait(config_event); // Wait for reconfiguration
+                    //     config_updated = false; // Reset the flag
+                    // }
+                    // 打印当前请求信息
+                    // std::cout << "Request " << current_request + 1 << " of "
+                    // << total_requests
+                    //         << ": address=0x" << std::hex << (base_address +
+                    //         current_request * cache_lines)
+                    //         << ", length=" << std::dec << data_length
+                    //         << ", command=Read" << std::endl;
+                    // std::cout << "Event: Before notified at time " <<
+                    // sc_core::sc_time_stamp() << std::endl; Create a new
+                    // request
+                    Request request;
+                    request.address = base_address + current_request * data_length;
+                    request.command = (read_or_write == 0) ? Request::Command::Read : Request::Command::Write; // Fixed as Read
+                    request.length = data_length;
+                    request.delay = sc_core::SC_ZERO_TIME;
+
+                    // Send the request through the TLM socket
+                    sendRequest(request);
+
+                    // Increment the request counter
+                    ++current_request;
+                    if (request.command == Request::Command::Read)
+                        pendingReadRequests++;
+                    else if (request.command == Request::Command::Write)
+                        pendingWriteRequests++;
+
+                    transactionsSent++;
+                    // 打印事件通知信息
+                    // std::cout << "Event: next_dram_event notified at time "
+                    // << sc_core::sc_time_stamp() << std::endl;
+                    wait(*next_dram_event);
+
+                    // Wait for some delay (if needed)
+                    // wait(sc_core::sc_time(10, sc_core::SC_NS)); // Example
+                    // delay
+                }
+                finished = true;
+            } else {
+                end_nb_dram_event->notify();
+            }
+        }
+    }
+
+    // Helper function to send a request via TLM
+    void sendRequest(const Request &request) {
+        tlm::tlm_generic_payload &trans = mm.allocate(request.length);
+        tlm::tlm_phase phase = tlm::BEGIN_REQ;
+        trans.acquire();
+        trans.set_address(request.address);
+        trans.set_data_length(request.length);
+        trans.set_byte_enable_length(0);
+        trans.set_streaming_width(request.length);
+        trans.set_dmi_allowed(false);
+        trans.set_command(request.command == Request::Command::Read ? tlm::TLM_READ_COMMAND : tlm::TLM_WRITE_COMMAND);
+#if DUMMY == 1
+        trans.set_data_ptr(reinterpret_cast<unsigned char *>((void *)0));
+#else
+        trans.set_data_ptr(reinterpret_cast<unsigned char *>(dram_start));
+#endif
+        trans.set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
+
+        sc_core::sc_time delay = request.delay;
+
+        sc_core::sc_time clkPeriod;
+        clkPeriod = sc_core::sc_time(CYCLE, sc_core::SC_NS);
+
+        sc_core::sc_time sendingTime = sc_core::sc_time_stamp() + delay;
+
+        bool needsOffset = (sendingTime % clkPeriod) != sc_core::SC_ZERO_TIME;
+        if (needsOffset) {
+            sendingTime += clkPeriod;
+            sendingTime -= sendingTime % clkPeriod;
+            wait(sendingTime - sc_core::sc_time_stamp());
+        }
+
+        if (sendingTime == lastEndRequest) {
+            sendingTime += clkPeriod;
+            wait(clkPeriod);
+        }
+
+        delay = sendingTime - sc_core::sc_time_stamp();
+        socket->nb_transport_fw(trans, phase, delay);
+
+        // Check response status
+        // if (trans.is_response_error()) {
+        //     SC_REPORT_ERROR("DMAProducer", "TLM transaction failed");
+        // }
+        // wait(delay);
+    }
 };

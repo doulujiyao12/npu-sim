@@ -11,8 +11,6 @@
 #include "trace/Event_engine.h"
 #include "memory/dram/utils.h"
 
-
-
 // DMA Producer SystemC Module
 class NB_DcacheIF : public sc_core::sc_module {
 public:

@@ -21,7 +21,6 @@
 #include "workercore/workercore.h"
 #include "memory/dram/GPUNB_DcacheIF.h"
 
-
 using namespace std;
 
 // workercore
@@ -213,7 +212,7 @@ void WorkerCoreExecutor::worker_core_execute()
         {
             bool flag = false;
             if (typeid(*p) == typeid(Recv_prim))
-            {
+            {   
                 Recv_prim *rp = (Recv_prim *)p;
                 if (rp->type == RECV_CONF)
                 {
@@ -1067,6 +1066,7 @@ void WorkerCoreExecutor::task_logic()
 
         DcacheCore *wc = this->dcache_socket; // 实例化或获取 DcacheCore 对象
 #endif
+//需要的上下文
         sc_event *s_nbdram = this->start_nb_dram_event;                // 实例化或获取 start_nb_dram_event 对象
         sc_event *e_nbdram = this->end_nb_dram_event;                  // 实例化或获取 end_nb_dram_event 对象
         mem_access_unit *mau = this->mem_access_port;                  // 实例化或获取 mem_access_unit 对象
@@ -1076,6 +1076,7 @@ void WorkerCoreExecutor::task_logic()
                                                                        // int* sram_addr = &(p->sram_addr);
 #if USE_NB_DRAMSYS == 1
         // 创建类实例
+        // 构成core的context并传入
         TaskCoreContext context(mau, hmau, msg_data, sram_addr, s_nbdram, e_nbdram, nb_dcache, loop_cnt);
 #else
         TaskCoreContext context(wc, mau, hmau, msg_data, sram_addr, s_nbdram, e_nbdram, loop_cnt);
