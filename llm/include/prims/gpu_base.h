@@ -15,10 +15,14 @@ public:
     int out_size;
 
     bool mock;
+    int req_sm;
+
+    GpuPosLocator *gpu_pos_locator;
+    AddrDatapassLabel datapass_label;
 
     void parse_compose(json j);
+    void parse_addr_label(json j);
 
     virtual void parse_json(json j) = 0;
-    virtual void initialize() = 0;
     virtual gpu_base *clone() = 0;
 };

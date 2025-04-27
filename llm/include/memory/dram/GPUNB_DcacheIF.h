@@ -27,7 +27,7 @@ public:
     tlm_utils::peq_with_cb_and_phase<GPUNB_dcacheIF> payloadEventQueue;
     sc_core::sc_time lastEndRequest = sc_core::sc_max_time();
     MemoryManager_v2 mm;
-
+    int id;
     bool transactionPostponed = false;
     bool finished = false;
 
@@ -42,8 +42,9 @@ public:
 
 
     // Constructor
-    GPUNB_dcacheIF(sc_core::sc_module_name name, sc_event *start_nb_dram_event, sc_event *end_nb_dram_event, Event_engine *event_engine)
+    GPUNB_dcacheIF(sc_core::sc_module_name name, int id, sc_event *start_nb_dram_event, sc_event *end_nb_dram_event, Event_engine *event_engine)
         : sc_module(name),
+          id(id),
           start_nb_dram_event(start_nb_dram_event),
           end_nb_dram_event(end_nb_dram_event),
           payloadEventQueue(this, &GPUNB_dcacheIF::peqCallback),
@@ -134,12 +135,20 @@ private:
                 next_dram_event->notify();
                 transactionPostponed = false;
             }
-
+#if GPU_CACHE_DEBUG == 1
+            cout << "GPUNB_dcacheIF[" << id << "] Begin resp finished=" << finished 
+                 << " sent=" << transactionsSent 
+                 << " received=" << transactionsReceived << endl;
+#endif  
             // If all answers were received:
             if (finished && transactionsSent == transactionsReceived) {
                 finished = false;
                 transactionsSent = 0;
                 transactionsReceived = 0;
+#if GPU_CACHE_DEBUG == 1
+
+                cout << "end event notify begin resp" << endl;
+#endif
                 end_nb_dram_event->notify();
             }
         } else if (phase == tlm::END_RESP) {
@@ -162,12 +171,22 @@ private:
             } else {
                 transactionPostponed = true;
             }
+            // 打印完成状态和事务计数信息
+#if GPU_CACHE_DEBUG == 1
 
+            cout << "GPUNB_dcacheIF[" << id << "] End resp finished=" << finished 
+                 << " sent=" << transactionsSent 
+                 << " received=" << transactionsReceived << endl;
+#endif
             // If all answers were received:
             if (finished && transactionsSent == transactionsReceived) {
                 finished = false;
                 transactionsSent = 0;
                 transactionsReceived = 0;
+#if GPU_CACHE_DEBUG == 1
+
+                cout << "end event notify end resp" << endl;
+#endif
                 end_nb_dram_event->notify();
             }
         } else {
@@ -199,6 +218,8 @@ private:
                         pendingWriteRequests++;
 
                     transactionsSent++;
+                    finished = true;
+
                     // 打印事件通知信息
                     // std::cout << "Event: next_dram_event notified at time "
                     // << sc_core::sc_time_stamp() << std::endl;
@@ -208,7 +229,11 @@ private:
                     // wait(sc_core::sc_time(10, sc_core::SC_NS)); // Example
                     // delay
                 }
-                finished = true;
+                
+                // finished = true;
+                // cout << "finished= " << finished << " GPUNB_dcacheIF[" << id << "]" 
+                //      << " sent=" << transactionsSent 
+                //      << " received=" << transactionsReceived << endl;
             } else {
                 end_nb_dram_event->notify();
             }

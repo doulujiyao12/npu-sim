@@ -152,10 +152,10 @@ int Matmul_f_decode::task_core(TaskCoreContext &context) {
 
         printf("[INFO] Matmul_f_decode: read from dram, label: %s\n", datapass_label.indata[0].c_str());
 
-        SramPosKey inp_key = SramPosKey(*sram_addr, data_byte * data_size_input);
+        AddrPosKey inp_key = AddrPosKey(*sram_addr, data_byte * data_size_input);
         sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context, dram_time);
     } else {
-        SramPosKey inp_key;
+        AddrPosKey inp_key;
         bool flag = sram_pos_locator->findPair(datapass_label.indata[0], inp_sram_offset);
         printf("[INFO] Matmul_f_decode: read from sram, label: %s, value: %d\n", datapass_label.indata[0].c_str(), inp_sram_offset);
         if (flag == -1) {
@@ -181,12 +181,12 @@ int Matmul_f_decode::task_core(TaskCoreContext &context) {
     }
 
     auto label_weight = ETERNAL_PREFIX + prefix + "_w";
-    SramPosKey w_key;
+    AddrPosKey w_key;
     int flag = sram_pos_locator->findPair(label_weight, w_key);
     if (flag == -1) {
         sram_first_write_generic(context, data_byte * data_size_weight, weight_global_addr, dram_time, dram_start);
 
-        w_key = SramPosKey(*sram_addr, data_byte * data_size_weight);
+        w_key = AddrPosKey(*sram_addr, data_byte * data_size_weight);
         sram_pos_locator->addPair(label_weight, w_key, context, dram_time);
     } else if (flag > 0) {
         sram_first_write_generic(context, flag, inp_global_addr, dram_time, dram_start);
@@ -196,12 +196,12 @@ int Matmul_f_decode::task_core(TaskCoreContext &context) {
     }
 
     auto label_bias = ETERNAL_PREFIX + prefix + "_b";
-    SramPosKey b_key;
+    AddrPosKey b_key;
     flag = sram_pos_locator->findPair(label_bias, b_key);
     if (flag == -1) {
         sram_first_write_generic(context, data_byte * data_size_bias, bias_global_addr, dram_time, dram_start);
 
-        SramPosKey b_key = SramPosKey(*sram_addr, data_byte * data_size_bias);
+        AddrPosKey b_key = AddrPosKey(*sram_addr, data_byte * data_size_bias);
         sram_pos_locator->addPair(label_bias, b_key, context, dram_time);
     } else if (flag > 0) {
         sram_first_write_generic(context, flag, bias_global_addr, dram_time, dram_start);
@@ -223,7 +223,7 @@ int Matmul_f_decode::task_core(TaskCoreContext &context) {
 
     // 写入kvcache
     for (int batch = 0; batch < B; batch++) {
-        SramPosKey kcache;
+        AddrPosKey kcache;
         char format_label_k[100];
         sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX, batch);
         string label_decode_k = format_label_k;
@@ -250,7 +250,7 @@ int Matmul_f_decode::task_core(TaskCoreContext &context) {
             sram_pos_locator->addPair(label_decode_k, kcache, context, dram_time);
         }
 
-        SramPosKey vcache;
+        AddrPosKey vcache;
         char format_label_v[100];
         sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX, KVCACHE_PREFIX, batch);
         string label_decode_v = format_label_v;
@@ -314,7 +314,7 @@ int Matmul_f_decode::task_core(TaskCoreContext &context) {
 #if USE_SRAM == 1
     // 写入out
     // label kv in sram locator
-    SramPosKey out_key = SramPosKey(*sram_addr, data_byte * data_size_out);
+    AddrPosKey out_key = AddrPosKey(*sram_addr, data_byte * data_size_out);
     sram_pos_locator->addPair(datapass_label.outdata, out_key, context, dram_time);
     sram_write_append_generic(context, data_byte * data_size_out, overlap_time);
 #else

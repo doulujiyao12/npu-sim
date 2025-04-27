@@ -97,10 +97,10 @@ public:
 };
 
 
-class Set_Sram : public prim_base {
+class Set_addr : public prim_base {
 public:
-    SramDatapassLabel *target;
-    SramDatapassLabel *datapass_label;
+    AddrDatapassLabel *target;
+    AddrDatapassLabel *datapass_label;
 
     int task();
     int task_core(TaskCoreContext &context);
@@ -112,24 +112,17 @@ public:
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype);
 
-    Set_Sram() {
-        datapass_label = new SramDatapassLabel();
-        name = "Set_Sram";
+    Set_addr() {
+        datapass_label = new AddrDatapassLabel();
+        name = "Set_addr";
     }
 
-    Set_Sram(int sram_addr) {
-        datapass_label = new SramDatapassLabel();
-        this->sram_addr = sram_addr;
-        name = "Set_Sram";
-    }
-
-    Set_Sram(SramDatapassLabel *target) {
-        datapass_label = new SramDatapassLabel();
+    Set_addr(AddrDatapassLabel *target) {
+        datapass_label = new AddrDatapassLabel();
         this->target = target;
-        name = "Set_Sram";
+        name = "Set_addr";
     }
 };
-
 
 class Store_prim : public prim_base {
 public:

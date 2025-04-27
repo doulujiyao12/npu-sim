@@ -8,7 +8,7 @@
 class Event_engine : public sc_module {
 public:
     SC_HAS_PROCESS(Event_engine);
-    Event_engine(const sc_module_name &name);
+    Event_engine(const sc_module_name &name, int trace_window);
 
     ~Event_engine();
     void engine_run();
@@ -35,4 +35,5 @@ public:
 
     unsigned pid_count = 1;                       // PID 计数器
     map<string, unsigned> thread_count_in_module; // 模块中线程计数器
+    int trace_window; // 追踪窗口大小
 };

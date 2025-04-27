@@ -125,7 +125,7 @@ endfunction()
 # add_debug_executable(global_chip_test  "./llm/unittest/global_chip_test.cpp")
 
 # 更新清理目标
-set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "npusim;npusim_debug;load_config;load_config_debug")
+# set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "npusim;npusim_debug;load_config;load_config_debug")
 
 
 # add_executable(npusim ${SRC_FILES})

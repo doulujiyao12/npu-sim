@@ -177,11 +177,19 @@ void from_json(const json &j, StreamConfig &c) {
         for (auto prim : prims) {
             gpu_base *p = nullptr;
             string type = prim.at("type");
+            cout << type << endl;
 
             p = (gpu_base *)new_prim(type);
             p->parse_json(prim);
 
             c.prims.push_back((prim_base *)p);
+        }
+    }
+
+    if (j.contains("source")) {
+        auto sources = j["source"];
+        for (auto source : sources) {
+            c.sources.push_back(make_pair(source["label"], find_var(source["size"])));
         }
     }
 }

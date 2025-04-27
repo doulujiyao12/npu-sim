@@ -20,6 +20,12 @@
       "streams": [
         {
           "id": 0,
+          "source": [
+            {
+              "label": "matmul_1_in",
+              "size": "BTC"
+            }
+          ],
           "prims": [
             {
               "type": "Matmul_f_gpu",
@@ -27,12 +33,35 @@
                 "grid_x": 4,
                 "grid_y": 4,
                 "block_x": 4,
-                "block_y": 4
+                "block_y": 4,
+                "require_sm": 4
               },
               "B": "B",
               "T": "T",
               "C": "C",
-              "OC": "3C"
+              "OC": "3C",
+              "address": {
+                "indata": "matmul_1_in",
+                "outdata": "matmul_1_out"
+              }
+            },
+            {
+              "type": "Attention_f_gpu",
+              "compose": {
+                "grid_x": 4,
+                "grid_y": 4,
+                "block_x": 4,
+                "block_y": 4,
+                "require_sm": 4
+              },
+              "B": "B",
+              "T": "T",
+              "C": "C",
+              "NH": "NH",
+              "address": {
+                "indata": "matmul_1_out",
+                "outdata": "attention_1_out"
+              }
             }
           ]
         }

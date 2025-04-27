@@ -65,6 +65,8 @@ public:
     int output_lock[5];
     int output_lock_ref[5];
 
+    vector<Msg> req_queue; // 用于存放req。当req需要的信道被上锁时，会被存放在这里。
+
     /* -----------------Host-Interface------------------ */
     // 只有位置最靠边缘的router才会注册这些端口
     sc_in<bool> *host_data_sent_i;

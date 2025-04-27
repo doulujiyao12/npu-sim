@@ -77,6 +77,7 @@ sc_bv<128> Residual_f::serialize() {
 
     return d;
 }
+
 int Residual_f::task_core(TaskCoreContext &context) {
 #if USE_NB_DRAMSYS == 0
     auto wc = context.wc;
@@ -137,7 +138,7 @@ int Residual_f::task_core(TaskCoreContext &context) {
         in_label_cnt++;
     }
 
-    for (int i = 0; i < in_label_cnt; i++) {
+    for (int i = 0; i < in_label_cnt;) {
         if (datapass_label.indata[i] == UNSET_LABEL)
             continue;
 
@@ -152,10 +153,10 @@ int Residual_f::task_core(TaskCoreContext &context) {
 
             printf("[INFO] Residual_f: read from dram, label: %s\n", datapass_label.indata[i].c_str());
 
-            SramPosKey inp_key = SramPosKey(inp_sram_offset[i], data_byte * data_size_single_input);
+            AddrPosKey inp_key = AddrPosKey(inp_sram_offset[i], data_byte * data_size_single_input);
             sram_pos_locator->addPair(datapass_label.indata[i], inp_key, context, dram_time);
         } else {
-            SramPosKey inp_key;
+            AddrPosKey inp_key;
             int flag = sram_pos_locator->findPair(datapass_label.indata[i], inp_sram_offset[i]);
             if (flag == -1) {
                 printf("[ERROR] Residual_f: sram_pos_locator cannot find the "
@@ -169,6 +170,8 @@ int Residual_f::task_core(TaskCoreContext &context) {
                 sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context, dram_time);
             }
         }
+
+        i++;
     }
 
     printf("residual_forward: dram time 1: %ld\n", dram_time);
@@ -221,7 +224,7 @@ int Residual_f::task_core(TaskCoreContext &context) {
 #if USE_SRAM == 1
     // 写入out
     // label kv in sram locator
-    SramPosKey out_key = SramPosKey(*sram_addr, data_byte * data_size_out);
+    AddrPosKey out_key = AddrPosKey(*sram_addr, data_byte * data_size_out);
     sram_pos_locator->addPair(datapass_label.outdata, out_key, context, dram_time);
     sram_write_append_generic(context, data_byte * data_size_out, overlap_time);
 #else

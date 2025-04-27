@@ -28,48 +28,6 @@ MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine, 
 
 
     init();
-    // write_buffer = new queue<Msg>[GRID_X];
-
-    // phase = PRO_CONF;
-
-    // g_recv_ack_cnt = 0;
-    // g_recv_done_cnt = 0;
-
-    // SC_THREAD(write_helper);
-    // sensitive << ev_write;
-    // dont_initialize();
-
-    // SC_THREAD(distribute_config);
-    // sensitive << start_i.pos();
-    // dont_initialize();
-
-    // SC_THREAD(distribute_data)
-    // sensitive << ev_dis_data;
-    // dont_initialize();
-
-    // SC_THREAD(distribute_start_data);
-    // sensitive << ev_dis_start;
-    // dont_initialize();
-
-    // SC_THREAD(recv_helper);
-    // for (int i = 0; i < GRID_X; i++) {
-    //     sensitive << host_data_sent_i[i].pos();
-    // }
-    // sensitive << ev_recv_helper;
-    // dont_initialize();
-
-    // SC_THREAD(recv_ack);
-    // sensitive << ev_recv_ack;
-    // dont_initialize();
-
-    // SC_THREAD(recv_done);
-    // sensitive << ev_recv_done;
-    // dont_initialize();
-
-    // SC_THREAD(switch_phase);
-    // sensitive << ev_switch_phase;
-    // dont_initialize();
-    // flow_id = 0;
 }
 
 MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine, config_helper_base *input_config) : event_engine(event_engine), config_helper(input_config) {
@@ -128,6 +86,7 @@ void MemInterface::init(){
     SC_THREAD(switch_phase);
     sensitive << ev_switch_phase;
     dont_initialize();
+
     flow_id = 0;
 };
 
@@ -226,7 +185,21 @@ void MemInterface::distribute_start_data() {
     while (true) {
         clear_write_buffer();
         event_engine->add_event(this->name(), "Send Input Data", "B", Trace_event_util());
-        config_helper->fill_queue_start(write_buffer);
+
+        if (SYSTEM_MODE == SIM_DATAFLOW)
+            config_helper->fill_queue_start(write_buffer);
+        else if (SYSTEM_MODE == SIM_GPU) {
+            auto helper = (Config_helper_gpu *)config_helper;
+            helper->fill_queue_start(write_buffer, helper->gpu_index);
+
+            // 填充初始数据
+            for (auto stream : helper->streams) {
+                for (auto source : stream.sources) {
+                    AddrPosKey source_key = AddrPosKey(0, source.second);
+                    gpu_pos_locator->addPair(source.first + "#1", source_key);
+                }
+            }
+        }
 
         ev_write.notify(0, SC_NS);
         wait(write_done.posedge_event());
@@ -317,7 +290,26 @@ void MemInterface::recv_done() {
 
         event_engine->add_event(this->name(), "Waiting Core busy", "E", Trace_event_util());
 
-        if (g_recv_done_cnt >= config_helper->end_cores * config_helper->pipeline) {
+        if (SYSTEM_MODE == SIM_GPU) {
+            auto helper = (Config_helper_gpu *)config_helper;
+            auto prim = helper->streams[0].prims[helper->gpu_index - 1];
+            auto core_inv = ((gpu_base *)prim)->req_sm;
+
+            if (core_inv >= GRID_SIZE) core_inv = GRID_SIZE;
+            if (g_recv_done_cnt >= core_inv) {
+                cout << "Mem Interface: one work done. " << helper->gpu_index << " of " << helper->streams[0].prims.size() << endl;
+                
+                if (helper->gpu_index == helper->streams[0].prims.size()) {
+                    cout << "Mem Interface: all work done.\n";
+                    sc_stop();
+                } else {
+                    g_recv_done_cnt = 0;
+                    ev_switch_phase.notify(CYCLE, SC_NS);
+                }
+            }
+        }
+
+        else if (g_recv_done_cnt >= config_helper->end_cores * config_helper->pipeline) {
             if (!config_helper->sequential || config_helper->seq_index == config_helper->source_info.size()) {
                 cout << "Mem Interface: all work done, end_core: " << config_helper->end_cores << ", recv_cnt: " << g_recv_done_cnt << endl;
 
@@ -367,6 +359,7 @@ void MemInterface::write_helper() {
             wait(CYCLE, SC_NS);
         }
 
+        cout << "Mem Interface: write done\n";
         write_done.write(true);
         wait();
     }

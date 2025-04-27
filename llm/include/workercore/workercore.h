@@ -72,6 +72,7 @@ public:
     queue<Msg> ack_buffer;
 
     bool send_done;                     // 并行策略：send和recv并行
+    bool send_last_packet;
     bool comp_done;                     // 并行策略：comp和send并行
     deque<prim_base *> prim_queue;      // 用于存储所有需要依次执行的原语
     queue<prim_base *> send_para_queue; // 并行策略：send和recv并行
@@ -120,6 +121,7 @@ public:
     L1Cache *core_lv1_cache;
     // Processor *cache_processor;
     GPUNB_dcacheIF * gpunb_dcache_if;
+    GpuPosLocator *gpu_pos_locator;
 #else
 #endif
     mem_access_unit *mem_access_port;
@@ -129,8 +131,10 @@ public:
     int *sram_addr;                         // 用于记录当前sram可分配的起始地址
     sc_event *start_nb_dram_event;          // 用于启动非阻塞dram访存
     sc_event *end_nb_dram_event;            // 非阻塞sram访存结束标志
+    sc_event *start_nb_gpu_dram_event;     // 用于启动非阻塞gpu dram访存
+    sc_event *end_nb_gpu_dram_event;       // 非阻塞gpu dram访存结束标志
     SramPosLocator *sram_pos_locator;       // 记录sram中数据的位置，label(string)-int
-    SramDatapassLabel *next_datapass_label; // 记录sram中数据的标签，这个变量由set
+    AddrDatapassLabel *next_datapass_label; // 记录sram中数据的标签，这个变量由set
                                             // sram修改，并由紧接着的comp原语读取并使用
 
     SC_HAS_PROCESS(WorkerCoreExecutor);

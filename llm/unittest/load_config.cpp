@@ -70,7 +70,7 @@ int sc_main(int argc, char *argv[]){
     // TopConfig top_config(g_flag_config_file.c_str());
     top_config->print_self();
 
-    Event_engine *event_engine = new Event_engine("event-engine");
+    Event_engine *event_engine = new Event_engine("event-engine", 10);
     TopMonitor *top_monitor = new TopMonitor("top_monitor", event_engine, top_config, g_flag_ttf.c_str());
     sc_trace_file *tf = sc_create_vcd_trace_file("Cchip_1");    
     sc_clock clk("clk", CYCLE, SC_NS);

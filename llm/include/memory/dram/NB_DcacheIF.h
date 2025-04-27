@@ -125,6 +125,7 @@ private:
         } else if (phase == tlm::BEGIN_RESP) {
             tlm::tlm_phase nextPhase = tlm::END_RESP;
             sc_core::sc_time delay = sc_core::SC_ZERO_TIME;
+            // cout << "address!!!!!!!!!!!!!!!!!!: " << payload.get_address() << endl;
             socket->nb_transport_fw(payload, nextPhase, delay);
 
             payload.release();

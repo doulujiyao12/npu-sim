@@ -23,7 +23,7 @@ int Clear_sram::task_core(TaskCoreContext &context) {
     // CTODO: rearrange sram (need sram_pos_locator pointer)
     cout << "[INFO] before clear_sram: sram_addr=" << *(context.sram_addr) << endl;
 
-    vector<pair<string, SramPosKey>> temp_list;
+    vector<pair<string, AddrPosKey>> temp_list;
     for (auto record : sram_pos_locator->data_map) {
         cout << "\tReading label <" << record.first << ">\n";
 
@@ -53,7 +53,7 @@ int Clear_sram::task_core(TaskCoreContext &context) {
         int byte_residue = size * 8 - dma_read_count * (SRAM_BITWIDTH * SRAM_BANKS);
         int single_read_count = ceiling_division(byte_residue, SRAM_BITWIDTH);
 
-        SramPosKey temp_key = SramPosKey(pos, size);
+        AddrPosKey temp_key = AddrPosKey(pos, size);
         u_int64_t temp_addr = 0;
         sram_pos_locator->addPair(record.first, temp_key, context, temp_addr);
         cout << "\tAdd label <" << record.first << "> at offset " << pos << endl;

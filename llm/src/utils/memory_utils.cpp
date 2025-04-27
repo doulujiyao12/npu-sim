@@ -622,33 +622,44 @@ int check_dcache(int tX, int tY, u_int64_t array, u_int64_t timer, u_int64_t &ti
 #if USE_L1L2_CACHE == 1
 void gpu_read_generic(TaskCoreContext &context, uint64_t global_addr, int data_size_in_byte, int &mem_time) {
         
-    int inp_global_addr = global_addr;
+    int inp_global_addr = (global_addr / 32) * 32; // 向下取整到dram 取址的整数倍，这里是32
+    cout << "addr " << inp_global_addr << endl;
+    int end_addr = global_addr + data_size_in_byte;
+    int end_global_addr = ((end_addr + 31) / 32) * 32; //尾地址向上取整
+    cout << "end addr " << end_global_addr << endl;
+
+    int aligned_data_size_in_byte = end_global_addr - inp_global_addr;
 
 
     auto gpunb_dcache_if = context.gpunb_dcache_if;
 
-    auto s_nbdram = context.s_nbdram;
-    auto e_nbdram = context.e_nbdram;
+    auto s_nbdram = context.start_nb_gpu_dram_event;
+    auto e_nbdram = context.end_nb_gpu_dram_event;
 
     u_int64_t in_dcacheline = 0;
     int cache_lines = 1 << (dcache_words_in_line_log2 + 2 + 3);
-    int cache_count = ceiling_division(data_size_in_byte * 8, cache_lines);
+    int cache_count = ceiling_division(aligned_data_size_in_byte * 8, cache_lines);
 
 
 
     sc_time start_first_write_time = sc_time_stamp();
-
+#if GPU_CACHE_DEBUG == 1
 
     cout << "read cache_count: " << cache_count << "cache_lines " << cache_lines << endl;
+    cout << "start gpu_nbdram: " << sc_time_stamp().to_string() << " id " << gpunb_dcache_if->id << endl;
 
+#endif 
     gpunb_dcache_if->reconfigure(inp_global_addr, cache_count, cache_lines, 0);
 
-    cout << "start gpu_nbdram: " << sc_time_stamp().to_string() << endl;
+    context.event_engine->add_event("Core " + toHexString(*context.cid), "read_gpu", "B", Trace_event_util("read_gpu"));
+
     wait(*e_nbdram);
+    context.event_engine->add_event("Core " + toHexString(*context.cid), "read_gpu", "E", Trace_event_util("read_gpu"));
+#if GPU_CACHE_DEBUG == 1
 
-    cout << "end gpu_nbdram: " << sc_time_stamp().to_string() << endl;
+    cout << "end gpu_nbdram: " << sc_time_stamp().to_string() << " id " << gpunb_dcache_if->id << endl;
 
-
+#endif
     
 #if USE_NB_DRAMSYS
     sc_time end_first_write_time = sc_time_stamp();
@@ -658,32 +669,40 @@ void gpu_read_generic(TaskCoreContext &context, uint64_t global_addr, int data_s
 }
 
 void gpu_write_generic(TaskCoreContext &context, uint64_t global_addr, int data_size_in_byte, int &mem_time) {
-    
-    int inp_global_addr = global_addr;
+
+    int inp_global_addr = (global_addr / 32) * 32; // 向下取整到dram 取址的整数倍，这里是32
+    int end_addr = global_addr + data_size_in_byte;
+    int end_global_addr = ((end_addr + 31) / 32) * 32; //尾地址向上取整
+
+    cout << "addr " << inp_global_addr << endl;
+    cout << "end addr " << end_global_addr << endl;
+
+    int aligned_data_size_in_byte = end_global_addr - inp_global_addr;
 
 
     auto gpunb_dcache_if = context.gpunb_dcache_if;
 
-    auto s_nbdram = context.s_nbdram;
-    auto e_nbdram = context.e_nbdram;
+    auto s_nbdram = context.start_nb_gpu_dram_event;
+    auto e_nbdram = context.end_nb_gpu_dram_event;
 
     u_int64_t in_dcacheline = 0;
     int cache_lines = 1 << (dcache_words_in_line_log2 + 2 + 3);
-    int cache_count = ceiling_division(data_size_in_byte * 8, cache_lines);
-
-
+    int cache_count = ceiling_division(aligned_data_size_in_byte * 8, cache_lines);
 
     sc_time start_first_write_time = sc_time_stamp();
+#if GPU_CACHE_DEBUG == 1
 
     cout << "write gpu cache_count: " << cache_count << "cache_lines " << cache_lines << endl;
-
+    cout << "start gpu_nbdram: " << sc_time_stamp().to_string() << " id " << gpunb_dcache_if->id << endl;
+#endif
 
     gpunb_dcache_if->reconfigure(inp_global_addr, cache_count, cache_lines, 1);
 
-    cout << "start gpu_nbdram: " << sc_time_stamp().to_string() << endl;
     wait(*e_nbdram);
+#if GPU_CACHE_DEBUG == 1
 
-    cout << "end gpu_nbdram: " << sc_time_stamp().to_string() << endl;
+    cout << "end gpu_nbdram: " << sc_time_stamp().to_string() << " id " << gpunb_dcache_if->id << endl;
+#endif
 
 
     

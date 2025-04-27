@@ -101,12 +101,13 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid, Event
     SC_THREAD(poll_buffer_i);
     sram_addr = new int(0);
     send_done = true;
+    send_last_packet = false;
     loop_cnt = 1;
     start_nb_dram_event = new sc_event();
-    // start_nb_gpu_dram_event = new sc_event();
+    start_nb_gpu_dram_event = new sc_event();
     end_nb_dram_event = new sc_event();
-    // end_nb_gpu_dram_event = new sc_event();
-    next_datapass_label = new SramDatapassLabel();
+    end_nb_gpu_dram_event = new sc_event();
+    next_datapass_label = new AddrDatapassLabel();
     sram_pos_locator = new SramPosLocator(s_cid);
 #if USE_NB_DRAMSYS == 1
     nb_dcache_socket = new NB_DcacheIF(sc_gen_unique_name("nb_dcache"), start_nb_dram_event, end_nb_dram_event, event_engine);
@@ -115,7 +116,7 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid, Event
 #endif
 #if USE_L1L2_CACHE == 1
     core_lv1_cache = new L1Cache(("l1_cache_" + to_string(cid)).c_str(), cid, 8192, 64, 4, 8);
-    gpunb_dcache_if = new GPUNB_dcacheIF(sc_gen_unique_name("nb_dcache_if"), start_nb_dram_event, end_nb_dram_event, event_engine);
+    gpunb_dcache_if = new GPUNB_dcacheIF(sc_gen_unique_name("nb_dcache_if"), cid, start_nb_gpu_dram_event, end_nb_gpu_dram_event, event_engine);
     // cache_processor = new Processor(("processor_" + to_string(cid)).c_str(), cid * 1000);
 #else
 #endif
@@ -201,9 +202,21 @@ void WorkerCoreExecutor::worker_core_execute()
         }
         else
         {
+            // 检查队列中p的下一个原语是否还是计算原语
+            bool last_comp = false;
+            if (prim_queue.size() >= 2 && !is_comp_prim(prim_queue[1])) {
+                last_comp = true;
+            }
+
             ev_comp.notify(CYCLE, SC_NS);
             event_engine->add_event("Core " + toHexString(cid), "Comp_prim", "B", Trace_event_util(p->name));
             wait(prim_block.negedge_event());
+
+            // 发送信号让send发送最后一个包
+            if (last_comp) {
+                send_last_packet = true;
+            }
+
             event_engine->add_event("Core " + toHexString(cid), "Comp_prim", "E", Trace_event_util(p->name));
         }
 
@@ -281,9 +294,6 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     case 0xa:
         task = new Conv_f();
         break;
-    case 0x13:
-        task = new Max_pool();
-        break;
     case 0xb:
         task = new Relu_f();
         break;
@@ -308,6 +318,9 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     case 0x12:
         task = new Attention_f_decode();
         break;
+    case 0x13:
+        task = new Max_pool();
+        break;
     case 0x14:
         task = new Matmul_f_prefill();
         break;
@@ -315,16 +328,25 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
         task = new Dummy_p();
         break;
     case 0xd1:
-    {
-        int sram_addr = buffer.range(31, 8).to_uint64();
-        task = new Set_Sram(this->next_datapass_label);
+        task = new Set_addr(this->next_datapass_label);
         break;
-    }
     case 0xd2:
         task = new Clear_sram();
         break;
     case 0xe0:
         task = new Matmul_f_gpu();
+        break;
+    case 0xe1:
+        task = new Attention_f_gpu();
+        break;
+    case 0xe2:
+        task = new Gelu_f_gpu();
+        break;
+    case 0xe3:
+        task = new Residual_f_gpu();
+        break;
+    case 0xe4:
+        task = new Layernorm_f_gpu();
         break;
     default:
         cout << "Unknown prim: " << type << ".\n";
@@ -334,11 +356,13 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     task->deserialize(buffer);
     task->cid = cid;
 
-    if (is_comp_prim(task))
-    {
+    if (is_comp_prim(task)) {
         comp_base *comp = (comp_base *)task;
         comp->sram_pos_locator = sram_pos_locator;
         comp->sram_pos_locator->cid = cid;
+    } else if (is_gpu_prim(task)) {
+        gpu_base *gpu = (gpu_base *)task;
+        gpu->gpu_pos_locator = gpu_pos_locator;
     }
 
     return task;
@@ -578,6 +602,11 @@ void WorkerCoreExecutor::send_para_logic()
                         if (is_end_packet)
                         {
                             length = s_prim->end_length;
+                            while (!send_last_packet) {
+                                wait(CYCLE, SC_NS);
+                            }
+
+                            send_last_packet = false;
                         }
 
                         int delay = 0;
@@ -922,7 +951,7 @@ void WorkerCoreExecutor::recv_logic()
                             {
                                 // 在pos locator中添加一个kv，label是input_label
                                 // 对于每一个核的第一算子的input来自与send 核的输出，并且已经会由router保存在sram上
-                                SramPosKey inp_key = SramPosKey(*sram_addr, 0);
+                                AddrPosKey inp_key = AddrPosKey(*sram_addr, 0);
                                 char format_label[100];
                                 sprintf(format_label, "%s#%d", INPUT_LABEL, loop_cnt);
                                 string input_label = format_label;
@@ -975,7 +1004,7 @@ void WorkerCoreExecutor::recv_logic()
                                 // 更新pos_locator中的kv的size
                                 if (SYSTEM_MODE == SIM_DATAFLOW)
                                 {
-                                    SramPosKey inp_key;
+                                    AddrPosKey inp_key;
                                     char format_label[100];
                                     sprintf(format_label, "%s#%d", INPUT_LABEL, loop_cnt);
                                     string input_label = format_label;
@@ -1066,7 +1095,8 @@ void WorkerCoreExecutor::task_logic()
 
         DcacheCore *wc = this->dcache_socket; // 实例化或获取 DcacheCore 对象
 #endif
-//需要的上下文
+        sc_event *end_nb_gpu_dram_event = this->end_nb_gpu_dram_event; // 实例化或获取 end_nb_gpu_dram_event 对象
+        sc_event *start_nb_gpu_dram_event = this->start_nb_gpu_dram_event; // 实例化或获取 start_nb_gpu_dram_event 对象
         sc_event *s_nbdram = this->start_nb_dram_event;                // 实例化或获取 start_nb_dram_event 对象
         sc_event *e_nbdram = this->end_nb_dram_event;                  // 实例化或获取 end_nb_dram_event 对象
         mem_access_unit *mau = this->mem_access_port;                  // 实例化或获取 mem_access_unit 对象
@@ -1074,17 +1104,16 @@ void WorkerCoreExecutor::task_logic()
                                                                        // high_bw_mem_access_unit 对象
         sc_bv<SRAM_BITWIDTH> msg_data = msg_data_tmp;                  // 初始化 msg_data
                                                                        // int* sram_addr = &(p->sram_addr);
-#if USE_NB_DRAMSYS == 1
+#if USE_L1L2_CACHE == 1
         // 创建类实例
-        // 构成core的context并传入
-        TaskCoreContext context(mau, hmau, msg_data, sram_addr, s_nbdram, e_nbdram, nb_dcache, loop_cnt);
+        TaskCoreContext context(mau, hmau, msg_data, sram_addr, s_nbdram, e_nbdram, nb_dcache, loop_cnt, start_nb_gpu_dram_event, end_nb_gpu_dram_event);
 #else
         TaskCoreContext context(wc, mau, hmau, msg_data, sram_addr, s_nbdram, e_nbdram, loop_cnt);
 #endif
 
         if (!p->use_hw || typeid(*p) != typeid(Matmul_f))
         {
-            if (typeid(*p) == typeid(Set_Sram))
+            if (typeid(*p) == typeid(Set_addr))
             {
                 // set sram 修改标签
                 // 已经在 parse_prim 中设置了 datapass_label，这里do nothing
@@ -1099,7 +1128,12 @@ void WorkerCoreExecutor::task_logic()
             {
                 cout << "socket " << cid << endl;
                 context.gpunb_dcache_if = gpunb_dcache_if;
+                context.cid = &cid;  
+                context.event_engine = event_engine;
                 cout << "socket2 " << cid << endl;
+
+                gpu_base *gpu = (gpu_base *)p;
+                gpu->datapass_label = *next_datapass_label;
             }
             else if (typeid(*p) == typeid(Clear_sram))
             {

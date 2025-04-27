@@ -13,7 +13,7 @@ class prim_base;
 vector<prim_base *> global_prim_stash;
 
 KVCache KVCache_g;
-SramLabelTable g_sram_label_table;
+AddrLabelTable g_addr_label_table;
 
 // 记录所有在计算原语中的参数，见test文件夹下的config文件
 vector<pair<string, int>> vtable;

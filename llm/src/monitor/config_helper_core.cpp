@@ -224,15 +224,22 @@ Config_helper_core::Config_helper_core(string filename, string font_ttf, int con
 }
 
 void Config_helper_core::fill_queue_config(queue<Msg> *q) {
+    cout << "here\n";
     for (auto config : coreconfigs) {
         int index = config.id / GRID_X;
         int prim_seq = 0;
         vector<Msg> single_rep;
 
+        cout << "1113\n";
+
         for (auto work : config.worklist) {
+            cout << "work:" << endl;
             for (auto lcnt = 0; lcnt < work.loop - 1; lcnt++) {
-                for (auto prim : work.prims_in_loop)
+                cout << "lcnt:" << lcnt << endl;
+                for (auto prim : work.prims_in_loop) {
+                    cout << "1\n";
                     single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, config.id, prim->serialize()));
+                }
             }
 
             for (auto prim : work.prims_last_loop)
@@ -277,10 +284,10 @@ void Config_helper_core::generate_prims(int i) {
         // 然后是comp，直接推c中的对应队列即可
         for (auto prim : work.prims) {
             // //std::cout << "Coreiii2 " << i << " prims: " << prim->sram_addr
-            // << std::endl; 在set_sram里面复制一份计算原语的datapass_label
-            prim_base *p = new_prim("Set_Sram");
-            auto label = ((Set_Sram *)p)->datapass_label;
-            // set_sram 的label 指向其后面的那条原语
+            // << std::endl; 在Set_addr里面复制一份计算原语的datapass_label
+            prim_base *p = new_prim("Set_addr");
+            auto label = ((Set_addr *)p)->datapass_label;
+            // Set_addr 的label 指向其后面的那条原语
             for (int i = 0; i < MAX_SPLIT_NUM; i++) {
                 label->indata[i] = ((comp_base *)prim)->datapass_label.indata[i];
             }
@@ -320,9 +327,9 @@ void Config_helper_core::generate_prims(int i) {
         work.prims_last_loop.push_back(new Recv_prim(RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt));
 
         for (auto prim : work.prims) {
-            // 在set_sram里面复制一份计算原语的datapass_label
-            prim_base *p = new_prim("Set_Sram");
-            auto label = ((Set_Sram *)p)->datapass_label;
+            // 在Set_addr里面复制一份计算原语的datapass_label
+            prim_base *p = new_prim("Set_addr");
+            auto label = ((Set_addr *)p)->datapass_label;
             for (int i = 0; i < MAX_SPLIT_NUM; i++) {
                 label->indata[i] = ((comp_base *)prim)->datapass_label.indata[i];
             }
