@@ -690,7 +690,7 @@ void gpu_write_generic(TaskCoreContext &context, uint64_t global_addr, int data_
     cout << "write gpu cache_count: " << cache_count << "cache_lines " << cache_lines << endl;
     cout << "start gpu_nbdram: " << sc_time_stamp().to_string() << " id " << gpunb_dcache_if->id << endl;
 #endif
-
+    // cout << "dahudahu" <<endl;
     gpunb_dcache_if->reconfigure(inp_global_addr, cache_count, cache_lines, 1);
 
     wait(*e_nbdram);

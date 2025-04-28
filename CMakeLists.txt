@@ -17,6 +17,7 @@ if(NOT DEFINED ENV{SYSTEMC_HOME})
 endif()
 
 set(SYSTEMC_HOME $ENV{SYSTEMC_HOME})
+message(STATUS "SystemC Home: ${SYSTEMC_HOME}")
 # set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -Wno-unused-result -Wno-ignored-pragmas -Wno-unknown-attributes -DBROAD_W=16")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -Wextra -DBROAD_W=16")
 
@@ -86,7 +87,7 @@ function(add_test_executable target_name test_main_file)
         )
         target_compile_options(${target_name}_debug PRIVATE 
             -g 
-            -Ofast 
+            -O0 
             -Wno-unused-result 
             -Wno-ignored-pragmas 
             -Wno-unknown-attributes  

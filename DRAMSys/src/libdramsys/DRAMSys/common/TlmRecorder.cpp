@@ -139,6 +139,7 @@ void TlmRecorder::recordPhase(tlm_generic_payload& trans,
 
     if (phase == BEGIN_REQ)
     {
+        //std::cout << "\033[31m" << "BEGIN_REQ Address of trans: " << &trans << "\033[0m" << std::endl;
         introduceTransactionToSystem(trans);
         std::string phaseName = getPhaseName(phase).substr(6);
         currentTransactionsInSystem.at(&trans).recordedPhases.emplace_back(phaseName,
@@ -146,6 +147,7 @@ void TlmRecorder::recordPhase(tlm_generic_payload& trans,
     }
     if (phase == BEGIN_RESP)
     {
+        //std::cout << "\033[32m" << "BEGIN_RESP Address of trans: " << &trans << "\033[0m" << std::endl;        
         std::string phaseName = getPhaseName(phase).substr(6);
         currentTransactionsInSystem.at(&trans).recordedPhases.emplace_back(phaseName,
                                                                            currentTime + delay);
@@ -158,6 +160,7 @@ void TlmRecorder::recordPhase(tlm_generic_payload& trans,
     }
     else if (phase == END_RESP)
     {
+        //std::cout << "\033[33m" << "END_RESP Address of trans: " << &trans << "\033[0m" << std::endl;
         // BEGIN_RESP is always the last phase of a normal transaction at this point
         currentTransactionsInSystem.at(&trans).recordedPhases.back().interval.end =
             currentTime + delay;

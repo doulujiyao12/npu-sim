@@ -23,7 +23,7 @@ sc_bv<256> serialize_msg(Msg msg) {
 Msg deserialize_msg(sc_bv<256> buffer) {
     Msg msg;
 
-    int pos;
+    int pos = 0;
 
     msg.is_end = buffer.range(pos + M_D_IS_END - 1, pos).to_uint64(), pos += M_D_IS_END;
     msg.msg_type = MSG_TYPE(buffer.range(pos + M_D_MSG_TYPE - 1, pos).to_uint64()), pos += M_D_MSG_TYPE;
