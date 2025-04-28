@@ -706,8 +706,7 @@ public:
                     // trans.get_data_ptr(), lineSize);
 
                     // 更新原始事务数据
-                    tlm_generic_payload *origTrans =
-                        mshrEntries[mshrIndex].pendingTransaction;
+                    tlm_generic_payload *origTrans = &trans;//mshrEntries[mshrIndex].pendingTransaction;
                     // memcpy(origTrans->get_data_ptr(), trans.get_data_ptr(),
                     // origTrans->get_data_length());
 
@@ -765,8 +764,7 @@ public:
                     sets[setIndex].lines[replaceIndex].valid = true;
                     sets[setIndex].lines[replaceIndex].state = MODIFIED;
 
-                    tlm_generic_payload *origTrans =
-                        mshrEntries[mshrIndex].pendingTransaction;
+                    tlm_generic_payload *origTrans = &trans;//mshrEntries[mshrIndex].pendingTransaction;
                     // memcpy(&sets[setIndex].lines[replaceIndex].data[0],
                     // origTrans->get_data_ptr(), origTrans->get_data_length());
 
@@ -844,8 +842,7 @@ public:
                     // trans.get_data_ptr(), lineSize);
 
                     // 更新原始事务数据
-                    tlm_generic_payload *origTrans =
-                        mshrEntries[mshrIndex].pendingTransaction;
+                    tlm_generic_payload *origTrans = &trans;//mshrEntries[mshrIndex].pendingTransaction;
                     // memcpy(origTrans->get_data_ptr(), trans.get_data_ptr(),
                     // origTrans->get_data_length());
 
@@ -903,8 +900,7 @@ public:
                     sets[setIndex].lines[replaceIndex].valid = true;
                     sets[setIndex].lines[replaceIndex].state = MODIFIED;
 
-                    tlm_generic_payload *origTrans =
-                        mshrEntries[mshrIndex].pendingTransaction;
+                    tlm_generic_payload *origTrans = &trans;//mshrEntries[mshrIndex].pendingTransaction;
                     // memcpy(&sets[setIndex].lines[replaceIndex].data[0],
                     // origTrans->get_data_ptr(), origTrans->get_data_length());
 
@@ -1770,8 +1766,7 @@ public:
                     // trans.get_data_ptr(), lineSize);
 
                     // 更新原始事务数据
-                    tlm_generic_payload *origTrans =
-                        mshrEntries[mshrIndex].pendingTransaction;
+                    tlm_generic_payload *origTrans = &trans;//mshrEntries[mshrIndex].pendingTransaction;
                     // memcpy(origTrans->get_data_ptr(), trans.get_data_ptr(),
                     // origTrans->get_data_length());
 
@@ -1784,8 +1779,7 @@ public:
                     bus_socket->nb_transport_bw(*origTrans, busPhase, busDelay);
                 } else if (trans.get_command() == TLM_WRITE_COMMAND) {
                     // 处理写响应
-                    tlm_generic_payload *origTrans =
-                        mshrEntries[mshrIndex].pendingTransaction;
+                    tlm_generic_payload *origTrans = &trans;//mshrEntries[mshrIndex].pendingTransaction;
 
                     int replaceIndex = -1;
                     for (int i = 0; i < associativity; i++) {
