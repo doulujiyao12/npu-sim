@@ -14,8 +14,9 @@
 
 std::string toHexString(int value) {
     std::ostringstream stream;
-    stream << std::setw(3) << std::setfill('0') << value; // 设置宽度为3，并用'0'填充
-    return stream.str();                                  // 返回结果字符串
+    stream << std::setw(3) << std::setfill('0')
+           << value;     // 设置宽度为3，并用'0'填充
+    return stream.str(); // 返回结果字符串
 }
 
 void print_bar(int length) {
@@ -26,36 +27,45 @@ void print_bar(int length) {
 }
 
 // 辅助函数：打印美观的表格行
-void print_row(const std::string &label, int value) { std::cout << "| " << std::left << std::setw(20) << label << "| " << std::right << std::setw(15) << value << " |\n"; }
+void print_row(const std::string &label, int value) {
+    std::cout << "| " << std::left << std::setw(20) << label << "| "
+              << std::right << std::setw(15) << value << " |\n";
+}
 // ----------------------------------------------------------------------------
 // fread convenience utils, with nice handling of error checking using macros
 // simple replace fopen, fread, fclose, fseek
 // with fopenCheck, freadCheck, fcloseCheck, fseekCheck
 
-FILE *fopen_check(const char *path, const char *mode, const char *file, int line) {
+FILE *fopen_check(const char *path, const char *mode, const char *file,
+                  int line) {
     FILE *fp = fopen(path, mode);
     if (fp == NULL) {
-        fprintf(stderr, "Error: Failed to open file '%s' at %s:%d\n", path, file, line);
+        fprintf(stderr, "Error: Failed to open file '%s' at %s:%d\n", path,
+                file, line);
         fprintf(stderr, "Error details:\n");
         fprintf(stderr, "  File: %s\n", file);
         fprintf(stderr, "  Line: %d\n", line);
         fprintf(stderr, "  Path: %s\n", path);
         fprintf(stderr, "  Mode: %s\n", mode);
-        fprintf(stderr, "---> HINT 1: dataset files/code have moved to dev/data "
-                        "recently (May 20, 2024). You may have to mv them from the "
-                        "legacy data/ dir to dev/data/(dataset), or re-run the data "
-                        "preprocessing script. Refer back to the main README\n");
-        fprintf(stderr, "---> HINT 2: possibly try to re-run `python train_gpt2.py`\n");
+        fprintf(stderr,
+                "---> HINT 1: dataset files/code have moved to dev/data "
+                "recently (May 20, 2024). You may have to mv them from the "
+                "legacy data/ dir to dev/data/(dataset), or re-run the data "
+                "preprocessing script. Refer back to the main README\n");
+        fprintf(stderr,
+                "---> HINT 2: possibly try to re-run `python train_gpt2.py`\n");
         exit(EXIT_FAILURE);
     }
     return fp;
 }
 
-void fread_check(void *ptr, size_t size, size_t nmemb, FILE *stream, const char *file, int line) {
+void fread_check(void *ptr, size_t size, size_t nmemb, FILE *stream,
+                 const char *file, int line) {
     size_t result = fread(ptr, size, nmemb, stream);
     if (result != nmemb) {
         if (feof(stream)) {
-            fprintf(stderr, "Error: Unexpected end of file at %s:%d\n", file, line);
+            fprintf(stderr, "Error: Unexpected end of file at %s:%d\n", file,
+                    line);
         } else if (ferror(stream)) {
             fprintf(stderr, "Error: File read error at %s:%d\n", file, line);
         } else {
@@ -117,11 +127,13 @@ void fseek_check(FILE *fp, long off, int whence, const char *file, int line) {
     }
 }
 
-void fwrite_check(void *ptr, size_t size, size_t nmemb, FILE *stream, const char *file, int line) {
+void fwrite_check(void *ptr, size_t size, size_t nmemb, FILE *stream,
+                  const char *file, int line) {
     size_t result = fwrite(ptr, size, nmemb, stream);
     if (result != nmemb) {
         if (feof(stream)) {
-            fprintf(stderr, "Error: Unexpected end of file at %s:%d\n", file, line);
+            fprintf(stderr, "Error: Unexpected end of file at %s:%d\n", file,
+                    line);
         } else if (ferror(stream)) {
             fprintf(stderr, "Error: File write error at %s:%d\n", file, line);
         } else {
@@ -145,7 +157,8 @@ void fwrite_check(void *ptr, size_t size, size_t nmemb, FILE *stream, const char
 void *malloc_check(size_t size, const char *file, int line) {
     void *ptr = malloc(size);
     if (ptr == NULL) {
-        fprintf(stderr, "Error: Memory allocation failed at %s:%d\n", file, line);
+        fprintf(stderr, "Error: Memory allocation failed at %s:%d\n", file,
+                line);
         fprintf(stderr, "Error details:\n");
         fprintf(stderr, "  File: %s\n", file);
         fprintf(stderr, "  Line: %d\n", line);
@@ -157,10 +170,12 @@ void *malloc_check(size_t size, const char *file, int line) {
 
 // ----------------------------------------------------------------------------
 // check that all tokens are within range
-void token_check(const int *tokens, int token_count, int vocab_size, const char *file, int line) {
+void token_check(const int *tokens, int token_count, int vocab_size,
+                 const char *file, int line) {
     for (int i = 0; i < token_count; i++) {
         if (!(0 <= tokens[i] && tokens[i] < vocab_size)) {
-            fprintf(stderr, "Error: Token out of vocabulary at %s:%d\n", file, line);
+            fprintf(stderr, "Error: Token out of vocabulary at %s:%d\n", file,
+                    line);
             fprintf(stderr, "Error details:\n");
             fprintf(stderr, "  File: %s\n", file);
             fprintf(stderr, "  Line: %d\n", line);
@@ -224,6 +239,7 @@ int ends_with_bin(const char *str) {
     if (len < suffix_len) {
         return 0;
     }
-    int suffix_matches = strncmp(str + len - suffix_len, suffix, suffix_len) == 0;
+    int suffix_matches =
+        strncmp(str + len - suffix_len, suffix, suffix_len) == 0;
     return suffix_matches;
 }

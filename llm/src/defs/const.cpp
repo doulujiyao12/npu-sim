@@ -31,7 +31,10 @@ u_int32_t hbm_device_latency = ceil_macro(30 * pu_mem_ratio);
 const u_int32_t average_die_to_edge_distance = hops_to_mc(DIE_W);
 u_int32_t on_die_hop_latency = 1;
 
-u_int32_t hbm_read_latency = hbm_device_latency + ceil_macro(noc_to_pu_ratio * average_die_to_edge_distance * on_die_hop_latency);
+u_int32_t hbm_read_latency =
+    hbm_device_latency +
+    ceil_macro(noc_to_pu_ratio * average_die_to_edge_distance *
+               on_die_hop_latency);
 
 // ---------------------------------------------------------
 

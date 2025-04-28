@@ -23,7 +23,8 @@ void Recv_prim::print_self(string prefix) {
     if (type == RECV_WEIGHT)
         type_s = "RECV_WEIGHT";
 
-    cout << prefix << "\t[" << type_s << "] > tag_id: " << tag_id << ", recv_cnt: " << recv_cnt << endl;
+    cout << prefix << "\t[" << type_s << "] > tag_id: " << tag_id
+         << ", recv_cnt: " << recv_cnt << endl;
 }
 int Recv_prim::sram_utilization(DATATYPE datatype) {
     int total_sram = 0;

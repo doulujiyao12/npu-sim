@@ -8,8 +8,8 @@
 
 #include "macros/macros.h"
 #include "memory/MemoryManager_v2.h"
-#include "trace/Event_engine.h"
 #include "memory/dram/utils.h"
+#include "trace/Event_engine.h"
 
 
 // 定义 Request 结构体
@@ -42,7 +42,9 @@ public:
 
 
     // Constructor
-    GPUNB_dcacheIF(sc_core::sc_module_name name, int id, sc_event *start_nb_dram_event, sc_event *end_nb_dram_event, Event_engine *event_engine)
+    GPUNB_dcacheIF(sc_core::sc_module_name name, int id,
+                   sc_event *start_nb_dram_event, sc_event *end_nb_dram_event,
+                   Event_engine *event_engine)
         : sc_module(name),
           id(id),
           start_nb_dram_event(start_nb_dram_event),
@@ -61,7 +63,8 @@ public:
     }
 
     // Reconfigure the DMA producer
-    void reconfigure(uint64_t base_addr, int cache_cnt, int line_size, bool read_or_write) {
+    void reconfigure(uint64_t base_addr, int cache_cnt, int line_size,
+                     bool read_or_write) {
         // sc_core::sc_mutex_lock lock(config_mutex); // Protect configuration
         // variables
         base_address = base_addr;
@@ -79,15 +82,17 @@ private:
     int total_requests;    // 总请求数 = dma_read_count * cache_count
     int current_request;   // 已生成请求计数
     // int cache_lines;       // 地址步进值（字节）
-    bool read_or_write;     // 读写标志位 0 是 读 1 是 写
-    int data_length;       // 传输长度单位
+    bool read_or_write; // 读写标志位 0 是 读 1 是 写
+    int data_length;    // 传输长度单位
 
     // Synchronization
     sc_core::sc_event config_event; // Event to notify reconfiguration
     sc_core::sc_mutex config_mutex; // Mutex to protect configuration
     bool config_updated;            // Flag to indicate configuration update
 
-    tlm::tlm_sync_enum nb_transport_bw(tlm::tlm_generic_payload &payload, tlm::tlm_phase &phase, sc_core::sc_time &bwDelay) {
+    tlm::tlm_sync_enum nb_transport_bw(tlm::tlm_generic_payload &payload,
+                                       tlm::tlm_phase &phase,
+                                       sc_core::sc_time &bwDelay) {
         payloadEventQueue.notify(payload, phase, bwDelay);
         return tlm::TLM_ACCEPTED;
     }
@@ -95,17 +100,20 @@ private:
     bool nextRequestSendable() const {
         // If either the maxPendingReadRequests or maxPendingWriteRequests
         // limit is reached, do not send next payload.
-        if (maxPendingReadRequests.has_value() && pendingReadRequests >= maxPendingReadRequests.value())
+        if (maxPendingReadRequests.has_value() &&
+            pendingReadRequests >= maxPendingReadRequests.value())
             return false;
 
-        if (maxPendingWriteRequests.has_value() && pendingWriteRequests >= maxPendingWriteRequests.value())
+        if (maxPendingWriteRequests.has_value() &&
+            pendingWriteRequests >= maxPendingWriteRequests.value())
             return false;
 
         return true;
     }
 
-    void peqCallback(tlm::tlm_generic_payload &payload, const tlm::tlm_phase &phase) {
-  
+    void peqCallback(tlm::tlm_generic_payload &payload,
+                     const tlm::tlm_phase &phase) {
+
         if (phase == tlm::END_REQ) {
             lastEndRequest = sc_core::sc_time_stamp();
 
@@ -136,10 +144,11 @@ private:
                 transactionPostponed = false;
             }
 #if GPU_CACHE_DEBUG == 1
-            cout << "GPUNB_dcacheIF[" << id << "] Begin resp finished=" << finished 
-                 << " sent=" << transactionsSent 
+            cout << "GPUNB_dcacheIF[" << id
+                 << "] Begin resp finished=" << finished
+                 << " sent=" << transactionsSent
                  << " received=" << transactionsReceived << endl;
-#endif  
+#endif
             // If all answers were received:
             if (finished && transactionsSent == transactionsReceived) {
                 finished = false;
@@ -174,8 +183,9 @@ private:
             // 打印完成状态和事务计数信息
 #if GPU_CACHE_DEBUG == 1
 
-            cout << "GPUNB_dcacheIF[" << id << "] End resp finished=" << finished 
-                 << " sent=" << transactionsSent 
+            cout << "GPUNB_dcacheIF[" << id
+                 << "] End resp finished=" << finished
+                 << " sent=" << transactionsSent
                  << " received=" << transactionsReceived << endl;
 #endif
             // If all answers were received:
@@ -190,7 +200,8 @@ private:
                 end_nb_dram_event->notify();
             }
         } else {
-            SC_REPORT_FATAL("TrafficInitiator", "PEQ was triggered with unknown phase");
+            SC_REPORT_FATAL("TrafficInitiator",
+                            "PEQ was triggered with unknown phase");
         }
     }
 
@@ -200,10 +211,14 @@ private:
             wait(*start_nb_dram_event);
             if (total_requests > 0) {
                 while (current_request < total_requests) {
-                    
+
                     Request request;
-                    request.address = base_address + current_request * data_length;
-                    request.command = (read_or_write == 0) ? Request::Command::Read : Request::Command::Write; // Fixed as Read
+                    request.address =
+                        base_address + current_request * data_length;
+                    request.command =
+                        (read_or_write == 0)
+                            ? Request::Command::Read
+                            : Request::Command::Write; // Fixed as Read
                     request.length = data_length;
                     request.delay = sc_core::SC_ZERO_TIME;
 
@@ -229,10 +244,11 @@ private:
                     // wait(sc_core::sc_time(10, sc_core::SC_NS)); // Example
                     // delay
                 }
-                
+
                 // finished = true;
-                // cout << "finished= " << finished << " GPUNB_dcacheIF[" << id << "]" 
-                //      << " sent=" << transactionsSent 
+                // cout << "finished= " << finished << " GPUNB_dcacheIF[" << id
+                // << "]"
+                //      << " sent=" << transactionsSent
                 //      << " received=" << transactionsReceived << endl;
             } else {
                 end_nb_dram_event->notify();
@@ -250,7 +266,9 @@ private:
         trans.set_byte_enable_length(0);
         trans.set_streaming_width(request.length);
         trans.set_dmi_allowed(false);
-        trans.set_command(request.command == Request::Command::Read ? tlm::TLM_READ_COMMAND : tlm::TLM_WRITE_COMMAND);
+        trans.set_command(request.command == Request::Command::Read
+                              ? tlm::TLM_READ_COMMAND
+                              : tlm::TLM_WRITE_COMMAND);
 #if DUMMY == 1
         trans.set_data_ptr(reinterpret_cast<unsigned char *>((void *)0));
 #else

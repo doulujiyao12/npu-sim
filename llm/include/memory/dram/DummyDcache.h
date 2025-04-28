@@ -36,10 +36,12 @@ public:
             trans.set_response_status(TLM_OK_RESPONSE); // 设置响应状态
         } else if (trans.is_write()) {
             // 模拟写数据（这里可以选择记录数据或忽略）
-            std::cout << "Writing data to address 0x" << std::hex << address << std::endl;
+            std::cout << "Writing data to address 0x" << std::hex << address
+                      << std::endl;
             trans.set_response_status(TLM_OK_RESPONSE); // 设置响应状态
         } else {
-            trans.set_response_status(TLM_GENERIC_ERROR_RESPONSE); // 设置错误响应
+            trans.set_response_status(
+                TLM_GENERIC_ERROR_RESPONSE); // 设置错误响应
         }
 
         // wait(delay); // 模拟延迟

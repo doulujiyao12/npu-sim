@@ -164,7 +164,8 @@ public:
     HardwareTaskConfig *generate_hw_config();
     Matmul_f_decode() { name = "Matmul_f_decode"; }
 
-    void matmul_forward_naive(float *out, const float *inp, const float *weight, const float *bias, int B, int T, int C, int OC);
+    void matmul_forward_naive(float *out, const float *inp, const float *weight,
+                              const float *bias, int B, int T, int C, int OC);
 };
 
 
@@ -188,7 +189,8 @@ public:
     HardwareTaskConfig *generate_hw_config();
     Matmul_f_prefill() { name = "Matmul_f_prefill"; }
 
-    void matmul_forward_naive(float *out, const float *inp, const float *weight, const float *bias, int B, int T, int C, int OC);
+    void matmul_forward_naive(float *out, const float *inp, const float *weight,
+                              const float *bias, int B, int T, int C, int OC);
 };
 
 
@@ -212,7 +214,8 @@ public:
     HardwareTaskConfig *generate_hw_config();
     Matmul_f() { name = "Matmul_f"; }
 
-    void matmul_forward_naive(float *out, const float *inp, const float *weight, const float *bias, int B, int T, int C, int OC);
+    void matmul_forward_naive(float *out, const float *inp, const float *weight,
+                              const float *bias, int B, int T, int C, int OC);
 };
 
 

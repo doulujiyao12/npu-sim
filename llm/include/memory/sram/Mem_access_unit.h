@@ -8,7 +8,8 @@
 class mem_access_unit : public sc_module {
 public:
     SC_HAS_PROCESS(mem_access_unit);
-    mem_access_unit(const sc_module_name nm, Event_engine *e_engine) : sc_module(nm), e_engine_(e_engine) {}
+    mem_access_unit(const sc_module_name nm, Event_engine *e_engine)
+        : sc_module(nm), e_engine_(e_engine) {}
 
 public:
     sc_port<mem_read_time_if<sc_bv<SRAM_BITWIDTH>>> mem_read_port;

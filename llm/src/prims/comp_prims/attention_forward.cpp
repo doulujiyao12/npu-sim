@@ -9,8 +9,10 @@
 void Attention_f::print_self(string prefix) {
     cout << prefix << "<attention_forward>\n";
     cout << prefix << "\tB: " << B << ", T: " << T << ", C: " << C << endl;
-    cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size << ", previous_inp_size: " << p_inp_size << endl;
-    cout << prefix << "\toutput_offset: " << out_offset << ", input_offset: " << inp_offset << endl;
+    cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size
+         << ", previous_inp_size: " << p_inp_size << endl;
+    cout << prefix << "\toutput_offset: " << out_offset
+         << ", input_offset: " << inp_offset << endl;
 }
 
 void Attention_f::parse_json(json j) {
@@ -41,8 +43,10 @@ int Attention_f::sram_utilization(DATATYPE datatype) {
         data_byte = 1;
     }
 
-    int p_inp_sram = ceiling_division(B * T * 3 * C * data_byte * 8, SRAM_BITWIDTH);
-    int a_sram = ceiling_division(B * NH * T * T * data_byte * 8, SRAM_BITWIDTH);
+    int p_inp_sram =
+        ceiling_division(B * T * 3 * C * data_byte * 8, SRAM_BITWIDTH);
+    int a_sram =
+        ceiling_division(B * NH * T * T * data_byte * 8, SRAM_BITWIDTH);
     int out_sram = ceiling_division(out_size * data_byte * 8, SRAM_BITWIDTH);
 
     total_sram = p_inp_sram + a_sram + out_sram;
@@ -131,30 +135,38 @@ int Attention_f::task_core(TaskCoreContext &context) {
 
     auto inp_sram_offset = 0;
     if (datapass_label.indata[0].find(DRAM_LABEL) == 0) {
-        sram_first_write_generic(context, data_byte * data_size_input, inp_global_addr, dram_time, dram_start);
+        sram_first_write_generic(context, data_byte * data_size_input,
+                                 inp_global_addr, dram_time, dram_start);
 
         size_t space_pos = datapass_label.indata[0].find(' ');
         if (space_pos != std::string::npos) {
-            datapass_label.indata[0] = datapass_label.indata[0].substr(space_pos + 1);
+            datapass_label.indata[0] =
+                datapass_label.indata[0].substr(space_pos + 1);
         }
 
-        printf("[INFO] Attention_f: read from dram, label: %s\n", datapass_label.indata[0].c_str());
+        printf("[INFO] Attention_f: read from dram, label: %s\n",
+               datapass_label.indata[0].c_str());
 
-        AddrPosKey inp_key = AddrPosKey(*sram_addr, data_byte * data_size_input);
-        sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context, dram_time);
+        AddrPosKey inp_key =
+            AddrPosKey(*sram_addr, data_byte * data_size_input);
+        sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context,
+                                  dram_time);
     } else {
         AddrPosKey inp_key;
-        int flag = sram_pos_locator->findPair(datapass_label.indata[0], inp_key);
+        int flag =
+            sram_pos_locator->findPair(datapass_label.indata[0], inp_key);
         if (flag == -1) {
             printf("[ERROR] Attention_f: sram_pos_locator cannot find the "
                    "label: %s\n",
                    datapass_label.indata[0].c_str());
             sc_stop();
         } else if (flag > 0) {
-            sram_first_write_generic(context, flag, inp_global_addr, dram_time, dram_start);
+            sram_first_write_generic(context, flag, inp_global_addr, dram_time,
+                                     dram_start);
             inp_key.size = data_size_input;
             inp_key.spill_size = 0;
-            sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context, dram_time);
+            sram_pos_locator->addPair(datapass_label.indata[0], inp_key,
+                                      context, dram_time);
         }
     }
 
@@ -168,7 +180,8 @@ int Attention_f::task_core(TaskCoreContext &context) {
     }
 
     auto label_preatt = ETERNAL_PREFIX + prefix + "_preatt";
-    AddrPosKey preatt_key = AddrPosKey(*sram_addr, data_byte * data_size_preatt);
+    AddrPosKey preatt_key =
+        AddrPosKey(*sram_addr, data_byte * data_size_preatt);
     sram_pos_locator->addPair(label_preatt, preatt_key, context, dram_time);
     sram_write_append_generic(context, data_byte * data_size_preatt, dram_time);
 
@@ -181,16 +194,24 @@ int Attention_f::task_core(TaskCoreContext &context) {
 
     // 读出Q,K
     sram_pos_locator->findPair(datapass_label.indata[0], inp_sram_offset);
-    sram_read_generic(context, data_byte * data_size_input / 3 * 2, inp_sram_offset, dram_time);
+    sram_read_generic(context, data_byte * data_size_input / 3 * 2,
+                      inp_sram_offset, dram_time);
     // 写入preatt中间结果
     int preatt_sram_offset, att_sram_offset;
-    sram_write_back_generic(context, data_byte * data_size_preatt, preatt_sram_offset, dram_time);
+    sram_write_back_generic(context, data_byte * data_size_preatt,
+                            preatt_sram_offset, dram_time);
     // 读出preatt，计算自然指数，写入att
-    sram_read_generic(context, data_byte * data_size_preatt, preatt_sram_offset, dram_time);
-    sram_write_back_generic(context, data_byte * data_size_att, att_sram_offset, dram_time);
+    sram_read_generic(context, data_byte * data_size_preatt, preatt_sram_offset,
+                      dram_time);
+    sram_write_back_generic(context, data_byte * data_size_att, att_sram_offset,
+                            dram_time);
     // 读出att和V
-    sram_read_generic(context, data_byte * data_size_att, att_sram_offset, dram_time);
-    sram_read_generic(context, data_byte * data_size_input / 3, inp_sram_offset + (preatt_sram_offset - inp_sram_offset) / 3 * 2, dram_time);
+    sram_read_generic(context, data_byte * data_size_att, att_sram_offset,
+                      dram_time);
+    sram_read_generic(context, data_byte * data_size_input / 3,
+                      inp_sram_offset +
+                          (preatt_sram_offset - inp_sram_offset) / 3 * 2,
+                      dram_time);
 
     // 删除标签
     if (!input_reuse) {
@@ -205,7 +226,8 @@ int Attention_f::task_core(TaskCoreContext &context) {
     // 计算overlap
     int cycle = 0;
     if (tile_exu.type == MAC_Array) {
-        cycle = (B * NH * T * (T - 1) / 2 * (4 * C / NH + 5)) / (2 * tile_exu.x_dims * tile_exu.y_dims * comp_util) * CYCLE;
+        cycle = (B * NH * T * (T - 1) / 2 * (4 * C / NH + 5)) /
+                (2 * tile_exu.x_dims * tile_exu.y_dims * comp_util) * CYCLE;
     } else {
         assert(false && "Unsupported tile type");
     }
@@ -215,10 +237,12 @@ int Attention_f::task_core(TaskCoreContext &context) {
     if (dram_time > cycle) {
         // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
         overlap_time = 0;
-        std::cout << RED << "cycle: " << cycle << ", dram_time: " << dram_time << RESET << std::endl;
+        std::cout << RED << "cycle: " << cycle << ", dram_time: " << dram_time
+                  << RESET << std::endl;
     } else {
         overlap_time = cycle - dram_time;
-        std::cout << GREEN << "cycle: " << cycle << ", dram_time: " << dram_time << RESET << std::endl;
+        std::cout << GREEN << "cycle: " << cycle << ", dram_time: " << dram_time
+                  << RESET << std::endl;
     }
 #else
     if (dram_time > cycle) {
@@ -232,7 +256,8 @@ int Attention_f::task_core(TaskCoreContext &context) {
     // 写入out
     // label kv in sram locator
     AddrPosKey out_key = AddrPosKey(*sram_addr, data_byte * data_size_out);
-    sram_pos_locator->addPair(datapass_label.outdata, out_key, context, dram_time);
+    sram_pos_locator->addPair(datapass_label.outdata, out_key, context,
+                              dram_time);
     sram_write_append_generic(context, data_byte * data_size_out, overlap_time);
 #else
     // CTODO: do dram only
@@ -267,7 +292,8 @@ int Attention_f::task() {
 
     int cycle = 0;
     if (tile_exu.type == MAC_Array) {
-        cycle = (B * NH * T * (T - 1) / 2 * (4 * C / NH + 5)) / (2 * tile_exu.x_dims * tile_exu.y_dims * comp_util) * CYCLE;
+        cycle = (B * NH * T * (T - 1) / 2 * (4 * C / NH + 5)) /
+                (2 * tile_exu.x_dims * tile_exu.y_dims * comp_util) * CYCLE;
     } else {
         assert(false && "Unsupported tile type");
     }
@@ -277,49 +303,84 @@ int Attention_f::task() {
     for (int b = 0; b < B; b++) {
         for (int t = 0; t < T; t++) {
             for (int h = 0; h < NH; h++) {
-                u_int64_t query_t = inp_global_addr + (b * T * C3 + t * C3 + h * hs) * data_byte;
-                u_int64_t preatt_bth = prea_global_addr + (b * NH * T * T + h * T * T + t * T) * data_byte;
+                u_int64_t query_t = inp_global_addr +
+                                    (b * T * C3 + t * C3 + h * hs) * data_byte;
+                u_int64_t preatt_bth =
+                    prea_global_addr +
+                    (b * NH * T * T + h * T * T + t * T) * data_byte;
 
                 // pass 1
                 for (int t2 = 0; t2 <= t; t2++) {
-                    u_int64_t key_t2 = inp_global_addr + (b * T * C3 + t2 * C3 + h * hs + C) * data_byte;
+                    u_int64_t key_t2 =
+                        inp_global_addr +
+                        (b * T * C3 + t2 * C3 + h * hs + C) * data_byte;
 
                     for (int i = 0; i < hs; i++) {
-                        in_dcacheline = (query_t >> dcache_words_in_line_log2) >> 2;
-                        dram_time += check_dcache(0, 0, in_dcacheline << (dcache_words_in_line_log2 + 2), dram_time, time_fetched, time_prefetched, prefetch_tag, false);
+                        in_dcacheline =
+                            (query_t >> dcache_words_in_line_log2) >> 2;
+                        dram_time += check_dcache(
+                            0, 0,
+                            in_dcacheline << (dcache_words_in_line_log2 + 2),
+                            dram_time, time_fetched, time_prefetched,
+                            prefetch_tag, false);
                         query_t += data_byte;
 
-                        in_dcacheline = (key_t2 >> dcache_words_in_line_log2) >> 2;
-                        dram_time += check_dcache(0, 0, in_dcacheline << (dcache_words_in_line_log2 + 2), dram_time, time_fetched, time_prefetched, prefetch_tag, false);
+                        in_dcacheline =
+                            (key_t2 >> dcache_words_in_line_log2) >> 2;
+                        dram_time += check_dcache(
+                            0, 0,
+                            in_dcacheline << (dcache_words_in_line_log2 + 2),
+                            dram_time, time_fetched, time_prefetched,
+                            prefetch_tag, false);
                         key_t2 += data_byte;
                     }
 
 
-                    prea_dcacheline = (preatt_bth >> dcache_words_in_line_log2) >> 2;
-                    dram_time += check_dcache(0, 0, prea_dcacheline << (dcache_words_in_line_log2 + 2), dram_time, time_fetched, time_prefetched, prefetch_tag, false);
+                    prea_dcacheline =
+                        (preatt_bth >> dcache_words_in_line_log2) >> 2;
+                    dram_time += check_dcache(
+                        0, 0,
+                        prea_dcacheline << (dcache_words_in_line_log2 + 2),
+                        dram_time, time_fetched, time_prefetched, prefetch_tag,
+                        false);
                     preatt_bth += data_byte;
                 }
 
-                u_int64_t att_bth = a_global_addr + (b * NH * T * T + h * T * T + t * T) * data_byte;
-                preatt_bth = prea_global_addr + (b * NH * T * T + h * T * T + t * T) * data_byte;
+                u_int64_t att_bth =
+                    a_global_addr +
+                    (b * NH * T * T + h * T * T + t * T) * data_byte;
+                preatt_bth = prea_global_addr +
+                             (b * NH * T * T + h * T * T + t * T) * data_byte;
 
                 // pass 2
                 for (int t2 = 0; t2 <= t; t2++) {
                     a_dcacheline = (att_bth >> dcache_words_in_line_log2) >> 2;
-                    dram_time += check_dcache(0, 0, a_dcacheline << (dcache_words_in_line_log2 + 2), dram_time, time_fetched, time_prefetched, prefetch_tag, false);
+                    dram_time += check_dcache(
+                        0, 0, a_dcacheline << (dcache_words_in_line_log2 + 2),
+                        dram_time, time_fetched, time_prefetched, prefetch_tag,
+                        false);
                     att_bth += data_byte;
 
-                    prea_dcacheline = (preatt_bth >> dcache_words_in_line_log2) >> 2;
-                    dram_time += check_dcache(0, 0, prea_dcacheline << (dcache_words_in_line_log2 + 2), dram_time, time_fetched, time_prefetched, prefetch_tag, false);
+                    prea_dcacheline =
+                        (preatt_bth >> dcache_words_in_line_log2) >> 2;
+                    dram_time += check_dcache(
+                        0, 0,
+                        prea_dcacheline << (dcache_words_in_line_log2 + 2),
+                        dram_time, time_fetched, time_prefetched, prefetch_tag,
+                        false);
                     preatt_bth += data_byte;
                 }
 
-                att_bth = a_global_addr + (b * NH * T * T + h * T * T + t * T) * data_byte;
+                att_bth = a_global_addr +
+                          (b * NH * T * T + h * T * T + t * T) * data_byte;
 
                 // pass 3
                 for (int t2 = 0; t2 < T; t2++) {
                     a_dcacheline = (att_bth >> dcache_words_in_line_log2) >> 2;
-                    dram_time += check_dcache(0, 0, a_dcacheline << (dcache_words_in_line_log2 + 2), dram_time, time_fetched, time_prefetched, prefetch_tag, false);
+                    dram_time += check_dcache(
+                        0, 0, a_dcacheline << (dcache_words_in_line_log2 + 2),
+                        dram_time, time_fetched, time_prefetched, prefetch_tag,
+                        false);
                     att_bth += data_byte;
                 }
             }
@@ -337,11 +398,16 @@ int Attention_f::task() {
     for (int b = 0; b < B; b++) {
         for (int t = 0; t < T; t++) {
             for (int h = 0; h < NH; h++) {
-                u_int64_t out_bth = out_global_addr + (b * T * C + t * C + h * hs) * data_byte;
+                u_int64_t out_bth =
+                    out_global_addr + (b * T * C + t * C + h * hs) * data_byte;
 
                 for (int t2 = 0; t2 < T; t2++) {
-                    out_dcacheline = (out_bth >> dcache_words_in_line_log2) >> 2;
-                    overlap_time += check_dcache(0, 0, out_dcacheline << (dcache_words_in_line_log2 + 2), overlap_time, time_fetched, time_prefetched, prefetch_tag, false);
+                    out_dcacheline =
+                        (out_bth >> dcache_words_in_line_log2) >> 2;
+                    overlap_time += check_dcache(
+                        0, 0, out_dcacheline << (dcache_words_in_line_log2 + 2),
+                        overlap_time, time_fetched, time_prefetched,
+                        prefetch_tag, false);
                     out_bth += data_byte;
                 }
             }
@@ -372,12 +438,14 @@ int Attention_f::task() {
                 // pass 1: calculate query dot key and maxval
                 float maxval = -10000.0f; // TODO something better
                 for (int t2 = 0; t2 <= t; t2++) {
-                    float *key_t2 = inp + b * T * C3 + t2 * C3 + h * hs + C; // +C because it's key
+                    float *key_t2 = inp + b * T * C3 + t2 * C3 + h * hs +
+                                    C; // +C because it's key
 
                     // (query_t) dot (key_t2)
                     float val = 0.0f;
                     for (int i = 0; i < hs; i++) {
-                        val += query_t[i] * key_t2[i]; // compute: B*NH*T*(T-1)/2*(2*hs+1)
+                        val += query_t[i] *
+                               key_t2[i]; // compute: B*NH*T*(T-1)/2*(2*hs+1)
                     }
                     val *= scale;
                     if (val > maxval) {
@@ -392,7 +460,8 @@ int Attention_f::task() {
                 // stability
                 float expsum = 0.0f;
                 for (int t2 = 0; t2 <= t; t2++) {
-                    float expv = expf(preatt_bth[t2] - maxval); // compute: B*NH*T*(T-1)/2*3
+                    float expv = expf(preatt_bth[t2] -
+                                      maxval); // compute: B*NH*T*(T-1)/2*3
                     expsum += expv;
                     att_bth[t2] = expv;
                 }
@@ -417,10 +486,13 @@ int Attention_f::task() {
                     out_bth[i] = 0.0f;
                 }
                 for (int t2 = 0; t2 <= t; t2++) {
-                    float *value_t2 = inp + b * T * C3 + t2 * C3 + h * hs + C * 2; // +C*2 because it's value
+                    float *value_t2 = inp + b * T * C3 + t2 * C3 + h * hs +
+                                      C * 2; // +C*2 because it's value
                     float att_btht2 = att_bth[t2];
                     for (int i = 0; i < hs; i++) {
-                        out_bth[i] += att_btht2 * value_t2[i]; // compute: B*NH*T*(T-1)/2*2*hs
+                        out_bth[i] +=
+                            att_btht2 *
+                            value_t2[i]; // compute: B*NH*T*(T-1)/2*2*hs
                     }
                 }
             }

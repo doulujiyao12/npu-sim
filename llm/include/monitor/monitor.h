@@ -3,11 +3,11 @@
 
 #include "../router/router.h"
 #include "../workercore/workercore.h"
+#include "link/chip_global_memory.h"
+#include "monitor/config_helper_base.h"
 #include "monitor/gpu_cache_system.h"
 #include "monitor/mem_interface.h"
 #include "trace/Event_engine.h"
-#include "link/chip_global_memory.h"
-#include "monitor/config_helper_base.h"
 using namespace std;
 
 class Monitor : public sc_module {
@@ -46,8 +46,10 @@ public:
     Event_engine *event_engine;
 
     SC_HAS_PROCESS(Monitor);
-    Monitor(const sc_module_name &n, Event_engine *event_engine, const char *config_name, const char *font_ttf);
-    Monitor(const sc_module_name &n, Event_engine *event_engine, config_helper_base *input_config);
+    Monitor(const sc_module_name &n, Event_engine *event_engine,
+            const char *config_name, const char *font_ttf);
+    Monitor(const sc_module_name &n, Event_engine *event_engine,
+            config_helper_base *input_config);
     ~Monitor();
 
     void start_simu();

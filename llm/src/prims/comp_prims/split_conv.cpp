@@ -7,8 +7,10 @@
 void Split_conv::print_self(string prefix) {
     cout << prefix << "<split_conv>\n";
     cout << prefix << "\tslice: " << slice << ", new_H: " << new_H << endl;
-    cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size << ", previous_inp_size: " << p_inp_size << endl;
-    cout << prefix << "\toutput_offset: " << out_offset << ", input_offset: " << inp_offset << endl;
+    cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size
+         << ", previous_inp_size: " << p_inp_size << endl;
+    cout << prefix << "\toutput_offset: " << out_offset
+         << ", input_offset: " << inp_offset << endl;
 }
 
 void Split_conv::parse_json(json j) {
@@ -94,7 +96,10 @@ int Split_conv::task() {
         for (int c = 0; c < C; ++c) {
             for (int h = 0; h < H; ++h) {
                 for (int w = 0; w < W; ++w) {
-                    padded_input[b * C * (H + 2 * pY) * (W + 2 * pX) + c * (H + 2 * pY) * (W + 2 * pX) + (h + pY) * (W + 2 * pX) + (w + pX)] = input[b * C * H * W + c * H * W + h * W + w];
+                    padded_input[b * C * (H + 2 * pY) * (W + 2 * pX) +
+                                 c * (H + 2 * pY) * (W + 2 * pX) +
+                                 (h + pY) * (W + 2 * pX) + (w + pX)] =
+                        input[b * C * H * W + c * H * W + h * W + w];
                 }
             }
         }
@@ -109,7 +114,10 @@ int Split_conv::task() {
                     for (int w = 0; w < new_W; w++) {
                         // CTODO: finish this
                         int inp_h = new_H * s - (s - 1) * (K - S) + h;
-                        output[offset++] = padded_input[b * C * (H + 2 * pY) * (W + 2 * pX) + c * (H + 2 * pY) * (W + 2 * pX) + inp_h * (W + 2 * pX) + w];
+                        output[offset++] =
+                            padded_input[b * C * (H + 2 * pY) * (W + 2 * pX) +
+                                         c * (H + 2 * pY) * (W + 2 * pX) +
+                                         inp_h * (W + 2 * pX) + w];
                     }
                 }
             }

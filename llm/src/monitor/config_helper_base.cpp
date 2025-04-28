@@ -56,7 +56,9 @@ void config_helper_base::fill_queue_data(queue<Msg> *q) {
                 // p_inp_size 是 输入 input的大小
                 int send_size = cp->inp_size - cp->p_inp_size;
                 int send_size_in_bit = send_size * 8;
-                int pkg_num = (send_size_in_bit % M_D_DATA) ? (send_size_in_bit / M_D_DATA + 1) : (send_size_in_bit / M_D_DATA);
+                int pkg_num = (send_size_in_bit % M_D_DATA)
+                                  ? (send_size_in_bit / M_D_DATA + 1)
+                                  : (send_size_in_bit / M_D_DATA);
 
                 for (int j = 1; j <= pkg_num; j++) {
                     // CTODO: 拿到真正的数据
@@ -67,7 +69,9 @@ void config_helper_base::fill_queue_data(queue<Msg> *q) {
                         length = send_size * 8 - M_D_DATA * (pkg_num - 1);
                     }
 
-                    Msg m = Msg(false, MSG_TYPE::P_DATA, j + pkg_index, config.id, send_offset + M_D_DATA * (j - 1), (1 << M_D_TAG_ID) - 1, length, d);
+                    Msg m = Msg(false, MSG_TYPE::P_DATA, j + pkg_index,
+                                config.id, send_offset + M_D_DATA * (j - 1),
+                                (1 << M_D_TAG_ID) - 1, length, d);
                     m.source = GRID_SIZE;
                     q[index].push(m);
                 }
@@ -77,20 +81,26 @@ void config_helper_base::fill_queue_data(queue<Msg> *q) {
                 // packages, now total " << pkg_index << " packages.\n";
             }
         }
-        cout << "core " << config.id << " send " << core_prim_cnt << " prims.\n";
+        cout << "core " << config.id << " send " << core_prim_cnt
+             << " prims.\n";
 #else
         // do nothing
 #endif
 
         // HOST DATA END 包
         sc_bv<128> d(0x1);
-        // Msg(bool e, MSG_TYPE m, int seq, int des, int offset, int tag, int length, sc_bv<128> d) : is_end(e), msg_type(m), seq_id(seq), des(des), offset(offset), tag_id(tag), length(length), data(d) {}
-        // (1 << M_D_TAG_ID) - 1 已被弃用 P_DATA 包的 tag 不会被用于router中的lock，默认最大tag_id
-        // (1 << 16) - 1 end 包的 offset 弃用
-        Msg m = Msg(true, MSG_TYPE::P_DATA, pkg_index + 1, config.id, (1 << 16) - 1, (1 << M_D_TAG_ID) - 1, 0, d);
+        // Msg(bool e, MSG_TYPE m, int seq, int des, int offset, int tag, int
+        // length, sc_bv<128> d) : is_end(e), msg_type(m), seq_id(seq),
+        // des(des), offset(offset), tag_id(tag), length(length), data(d) {} (1
+        // << M_D_TAG_ID) - 1 已被弃用 P_DATA 包的 tag
+        // 不会被用于router中的lock，默认最大tag_id (1 << 16) - 1 end 包的
+        // offset 弃用
+        Msg m = Msg(true, MSG_TYPE::P_DATA, pkg_index + 1, config.id,
+                    (1 << 16) - 1, (1 << M_D_TAG_ID) - 1, 0, d);
         m.source = GRID_SIZE;
         q[index].push(m);
 
-        cout << "core " << config.id << " send " << pkg_index + 1 << " data packages.\n";
+        cout << "core " << config.id << " send " << pkg_index + 1
+             << " data packages.\n";
     }
 }

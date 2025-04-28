@@ -1,13 +1,19 @@
 #include "monitor/monitor.h"
 #include "monitor/config_helper_gpu.h"
 
-Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine, const char *config_name, const char *font_ttf) : sc_module(n), event_engine(event_engine) {
-    memInterface = new MemInterface("mem-interface", this->event_engine, config_name, font_ttf);
+Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine,
+                 const char *config_name, const char *font_ttf)
+    : sc_module(n), event_engine(event_engine) {
+    memInterface = new MemInterface("mem-interface", this->event_engine,
+                                    config_name, font_ttf);
     init();
 }
 
-Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine, config_helper_base *input_config) : sc_module(n), event_engine(event_engine) {
-    memInterface = new MemInterface("mem-interface", this->event_engine, input_config);
+Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine,
+                 config_helper_base *input_config)
+    : sc_module(n), event_engine(event_engine) {
+    memInterface =
+        new MemInterface("mem-interface", this->event_engine, input_config);
     init();
 }
 
@@ -33,12 +39,14 @@ Monitor::~Monitor() {
     delete memInterface;
 }
 
-void Monitor::init(){
+void Monitor::init() {
     routerMonitor = new RouterMonitor("router-monitor", this->event_engine);
-    // memInterface = new MemInterface("mem-interface", this->event_engine, config_name, font_ttf);
+    // memInterface = new MemInterface("mem-interface", this->event_engine,
+    // config_name, font_ttf);
     workerCores = new WorkerCore *[GRID_SIZE];
     for (int i = 0; i < GRID_SIZE; i++) {
-        workerCores[i] = new WorkerCore(sc_gen_unique_name("workercore"), i, this->event_engine);
+        workerCores[i] = new WorkerCore(sc_gen_unique_name("workercore"), i,
+                                        this->event_engine);
     }
 
 #if USE_L1L2_CACHE == 1
@@ -50,14 +58,15 @@ void Monitor::init(){
         processors.push_back(workerCores[i]->executor->gpunb_dcache_if);
     }
 
-    cacheSystem = new L1L2CacheSystem("l1l2-cache_system", GRID_SIZE, l1caches, processors, "../DRAMSys/configs/ddr4-example.json", "../DRAMSys/configs");
+    cacheSystem = new L1L2CacheSystem(
+        "l1l2-cache_system", GRID_SIZE, l1caches, processors,
+        "../DRAMSys/configs/ddr4-example.json", "../DRAMSys/configs");
 
     gpu_pos_locator = new GpuPosLocator();
-    memInterface->gpu_pos_locator = gpu_pos_locator;
-    for (int i = 0; i < GRID_SIZE; i++) {
+    ((config_helper_gpu *)memInterface->config_helper)->gpu_pos_locator =
+        gpu_pos_locator;
+    for (int i = 0; i < GRID_SIZE; i++)
         workerCores[i]->executor->gpu_pos_locator = gpu_pos_locator;
-    }
-#else
 #endif
 
     memInterface->start_i(star);

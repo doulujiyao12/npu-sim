@@ -1,6 +1,7 @@
 #include "trace/Event_engine.h"
 
-Event_engine::Event_engine(const sc_module_name &name, int trace_window) : sc_module(name), trace_window(trace_window) {
+Event_engine::Event_engine(const sc_module_name &name, int trace_window)
+    : sc_module(name), trace_window(trace_window) {
     SC_THREAD(engine_run);
     sensitive << sync_events;
     is_first_dump = true;
@@ -17,7 +18,8 @@ void Event_engine::engine_run() {
     while (1) {
         wait();
         if (Trace_event_queue_clock_engine.trace_event_queue.size() != 0) {
-            Trace_event e_temp = Trace_event_queue_clock_engine.trace_event_queue.front();
+            Trace_event e_temp =
+                Trace_event_queue_clock_engine.trace_event_queue.front();
             e_temp.record_time(sc_time_stamp());
             this->traced_event_list.push_back(e_temp);
             Trace_event_queue_clock_engine.trace_event_queue.pop();
@@ -36,14 +38,19 @@ void Event_engine::engine_run() {
 // 	Trace_event_queue_clock_engine.trace_event_queue.push(e_temp);
 // 	sync_events.notify(SC_ZERO_TIME);
 // }
-void Event_engine::add_event(string _module_name, string _thread_name, string _type, Trace_event_util _util, sc_time relative_time, unsigned flow_id, string bp) {
-    Trace_event e_temp(_module_name, _thread_name, _type, _util, relative_time, flow_id, bp);
+void Event_engine::add_event(string _module_name, string _thread_name,
+                             string _type, Trace_event_util _util,
+                             sc_time relative_time, unsigned flow_id,
+                             string bp) {
+    Trace_event e_temp(_module_name, _thread_name, _type, _util, relative_time,
+                       flow_id, bp);
     Trace_event_queue_clock_engine.trace_event_queue.push(e_temp);
     sync_events.notify(SC_ZERO_TIME);
 }
 
 
-void Event_engine::dump_traced_file(const string &filepath, bool is_final_dump) {
+void Event_engine::dump_traced_file(const string &filepath,
+                                    bool is_final_dump) {
 
     if (is_first_dump) {
         json_stream.open(filepath);
@@ -86,13 +93,15 @@ void Event_engine::writeJsonTail() {
 
 void Event_engine::writeEvents(bool final) {
     // 更新模块信息
-    for (auto iter = traced_event_list.begin(); iter != traced_event_list.end(); iter++) {
+    for (auto iter = traced_event_list.begin(); iter != traced_event_list.end();
+         iter++) {
         string m_name = iter->module_name;
         if (module_idx.find(m_name) == module_idx.end()) {
             module_idx[m_name] = pid_count++;
             thread_count_in_module[m_name] = 0; // 初始化模块内的线程计数器
             // 写入模块信息
-            json_stream << "{\"name\": \"process_name\", \"ph\": \"M\", \"pid\": ";
+            json_stream
+                << "{\"name\": \"process_name\", \"ph\": \"M\", \"pid\": ";
             json_stream << module_idx[m_name];
             json_stream << ", \"args\": {\"name\": \"";
             json_stream << m_name;
@@ -101,7 +110,8 @@ void Event_engine::writeEvents(bool final) {
     }
 
     // 更新线程信息
-    for (auto iter = traced_event_list.begin(); iter != traced_event_list.end(); iter++) {
+    for (auto iter = traced_event_list.begin(); iter != traced_event_list.end();
+         iter++) {
         string m_name = iter->module_name;
         string t_name = iter->thread_name;
         pair<string, string> m_t_name(m_name, t_name);
@@ -109,7 +119,8 @@ void Event_engine::writeEvents(bool final) {
         if (thread_idx.find(m_t_name) == thread_idx.end()) {
             thread_idx[m_t_name] = thread_count_in_module[m_name]++;
             // 写入线程信息
-            json_stream << "{\"name\": \"thread_name\", \"ph\": \"M\", \"pid\": ";
+            json_stream
+                << "{\"name\": \"thread_name\", \"ph\": \"M\", \"pid\": ";
             json_stream << module_idx[m_name];
             json_stream << ", \"tid\": ";
             json_stream << thread_idx[m_t_name];
@@ -120,14 +131,16 @@ void Event_engine::writeEvents(bool final) {
     }
 
     // 写入事件数据
-    for (auto iter = traced_event_list.begin(); iter != traced_event_list.end(); iter++) {
+    for (auto iter = traced_event_list.begin(); iter != traced_event_list.end();
+         iter++) {
         string m_name = iter->module_name;
         string t_name = iter->thread_name;
         string event_type = iter->type;
         double ts = iter->time.to_seconds() * 1e6;
 
         json_stream << "{\"name\": \"";
-        json_stream << ((iter->util.m_bar_name != "") ? iter->util.m_bar_name : t_name);
+        json_stream << ((iter->util.m_bar_name != "") ? iter->util.m_bar_name
+                                                      : t_name);
         json_stream << "\", \"cat\": \"";
         json_stream << m_name;
         if (iter->util.m_color != "None") {
@@ -157,7 +170,9 @@ void Event_engine::writeEvents(bool final) {
         // 写入通用 args 字段
         json_stream << ", \"args\": {";
         if (event_type == "C") {
-            string value_name = (!iter->util.m_bar_name.empty()) ? iter->util.m_bar_name : t_name;
+            string value_name = (!iter->util.m_bar_name.empty())
+                                    ? iter->util.m_bar_name
+                                    : t_name;
             json_stream << "\"" << value_name << "\": ";
             json_stream << iter->util.m_value;
         } else if (!iter->util.m_bar_name.empty()) {
@@ -240,8 +255,8 @@ void Event_engine::writeEvents(bool final) {
 // \"pid\": "; 		json_stream << module_idx.at(m_name);
 // json_stream << ", \"tid\":
 // "; 		json_stream << thread_idx.at(module_name_and_thread_name(m_name,
-// t_name)); 		json_stream << ", \"args\": {\"name\": \""; 		json_stream << t_name;
-// 		json_stream << "\"}},\n";
+// t_name)); 		json_stream << ", \"args\": {\"name\": \"";
+// json_stream << t_name; 		json_stream << "\"}},\n";
 // 	}
 
 

@@ -19,9 +19,7 @@ public:
     std::vector<ChipConfig> chips;
     void print_self();
 
-    Type getType() const override{
-        return TYPE_NODE;
-    }
+    Type getType() const override { return TYPE_NODE; }
 };
 
 void from_json(const json &j, NodeConfig &c);

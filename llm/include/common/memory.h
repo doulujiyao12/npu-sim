@@ -29,13 +29,16 @@ public:
     string outdata;
     AddrDatapassLabel() {
         for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-            indata[i] = UNSET_LABEL; // 读入sram的输入数据标签，绝大多数情况下只使用第一个元素
+            indata[i] =
+                UNSET_LABEL; // 读入sram的输入数据标签，绝大多数情况下只使用第一个元素
         }
 
         outdata = UNSET_LABEL; // 写回sram的输出数据标签
     }
 
-    AddrDatapassLabel(string indata_v, string outdata_v) : outdata(outdata_v) { indata[0] = indata_v; }
+    AddrDatapassLabel(string indata_v, string outdata_v) : outdata(outdata_v) {
+        indata[0] = indata_v;
+    }
 };
 
 
@@ -87,7 +90,8 @@ public:
         max_sram_size = MAX_SRAM_SIZE;
     }
 
-    void addPair(const std::string &key, AddrPosKey value, TaskCoreContext &context, u_int64_t &dram_time);
+    void addPair(const std::string &key, AddrPosKey value,
+                 TaskCoreContext &context, u_int64_t &dram_time);
     // void addPair(const std::string &key, AddrPosKey value);
 
     int findPair(std::string &key, int &result);
@@ -105,13 +109,12 @@ public:
     std::unordered_map<std::string, AddrPosKey> data_map;
     int addr_top;
 
-    GpuPosLocator() {
-        addr_top = 1024;
-    }
+    GpuPosLocator() { addr_top = 1024; }
 
     void addPair(const std::string &key, AddrPosKey &value);
 
-    void fetchPair(std::string &key, AddrPosKey &result); // 如果没找到，直接添加一个
+    void fetchPair(std::string &key,
+                   AddrPosKey &result); // 如果没找到，直接添加一个
     bool findPair(std::string &key, int &result);
     bool findPair(std::string &key, AddrPosKey &result);
 

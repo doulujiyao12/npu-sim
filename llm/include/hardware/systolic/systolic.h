@@ -25,7 +25,8 @@ public:
     sc_in<bool> systolic_start_i;
 
     SC_HAS_PROCESS(SystolicArray);
-    SystolicArray(const sc_module_name &n, Event_engine *event_engine, HardwareTaskConfig *config);
+    SystolicArray(const sc_module_name &n, Event_engine *event_engine,
+                  HardwareTaskConfig *config);
     ~SystolicArray();
 
     void systolic_execute();
@@ -47,9 +48,10 @@ public:
 
     int psum_count[PE_GRID_X]; // 记录每个接收通道已经接收到的psum的数量
 
-    sc_event ev_exec;                // 被systolic调用，触发工作流
-    sc_event ev_next_trigger_psum;   // 用于触发下一个psum的接收
-    sc_signal<bool> recv_psum_block; // 在开始发送数据之后，等待其下降沿，表明psum已经全部接收完毕
+    sc_event ev_exec;              // 被systolic调用，触发工作流
+    sc_event ev_next_trigger_psum; // 用于触发下一个psum的接收
+    sc_signal<bool>
+        recv_psum_block; // 在开始发送数据之后，等待其下降沿，表明psum已经全部接收完毕
     sc_signal<bool> work_done;
 
     sc_out<float> data_o[PE_GRID_X];        // 将数据发送到PE
@@ -59,7 +61,8 @@ public:
     sc_in<bool> data_sent_i[PE_GRID_X];     // 从下侧接收PE发来数据的提示
 
     SC_HAS_PROCESS(Systolic_interface);
-    Systolic_interface(const sc_module_name &n, Event_engine *event_engine, HardwareTaskConfig *config);
+    Systolic_interface(const sc_module_name &n, Event_engine *event_engine,
+                       HardwareTaskConfig *config);
     ~Systolic_interface() {}
 
     void systolic_interface_execute();

@@ -10,8 +10,7 @@ using json = nlohmann::json;
 // 用于统一函数接口
 class BaseConfig {
 public:
-
-    enum Type{
+    enum Type {
         TYPE_TOP,
         TYPE_CHIP,
         TYPE_NODE,

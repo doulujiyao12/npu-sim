@@ -78,6 +78,8 @@ void init_grid(string config_path) {
             SYSTEM_MODE = SIM_DATAFLOW;
         } else if (mode == "gpu") {
             SYSTEM_MODE = SIM_GPU;
+        } else if (mode == "sched_pd") {
+            SYSTEM_MODE = SIM_PD;
         }
     } else {
         SYSTEM_MODE = SIM_DATAFLOW;

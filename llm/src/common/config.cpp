@@ -189,7 +189,8 @@ void from_json(const json &j, StreamConfig &c) {
     if (j.contains("source")) {
         auto sources = j["source"];
         for (auto source : sources) {
-            c.sources.push_back(make_pair(source["label"], find_var(source["size"])));
+            c.sources.push_back(
+                make_pair(source["label"], find_var(source["size"])));
         }
     }
 }

@@ -2,7 +2,8 @@
 #include "macros/macros.h"
 #include "utils/pe_utils.h"
 
-PE::PE(const sc_module_name &n, int s_peid, Event_engine *event_engine) : sc_module(n), event_engine(event_engine) {
+PE::PE(const sc_module_name &n, int s_peid, Event_engine *event_engine)
+    : sc_module(n), event_engine(event_engine) {
     peid = s_peid;
 
     data_sent_i = new sc_in<bool>[2];
@@ -60,7 +61,8 @@ void PE::step_in() {
                 psum = psum_i->read();
             }
 
-            cout << "PE " << peid << ": weight " << weight << ", data " << data << ", psum " << psum << "->";
+            cout << "PE " << peid << ": weight " << weight << ", data " << data
+                 << ", psum " << psum << "->";
 
             psum += data * weight;
 

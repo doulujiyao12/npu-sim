@@ -8,11 +8,15 @@
 
 void Merge_matmul::print_self(string prefix) {
     cout << prefix << "<merge_matmul>\n";
-    cout << prefix << "\t[input size] B: " << B << ", T: " << T << ", C: " << C << endl;
-    cout << prefix << "\t[merge type] " << (dim == 1 ? ("concat") : ("addup")) << endl;
+    cout << prefix << "\t[input size] B: " << B << ", T: " << T << ", C: " << C
+         << endl;
+    cout << prefix << "\t[merge type] " << (dim == 1 ? ("concat") : ("addup"))
+         << endl;
     cout << prefix << "\tslice: " << slice << endl;
-    cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size << ", previous_inp_size: " << p_inp_size << endl;
-    cout << prefix << "\toutput_offset: " << out_offset << ", input_offset: " << inp_offset << endl;
+    cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size
+         << ", previous_inp_size: " << p_inp_size << endl;
+    cout << prefix << "\toutput_offset: " << out_offset
+         << ", input_offset: " << inp_offset << endl;
 }
 
 void Merge_matmul::parse_matmul(Matmul_f *p) {
@@ -146,31 +150,42 @@ int Merge_matmul::task_core(TaskCoreContext &context) {
 
         if (datapass_label.indata[i].find(DRAM_LABEL) == 0) {
             inp_sram_offset[i] = *sram_addr;
-            sram_first_write_generic(context, data_byte * data_size_input / in_label_cnt, inp_global_addr, dram_time, dram_start);
+            sram_first_write_generic(context,
+                                     data_byte * data_size_input / in_label_cnt,
+                                     inp_global_addr, dram_time, dram_start);
 
             size_t space_pos = datapass_label.indata[i].find(' ');
             if (space_pos != std::string::npos) {
-                datapass_label.indata[i] = datapass_label.indata[i].substr(space_pos + 1);
+                datapass_label.indata[i] =
+                    datapass_label.indata[i].substr(space_pos + 1);
             }
 
-            printf("[INFO] Merge_matmul_f: read from dram, label: %s\n", datapass_label.indata[i].c_str());
+            printf("[INFO] Merge_matmul_f: read from dram, label: %s\n",
+                   datapass_label.indata[i].c_str());
 
-            AddrPosKey inp_key = AddrPosKey(inp_sram_offset[i], data_byte * data_size_input / in_label_cnt);
-            sram_pos_locator->addPair(datapass_label.indata[i], inp_key, context, dram_time);
+            AddrPosKey inp_key = AddrPosKey(
+                inp_sram_offset[i], data_byte * data_size_input / in_label_cnt);
+            sram_pos_locator->addPair(datapass_label.indata[i], inp_key,
+                                      context, dram_time);
         } else {
             AddrPosKey inp_key;
-            int flag = sram_pos_locator->findPair(datapass_label.indata[i], inp_sram_offset[i]);
-            printf("[INFO] Merge_matmul_f: read from sram, label: %s, value: %d\n", datapass_label.indata[i].c_str(), inp_sram_offset[i]);
+            int flag = sram_pos_locator->findPair(datapass_label.indata[i],
+                                                  inp_sram_offset[i]);
+            printf(
+                "[INFO] Merge_matmul_f: read from sram, label: %s, value: %d\n",
+                datapass_label.indata[i].c_str(), inp_sram_offset[i]);
             if (flag == -1) {
                 printf("[ERROR] Merge_matmul_f: sram_pos_locator cannot find "
                        "the label: %s\n",
                        datapass_label.indata[i].c_str());
                 sc_stop();
             } else if (flag > 0) {
-                sram_first_write_generic(context, flag, inp_global_addr, dram_time, dram_start);
+                sram_first_write_generic(context, flag, inp_global_addr,
+                                         dram_time, dram_start);
                 inp_key.size = data_byte * data_size_input;
                 inp_key.spill_size = 0;
-                sram_pos_locator->addPair(datapass_label.indata[i], inp_key, context, dram_time);
+                sram_pos_locator->addPair(datapass_label.indata[i], inp_key,
+                                          context, dram_time);
             }
         }
     }
@@ -178,8 +193,10 @@ int Merge_matmul::task_core(TaskCoreContext &context) {
     printf("merge_matmul_forward: dram time 1: %ld\n", dram_time);
 
     for (int i = 0; i < in_label_cnt; i++) {
-        sram_pos_locator->findPair(datapass_label.indata[i], inp_sram_offset[i]);
-        sram_read_generic(context, data_byte * data_size_input / in_label_cnt, inp_sram_offset[i], dram_time);
+        sram_pos_locator->findPair(datapass_label.indata[i],
+                                   inp_sram_offset[i]);
+        sram_read_generic(context, data_byte * data_size_input / in_label_cnt,
+                          inp_sram_offset[i], dram_time);
     }
 
     // 删除标签
@@ -196,7 +213,8 @@ int Merge_matmul::task_core(TaskCoreContext &context) {
 
     u_int64_t cycle = 0;
     if (tile_exu.type == MAC_Array) {
-        cycle = (B * T * C) / (tile_exu.x_dims * tile_exu.y_dims * comp_util) * CYCLE;
+        cycle = (B * T * C) / (tile_exu.x_dims * tile_exu.y_dims * comp_util) *
+                CYCLE;
     } else {
         assert(false && "Unsupported tile type");
     }
@@ -206,10 +224,12 @@ int Merge_matmul::task_core(TaskCoreContext &context) {
     if (dram_time > cycle) {
         // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
         overlap_time = 0;
-        std::cout << RED << "cycle: " << cycle << ", dram_time: " << dram_time << RESET << std::endl;
+        std::cout << RED << "cycle: " << cycle << ", dram_time: " << dram_time
+                  << RESET << std::endl;
     } else {
         overlap_time = cycle - dram_time;
-        std::cout << GREEN << "cycle: " << cycle << ", dram_time: " << dram_time << RESET << std::endl;
+        std::cout << GREEN << "cycle: " << cycle << ", dram_time: " << dram_time
+                  << RESET << std::endl;
     }
 #else
     if (dram_time > cycle) {
@@ -223,8 +243,10 @@ int Merge_matmul::task_core(TaskCoreContext &context) {
     // 写入out
     // label kv in sram locator
     AddrPosKey out_key = AddrPosKey(*sram_addr, data_byte * data_size_output);
-    sram_pos_locator->addPair(datapass_label.outdata, out_key, context, dram_time);
-    sram_write_append_generic(context, data_byte * data_size_output, overlap_time);
+    sram_pos_locator->addPair(datapass_label.outdata, out_key, context,
+                              dram_time);
+    sram_write_append_generic(context, data_byte * data_size_output,
+                              overlap_time);
 #else
     // CTODO: do dram only
 #endif
@@ -236,7 +258,8 @@ int Merge_matmul::task() {
 
     int cycle = 0;
     if (tile_exu.type == MAC_Array) {
-        cycle = (B * T * C) / (tile_exu.x_dims * tile_exu.y_dims * comp_util) * CYCLE;
+        cycle = (B * T * C) / (tile_exu.x_dims * tile_exu.y_dims * comp_util) *
+                CYCLE;
     } else {
         assert(false && "Unsupported tile type");
     }
@@ -265,14 +288,23 @@ int Merge_matmul::task() {
             for (int t = 0; t < T; t++) {
                 for (int c = 0; c < C; c++) {
                     for (int s = 0; s < slice; s++) {
-                        u_int64_t out_l = out_global_addr + (b * T * C + t * C + c) * 4;
-                        u_int64_t inp_l = inp_global_addr + (s * B * T * C + b * T * C + t * C + c) * 4;
+                        u_int64_t out_l =
+                            out_global_addr + (b * T * C + t * C + c) * 4;
+                        u_int64_t inp_l =
+                            inp_global_addr +
+                            (s * B * T * C + b * T * C + t * C + c) * 4;
 
                         dcacheline = (out_l >> dcache_words_in_line_log2) >> 2;
-                        dram_time += check_dcache(0, 0, dcacheline << (dcache_words_in_line_log2 + 2), dram_time, time_fetched, time_prefetched, prefetch_tag, false);
+                        dram_time += check_dcache(
+                            0, 0, dcacheline << (dcache_words_in_line_log2 + 2),
+                            dram_time, time_fetched, time_prefetched,
+                            prefetch_tag, false);
 
                         dcacheline = (inp_l >> dcache_words_in_line_log2) >> 2;
-                        dram_time += check_dcache(0, 0, dcacheline << (dcache_words_in_line_log2 + 2), dram_time, time_fetched, time_prefetched, prefetch_tag, false);
+                        dram_time += check_dcache(
+                            0, 0, dcacheline << (dcache_words_in_line_log2 + 2),
+                            dram_time, time_fetched, time_prefetched,
+                            prefetch_tag, false);
                     }
                 }
             }
@@ -285,14 +317,24 @@ int Merge_matmul::task() {
                 for (int c = 0; c < C; c++) {
                     for (int s = 0; s < slice; s++) {
                         int c_index = s * C + c;
-                        u_int64_t out_l = out_global_addr + (b * T * C * slice + t * C * slice + c_index) * 4;
-                        u_int64_t inp_l = inp_global_addr + (s * B * T * C + b * T * C + t * C + c) * 4;
+                        u_int64_t out_l =
+                            out_global_addr +
+                            (b * T * C * slice + t * C * slice + c_index) * 4;
+                        u_int64_t inp_l =
+                            inp_global_addr +
+                            (s * B * T * C + b * T * C + t * C + c) * 4;
 
                         dcacheline = (out_l >> dcache_words_in_line_log2) >> 2;
-                        dram_time += check_dcache(0, 0, dcacheline << (dcache_words_in_line_log2 + 2), dram_time, time_fetched, time_prefetched, prefetch_tag, false);
+                        dram_time += check_dcache(
+                            0, 0, dcacheline << (dcache_words_in_line_log2 + 2),
+                            dram_time, time_fetched, time_prefetched,
+                            prefetch_tag, false);
 
                         dcacheline = (inp_l >> dcache_words_in_line_log2) >> 2;
-                        dram_time += check_dcache(0, 0, dcacheline << (dcache_words_in_line_log2 + 2), dram_time, time_fetched, time_prefetched, prefetch_tag, false);
+                        dram_time += check_dcache(
+                            0, 0, dcacheline << (dcache_words_in_line_log2 + 2),
+                            dram_time, time_fetched, time_prefetched,
+                            prefetch_tag, false);
                     }
                 }
             }
@@ -317,7 +359,8 @@ int Merge_matmul::task() {
             for (int t = 0; t < T; t++) {
                 for (int c = 0; c < C; c++) {
                     for (int s = 0; s < slice; s++) {
-                        out[b * T * C + t * C + c] += inp[s * B * T * C + b * T * C + t * C + c];
+                        out[b * T * C + t * C + c] +=
+                            inp[s * B * T * C + b * T * C + t * C + c];
                     }
                 }
             }
@@ -329,7 +372,8 @@ int Merge_matmul::task() {
                 for (int c = 0; c < C; c++) {
                     for (int s = 0; s < slice; s++) {
                         int c_index = s * C + c;
-                        out[b * T * C * slice + t * C * slice + c_index] = inp[s * B * T * C + b * T * C + t * C + c];
+                        out[b * T * C * slice + t * C * slice + c_index] =
+                            inp[s * B * T * C + b * T * C + t * C + c];
                     }
                 }
             }

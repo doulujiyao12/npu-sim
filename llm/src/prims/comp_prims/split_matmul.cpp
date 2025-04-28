@@ -9,8 +9,10 @@
 void Split_matmul::print_self(string prefix) {
     cout << prefix << "<split_matmul>\n";
     cout << prefix << "\tslice: " << slice << ", dim: " << dim << endl;
-    cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size << ", previous_inp_size: " << p_inp_size << endl;
-    cout << prefix << "\toutput_offset: " << out_offset << ", input_offset: " << inp_offset << endl;
+    cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size
+         << ", previous_inp_size: " << p_inp_size << endl;
+    cout << prefix << "\toutput_offset: " << out_offset
+         << ", input_offset: " << inp_offset << endl;
 }
 
 void Split_matmul::parse_json(json j) {
@@ -132,31 +134,40 @@ int Split_matmul::task_core(TaskCoreContext &context) {
 
     auto inp_sram_offset = 0;
     if (datapass_label.indata[0].find(DRAM_LABEL) == 0) {
-        sram_first_write_generic(context, data_byte * data_size_input, inp_global_addr, dram_time, dram_start);
+        sram_first_write_generic(context, data_byte * data_size_input,
+                                 inp_global_addr, dram_time, dram_start);
 
         size_t space_pos = datapass_label.indata[0].find(' ');
         if (space_pos != std::string::npos) {
-            datapass_label.indata[0] = datapass_label.indata[0].substr(space_pos + 1);
+            datapass_label.indata[0] =
+                datapass_label.indata[0].substr(space_pos + 1);
         }
 
-        printf("[INFO] Split_matmul_f: read from dram, label: %s\n", datapass_label.indata[0].c_str());
+        printf("[INFO] Split_matmul_f: read from dram, label: %s\n",
+               datapass_label.indata[0].c_str());
 
-        AddrPosKey inp_key = AddrPosKey(*sram_addr, data_byte * data_size_input);
-        sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context, dram_time);
+        AddrPosKey inp_key =
+            AddrPosKey(*sram_addr, data_byte * data_size_input);
+        sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context,
+                                  dram_time);
     } else {
         AddrPosKey inp_key;
-        int flag = sram_pos_locator->findPair(datapass_label.indata[0], inp_sram_offset);
-        printf("[INFO] Split_matmul_f: read from sram, label: %s, value: %d\n", datapass_label.indata[0].c_str(), inp_sram_offset);
+        int flag = sram_pos_locator->findPair(datapass_label.indata[0],
+                                              inp_sram_offset);
+        printf("[INFO] Split_matmul_f: read from sram, label: %s, value: %d\n",
+               datapass_label.indata[0].c_str(), inp_sram_offset);
         if (flag == -1) {
             printf("[ERROR] Split_matmul_f: sram_pos_locator cannot find the "
                    "label: %s\n",
                    datapass_label.indata[0].c_str());
             sc_stop();
         } else if (flag > 0) {
-            sram_first_write_generic(context, flag, inp_global_addr, dram_time, dram_start);
+            sram_first_write_generic(context, flag, inp_global_addr, dram_time,
+                                     dram_start);
             inp_key.size = data_byte * data_size_input;
             inp_key.spill_size = 0;
-            sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context, dram_time);
+            sram_pos_locator->addPair(datapass_label.indata[0], inp_key,
+                                      context, dram_time);
         }
     }
 
@@ -188,11 +199,13 @@ int Split_matmul::task_core(TaskCoreContext &context) {
     if (dram_time > cycle) {
         // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
         overlap_time = 0;
-        std::cout << RED << "cycle: " << cycle << ", dram_time: " << dram_time << RESET << std::endl;
+        std::cout << RED << "cycle: " << cycle << ", dram_time: " << dram_time
+                  << RESET << std::endl;
 
     } else {
         overlap_time = cycle - dram_time;
-        std::cout << GREEN << "cycle: " << cycle << ", dram_time: " << dram_time << RESET << std::endl;
+        std::cout << GREEN << "cycle: " << cycle << ", dram_time: " << dram_time
+                  << RESET << std::endl;
     }
 #else
     if (dram_time > cycle) {
@@ -215,12 +228,15 @@ int Split_matmul::task_core(TaskCoreContext &context) {
         out_labels.push_back(label);
     }
 
-    sram_write_append_generic(context, data_byte * data_size_output, overlap_time);
+    sram_write_append_generic(context, data_byte * data_size_output,
+                              overlap_time);
 
     auto interval = (*sram_addr - temp_out_sram_offset) / out_labels.size();
 
     for (int i = 0; i < out_labels.size(); i++) {
-        AddrPosKey out_key = AddrPosKey(temp_out_sram_offset + i * interval, data_byte * data_size_output / out_labels.size());
+        AddrPosKey out_key =
+            AddrPosKey(temp_out_sram_offset + i * interval,
+                       data_byte * data_size_output / out_labels.size());
         sram_pos_locator->addPair(out_labels[i], out_key, context, dram_time);
     }
 #else
@@ -233,7 +249,8 @@ int Split_matmul::task_core(TaskCoreContext &context) {
 int Split_matmul::task() {
     int cycle = 0;
     if (tile_exu.type == MAC_Array) {
-        cycle = (B * T * C) / (tile_exu.x_dims * tile_exu.y_dims * comp_util) * CYCLE;
+        cycle = (B * T * C) / (tile_exu.x_dims * tile_exu.y_dims * comp_util) *
+                CYCLE;
     } else {
         assert(false && "Unsupported tile type");
     }
@@ -257,14 +274,22 @@ int Split_matmul::task() {
         for (int b = 0; b < B; b++) {
             for (int t = 0; t < T; t++) {
                 for (int c = 0; c < C; c++) {
-                    u_int64_t out_l = out_global_addr + (b * T * C + t * C + c) * 4;
-                    u_int64_t inp_l = inp_global_addr + (b * T * C + t * C + c) * 4;
+                    u_int64_t out_l =
+                        out_global_addr + (b * T * C + t * C + c) * 4;
+                    u_int64_t inp_l =
+                        inp_global_addr + (b * T * C + t * C + c) * 4;
 
                     dcacheline = (out_l >> dcache_words_in_line_log2) >> 2;
-                    dram_time += check_dcache(0, 0, dcacheline << (dcache_words_in_line_log2 + 2), dram_time, time_fetched, time_prefetched, prefetch_tag, false);
+                    dram_time += check_dcache(
+                        0, 0, dcacheline << (dcache_words_in_line_log2 + 2),
+                        dram_time, time_fetched, time_prefetched, prefetch_tag,
+                        false);
 
                     dcacheline = (inp_l >> dcache_words_in_line_log2) >> 2;
-                    dram_time += check_dcache(0, 0, dcacheline << (dcache_words_in_line_log2 + 2), dram_time, time_fetched, time_prefetched, prefetch_tag, false);
+                    dram_time += check_dcache(
+                        0, 0, dcacheline << (dcache_words_in_line_log2 + 2),
+                        dram_time, time_fetched, time_prefetched, prefetch_tag,
+                        false);
                 }
             }
         }
@@ -279,14 +304,24 @@ int Split_matmul::task() {
                 for (int t = 0; t < T; t++) {
                     for (int c = 0; c < C / slice; c++) {
                         u_int64_t out_l = out_global_addr + offset * 4;
-                        u_int64_t inp_l = inp_global_addr + (column * B * T * C / slice + b * T * C / slice + t * C / slice + c) * 4;
+                        u_int64_t inp_l =
+                            inp_global_addr +
+                            (column * B * T * C / slice + b * T * C / slice +
+                             t * C / slice + c) *
+                                4;
                         offset++;
 
                         dcacheline = (out_l >> dcache_words_in_line_log2) >> 2;
-                        dram_time += check_dcache(0, 0, dcacheline << (dcache_words_in_line_log2 + 2), dram_time, time_fetched, time_prefetched, prefetch_tag, false);
+                        dram_time += check_dcache(
+                            0, 0, dcacheline << (dcache_words_in_line_log2 + 2),
+                            dram_time, time_fetched, time_prefetched,
+                            prefetch_tag, false);
 
                         dcacheline = (inp_l >> dcache_words_in_line_log2) >> 2;
-                        dram_time += check_dcache(0, 0, dcacheline << (dcache_words_in_line_log2 + 2), dram_time, time_fetched, time_prefetched, prefetch_tag, false);
+                        dram_time += check_dcache(
+                            0, 0, dcacheline << (dcache_words_in_line_log2 + 2),
+                            dram_time, time_fetched, time_prefetched,
+                            prefetch_tag, false);
                     }
                 }
             }
@@ -321,7 +356,9 @@ int Split_matmul::task() {
             for (int b = 0; b < B; b++) {
                 for (int t = 0; t < T; t++) {
                     for (int c = 0; c < C / slice; c++) {
-                        out[offset++] = inp[column * B * T * C / slice + b * T * C / slice + t * C / slice + c];
+                        out[offset++] =
+                            inp[column * B * T * C / slice + b * T * C / slice +
+                                t * C / slice + c];
                     }
                 }
             }

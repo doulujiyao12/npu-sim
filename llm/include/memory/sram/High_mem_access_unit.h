@@ -9,7 +9,8 @@
 class high_bw_mem_access_unit : public sc_module {
 public:
     SC_HAS_PROCESS(high_bw_mem_access_unit);
-    high_bw_mem_access_unit(const sc_module_name nm, Event_engine *e_engine) : sc_module(nm), e_engine_(e_engine) {
+    high_bw_mem_access_unit(const sc_module_name nm, Event_engine *e_engine)
+        : sc_module(nm), e_engine_(e_engine) {
         // SC_THREAD(memory_read);
     }
 

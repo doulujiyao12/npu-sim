@@ -30,20 +30,27 @@ using std::vector;
 
 template <typename T> class OptionInfo {
 public:
-    OptionInfo(const std::string &option, const std::string &comment, T *p) : opt(option), comment(comment), optPtr(p) {}
+    OptionInfo(const std::string &option, const std::string &comment, T *p)
+        : opt(option), comment(comment), optPtr(p) {}
     std::string opt;
     std::string comment;
     T *optPtr;
 };
 
-template <typename T> void registerFlag(const flag_string &opt, T *optPtr, std::string &comment) {}
+template <typename T>
+void registerFlag(const flag_string &opt, T *optPtr, std::string &comment) {}
 
-#define Implement_Flags_Register(type)                                                                                                                                                                 \
-    static vector<OptionInfo<type>> &get_s_##type##_Flags() {                                                                                                                                          \
-        static vector<OptionInfo<type>> s_##type##_Flags;                                                                                                                                              \
-        return s_##type##_Flags;                                                                                                                                                                       \
-    }                                                                                                                                                                                                  \
-    template <> void registerFlag<type>(const flag_string &opt, type *optPtr, const char *comment) { get_s_##type##_Flags().push_back(OptionInfo<type>(opt, comment, optPtr)); }
+#define Implement_Flags_Register(type)                                         \
+    static vector<OptionInfo<type>> &get_s_##type##_Flags() {                  \
+        static vector<OptionInfo<type>> s_##type##_Flags;                      \
+        return s_##type##_Flags;                                               \
+    }                                                                          \
+    template <>                                                                \
+    void registerFlag<type>(const flag_string &opt, type *optPtr,              \
+                            const char *comment) {                             \
+        get_s_##type##_Flags().push_back(                                      \
+            OptionInfo<type>(opt, comment, optPtr));                           \
+    }
 
 Implement_Flags_Register(flag_bool);
 Implement_Flags_Register(flag_float);
@@ -71,7 +78,8 @@ Implement_Flags_Register(flag_doublelist);
 //! @note @code key must point to a valid C-string or the behavior is undefined.
 //! @see is_false_key
 inline bool is_true_key(const char *key) {
-    const static char *true_keys[] = {"true", "True", "TRUE", "on", "On", "ON", "yes", "Yes", "YES"};
+    const static char *true_keys[] = {"true", "True", "TRUE", "on", "On",
+                                      "ON",   "yes",  "Yes",  "YES"};
     for (size_t i = 0; i < sizeof(true_keys) / sizeof(char *); ++i) {
         if (0 == strcmp(true_keys[i], key)) {
             return true;
@@ -88,7 +96,8 @@ inline bool is_true_key(const char *key) {
 //! @note @code key must point to a valid C-string or the behavior is undefined
 //! @see is_true_key
 inline bool is_false_key(const char *key) {
-    const static char *false_keys[] = {"false", "False", "FALSE", "off", "Off", "OFF", "no", "No", "NO"};
+    const static char *false_keys[] = {"false", "False", "FALSE", "off", "Off",
+                                       "OFF",   "no",    "No",    "NO"};
 
     for (size_t i = 0; i < sizeof(false_keys) / sizeof(char *); ++i) {
         if (0 == strcmp(false_keys[i], key)) {
@@ -116,7 +125,8 @@ inline bool str_contains(const char *str, char c) {
 //! @param arg
 //! @param opt
 //! @param delimiters
-inline const char *is_separated_with(const char *arg, const char *opt, const char *delimiters) {
+inline const char *is_separated_with(const char *arg, const char *opt,
+                                     const char *delimiters) {
     const char *a = arg;
     const char *o = opt;
     for (;;) {
@@ -274,7 +284,8 @@ inline void parse_split_flag_boollist(flag_boollist *ptr, const char *p) {
             } else if (is_false_key(tmp.c_str())) {
                 ptr->push_back(false);
             } else {
-                std::cout << "Warning -- Flag parse: Invalid bool expression" << std::endl;
+                std::cout << "Warning -- Flag parse: Invalid bool expression"
+                          << std::endl;
             }
             tmp.clear();
         }
@@ -343,7 +354,8 @@ inline void parse_split_flag_doublelist(flag_doublelist *ptr, const char *p) {
             errno = 0;
             value = strtod(p, &endptr);
             if (errno != 0 || endptr == p || endptr == NULL) {
-                std::cout << "Warning -- Flag parse: Invalid float expression" << std::endl;
+                std::cout << "Warning -- Flag parse: Invalid float expression"
+                          << std::endl;
             } else {
                 ptr->push_back(value);
             }
@@ -381,7 +393,8 @@ inline void parse_split_flag_int32list(flag_int32list *ptr, const char *p) {
             errno = 0;
             value = strtol(p, &endptr, 10);
             if (errno != 0 || endptr == p) {
-                std::cout << "Warning -- Flag parse: Invalid float expression" << std::endl;
+                std::cout << "Warning -- Flag parse: Invalid float expression"
+                          << std::endl;
             } else {
                 ptr->push_back(value);
             }
@@ -419,7 +432,8 @@ inline void parse_split_flag_uint32list(flag_uint32list *ptr, const char *p) {
             errno = 0;
             value = strtoul(p, &endptr, 10);
             if (errno != 0 || endptr == p || endptr == NULL) {
-                std::cout << "Warning -- Flag parse: Invalid float expression" << std::endl;
+                std::cout << "Warning -- Flag parse: Invalid float expression"
+                          << std::endl;
             } else {
                 ptr->push_back(value);
             }
@@ -457,7 +471,8 @@ inline void parse_split_flag_uint64list(flag_uint64list *ptr, const char *p) {
             errno = 0;
             value = strtoull(p, &endptr, 10);
             if (errno != 0 || endptr == p || endptr == NULL) {
-                std::cout << "Warning -- Flag parse: Invalid float expression" << std::endl;
+                std::cout << "Warning -- Flag parse: Invalid float expression"
+                          << std::endl;
             } else {
                 ptr->push_back(value);
             }
@@ -495,7 +510,8 @@ inline void parse_split_flag_int64list(flag_int64list *ptr, const char *p) {
             errno = 0;
             value = strtoll(p, &endptr, 10);
             if (errno != 0 || endptr == p || endptr == NULL) {
-                std::cout << "Warning -- Flag parse: Invalid float expression" << std::endl;
+                std::cout << "Warning -- Flag parse: Invalid float expression"
+                          << std::endl;
             } else {
                 ptr->push_back(value);
             }
@@ -505,77 +521,87 @@ inline void parse_split_flag_int64list(flag_int64list *ptr, const char *p) {
 }
 
 int parse_args(int argc, char **argv) {
-#define CHECK_ARGC                                                                                                                                                                                     \
-    if (i >= argc)                                                                                                                                                                                     \
+#define CHECK_ARGC                                                             \
+    if (i >= argc)                                                             \
     break
-#define PARSE_COMMON_TYPE(type)                                                                                                                                                                        \
-    do {                                                                                                                                                                                               \
-        for (auto iter = get_s_##type##_Flags().begin(); iter != get_s_##type##_Flags().end(); ++iter) {                                                                                               \
-            if (iter->opt == argv[i]) {                                                                                                                                                                \
-                ++iRet;                                                                                                                                                                                \
-                ++i;                                                                                                                                                                                   \
-                if (i < argc) {                                                                                                                                                                        \
-                    if (parse_##type(iter->optPtr, argv[i])) {                                                                                                                                         \
-                        ++i;                                                                                                                                                                           \
-                    }                                                                                                                                                                                  \
-                }                                                                                                                                                                                      \
-                break;                                                                                                                                                                                 \
-            } else if (const char *p = is_separated_with(argv[i], iter->opt.c_str(), "-=")) {                                                                                                          \
-                ++iRet;                                                                                                                                                                                \
-                if (!parse_##type(iter->optPtr, p)) {                                                                                                                                                  \
-                    std::cout << "Warning -- Flag parse : not a valid expression: " << argv[i] << std::endl;                                                                                           \
-                } else {                                                                                                                                                                               \
-                    ++i;                                                                                                                                                                               \
-                }                                                                                                                                                                                      \
-                break;                                                                                                                                                                                 \
-            }                                                                                                                                                                                          \
-        }                                                                                                                                                                                              \
+#define PARSE_COMMON_TYPE(type)                                                \
+    do {                                                                       \
+        for (auto iter = get_s_##type##_Flags().begin();                       \
+             iter != get_s_##type##_Flags().end(); ++iter) {                   \
+            if (iter->opt == argv[i]) {                                        \
+                ++iRet;                                                        \
+                ++i;                                                           \
+                if (i < argc) {                                                \
+                    if (parse_##type(iter->optPtr, argv[i])) {                 \
+                        ++i;                                                   \
+                    }                                                          \
+                }                                                              \
+                break;                                                         \
+            } else if (const char *p = is_separated_with(                      \
+                           argv[i], iter->opt.c_str(), "-=")) {                \
+                ++iRet;                                                        \
+                if (!parse_##type(iter->optPtr, p)) {                          \
+                    std::cout                                                  \
+                        << "Warning -- Flag parse : not a valid expression: "  \
+                        << argv[i] << std::endl;                               \
+                } else {                                                       \
+                    ++i;                                                       \
+                }                                                              \
+                break;                                                         \
+            }                                                                  \
+        }                                                                      \
     } while (0)
 
-#define PARSE_BOOL_TYPE(type)                                                                                                                                                                          \
-    do {                                                                                                                                                                                               \
-        for (auto iter = get_s_##type##_Flags().begin(); iter != get_s_##type##_Flags().end(); ++iter) {                                                                                               \
-            if (iter->opt == argv[i]) {                                                                                                                                                                \
-                ++iRet;                                                                                                                                                                                \
-                ++i;                                                                                                                                                                                   \
-                if (i < argc) {                                                                                                                                                                        \
-                    if (parse_##type(iter->optPtr, argv[i])) {                                                                                                                                         \
-                        ++i;                                                                                                                                                                           \
-                    }                                                                                                                                                                                  \
-                } else {                                                                                                                                                                               \
-                    *iter->optPtr = !*iter->optPtr;                                                                                                                                                    \
-                }                                                                                                                                                                                      \
-                break;                                                                                                                                                                                 \
-            } else if (const char *p = is_separated_with(argv[i], iter->opt.c_str(), "-=")) {                                                                                                          \
-                ++iRet;                                                                                                                                                                                \
-                if (!parse_##type(iter->optPtr, p)) {                                                                                                                                                  \
-                    std::cout << "Warning -- Flag parse : not a valid expression: " << argv[i] << std::endl;                                                                                           \
-                } else {                                                                                                                                                                               \
-                    ++i;                                                                                                                                                                               \
-                }                                                                                                                                                                                      \
-                break;                                                                                                                                                                                 \
-            }                                                                                                                                                                                          \
-        }                                                                                                                                                                                              \
+#define PARSE_BOOL_TYPE(type)                                                  \
+    do {                                                                       \
+        for (auto iter = get_s_##type##_Flags().begin();                       \
+             iter != get_s_##type##_Flags().end(); ++iter) {                   \
+            if (iter->opt == argv[i]) {                                        \
+                ++iRet;                                                        \
+                ++i;                                                           \
+                if (i < argc) {                                                \
+                    if (parse_##type(iter->optPtr, argv[i])) {                 \
+                        ++i;                                                   \
+                    }                                                          \
+                } else {                                                       \
+                    *iter->optPtr = !*iter->optPtr;                            \
+                }                                                              \
+                break;                                                         \
+            } else if (const char *p = is_separated_with(                      \
+                           argv[i], iter->opt.c_str(), "-=")) {                \
+                ++iRet;                                                        \
+                if (!parse_##type(iter->optPtr, p)) {                          \
+                    std::cout                                                  \
+                        << "Warning -- Flag parse : not a valid expression: "  \
+                        << argv[i] << std::endl;                               \
+                } else {                                                       \
+                    ++i;                                                       \
+                }                                                              \
+                break;                                                         \
+            }                                                                  \
+        }                                                                      \
     } while (0)
 
-#define PARSE_LIST_TYPE(type)                                                                                                                                                                          \
-    do {                                                                                                                                                                                               \
-        for (auto iter = get_s_##type##_Flags().begin(); iter != get_s_##type##_Flags().end(); ++iter) {                                                                                               \
-            if (iter->opt == argv[i]) {                                                                                                                                                                \
-                ++iRet;                                                                                                                                                                                \
-                ++i;                                                                                                                                                                                   \
-                for (; i < argc; ++i) {                                                                                                                                                                \
-                    if (!parse_##type(iter->optPtr, argv[i])) {                                                                                                                                        \
-                        break;                                                                                                                                                                         \
-                    }                                                                                                                                                                                  \
-                }                                                                                                                                                                                      \
-                break;                                                                                                                                                                                 \
-            } else if (const char *p = is_separated_with(argv[i], iter->opt.c_str(), ",")) {                                                                                                           \
-                ++iRet;                                                                                                                                                                                \
-                ++i;                                                                                                                                                                                   \
-                parse_split_##type(iter->optPtr, p);                                                                                                                                                   \
-            }                                                                                                                                                                                          \
-        }                                                                                                                                                                                              \
+#define PARSE_LIST_TYPE(type)                                                  \
+    do {                                                                       \
+        for (auto iter = get_s_##type##_Flags().begin();                       \
+             iter != get_s_##type##_Flags().end(); ++iter) {                   \
+            if (iter->opt == argv[i]) {                                        \
+                ++iRet;                                                        \
+                ++i;                                                           \
+                for (; i < argc; ++i) {                                        \
+                    if (!parse_##type(iter->optPtr, argv[i])) {                \
+                        break;                                                 \
+                    }                                                          \
+                }                                                              \
+                break;                                                         \
+            } else if (const char *p = is_separated_with(                      \
+                           argv[i], iter->opt.c_str(), ",")) {                 \
+                ++iRet;                                                        \
+                ++i;                                                           \
+                parse_split_##type(iter->optPtr, p);                           \
+            }                                                                  \
+        }                                                                      \
     } while (0)
 
     int iRet = 0;
@@ -622,11 +648,12 @@ int parse_args(int argc, char **argv) {
 }
 
 void print_args_info() {
-#define PRINT_COMMON_HELP(type)                                                                                                                                                                        \
-    do {                                                                                                                                                                                               \
-        for (std::size_t i = 0; i < get_s_##type##_Flags().size(); ++i) {                                                                                                                              \
-            std::cout << "\t" << get_s_##type##_Flags()[i].opt << "\t\t\t\t" << get_s_##type##_Flags()[i].comment << std::endl;                                                                        \
-        }                                                                                                                                                                                              \
+#define PRINT_COMMON_HELP(type)                                                \
+    do {                                                                       \
+        for (std::size_t i = 0; i < get_s_##type##_Flags().size(); ++i) {      \
+            std::cout << "\t" << get_s_##type##_Flags()[i].opt << "\t\t\t\t"   \
+                      << get_s_##type##_Flags()[i].comment << std::endl;       \
+        }                                                                      \
     } while (0)
 
     PRINT_COMMON_HELP(flag_bool);

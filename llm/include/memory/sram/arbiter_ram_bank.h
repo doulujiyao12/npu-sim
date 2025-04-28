@@ -13,15 +13,21 @@ template <class T> class ArbiterRamBank : public sc_channel, public ram_if<T> {
 public:
     // 相较于 multiport_ram_array 只有一个 bank
     SC_HAS_PROCESS(ArbiterRamBank);
-    ArbiterRamBank(sc_module_name name_, uint64_t start_address, uint64_t depth_per_bank, uint64_t read_port_per_bank, uint64_t write_port_per_bank, Event_engine *_e_engine)
-        : start_address_(start_address), depth_per_bank_(depth_per_bank), read_port_per_bank_(read_port_per_bank), write_port_per_bank_(write_port_per_bank) {
+    ArbiterRamBank(sc_module_name name_, uint64_t start_address,
+                   uint64_t depth_per_bank, uint64_t read_port_per_bank,
+                   uint64_t write_port_per_bank, Event_engine *_e_engine)
+        : start_address_(start_address),
+          depth_per_bank_(depth_per_bank),
+          read_port_per_bank_(read_port_per_bank),
+          write_port_per_bank_(write_port_per_bank) {
         end_address_ = start_address_ + depth_per_bank_;
         assert(end_address_ >= start_address_);
 
         e_engine_ = _e_engine;
 
         uint64_t start_address_of_bank = start_address;
-        ram_bank_ = new Ram<T>(this->name(), start_address_, end_address_, e_engine_);
+        ram_bank_ =
+            new Ram<T>(this->name(), start_address_, end_address_, e_engine_);
         write_semaphore_ = new sc_semaphore(write_port_per_bank_);
         read_semaphore_ = new sc_semaphore(read_port_per_bank_);
 
@@ -43,7 +49,8 @@ public:
     void read_in_parallel();
     void write_in_parallel();
     transfer_status read(uint64_t address, T &data, bool shadow = false);
-    transfer_status write(uint64_t address, T &data, bool force_write = 1, bool shadow = false);
+    transfer_status write(uint64_t address, T &data, bool force_write = 1,
+                          bool shadow = false);
     transfer_status clear(uint64_t address, T &data);
     bool reset();
     inline uint64_t start_address() const;
@@ -76,17 +83,22 @@ template <class T> inline void ArbiterRamBank<T>::write_in_parallel() {
             write_semaphore_->wait(); // 如果信号量被锁定，这里会阻塞等待
         }
 
-        T data_temp = data_write_in_parallel.read();              // 从输入端口读取数据
-        uint64_t address_temp = address_write_in_parallel.read(); // 从输入端口读取地址
+        T data_temp = data_write_in_parallel.read(); // 从输入端口读取数据
+        uint64_t address_temp =
+            address_write_in_parallel.read(); // 从输入端口读取地址
 #if VERBOSE_TRACE == 1
-        e_engine_->add_event(this->name(), "Write simultaneously", "C", Trace_event_util((float)write_port_per_bank_ - write_semaphore_->get_value()));
+        e_engine_->add_event(this->name(), "Write simultaneously", "C",
+                             Trace_event_util((float)write_port_per_bank_ -
+                                              write_semaphore_->get_value()));
 #endif
         // 执行写操作，确保地址在范围内
         assert(ram_bank_->write(address_temp, data_temp) == TRANSFER_OK);
 
         write_semaphore_->post(); // 释放信号量
 #if VERBOSE_TRACE == 1
-        e_engine_->add_event(this->name(), "Write simultaneously", "C", Trace_event_util((float)write_port_per_bank_ - write_semaphore_->get_value()));
+        e_engine_->add_event(this->name(), "Write simultaneously", "C",
+                             Trace_event_util((float)write_port_per_bank_ -
+                                              write_semaphore_->get_value()));
 #endif
         write_done_event_.notify();
         wait(); // 等待新的写事件到来
@@ -96,64 +108,94 @@ template <class T> inline void ArbiterRamBank<T>::write_in_parallel() {
 template <class T> inline void ArbiterRamBank<T>::read_in_parallel() {
     while (true) {
         if (read_semaphore_->trywait() == -1) {
-            read_semaphore_->wait(); // if the mutex is locked, this function will wait
+            read_semaphore_
+                ->wait(); // if the mutex is locked, this function will wait
         }
         T data_temp;
 #if VERBOSE_TRACE == 1
-        e_engine_->add_event(this->name(), "Read simultaneously", "C", Trace_event_util((float)read_port_per_bank_ - read_semaphore_->get_value()));
+        e_engine_->add_event(this->name(), "Read simultaneously", "C",
+                             Trace_event_util((float)read_port_per_bank_ -
+                                              read_semaphore_->get_value()));
 #endif
-        assert(ram_bank_->read(address_read_in_parallel.read(), data_temp) == TRANSFER_OK);
+        assert(ram_bank_->read(address_read_in_parallel.read(), data_temp) ==
+               TRANSFER_OK);
         data_read_in_parallel.write(data_temp);
         read_semaphore_->post();
 #if VERBOSE_TRACE == 1
-        e_engine_->add_event(this->name(), "Read simultaneously", "C", Trace_event_util((float)read_port_per_bank_ - read_semaphore_->get_value()));
+        e_engine_->add_event(this->name(), "Read simultaneously", "C",
+                             Trace_event_util((float)read_port_per_bank_ -
+                                              read_semaphore_->get_value()));
 #endif
         read_done_event_.notify();
         wait();
     }
 }
 
-template <class T> inline transfer_status ArbiterRamBank<T>::read(uint64_t address, T &data, bool shadow) {
+template <class T>
+inline transfer_status ArbiterRamBank<T>::read(uint64_t address, T &data,
+                                               bool shadow) {
     if (address < start_address_ || address > end_address_) {
         return TRANSFER_ERROR;
     }
 
     if (read_semaphore_->trywait() == -1) {
-        read_semaphore_->wait(); // if the mutex is locked, this function will wait
+        read_semaphore_
+            ->wait(); // if the mutex is locked, this function will wait
     }
 #if VERBOSE_TRACE == 1
-    e_engine_->add_event(this->name(), "Read simultaneously", "C", Trace_event_util((float)read_port_per_bank_ - read_semaphore_->get_value()));
+    e_engine_->add_event(this->name(), "Read simultaneously", "C",
+                         Trace_event_util((float)read_port_per_bank_ -
+                                          read_semaphore_->get_value()));
 #endif
     transfer_status temp_status = ram_bank_->read(address, data, shadow);
     read_semaphore_->post();
 #if VERBOSE_TRACE == 1
-    e_engine_->add_event(this->name(), "Read simultaneously", "C", Trace_event_util((float)read_port_per_bank_ - read_semaphore_->get_value()));
+    e_engine_->add_event(this->name(), "Read simultaneously", "C",
+                         Trace_event_util((float)read_port_per_bank_ -
+                                          read_semaphore_->get_value()));
 #endif
     return temp_status;
 }
 
-template <class T> inline transfer_status ArbiterRamBank<T>::write(uint64_t address, T &data, bool force_write, bool shadow) {
+template <class T>
+inline transfer_status ArbiterRamBank<T>::write(uint64_t address, T &data,
+                                                bool force_write, bool shadow) {
     if (address < start_address_ || address > end_address_) {
         return TRANSFER_ERROR;
     }
     if (write_semaphore_->trywait() == -1) {
-        write_semaphore_->wait(); // if the mutex is locked, this function will wait
+        write_semaphore_
+            ->wait(); // if the mutex is locked, this function will wait
     }
 #if VERBOSE_TRACE == 1
-    e_engine_->add_event(this->name(), "Write simultaneously", "C", Trace_event_util((float)write_port_per_bank_ - write_semaphore_->get_value()));
+    e_engine_->add_event(this->name(), "Write simultaneously", "C",
+                         Trace_event_util((float)write_port_per_bank_ -
+                                          write_semaphore_->get_value()));
 #endif
-    transfer_status temp_status = ram_bank_->write(address, data, force_write, shadow);
+    transfer_status temp_status =
+        ram_bank_->write(address, data, force_write, shadow);
     write_semaphore_->post();
 #if VERBOSE_TRACE == 1
-    e_engine_->add_event(this->name(), "Write simultaneously", "C", Trace_event_util((float)write_port_per_bank_ - write_semaphore_->get_value()));
+    e_engine_->add_event(this->name(), "Write simultaneously", "C",
+                         Trace_event_util((float)write_port_per_bank_ -
+                                          write_semaphore_->get_value()));
 #endif
     return temp_status;
 }
 
-template <class T> inline transfer_status ArbiterRamBank<T>::clear(uint64_t address, T &data) { return ram_bank_->clear(address, data); }
+template <class T>
+inline transfer_status ArbiterRamBank<T>::clear(uint64_t address, T &data) {
+    return ram_bank_->clear(address, data);
+}
 
-template <class T> inline bool ArbiterRamBank<T>::reset() { return ram_bank_->reset(); }
+template <class T> inline bool ArbiterRamBank<T>::reset() {
+    return ram_bank_->reset();
+}
 
-template <class T> inline uint64_t ArbiterRamBank<T>::start_address() const { return start_address_; }
+template <class T> inline uint64_t ArbiterRamBank<T>::start_address() const {
+    return start_address_;
+}
 
-template <class T> inline uint64_t ArbiterRamBank<T>::end_address() const { return end_address_; }
+template <class T> inline uint64_t ArbiterRamBank<T>::end_address() const {
+    return end_address_;
+}

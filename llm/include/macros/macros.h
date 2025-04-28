@@ -4,7 +4,7 @@
 #define ASSERT_MODE 1
 
 #ifndef DCACHE
-#define DCACHE                                                                                                                                                                                         \
+#define DCACHE                                                                 \
     1 // 1: cache and DRAM in separete die, 2: cache and DRAM in the same HBM
       // die
 #endif
@@ -69,6 +69,11 @@
 #define INPUT_LABEL "input_label"
 #define MAX_SPLIT_NUM 10
 
+// PD中的分块策略
+#define MAX_PREFILL_WORKLOAD 384
+#define PD_RATIO 4
+#define CORE_CREDIT 8
+
 // 函数宏
 #define ceil_macro(x) ((x) - (int)(x) > 0.1 ? (int)(x) + 1 : (int)(x))
 
@@ -85,8 +90,8 @@
 // Grid 表示在x维度上所有的tile数量，最大
 // PROXY_W 不会大于 GRID_X 如果等于表示 没有tascade模式， 没有proxy 域
 // PACK_H 表示几个die封装成一个package
-#ifndef BOARD_W      // default max package size is 64, unless board is specificied,
-                     // then it's the same as board
+#ifndef BOARD_W // default max package size is 64, unless board is specificied,
+                // then it's the same as board
 #if PROXY_W < GRID_X // Proxy active, Tascade, package as die
 #define DEFAULT_PACK_SIZE (DIE_W)
 #else
@@ -106,7 +111,7 @@
 #define BOARD_FACTOR (4 / BOARD_W)
 #define BOARDS (BOARD_FACTOR * BOARD_FACTOR)
 #if BOARD_W < GRID_X
-#define MUX_BUS                                                                                                                                                                                        \
+#define MUX_BUS                                                                \
     2 // Multiplex output links to reduce the number of buses going out of the
       // board
 #else

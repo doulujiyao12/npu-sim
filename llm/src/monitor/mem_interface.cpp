@@ -3,6 +3,7 @@
 
 #include "monitor/config_helper_core.h"
 #include "monitor/config_helper_gpu.h"
+#include "monitor/config_helper_pd.h"
 #include "monitor/mem_interface.h"
 #include "prims/comp_prims.h"
 #include "prims/norm_prims.h"
@@ -10,31 +11,29 @@
 #include "utils/msg_utils.h"
 #include "utils/prim_utils.h"
 
-MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine, const char *config_name, const char *font_ttf) : event_engine(event_engine) {
-    // host_data_sent_i = new sc_in<bool>[GRID_X];
-    // host_data_sent_o = new sc_out<bool>[GRID_X];
-
-    // host_channel_i = new sc_in<sc_bv<256>>[GRID_X];
-    // host_channel_o = new sc_out<sc_bv<256>>[GRID_X];
-
-    // host_channel_avail_i = new sc_in<bool>[GRID_X];
+MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
+                           const char *config_name, const char *font_ttf)
+    : event_engine(event_engine) {
 
     cout << "SIMULATION MODE: " << SYSTEM_MODE << endl;
 
     if (SYSTEM_MODE == SIM_DATAFLOW)
-        config_helper = new Config_helper_core(config_name, font_ttf);
+        config_helper = new config_helper_core(config_name, font_ttf);
     else if (SYSTEM_MODE == SIM_GPU)
-        config_helper = new Config_helper_gpu(config_name, font_ttf);
-
+        config_helper = new config_helper_gpu(config_name, font_ttf);
+    else if (SYSTEM_MODE == SIM_PD)
+        config_helper = new config_helper_pd(config_name, font_ttf);
 
     init();
 }
 
-MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine, config_helper_base *input_config) : event_engine(event_engine), config_helper(input_config) {
+MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
+                           config_helper_base *input_config)
+    : event_engine(event_engine), config_helper(input_config) {
     init();
 }
 
-void MemInterface::init(){
+void MemInterface::init() {
     host_data_sent_i = new sc_in<bool>[GRID_X];
     host_data_sent_o = new sc_out<bool>[GRID_X];
 
@@ -42,8 +41,6 @@ void MemInterface::init(){
     host_channel_o = new sc_out<sc_bv<256>>[GRID_X];
 
     host_channel_avail_i = new sc_in<bool>[GRID_X];
-
-    cout << "SIMULATION MODE: " << SYSTEM_MODE << endl;
 
     write_buffer = new queue<Msg>[GRID_X];
 
@@ -57,7 +54,7 @@ void MemInterface::init(){
     dont_initialize();
 
     SC_THREAD(distribute_config);
-    sensitive << start_i.pos();
+    sensitive << start_i.pos() << ev_dis_config;
     dont_initialize();
 
     SC_THREAD(distribute_data)
@@ -136,74 +133,77 @@ void MemInterface::end_of_elaboration() {
 
 void MemInterface::distribute_config() {
     while (true) {
-        // send
-        // 组装write buffer
-        clear_write_buffer();
-        event_engine->add_event(this->name(), "Sending Config", "B", Trace_event_util());
+        event_engine->add_event(this->name(), "Sending Config", "B",
+                                Trace_event_util());
 
         config_helper->fill_queue_config(write_buffer);
 
         // 发送开始书写信号
-        ev_write.notify(0, SC_NS);
+        ev_write.notify(CYCLE, SC_NS);
         wait(write_done.posedge_event());
         cout << sc_time_stamp() << ": Mem Interface: config sent done.\n";
-        event_engine->add_event(this->name(), "Sending Config", "E", Trace_event_util());
+        event_engine->add_event(this->name(), "Sending Config", "E",
+                                Trace_event_util());
+
         // 使用唯一的flow ID替换名称
         flow_id++;
         std::string flow_name = "flow_" + std::to_string(flow_id);
-        event_engine->add_event(this->name(), "Sending Config", "s", Trace_event_util(flow_name), sc_time(0, SC_NS), 100);
-        // event_engine->add_event(this->name(), "Sending Config", "s", {},
-        // sc_time(0, SC_NS), 100);
+        event_engine->add_event(this->name(), "Sending Config", "s",
+                                Trace_event_util(flow_name), sc_time(0, SC_NS),
+                                100);
+
+        // 如果是PD模式，则需要在此次config发送完毕之后再次检查是否有config需要发送
+        if (SYSTEM_MODE == SIM_PD) {
+            if (((config_helper_pd *)config_helper)->judge_next_dis_config())
+                ev_dis_config.notify(CYCLE, SC_NS);
+        }
+
         wait();
     }
 }
 
 void MemInterface::distribute_data() {
     while (true) {
-        // 组装write buffer
-        clear_write_buffer();
-        event_engine->add_event(this->name(), "Send Weight Data", "B", Trace_event_util());
+        event_engine->add_event(this->name(), "Send Weight Data", "B",
+                                Trace_event_util());
+
         config_helper->fill_queue_data(write_buffer);
 
         // 发送开始书写信号
-        ev_write.notify(0, SC_NS);
+        ev_write.notify(CYCLE, SC_NS);
         wait(write_done.posedge_event());
-        event_engine->add_event(this->name(), "Send Weight Data", "E", Trace_event_util());
+        event_engine->add_event(this->name(), "Send Weight Data", "E",
+                                Trace_event_util());
         // 使用唯一的flow ID替换名称
         flow_id++;
         std::string flow_name = "flow_" + std::to_string(flow_id);
-        event_engine->add_event(this->name(), "Send Weight Data", "s", Trace_event_util(flow_name), sc_time(0, SC_NS), 100);
-        // event_engine->add_event(this->name(), "Send Weight Data", "s", {},
-        // sc_time(0, SC_NS), 100);
-        cout << "Mem Interface: data sent done.\n";
+        event_engine->add_event(this->name(), "Send Weight Data", "s",
+                                Trace_event_util(flow_name), sc_time(0, SC_NS),
+                                100);
 
+        cout << "Mem Interface: data sent done.\n";
         wait();
     }
 }
 
 void MemInterface::distribute_start_data() {
     while (true) {
-        clear_write_buffer();
-        event_engine->add_event(this->name(), "Send Input Data", "B", Trace_event_util());
+        event_engine->add_event(this->name(), "Send Input Data", "B",
+                                Trace_event_util());
 
-        if (SYSTEM_MODE == SIM_DATAFLOW)
-            config_helper->fill_queue_start(write_buffer);
-        else if (SYSTEM_MODE == SIM_GPU) {
-            auto helper = (Config_helper_gpu *)config_helper;
-            helper->fill_queue_start(write_buffer, helper->gpu_index);
+        config_helper->fill_queue_start(write_buffer);
 
-            // 填充初始数据
-            for (auto stream : helper->streams) {
-                for (auto source : stream.sources) {
-                    AddrPosKey source_key = AddrPosKey(0, source.second);
-                    gpu_pos_locator->addPair(source.first + "#1", source_key);
-                }
-            }
-        }
-
-        ev_write.notify(0, SC_NS);
+        ev_write.notify(CYCLE, SC_NS);
         wait(write_done.posedge_event());
-        event_engine->add_event(this->name(), "Send Input Data", "E", Trace_event_util());
+        event_engine->add_event(this->name(), "Send Input Data", "E",
+                                Trace_event_util());
+
+        // 如果是PD模式，则需要在此次start发送完毕之后再次检查是否还有核需要发送start
+        // data
+        if (SYSTEM_MODE == SIM_PD) {
+            if (((config_helper_pd *)config_helper)->judge_next_dis_start())
+                ev_dis_start.notify(CYCLE, SC_NS);
+        }
 
         cout << "Mem Interface: start data sent done.\n";
         wait();
@@ -217,11 +217,11 @@ void MemInterface::recv_helper() {
                 sc_bv<256> d = host_channel_i[i].read();
                 Msg m = deserialize_msg(d);
 
-                if (m.msg_type == ACK) {
+                if (m.msg_type == ACK)
                     ev_recv_ack.notify(CYCLE, SC_NS);
-                } else if (m.msg_type == DONE) {
+                else if (m.msg_type == DONE)
                     ev_recv_done.notify(CYCLE, SC_NS);
-                }
+
 
                 ev_recv_helper.notify(CYCLE, SC_NS);
             }
@@ -233,8 +233,8 @@ void MemInterface::recv_helper() {
 
 void MemInterface::recv_ack() {
     while (true) {
-        // recv, 在收到所有的ack包之后，发送config配置结束的消息
-        event_engine->add_event(this->name(), "Waiting Recv Ack", "B", Trace_event_util());
+        event_engine->add_event(this->name(), "Waiting Recv Ack", "B",
+                                Trace_event_util());
 
         for (int i = 0; i < GRID_X; i++) {
             if (host_data_sent_i[i].read()) {
@@ -242,23 +242,47 @@ void MemInterface::recv_ack() {
                 Msg m = deserialize_msg(d);
 
                 int cid = m.source;
-                cout << sc_time_stamp() << ": i = " << i << endl;
-                cout << sc_time_stamp() << ": Mem Interface: received ack packet from " << cid << ". total " << g_recv_ack_cnt + 1 << "/" << config_helper->coreconfigs.size() << ".\n";
-                g_recv_ack_cnt++;
+                cout << sc_time_stamp()
+                     << ": Mem Interface: received ack packet from " << cid
+                     << ". total " << g_recv_ack_cnt + 1 << "/"
+                     << config_helper->coreconfigs.size() << ".\n";
+
+                switch (SYSTEM_MODE) {
+                case SIM_DATAFLOW:
+                case SIM_GPU:
+                    g_recv_ack_cnt++;
+                    break;
+                case SIM_PD:
+                    ((config_helper_pd *)config_helper)
+                        ->coreStatus[cid]
+                        .data_sent = false;
+                    break;
+                }
             }
         }
 
-        event_engine->add_event(this->name(), "Waiting Recv Ack", "E", Trace_event_util());
+        event_engine->add_event(this->name(), "Waiting Recv Ack", "E",
+                                Trace_event_util());
 
-        if (g_recv_ack_cnt >= config_helper->coreconfigs.size()) {
-            ev_switch_phase.notify(CYCLE, SC_NS);
+        switch (SYSTEM_MODE) {
+        case SIM_DATAFLOW:
+        case SIM_GPU:
+            if (g_recv_ack_cnt >= config_helper->coreconfigs.size()) {
+                ev_switch_phase.notify(CYCLE, SC_NS);
 
-            // 使用唯一的flow ID替换名称
-            std::string flow_name = "flow_" + std::to_string(flow_id);
-            event_engine->add_event(this->name(), "Waiting Recv Ack", "f", Trace_event_util(flow_name), sc_time(0, SC_NS), 100, "e");
-            cout << "Mem Interface: received all ack packets.\n";
+                // 使用唯一的flow ID替换名称
+                std::string flow_name = "flow_" + std::to_string(flow_id);
+                event_engine->add_event(this->name(), "Waiting Recv Ack", "f",
+                                        Trace_event_util(flow_name),
+                                        sc_time(0, SC_NS), 100, "e");
+                cout << "Mem Interface: received all ack packets.\n";
 
-            g_recv_ack_cnt = 0;
+                g_recv_ack_cnt = 0;
+            }
+            break;
+        case SIM_PD:
+            ev_dis_start.notify(CYCLE, SC_NS);
+            break;
         }
 
         wait();
@@ -267,38 +291,70 @@ void MemInterface::recv_ack() {
 
 void MemInterface::recv_done() {
     while (true) {
-        event_engine->add_event(this->name(), "Waiting Core busy", "B", Trace_event_util());
+        event_engine->add_event(this->name(), "Waiting Core busy", "B",
+                                Trace_event_util());
 
         for (int i = 0; i < GRID_X; i++) {
             if (host_data_sent_i[i].read()) {
                 sc_bv<256> d = host_channel_i[i].read();
                 Msg m = deserialize_msg(d);
-                if (m.msg_type != DONE)
-                    continue;
 
                 int cid = m.source;
-                cout << sc_time_stamp() << ": Mem Interface: received done packet from " << cid << ", total " << g_recv_done_cnt + 1 << ".\n";
-                g_recv_done_cnt++;
+                cout << sc_time_stamp()
+                     << ": Mem Interface: received done packet from " << cid
+                     << ", total " << g_recv_done_cnt + 1 << ".\n";
 
-                cout << sc_time_stamp() << ": end_cores: " << config_helper->end_cores << endl;
-
-                if (g_recv_done_cnt / config_helper->end_cores == 0) {
-                    cout << sc_time_stamp() << ": Mem Interface: pipeline procedure " << g_recv_done_cnt / config_helper->end_cores << "done.\n";
+                switch (SYSTEM_MODE) {
+                case SIM_DATAFLOW:
+                case SIM_GPU:
+                    g_recv_done_cnt++;
+                    break;
+                case SIM_PD:
+                    ((config_helper_pd *)config_helper)
+                        ->process_core_done(cid, m);
+                    break;
                 }
             }
         }
 
-        event_engine->add_event(this->name(), "Waiting Core busy", "E", Trace_event_util());
+        event_engine->add_event(this->name(), "Waiting Core busy", "E",
+                                Trace_event_util());
 
-        if (SYSTEM_MODE == SIM_GPU) {
-            auto helper = (Config_helper_gpu *)config_helper;
+        switch (SYSTEM_MODE) {
+        case SIM_DATAFLOW:
+            if (g_recv_done_cnt >=
+                config_helper->end_cores * config_helper->pipeline) {
+                if (!config_helper->sequential ||
+                    config_helper->seq_index ==
+                        config_helper->source_info.size()) {
+                    cout << "Mem Interface: all work done, end_core: "
+                         << config_helper->end_cores
+                         << ", recv_cnt: " << g_recv_done_cnt << endl;
+
+                    g_recv_done_cnt = 0;
+                    wait(CYCLE, SC_NS);
+                    sc_stop();
+                } else {
+                    cout << "Mem Interface: one work done. "
+                         << config_helper->seq_index << " of "
+                         << config_helper->source_info.size() << ".\n";
+
+                    g_recv_done_cnt = 0;
+                    ev_switch_phase.notify(CYCLE, SC_NS);
+                }
+            }
+            break;
+        case SIM_GPU:
+            auto helper = (config_helper_gpu *)config_helper;
             auto prim = helper->streams[0].prims[helper->gpu_index - 1];
             auto core_inv = ((gpu_base *)prim)->req_sm;
 
-            if (core_inv >= GRID_SIZE) core_inv = GRID_SIZE;
+            if (core_inv >= GRID_SIZE)
+                core_inv = GRID_SIZE;
             if (g_recv_done_cnt >= core_inv) {
-                cout << "Mem Interface: one work done. " << helper->gpu_index << " of " << helper->streams[0].prims.size() << endl;
-                
+                cout << "Mem Interface: one work done. " << helper->gpu_index
+                     << " of " << helper->streams[0].prims.size() << endl;
+
                 if (helper->gpu_index == helper->streams[0].prims.size()) {
                     cout << "Mem Interface: all work done.\n";
                     sc_stop();
@@ -307,37 +363,38 @@ void MemInterface::recv_done() {
                     ev_switch_phase.notify(CYCLE, SC_NS);
                 }
             }
-        }
-
-        else if (g_recv_done_cnt >= config_helper->end_cores * config_helper->pipeline) {
-            if (!config_helper->sequential || config_helper->seq_index == config_helper->source_info.size()) {
-                cout << "Mem Interface: all work done, end_core: " << config_helper->end_cores << ", recv_cnt: " << g_recv_done_cnt << endl;
-
-                g_recv_done_cnt = 0;
-                wait(CYCLE, SC_NS);
-                sc_stop();
-            } else {
-                cout << "Mem Interface: one work done. " << config_helper->seq_index << " of " << config_helper->source_info.size() << ".\n";
-
-                g_recv_done_cnt = 0;
-                ev_switch_phase.notify(CYCLE, SC_NS);
-            }
+            break;
+        case SIM_PD:
+            ((config_helper_pd *)config_helper)->schedule();
+            ev_dis_config.notify(CYCLE, SC_NS);
+            break;
         }
 
         wait();
     }
 }
+
 // 从write_buffer里面取出数据，发送到host
 void MemInterface::write_helper() {
     while (true) {
         write_done.write(false);
         cout << "Mem Interface: start to write\n";
 
+        // 立刻将buffer中的内容复制到本地，并清空全局buffer
+        queue<Msg> temp_buffer[GRID_X];
+        for (int i = 0; i < GRID_X; i++) {
+            while (write_buffer[i].size()) {
+                Msg t = write_buffer[i].front();
+                temp_buffer[i].push(t);
+                write_buffer[i].pop();
+            }
+        }
+
         while (true) {
             bool stop_flag = true;
             for (int i = 0; i < GRID_X; i++) {
                 host_data_sent_o[i].write(false);
-                if (!write_buffer[i].size())
+                if (!temp_buffer[i].size())
                     continue;
 
                 stop_flag = false;
@@ -345,22 +402,21 @@ void MemInterface::write_helper() {
                     continue;
 
                 // send data
-                Msg t = write_buffer[i].front();
-                write_buffer[i].pop();
+                Msg t = temp_buffer[i].front();
+                temp_buffer[i].pop();
                 host_channel_o[i].write(serialize_msg(t));
                 host_data_sent_o[i].write(true);
-
-                // cout << "Write helper: send to " << t.des << ", seq_id: " <<
-                // t.seq_id << endl;
             }
 
             if (stop_flag)
                 break;
+
             wait(CYCLE, SC_NS);
         }
 
         cout << "Mem Interface: write done\n";
         write_done.write(true);
+
         wait();
     }
 }

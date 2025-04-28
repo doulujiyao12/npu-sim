@@ -16,7 +16,9 @@ public:
     Event_engine *e_engine;
 
 public:
-    rom(sc_module_name name_, uint64_t start_address, uint64_t end_address, T *&data, Event_engine *_e_engine) : start_address_(start_address), end_address_(end_address) {
+    rom(sc_module_name name_, uint64_t start_address, uint64_t end_address,
+        T *&data, Event_engine *_e_engine)
+        : start_address_(start_address), end_address_(end_address) {
         // sc_assert(end_address_ >= m_start_addresss);
         e_engine = _e_engine;
         mem = new T[end_address_ - start_address_];

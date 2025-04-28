@@ -49,7 +49,8 @@ typedef std::vector<flag_uint64> flag_uint64list;
 int parse_args(int argc, char **argv);
 void print_args_info();
 
-template <typename T> void registerFlag(const flag_string &opt, T *optPtr, const char *comment);
+template <typename T>
+void registerFlag(const flag_string &opt, T *optPtr, const char *comment);
 
 const flag_stringlist &get_unknown_flags();
 
@@ -134,44 +135,52 @@ END_FLAGS_NAMESPACES
 /**
  * \defgroup Define definitions
  */
-#define Define_Implementer(type, opt, def, comment)                                                                                                                                                    \
-    simple_flags::type Flag_##opt = def;                                                                                                                                                               \
-    BEGIN_FLAGS_NAMESPACES                                                                                                                                                                             \
-    class type##_Flag_Register_##opt {                                                                                                                                                                 \
-    public:                                                                                                                                                                                            \
-        type##_Flag_Register_##opt() { registerFlag<type>("-" Flag_To_Str(opt), &Flag_##opt, comment); }                                                                                               \
-    };                                                                                                                                                                                                 \
-    static type##_Flag_Register_##opt s_flag_##opt##_object;                                                                                                                                           \
+#define Define_Implementer(type, opt, def, comment)                            \
+    simple_flags::type Flag_##opt = def;                                       \
+    BEGIN_FLAGS_NAMESPACES                                                     \
+    class type##_Flag_Register_##opt {                                         \
+    public:                                                                    \
+        type##_Flag_Register_##opt() {                                         \
+            registerFlag<type>("-" Flag_To_Str(opt), &Flag_##opt, comment);    \
+        }                                                                      \
+    };                                                                         \
+    static type##_Flag_Register_##opt s_flag_##opt##_object;                   \
     END_FLAGS_NAMESPACES
 
-#define Define_ImplementerOpt(type, opt, flag, def, comment)                                                                                                                                           \
-    simple_flags::type flag = def;                                                                                                                                                                     \
-    BEGIN_FLAGS_NAMESPACES                                                                                                                                                                             \
-    class type##_Flag_Register_##flag {                                                                                                                                                                \
-    public:                                                                                                                                                                                            \
-        type##_Flag_Register_##flag() { registerFlag<type>(opt, &flag, comment); }                                                                                                                     \
-    };                                                                                                                                                                                                 \
-    static type##_Flag_Register_##flag type##_Flag_Register_##flag##_object;                                                                                                                           \
+#define Define_ImplementerOpt(type, opt, flag, def, comment)                   \
+    simple_flags::type flag = def;                                             \
+    BEGIN_FLAGS_NAMESPACES                                                     \
+    class type##_Flag_Register_##flag {                                        \
+    public:                                                                    \
+        type##_Flag_Register_##flag() {                                        \
+            registerFlag<type>(opt, &flag, comment);                           \
+        }                                                                      \
+    };                                                                         \
+    static type##_Flag_Register_##flag type##_Flag_Register_##flag##_object;   \
     END_FLAGS_NAMESPACES
 
-#define Define_Implementer_list(type, opt, comment)                                                                                                                                                    \
-    simple_flags::type Flag_##opt;                                                                                                                                                                     \
-    BEGIN_FLAGS_NAMESPACES                                                                                                                                                                             \
-    class type##_Flag_Register_##opt {                                                                                                                                                                 \
-    public:                                                                                                                                                                                            \
-        type##_Flag_Register_##opt() { registerFlag<type>("-" Flag_To_Str(opt), &Flag_##opt, comment); }                                                                                               \
-    };                                                                                                                                                                                                 \
-    static type##_Flag_Register_##opt type##_Flag_Register_##opt##_object;                                                                                                                             \
+#define Define_Implementer_list(type, opt, comment)                            \
+    simple_flags::type Flag_##opt;                                             \
+    BEGIN_FLAGS_NAMESPACES                                                     \
+    class type##_Flag_Register_##opt {                                         \
+    public:                                                                    \
+        type##_Flag_Register_##opt() {                                         \
+            registerFlag<type>("-" Flag_To_Str(opt), &Flag_##opt, comment);    \
+        }                                                                      \
+    };                                                                         \
+    static type##_Flag_Register_##opt type##_Flag_Register_##opt##_object;     \
     END_FLAGS_NAMESPACES
 
-#define Define_Implementer_listOpt(type, opt, flag, comment)                                                                                                                                           \
-    simple_flags::type flag;                                                                                                                                                                           \
-    BEGIN_FLAGS_NAMESPACES                                                                                                                                                                             \
-    class type##_Flag_Register_##flag {                                                                                                                                                                \
-    public:                                                                                                                                                                                            \
-        type##_Flag_Register_##flag() { registerFlag<type>(opt, &flag, comment); }                                                                                                                     \
-    };                                                                                                                                                                                                 \
-    static type##_Flag_Register_##flag type##_Flag_Register_##flag##_object;                                                                                                                           \
+#define Define_Implementer_listOpt(type, opt, flag, comment)                   \
+    simple_flags::type flag;                                                   \
+    BEGIN_FLAGS_NAMESPACES                                                     \
+    class type##_Flag_Register_##flag {                                        \
+    public:                                                                    \
+        type##_Flag_Register_##flag() {                                        \
+            registerFlag<type>(opt, &flag, comment);                           \
+        }                                                                      \
+    };                                                                         \
+    static type##_Flag_Register_##flag type##_Flag_Register_##flag##_object;   \
     END_FLAGS_NAMESPACES
 
 /**@}*/
@@ -181,14 +190,22 @@ END_FLAGS_NAMESPACES
  * Define a option which accept only one option, so it will be parsed.
  * @{
  */
-#define Define_bool(opt, def, comment) Define_Implementer(flag_bool, opt, def, comment)
-#define Define_float(opt, def, comment) Define_Implementer(flag_float, opt, def, comment)
-#define Define_double(opt, def, comment) Define_Implementer(flag_double, opt, def, comment)
-#define Define_int32(opt, def, comment) Define_Implementer(flag_int32, opt, def, comment)
-#define Define_uint32(opt, def, comment) Define_Implementer(flag_uint32, opt, def, comment)
-#define Define_int64(opt, def, comment) Define_Implementer(flag_int64, opt, def, comment)
-#define Define_uint64(opt, def, comment) Define_Implementer(flag_uint64, opt, def, comment)
-#define Define_string(opt, def, comment) Define_Implementer(flag_string, opt, def, comment)
+#define Define_bool(opt, def, comment)                                         \
+    Define_Implementer(flag_bool, opt, def, comment)
+#define Define_float(opt, def, comment)                                        \
+    Define_Implementer(flag_float, opt, def, comment)
+#define Define_double(opt, def, comment)                                       \
+    Define_Implementer(flag_double, opt, def, comment)
+#define Define_int32(opt, def, comment)                                        \
+    Define_Implementer(flag_int32, opt, def, comment)
+#define Define_uint32(opt, def, comment)                                       \
+    Define_Implementer(flag_uint32, opt, def, comment)
+#define Define_int64(opt, def, comment)                                        \
+    Define_Implementer(flag_int64, opt, def, comment)
+#define Define_uint64(opt, def, comment)                                       \
+    Define_Implementer(flag_uint64, opt, def, comment)
+#define Define_string(opt, def, comment)                                       \
+    Define_Implementer(flag_string, opt, def, comment)
 
 /**@}*/
 
@@ -197,14 +214,22 @@ END_FLAGS_NAMESPACES
  * Define self-defined optiong, so it will be parsed.
  * @{
  */
-#define Define_bool_opt(opt, flag, def, comment) Define_ImplementerOpt(flag_bool, opt, flag, def, comment)
-#define Define_float_opt(opt, flag, def, comment) Define_ImplementerOpt(flag_float, opt, flag, def, comment)
-#define Define_double_opt(opt, flag, def, comment) Define_ImplementerOpt(flag_double, opt, flag, def, comment)
-#define Define_int32_opt(opt, flag, def, comment) Define_ImplementerOpt(flag_int32, opt, flag, def, comment)
-#define Define_uint32_opt(opt, flag, def, comment) Define_ImplementerOpt(flag_uint32, opt, flag, def, comment)
-#define Define_int64_opt(opt, flag, def, comment) Define_ImplementerOpt(flag_int64, opt, flag, def, comment)
-#define Define_uint64_opt(opt, flag, def, comment) Define_ImplementerOpt(flag_uint64, opt, flag, def, comment)
-#define Define_string_opt(opt, flag, def, comment) Define_ImplementerOpt(flag_string, opt, flag, def, comment)
+#define Define_bool_opt(opt, flag, def, comment)                               \
+    Define_ImplementerOpt(flag_bool, opt, flag, def, comment)
+#define Define_float_opt(opt, flag, def, comment)                              \
+    Define_ImplementerOpt(flag_float, opt, flag, def, comment)
+#define Define_double_opt(opt, flag, def, comment)                             \
+    Define_ImplementerOpt(flag_double, opt, flag, def, comment)
+#define Define_int32_opt(opt, flag, def, comment)                              \
+    Define_ImplementerOpt(flag_int32, opt, flag, def, comment)
+#define Define_uint32_opt(opt, flag, def, comment)                             \
+    Define_ImplementerOpt(flag_uint32, opt, flag, def, comment)
+#define Define_int64_opt(opt, flag, def, comment)                              \
+    Define_ImplementerOpt(flag_int64, opt, flag, def, comment)
+#define Define_uint64_opt(opt, flag, def, comment)                             \
+    Define_ImplementerOpt(flag_uint64, opt, flag, def, comment)
+#define Define_string_opt(opt, flag, def, comment)                             \
+    Define_ImplementerOpt(flag_string, opt, flag, def, comment)
 
 /**@}*/
 
@@ -213,14 +238,22 @@ END_FLAGS_NAMESPACES
  * Define a option which accept parameter list, so it will be parsed.
  * @{
  */
-#define Define_stringlist(opt, comment) Define_Implementer_list(flag_stringlist, opt, comment)
-#define Define_boollist(opt, comment) Define_Implementer_list(flag_boollist, opt, comment)
-#define Define_floatlist(opt, comment) Define_Implementer_list(flag_floatlist, opt, comment)
-#define Define_doublelist(opt, comment) Define_Implementer_list(flag_doublelist, opt, comment)
-#define Define_int32list(opt, comment) Define_Implementer_list(flag_int32list, opt, comment)
-#define Define_uint32list(opt, comment) Define_Implementer_list(flag_uint32list, opt, comment)
-#define Define_int64list(opt, comment) Define_Implementer_list(flag_int64list, opt, comment)
-#define Define_uint64list(opt, comment) Define_Implementer_list(flag_uint64list, opt, comment)
+#define Define_stringlist(opt, comment)                                        \
+    Define_Implementer_list(flag_stringlist, opt, comment)
+#define Define_boollist(opt, comment)                                          \
+    Define_Implementer_list(flag_boollist, opt, comment)
+#define Define_floatlist(opt, comment)                                         \
+    Define_Implementer_list(flag_floatlist, opt, comment)
+#define Define_doublelist(opt, comment)                                        \
+    Define_Implementer_list(flag_doublelist, opt, comment)
+#define Define_int32list(opt, comment)                                         \
+    Define_Implementer_list(flag_int32list, opt, comment)
+#define Define_uint32list(opt, comment)                                        \
+    Define_Implementer_list(flag_uint32list, opt, comment)
+#define Define_int64list(opt, comment)                                         \
+    Define_Implementer_list(flag_int64list, opt, comment)
+#define Define_uint64list(opt, comment)                                        \
+    Define_Implementer_list(flag_uint64list, opt, comment)
 
 /**@}*/
 
@@ -228,13 +261,20 @@ END_FLAGS_NAMESPACES
  * \defgroup Self-define multi-parameter option define macros
  * Define a option which accept parameter list, so it will be parsed.
  */
-#define Define_stringlist_opt(opt, flag, comment) Define_Implementer_listOpt(flag_stringlist, opt, flag, comment)
-#define Define_int32list_opt(opt, flag, comment) Define_Implementer_listOpt(flag_int32list, opt, flag, comment)
-#define Define_uint32list_opt(opt, flag, comment) Define_Implementer_listOpt(flag_uint32list, opt, flag, comment)
-#define Define_int64list_opt(opt, flag, comment) Define_Implementer_listOpt(flag_int64list, opt, flag, comment)
-#define Define_uint64list_opt(opt, flag, comment) Define_Implementer_listOpt(flag_uint64list, opt, flag, comment)
-#define Define_floatlist_opt(opt, flag, comment) Define_Implementer_listOpt(flag_floatlist, opt, flag, comment)
-#define Define_doublelist_opt(opt, flag, comment) Define_Implementer_listOpt(flag_doublelist, opt, flag, comment)
+#define Define_stringlist_opt(opt, flag, comment)                              \
+    Define_Implementer_listOpt(flag_stringlist, opt, flag, comment)
+#define Define_int32list_opt(opt, flag, comment)                               \
+    Define_Implementer_listOpt(flag_int32list, opt, flag, comment)
+#define Define_uint32list_opt(opt, flag, comment)                              \
+    Define_Implementer_listOpt(flag_uint32list, opt, flag, comment)
+#define Define_int64list_opt(opt, flag, comment)                               \
+    Define_Implementer_listOpt(flag_int64list, opt, flag, comment)
+#define Define_uint64list_opt(opt, flag, comment)                              \
+    Define_Implementer_listOpt(flag_uint64list, opt, flag, comment)
+#define Define_floatlist_opt(opt, flag, comment)                               \
+    Define_Implementer_listOpt(flag_floatlist, opt, flag, comment)
+#define Define_doublelist_opt(opt, flag, comment)                              \
+    Define_Implementer_listOpt(flag_doublelist, opt, flag, comment)
 
 /**@}*/
 
