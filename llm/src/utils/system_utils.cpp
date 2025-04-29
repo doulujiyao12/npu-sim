@@ -20,6 +20,20 @@ int find_var(string var) {
     return 1;
 }
 
+void set_var_gpt2(int B, int T, int C, int NH) {
+    vtable.clear();
+    vtable.push_back(make_pair("B", B));
+    vtable.push_back(make_pair("T", T));
+    vtable.push_back(make_pair("C", C));
+    vtable.push_back(make_pair("NH", NH));
+    vtable.push_back(make_pair("3C", 3*C));
+    vtable.push_back(make_pair("4C", 4*C));
+    vtable.push_back(make_pair("BTC", B*T*C));
+    vtable.push_back(make_pair("2BTC", 2*B*T*C));
+    vtable.push_back(make_pair("3BTC", 3*B*T*C));
+    vtable.push_back(make_pair("4BTC", 4*B*T*C));
+}
+
 int ceiling_division(int a, int b) {
     if (b == 0) {
         throw std::invalid_argument("Division by zero is not allowed.");

@@ -14,6 +14,10 @@ public:
     int decode_done; // 收到decode的eof完成次数
     vector<Msg> temp_config; // 存放所有还没有发出去的config
 
+    // 模型配置
+    int heads;
+    double eof_chance;
+
     config_helper_pd(string filename, string font_ttf, int config_chip_id = 0);
 
     config_helper_pd *clone() const override {

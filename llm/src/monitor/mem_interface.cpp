@@ -136,6 +136,9 @@ void MemInterface::distribute_config() {
         event_engine->add_event(this->name(), "Sending Config", "B",
                                 Trace_event_util());
 
+        if (SYSTEM_MODE == SIM_PD)
+            ((config_helper_pd *)config_helper)->schedule();
+
         config_helper->fill_queue_config(write_buffer);
 
         // 发送开始书写信号
@@ -365,7 +368,6 @@ void MemInterface::recv_done() {
             }
             break;
         case SIM_PD:
-            ((config_helper_pd *)config_helper)->schedule();
             ev_dis_config.notify(CYCLE, SC_NS);
             break;
         }

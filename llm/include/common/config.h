@@ -13,6 +13,14 @@ public:
     int addr;
     bool critical;
     LOOP_TYPE loopout;
+
+    Cast() {}
+    Cast(int dest) : dest(dest), tag(tag) {
+        weight = 1;
+        addr = -1;
+        critical = false;
+        loopout = BOTH;
+    }
 };
 
 void from_json(const json &j, Cast &c);

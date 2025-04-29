@@ -292,8 +292,6 @@ void config_helper_core::generate_prims(int i) {
 
         // 然后是comp，直接推c中的对应队列即可
         for (auto prim : work.prims) {
-            // //std::cout << "Coreiii2 " << i << " prims: " << prim->sram_addr
-            // << std::endl; 在Set_addr里面复制一份计算原语的datapass_label
             prim_base *p = new_prim("Set_addr");
             auto label = ((Set_addr *)p)->datapass_label;
             // Set_addr 的label 指向其后面的那条原语

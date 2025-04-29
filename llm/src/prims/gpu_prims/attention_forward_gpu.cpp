@@ -65,7 +65,6 @@ int Attention_f_gpu::task_core(TaskCoreContext &context) {
     int overlap_time = 0;
     AddrPosKey out_key = AddrPosKey(0, data_byte * data_size_out);
     gpu_pos_locator->addPair(datapass_label.outdata, out_key);
-    // cout << "dddddddddd" << endl;
     gpu_write_generic(context, out_key.pos, data_byte*data_size_out, overlap_time);
 
     cout << cid << " [Attention_f_gpu] after write: " << overlap_time << endl;

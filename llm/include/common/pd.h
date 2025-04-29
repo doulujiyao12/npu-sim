@@ -7,7 +7,6 @@ public:
     // 不作修改
     int id;
     int seq_len;
-    int heads;
     int prefill_iters;
 
     // 需要修改
@@ -17,7 +16,7 @@ public:
     int decode_counter; // decode已经执行几次iter
 
     RequestRecord(int id, int seq_len, int heads)
-        : id(id), seq_len(seq_len), heads(heads) {
+        : id(id), seq_len(seq_len) {
         lock = false;
         phase = UNTOUCHED;
         prefill_counter = 0;
@@ -39,5 +38,24 @@ public:
     CoreStatus(int id) : id(id) {
         available = true;
         data_sent = false;
+    }
+};
+
+class BatchInfo {
+public:
+    int batch_size;
+    int req_ids[CORE_CREDIT];
+    PD_PHASE types[CORE_CREDIT];
+    int iter_count[CORE_CREDIT];
+
+    BatchInfo() {}
+
+    BatchInfo(vector<RequestRecord> records) {
+        batch_size = records.size();
+        for (int i = 0; i < batch_size; i++) {
+            req_ids[i] = records[i].id;
+            types[i] = records[i].phase;
+            iter_count[i] = types[i] ? records[i].decode_counter : records[i].prefill_counter;
+        }
     }
 };

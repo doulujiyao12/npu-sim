@@ -136,6 +136,28 @@ public:
     }
 };
 
+class Set_batch : public prim_base {
+public:
+    BatchInfo *target;
+    BatchInfo batchInfo;
+
+    int task();
+    int task_core(TaskCoreContext &context);
+
+    sc_bv<128> serialize();
+    void deserialize(sc_bv<128> buffer);
+
+    void parse_json(json j);
+    void print_self(string prefix);
+    int sram_utilization(DATATYPE datatype);
+
+    Set_batch() {}
+
+    Set_batch(BatchInfo *target) {
+        target = target;
+    }
+};
+
 class Store_prim : public prim_base {
 public:
     int dram_addr;
