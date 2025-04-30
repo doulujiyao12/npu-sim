@@ -21,10 +21,12 @@ void Set_addr::deserialize(sc_bv<128> buffer) {
 
     int offset = 34;
     for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-        datapass_label->indata[i] = g_addr_label_table.findRecord(buffer.range(offset + 7, offset).to_uint64());
+        datapass_label->indata[i] = g_addr_label_table.findRecord(
+            buffer.range(offset + 7, offset).to_uint64());
         offset += 8;
     }
-    datapass_label->outdata = g_addr_label_table.findRecord(buffer.range(offset + 7, offset).to_uint64());
+    datapass_label->outdata = g_addr_label_table.findRecord(
+        buffer.range(offset + 7, offset).to_uint64());
 }
 
 sc_bv<128> Set_addr::serialize() {
@@ -35,10 +37,12 @@ sc_bv<128> Set_addr::serialize() {
 
     int offset = 34;
     for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-        d.range(offset + 7, offset) = sc_bv<8>(g_addr_label_table.addRecord(datapass_label->indata[i]));
+        d.range(offset + 7, offset) =
+            sc_bv<8>(g_addr_label_table.addRecord(datapass_label->indata[i]));
         offset += 8;
     }
-    d.range(offset + 7, offset) = sc_bv<8>(g_addr_label_table.addRecord(datapass_label->outdata));
+    d.range(offset + 7, offset) =
+        sc_bv<8>(g_addr_label_table.addRecord(datapass_label->outdata));
 
     return d;
 }
@@ -59,7 +63,8 @@ int Set_addr::task_core(TaskCoreContext &context) {
     sprintf(format_label, "#%d", context.loop_cnt);
     string label_suffix = format_label;
     for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-        if (target->indata[i] != UNSET_LABEL && target->indata[i] != DRAM_LABEL) {
+        if (target->indata[i] != UNSET_LABEL &&
+            target->indata[i] != DRAM_LABEL) {
             target->indata[i] += label_suffix;
         }
     }

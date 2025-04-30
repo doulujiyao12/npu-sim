@@ -13,6 +13,14 @@ public:
     int addr;
     bool critical;
     LOOP_TYPE loopout;
+
+    Cast() {}
+    Cast(int dest) : dest(dest), tag(tag) {
+        weight = 1;
+        addr = -1;
+        critical = false;
+        loopout = BOTH;
+    }
 };
 
 void from_json(const json &j, Cast &c);
@@ -32,7 +40,8 @@ public:
 
     void print_self();
     CoreJob() {}
-    CoreJob(int recv_cnt, int recv_tag, int loop) : recv_cnt(recv_cnt), recv_tag(recv_tag), loop(loop) {
+    CoreJob(int recv_cnt, int recv_tag, int loop)
+        : recv_cnt(recv_cnt), recv_tag(recv_tag), loop(loop) {
         Cast new_cast;
         new_cast.dest = -1;
         cast.push_back(new_cast);

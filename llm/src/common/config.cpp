@@ -63,9 +63,13 @@ void from_json(const json &j, Cast &c) {
 }
 
 void from_json(const json &j, CoreJob &c) {
-    for (int i = 0; i < j["cast"].size(); i++) {
-        Cast temp = j["cast"][i];
-        c.cast.push_back(temp);
+    if (j.contains("cast")) {
+        for (int i = 0; i < j["cast"].size(); i++) {
+            Cast temp = j["cast"][i];
+            c.cast.push_back(temp);
+        }
+    } else {
+        Cast temp = Cast(-1);
     }
 
     j.at("recv_cnt").get_to(c.recv_cnt);
@@ -189,7 +193,8 @@ void from_json(const json &j, StreamConfig &c) {
     if (j.contains("source")) {
         auto sources = j["source"];
         for (auto source : sources) {
-            c.sources.push_back(make_pair(source["label"], find_var(source["size"])));
+            c.sources.push_back(
+                make_pair(source["label"], find_var(source["size"])));
         }
     }
 }

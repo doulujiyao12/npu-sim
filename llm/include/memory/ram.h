@@ -33,7 +33,11 @@ public:
     string name;
 
 public:
-    Ram(sc_module_name name_, uint64_t start_address, uint64_t end_address, Event_engine *_e_engine) : name(name_), start_address_(start_address), end_address_(end_address) {
+    Ram(sc_module_name name_, uint64_t start_address, uint64_t end_address,
+        Event_engine *_e_engine)
+        : name(name_),
+          start_address_(start_address),
+          end_address_(end_address) {
         // sc_assert(end_address_ >= m_start_addresss);
 #if DUMMY_SRAM == 1
 
@@ -48,7 +52,9 @@ public:
         e_engine = _e_engine;
 
         auto bits = (end_address_ - start_address_) * sizeof(T) * 8;
-        area = 0.001 * std::pow(0.028, 2.07) * std::pow(bits, 0.9) * std::pow(2, 0.7) + 0.0048;
+        area = 0.001 * std::pow(0.028, 2.07) * std::pow(bits, 0.9) *
+                   std::pow(2, 0.7) +
+               0.0048;
     }
     ~Ram() {
         if (mem) {
@@ -73,16 +79,20 @@ public:
         data = mem[address - start_address_];
 #endif
 #if VERBOSE_TRACE == 1
-        e_engine->add_event(this->name, __func__, "B", Trace_event_util("read"));
+        e_engine->add_event(this->name, __func__, "B",
+                            Trace_event_util("read"));
 #endif
         if (!shadow) {
             wait(RAM_READ_LATENCY, SC_NS);
 #if VERBOSE_TRACE == 1
-            e_engine->add_event(this->name, __func__, "E", Trace_event_util("read"));
+            e_engine->add_event(this->name, __func__, "E",
+                                Trace_event_util("read"));
 #endif
         } else {
 #if VERBOSE_TRACE == 1
-            e_engine->add_event(this->name, __func__, "E", Trace_event_util("read"), sc_time(RAM_READ_LATENCY, SC_NS));
+            e_engine->add_event(this->name, __func__, "E",
+                                Trace_event_util("read"),
+                                sc_time(RAM_READ_LATENCY, SC_NS));
 #endif
         }
 
@@ -93,7 +103,8 @@ public:
         return TRANSFER_OK;
     }
 
-    transfer_status write(uint64_t address, T &data, bool force_write = 1, bool shadow = true) {
+    transfer_status write(uint64_t address, T &data, bool force_write = 1,
+                          bool shadow = true) {
         if (address < start_address_ || address > end_address_) {
             return TRANSFER_ERROR;
         }
@@ -116,16 +127,20 @@ public:
         }
         // std::cout << this->name << __func__;
 #if VERBOSE_TRACE == 1
-        e_engine->add_event(this->name, __func__, "B", Trace_event_util("write"));
+        e_engine->add_event(this->name, __func__, "B",
+                            Trace_event_util("write"));
 #endif
         if (!shadow) {
             wait(RAM_WRITE_LATENCY, SC_NS);
 #if VERBOSE_TRACE == 1
-            e_engine->add_event(this->name, __func__, "E", Trace_event_util("write"));
+            e_engine->add_event(this->name, __func__, "E",
+                                Trace_event_util("write"));
 #endif
         } else {
 #if VERBOSE_TRACE == 1
-            e_engine->add_event(this->name, __func__, "E", Trace_event_util("write"), sc_time(RAM_WRITE_LATENCY, SC_NS));
+            e_engine->add_event(this->name, __func__, "E",
+                                Trace_event_util("write"),
+                                sc_time(RAM_WRITE_LATENCY, SC_NS));
 #endif
         }
 
@@ -150,7 +165,9 @@ public:
         // std::cout << sc_get_current_process_b()->name() << " " <<
         // sc_time_stamp() << " aa  " << valid_tmp << std::endl;
 #if VERBOSE_TRACE == 1
-        e_engine->add_event(this->name, "Mem Usage", "C", Trace_event_util(valid_perc, color), sc_time(shadow ? RAM_WRITE_LATENCY : 0, SC_NS));
+        e_engine->add_event(this->name, "Mem Usage", "C",
+                            Trace_event_util(valid_perc, color),
+                            sc_time(shadow ? RAM_WRITE_LATENCY : 0, SC_NS));
 #endif
         ram_write_busy = 0;
         return TRANSFER_OK;

@@ -19,8 +19,11 @@ void Send_prim::print_self(string prefix) {
     if (type == SEND_DONE)
         type_s = "SEND_DONE";
 
-    cout << prefix << "\t[" << type_s << "] > send to " << des_id << ", des_offset: " << des_offset << ", local_offset: " << local_offset << endl;
-    cout << prefix << "\tmax_packet: " << max_packet << ", tag_id: " << tag_id << ", end_length: " << end_length << endl;
+    cout << prefix << "\t[" << type_s << "] > send to " << des_id
+         << ", des_offset: " << des_offset << ", local_offset: " << local_offset
+         << endl;
+    cout << prefix << "\tmax_packet: " << max_packet << ", tag_id: " << tag_id
+         << ", end_length: " << end_length << endl;
 }
 
 void Send_prim::parse_json(json j, vector<pair<string, int>> vtable) {}
@@ -64,7 +67,8 @@ int Send_prim::task_core(TaskCoreContext &context) {
     auto hmau = context.hmau;
     auto &msg_data = context.msg_data;
     sc_time elapsed_time;
-    mau->mem_read_port->read(local_offset + M_D_DATA * (data_packet_id - 1), msg_data, elapsed_time);
+    mau->mem_read_port->read(local_offset + M_D_DATA * (data_packet_id - 1),
+                             msg_data, elapsed_time);
     msg_data = 0b1;
     // std::cout << "msg_data (hex) after send" << msg_data.to_string(SC_HEX) <<
     // std::endl;

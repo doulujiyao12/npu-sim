@@ -33,9 +33,7 @@ void Gelu_f_gpu::deserialize(sc_bv<128> buffer) {
     datatype = DATATYPE(buffer.range(73, 72).to_uint64());
 }
 
-int Gelu_f_gpu::sram_utilization(DATATYPE datatype) {
-    return 0;
-}
+int Gelu_f_gpu::sram_utilization(DATATYPE datatype) { return 0; }
 
 int Gelu_f_gpu::task_core(TaskCoreContext &context) {
     int data_byte = 0;
@@ -50,19 +48,22 @@ int Gelu_f_gpu::task_core(TaskCoreContext &context) {
 
     int mem_time = 0;
     auto input_mem_offset = 0;
-    if (!gpu_pos_locator->findPair(datapass_label.indata[0], input_mem_offset)) {
+    if (!gpu_pos_locator->findPair(datapass_label.indata[0],
+                                   input_mem_offset)) {
         printf("[ERROR] Gelu_f_gpu: gpu_pos_locator cannot find the label: "
-            "%s\n",
-            datapass_label.indata[0].c_str());
+               "%s\n",
+               datapass_label.indata[0].c_str());
         sc_stop();
     }
 
-    gpu_read_generic(context, input_mem_offset, data_byte*data_size_input, mem_time);
+    gpu_read_generic(context, input_mem_offset, data_byte * data_size_input,
+                     mem_time);
 
     int overlap_time = mem_time;
     AddrPosKey out_key = AddrPosKey(0, data_byte * data_size_out);
     gpu_pos_locator->addPair(datapass_label.outdata, out_key);
-    gpu_write_generic(context, out_key.pos, data_byte*data_size_out, overlap_time);
+    gpu_write_generic(context, out_key.pos, data_byte * data_size_out,
+                      overlap_time);
 
     cout << "[Gelu_f_gpu] after write: " << overlap_time << endl;
 

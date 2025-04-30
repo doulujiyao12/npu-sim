@@ -8,8 +8,9 @@
 
 #include "macros/macros.h"
 #include "memory/MemoryManager_v2.h"
-#include "trace/Event_engine.h"
 #include "memory/dram/utils.h"
+#include "trace/Event_engine.h"
+
 
 // DMA Producer SystemC Module
 class NB_DcacheIF : public sc_core::sc_module {
@@ -38,7 +39,8 @@ public:
 
 
     // Constructor
-    NB_DcacheIF(sc_core::sc_module_name name, sc_event *start_nb_dram_event, sc_event *end_nb_dram_event, Event_engine *event_engine)
+    NB_DcacheIF(sc_core::sc_module_name name, sc_event *start_nb_dram_event,
+                sc_event *end_nb_dram_event, Event_engine *event_engine)
         : sc_module(name),
           start_nb_dram_event(start_nb_dram_event),
           end_nb_dram_event(end_nb_dram_event),
@@ -56,7 +58,8 @@ public:
     }
 
     // Reconfigure the DMA producer
-    void reconfigure(uint64_t base_addr, int dma_read_cnt, int cache_cnt, int line_size, bool read_or_write)  {
+    void reconfigure(uint64_t base_addr, int dma_read_cnt, int cache_cnt,
+                     int line_size, bool read_or_write) {
         // sc_core::sc_mutex_lock lock(config_mutex); // Protect configuration
         // variables
         base_address = base_addr;
@@ -75,15 +78,17 @@ private:
     int total_requests;    // 总请求数 = dma_read_count * cache_count
     int current_request;   // 已生成请求计数
     // int cache_lines;       // 地址步进值（字节）
-    int data_length;       // 传输长度单位
-    bool read_or_write;     // 读写标志位 0 是 读 1 是 写
+    int data_length;    // 传输长度单位
+    bool read_or_write; // 读写标志位 0 是 读 1 是 写
 
     // Synchronization
     sc_core::sc_event config_event; // Event to notify reconfiguration
     sc_core::sc_mutex config_mutex; // Mutex to protect configuration
     bool config_updated;            // Flag to indicate configuration update
 
-    tlm::tlm_sync_enum nb_transport_bw(tlm::tlm_generic_payload &payload, tlm::tlm_phase &phase, sc_core::sc_time &bwDelay) {
+    tlm::tlm_sync_enum nb_transport_bw(tlm::tlm_generic_payload &payload,
+                                       tlm::tlm_phase &phase,
+                                       sc_core::sc_time &bwDelay) {
         payloadEventQueue.notify(payload, phase, bwDelay);
         return tlm::TLM_ACCEPTED;
     }
@@ -91,16 +96,19 @@ private:
     bool nextRequestSendable() const {
         // If either the maxPendingReadRequests or maxPendingWriteRequests
         // limit is reached, do not send next payload.
-        if (maxPendingReadRequests.has_value() && pendingReadRequests >= maxPendingReadRequests.value())
+        if (maxPendingReadRequests.has_value() &&
+            pendingReadRequests >= maxPendingReadRequests.value())
             return false;
 
-        if (maxPendingWriteRequests.has_value() && pendingWriteRequests >= maxPendingWriteRequests.value())
+        if (maxPendingWriteRequests.has_value() &&
+            pendingWriteRequests >= maxPendingWriteRequests.value())
             return false;
 
         return true;
     }
 
-    void peqCallback(tlm::tlm_generic_payload &payload, const tlm::tlm_phase &phase) {
+    void peqCallback(tlm::tlm_generic_payload &payload,
+                     const tlm::tlm_phase &phase) {
         // 打印phase类型
         // 打印当前时间戳
         // std::cout << "Current time: " << sc_core::sc_time_stamp() <<
@@ -125,7 +133,8 @@ private:
         } else if (phase == tlm::BEGIN_RESP) {
             tlm::tlm_phase nextPhase = tlm::END_RESP;
             sc_core::sc_time delay = sc_core::SC_ZERO_TIME;
-            // cout << "address!!!!!!!!!!!!!!!!!!: " << payload.get_address() << endl;
+            // cout << "address!!!!!!!!!!!!!!!!!!: " << payload.get_address() <<
+            // endl;
             socket->nb_transport_fw(payload, nextPhase, delay);
 
             payload.release();
@@ -182,7 +191,8 @@ private:
                 end_nb_dram_event->notify();
             }
         } else {
-            SC_REPORT_FATAL("TrafficInitiator", "PEQ was triggered with unknown phase");
+            SC_REPORT_FATAL("TrafficInitiator",
+                            "PEQ was triggered with unknown phase");
         }
     }
 
@@ -209,8 +219,12 @@ private:
                     // sc_core::sc_time_stamp() << std::endl; Create a new
                     // request
                     Request request;
-                    request.address = base_address + current_request * data_length;
-                    request.command = (read_or_write == 0) ? Request::Command::Read : Request::Command::Write; // Fixed as Read
+                    request.address =
+                        base_address + current_request * data_length;
+                    request.command =
+                        (read_or_write == 0)
+                            ? Request::Command::Read
+                            : Request::Command::Write; // Fixed as Read
                     request.length = data_length;
                     request.delay = sc_core::SC_ZERO_TIME;
 
@@ -251,7 +265,9 @@ private:
         trans.set_byte_enable_length(0);
         trans.set_streaming_width(request.length);
         trans.set_dmi_allowed(false);
-        trans.set_command(request.command == Request::Command::Read ? tlm::TLM_READ_COMMAND : tlm::TLM_WRITE_COMMAND);
+        trans.set_command(request.command == Request::Command::Read
+                              ? tlm::TLM_READ_COMMAND
+                              : tlm::TLM_WRITE_COMMAND);
 #if DUMMY == 1
         trans.set_data_ptr(reinterpret_cast<unsigned char *>((void *)0));
 #else

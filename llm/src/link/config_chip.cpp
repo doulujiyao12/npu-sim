@@ -3,22 +3,20 @@
 #include "monitor/config_helper_core.h"
 #include "monitor/config_helper_gpu.h"
 
-#include "utils/system_utils.h"
 #include "nlohmann/json.hpp"
+#include "utils/system_utils.h"
 #include <string>
 #include <vector>
 
 using json = nlohmann::json;
 
-ChipConfig::ChipConfig() {
-}
+ChipConfig::ChipConfig() {}
 
 
-ChipConfig::~ChipConfig() {
-}
+ChipConfig::~ChipConfig() {}
 
-void ChipConfig::print_self() { 
-    // chip->print_self(); 
+void ChipConfig::print_self() {
+    // chip->print_self();
     std::cout << "chip_id: " << id << std::endl;
     std::cout << "GridX: " << GridX << std::endl;
     std::cout << "GridY: " << GridY << std::endl;
@@ -26,27 +24,31 @@ void ChipConfig::print_self() {
 
 void ChipConfig::load_json(const json &j) {
     // std::cout << "load_json" << std::endl;
-    if (j.contains("cores_copy")) { assert(0 && "cores_copy should not be called here");}
+    if (j.contains("cores_copy")) {
+        assert(0 && "cores_copy should not be called here");
+    }
 
     j.at("chip_id").get_to(id);
     j.at("GridX").get_to(GridX);
     j.at("GridY").get_to(GridY);
 
-    //如果设置了Config的Type，则按照Config的Type来初始化
+    // 如果设置了Config的Type，则按照Config的Type来初始化
     //[MYONIE] TODO ：这里的初始化方式不太好，回头再看看
-    if(j.contains("core_type")){
-        if(j.at("core_type") == "dataflow"){
-            chip = new Config_helper_core(top_config->filename, top_config->font_ttf, id);
+    if (j.contains("core_type")) {
+        if (j.at("core_type") == "dataflow") {
+            chip = new config_helper_core(top_config->filename,
+                                          top_config->font_ttf, id);
+        } else if (j.at("core_type") == "gpu") {
+            chip = new config_helper_gpu(top_config->filename,
+                                         top_config->font_ttf, id);
         }
-        else if(j.at("core_type") == "gpu"){
-            chip = new Config_helper_gpu(top_config->filename, top_config->font_ttf, id);
-        }
-    } else{
-        if(SYSTEM_MODE == SIM_DATAFLOW){
-            chip = new Config_helper_core(top_config->filename, top_config->font_ttf, id);
-        } 
-        else if(SYSTEM_MODE == SIM_GPU){
-            chip = new Config_helper_gpu(top_config->filename, top_config->font_ttf, id);
+    } else {
+        if (SYSTEM_MODE == SIM_DATAFLOW) {
+            chip = new config_helper_core(top_config->filename,
+                                          top_config->font_ttf, id);
+        } else if (SYSTEM_MODE == SIM_GPU) {
+            chip = new config_helper_gpu(top_config->filename,
+                                         top_config->font_ttf, id);
         }
     }
 }

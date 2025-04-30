@@ -14,10 +14,14 @@ using namespace std;
 #define CHECK_C cout << total_cycle << endl;
 Define_bool_opt("--help", g_flag_help, false, "show these help information");
 Define_bool_opt("--node-mode", g_flag_node, false, "whether to sim in a node");
-Define_string_opt("--config-file", g_flag_config_file, "../llm/test/config_gpt2_small.json", "config file");
-Define_string_opt("--ttf-file", g_flag_ttf, "../font/NotoSansDisplay-Bold.ttf", "font ttf file");
-Define_bool_opt("--use-dramsys", g_flag_dramsys, true, "whether to use DRAMSys");
-Define_float_opt("--comp_util", g_flag_comp_util, 0.7, "computation and memory overlap");
+Define_string_opt("--config-file", g_flag_config_file,
+                  "../llm/test/config_gpt2_small.json", "config file");
+Define_string_opt("--ttf-file", g_flag_ttf, "../font/NotoSansDisplay-Bold.ttf",
+                  "font ttf file");
+Define_bool_opt("--use-dramsys", g_flag_dramsys, true,
+                "whether to use DRAMSys");
+Define_float_opt("--comp_util", g_flag_comp_util, 0.7,
+                 "computation and memory overlap");
 Define_int64_opt("--MAC_SIZE", g_flag_mac_size, 128, "MAC size");
 Define_int64_opt("--trace_window", g_flag_trace_window, 2, "Trace window size");
 
@@ -32,7 +36,9 @@ Define_int64_opt("--trace_window", g_flag_trace_window, 2, "Trace window size");
 // https://zhuanlan.zhihu.com/p/108231904
 
 
-void layernorm_forward(float *out, float *inp, float *weight, float *bias, int B, int T, int C, ExuConfig tile_exu, int &total_cycle) {
+void layernorm_forward(float *out, float *inp, float *weight, float *bias,
+                       int B, int T, int C, ExuConfig tile_exu,
+                       int &total_cycle) {
     // reference:
     // https://pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html
     // https://zhuanlan.zhihu.com/p/650231190 对最后一维特征做归一化
@@ -71,9 +77,10 @@ void layernorm_forward(float *out, float *inp, float *weight, float *bias, int B
             // seek to the output position in out[b,t,:]
             float *out_bt = out + b * T * C + t * C;
             for (int i = 0; i < C; i++) {
-                float n = (s * (x[i] - m));        // normalize // compute: 2C
-                float o = n * weight[i] + bias[i]; // scale and shift // compute: 2C
-                out_bt[i] = o;                     // write
+                float n = (s * (x[i] - m)); // normalize // compute: 2C
+                float o =
+                    n * weight[i] + bias[i]; // scale and shift // compute: 2C
+                out_bt[i] = o;               // write
             }
             // cache the mean and rstd for the backward pass later
             // mean[b * T + t] = m;
@@ -86,7 +93,8 @@ void layernorm_forward(float *out, float *inp, float *weight, float *bias, int B
     total_cycle += cycle;
 }
 
-void matmul_forward_naive(float *out, const float *inp, const float *weight, const float *bias, int B, int T, int C, int OC) {
+void matmul_forward_naive(float *out, const float *inp, const float *weight,
+                          const float *bias, int B, int T, int C, int OC) {
 // the most naive implementation of matrix multiplication
 // this serves as an algorithmic reference, and as a fallback for
 // unfriendly input shapes inside matmul_forward(), below.
@@ -105,8 +113,11 @@ void matmul_forward_naive(float *out, const float *inp, const float *weight, con
     }
 }
 
-void matmul_forward_cycle(int tile_id, float *out, const float *inp, const float *weight, const float *bias, int B, int T, int C, int OC, ExuConfig tile_exu, int out_addr, int inp_addr,
-                          int weight_addr, int bias_addr, DATATYPE datatype, int &total_cycle) {
+void matmul_forward_cycle(int tile_id, float *out, const float *inp,
+                          const float *weight, const float *bias, int B, int T,
+                          int C, int OC, ExuConfig tile_exu, int out_addr,
+                          int inp_addr, int weight_addr, int bias_addr,
+                          DATATYPE datatype, int &total_cycle) {
     // most of the running time is spent here and in matmul_backward
     // therefore, the implementation below is very mildly optimized
     // this function is otherwise identical to that of matmul_forward_naive()
@@ -150,12 +161,16 @@ void matmul_forward_cycle(int tile_id, float *out, const float *inp, const float
         for (int t = 0; t < T; t++) {
             for (int c = 0; c < C; c++) {
 
-                in_dcacheline = (inp_global_addr >> dcache_words_in_line_log2) >> 2;
+                in_dcacheline =
+                    (inp_global_addr >> dcache_words_in_line_log2) >> 2;
                 //(int tX,int tY, u_int64_t dram_addr, u_int64_t timer,
                 // u_int64_t & time_fetched, u_int64_t & time_prefetched,
                 // u_int64_t & prefetch_tag, bool prefetch){
 
-                dram_time += check_dcache(0, 0, in_dcacheline << (dcache_words_in_line_log2 + 2), total_cycle + dram_time, time_fetched, time_prefetched, prefetch_tag, false);
+                dram_time += check_dcache(
+                    0, 0, in_dcacheline << (dcache_words_in_line_log2 + 2),
+                    total_cycle + dram_time, time_fetched, time_prefetched,
+                    prefetch_tag, false);
                 inp_global_addr += data_byte;
                 // printf("out_global_addr: %d  dataset_words_per_tile: %d \n",
                 // out_global_addr, dataset_words_per_tile);
@@ -175,12 +190,16 @@ void matmul_forward_cycle(int tile_id, float *out, const float *inp, const float
     for (int oc = 0; oc < OC; oc++) {
         for (int c = 0; c < C; c++) {
 
-            weight_dcacheline = (weight_global_addr >> dcache_words_in_line_log2) >> 2;
+            weight_dcacheline =
+                (weight_global_addr >> dcache_words_in_line_log2) >> 2;
             //(int tX,int tY, u_int64_t dram_addr, u_int64_t timer, u_int64_t &
             // time_fetched, u_int64_t & time_prefetched, u_int64_t &
             // prefetch_tag, bool prefetch){
 
-            dram_time += check_dcache(0, 0, weight_dcacheline << (dcache_words_in_line_log2 + 2), total_cycle + dram_time, time_fetched, time_prefetched, prefetch_tag, false);
+            dram_time += check_dcache(
+                0, 0, weight_dcacheline << (dcache_words_in_line_log2 + 2),
+                total_cycle + dram_time, time_fetched, time_prefetched,
+                prefetch_tag, false);
             weight_global_addr += data_byte;
             // printf("out_global_addr: %d  dataset_words_per_tile: %d \n",
             // out_global_addr, dataset_words_per_tile);
@@ -205,7 +224,10 @@ void matmul_forward_cycle(int tile_id, float *out, const float *inp, const float
         // time_fetched, u_int64_t & time_prefetched, u_int64_t & prefetch_tag,
         // bool prefetch){
 
-        dram_time += check_dcache(0, 0, bias_dcacheline << (dcache_words_in_line_log2 + 2), total_cycle + dram_time, time_fetched, time_prefetched, prefetch_tag, false);
+        dram_time += check_dcache(
+            0, 0, bias_dcacheline << (dcache_words_in_line_log2 + 2),
+            total_cycle + dram_time, time_fetched, time_prefetched,
+            prefetch_tag, false);
         bias_global_addr += data_byte;
         // printf("out_global_addr: %d  dataset_words_per_tile: %d \n",
         // out_global_addr, dataset_words_per_tile);
@@ -244,12 +266,16 @@ void matmul_forward_cycle(int tile_id, float *out, const float *inp, const float
         for (int t = 0; t < T; t++) {
             for (int oc = 0; oc < OC; oc++) {
 
-                out_dcacheline = (out_global_addr >> dcache_words_in_line_log2) >> 2;
+                out_dcacheline =
+                    (out_global_addr >> dcache_words_in_line_log2) >> 2;
                 //(int tX,int tY, u_int64_t dram_addr, u_int64_t timer,
                 // u_int64_t & time_fetched, u_int64_t & time_prefetched,
                 // u_int64_t & prefetch_tag, bool prefetch){
 
-                overlap_time += check_dcache(0, 0, out_dcacheline << (dcache_words_in_line_log2 + 2), total_cycle + overlap_time, time_fetched, time_prefetched, prefetch_tag, false);
+                overlap_time += check_dcache(
+                    0, 0, out_dcacheline << (dcache_words_in_line_log2 + 2),
+                    total_cycle + overlap_time, time_fetched, time_prefetched,
+                    prefetch_tag, false);
                 out_global_addr += data_byte;
                 // printf("out_global_addr: %d  dataset_words_per_tile: %d \n",
                 // out_global_addr, dataset_words_per_tile);
@@ -308,7 +334,9 @@ void matmul_forward_cycle(int tile_id, float *out, const float *inp, const float
 }
 
 
-void matmul_forward(float *out, const float *inp, const float *weight, const float *bias, int B, int T, int C, int OC, ExuConfig tile_exu, int &total_cycle) {
+void matmul_forward(float *out, const float *inp, const float *weight,
+                    const float *bias, int B, int T, int C, int OC,
+                    ExuConfig tile_exu, int &total_cycle) {
     // most of the running time is spent here and in matmul_backward
     // therefore, the implementation below is very mildly optimized
     // this function is otherwise identical to that of matmul_forward_naive()
@@ -367,7 +395,9 @@ void matmul_forward(float *out, const float *inp, const float *weight, const flo
     total_cycle += cycle;
 }
 
-void attention_forward(float *out, float *preatt, float *att, float *inp, int B, int T, int C, int NH, ExuConfig tile_exu, int &total_cycle) {
+void attention_forward(float *out, float *preatt, float *att, float *inp, int B,
+                       int T, int C, int NH, ExuConfig tile_exu,
+                       int &total_cycle) {
     // input is (B, T, 3C) holding the query, key, value (Q, K, V) vectors
     // preatt, att are (B, NH, T, T). NH = number of heads, T = sequence length
     // that holds the pre-attention and post-attention scores (used in backward)
@@ -382,7 +412,8 @@ void attention_forward(float *out, float *preatt, float *att, float *inp, int B,
     int cycle = 0;
     // calculate cycles
     if (tile_exu.type == MAC_Array) {
-        cycle = (B * NH * T * (T - 1) / 2 * (4 * hs + 5)) / (2 * tile_exu.x_dims * tile_exu.y_dims);
+        cycle = (B * NH * T * (T - 1) / 2 * (4 * hs + 5)) /
+                (2 * tile_exu.x_dims * tile_exu.y_dims);
     }
 
 #pragma omp parallel for collapse(3)
@@ -397,12 +428,14 @@ void attention_forward(float *out, float *preatt, float *att, float *inp, int B,
                 float maxval = -10000.0f; // TODO something better
                 // 这里已经是causal了
                 for (int t2 = 0; t2 <= t; t2++) {
-                    float *key_t2 = inp + b * T * C3 + t2 * C3 + h * hs + C; // +C because it's key
+                    float *key_t2 = inp + b * T * C3 + t2 * C3 + h * hs +
+                                    C; // +C because it's key
 
                     // (query_t) dot (key_t2)
                     float val = 0.0f;
                     for (int i = 0; i < hs; i++) {
-                        val += query_t[i] * key_t2[i]; // compute: B*NH*T*(T-1)/2*(2*hs+1)
+                        val += query_t[i] *
+                               key_t2[i]; // compute: B*NH*T*(T-1)/2*(2*hs+1)
                     }
                     val *= scale;
                     if (val > maxval) {
@@ -417,7 +450,8 @@ void attention_forward(float *out, float *preatt, float *att, float *inp, int B,
                 // stability
                 float expsum = 0.0f;
                 for (int t2 = 0; t2 <= t; t2++) {
-                    float expv = expf(preatt_bth[t2] - maxval); // compute: B*NH*T*(T-1)/2*3
+                    float expv = expf(preatt_bth[t2] -
+                                      maxval); // compute: B*NH*T*(T-1)/2*3
                     expsum += expv;
                     // 减去 maxval 后的 指数数值
                     att_bth[t2] = expv;
@@ -444,10 +478,13 @@ void attention_forward(float *out, float *preatt, float *att, float *inp, int B,
                     out_bth[i] = 0.0f;
                 }
                 for (int t2 = 0; t2 <= t; t2++) {
-                    float *value_t2 = inp + b * T * C3 + t2 * C3 + h * hs + C * 2; // +C*2 because it's value
+                    float *value_t2 = inp + b * T * C3 + t2 * C3 + h * hs +
+                                      C * 2; // +C*2 because it's value
                     float att_btht2 = att_bth[t2];
                     for (int i = 0; i < hs; i++) {
-                        out_bth[i] += att_btht2 * value_t2[i]; // compute: B*NH*T*(T-1)/2*2*hs
+                        out_bth[i] +=
+                            att_btht2 *
+                            value_t2[i]; // compute: B*NH*T*(T-1)/2*2*hs
                     }
                 }
             }
@@ -460,7 +497,8 @@ void attention_forward(float *out, float *preatt, float *att, float *inp, int B,
 }
 
 #define GELU_SCALING_FACTOR sqrtf(2.0f / M_PI)
-void gelu_forward(float *out, float *inp, int N, ExuConfig tile_exu, int &total_cycle) {
+void gelu_forward(float *out, float *inp, int N, ExuConfig tile_exu,
+                  int &total_cycle) {
     // (approximate) GeLU elementwise non-linearity in the MLP block of
     // Transformer
     int cycle = 0;
@@ -471,8 +509,10 @@ void gelu_forward(float *out, float *inp, int N, ExuConfig tile_exu, int &total_
 
     for (int i = 0; i < N; i++) {
         float x = inp[i];
-        float cube = 0.044715f * x * x * x;                                   // compute: 3N
-        out[i] = 0.5f * x * (1.0f + tanhf(GELU_SCALING_FACTOR * (x + cube))); // compute: (2+2+4)N
+        float cube = 0.044715f * x * x * x; // compute: 3N
+        out[i] = 0.5f * x *
+                 (1.0f +
+                  tanhf(GELU_SCALING_FACTOR * (x + cube))); // compute: (2+2+4)N
     }
 
     cout << "gelu" << endl;
@@ -480,7 +520,8 @@ void gelu_forward(float *out, float *inp, int N, ExuConfig tile_exu, int &total_
     total_cycle += cycle;
 }
 
-void residual_forward(float *out, float *inp1, float *inp2, int N, ExuConfig tile_exu, int &total_cycle) {
+void residual_forward(float *out, float *inp1, float *inp2, int N,
+                      ExuConfig tile_exu, int &total_cycle) {
     int cycle = 0;
     // calculate cycles
     if (tile_exu.type == MAC_Array) {
@@ -496,7 +537,8 @@ void residual_forward(float *out, float *inp1, float *inp2, int N, ExuConfig til
     total_cycle += cycle;
 }
 
-void softmax_forward(float *probs, float *logits, int B, int T, int V, int Vp, ExuConfig tile_exu, int &total_cycle) {
+void softmax_forward(float *probs, float *logits, int B, int T, int V, int Vp,
+                     ExuConfig tile_exu, int &total_cycle) {
     // output: probs are (B,T,Vp) of the probabilities (sums to 1.0 in each b,t
     // position) input: logits is (B,T,Vp) of the unnormalized log probabilities
     // Vp is the padded vocab size (for efficiency), V is the "real" vocab size
@@ -544,7 +586,8 @@ void softmax_forward(float *probs, float *logits, int B, int T, int V, int Vp, E
     total_cycle += cycle;
 }
 
-void crossentropy_forward(float *losses, float *probs, int *targets, int B, int T, int Vp, ExuConfig tile_exu, int &total_cycle) {
+void crossentropy_forward(float *losses, float *probs, int *targets, int B,
+                          int T, int Vp, ExuConfig tile_exu, int &total_cycle) {
     // output: losses is (B,T) of the individual losses at each position
     // input: probs are (B,T,Vp) of the probabilities
     // input: targets is (B,T) of integers giving the correct index in logits
@@ -601,7 +644,8 @@ int task_n() {
     //(int tX,int tY, u_int64_t dram_addr, u_int64_t timer, u_int64_t &
     // time_fetched, u_int64_t & time_prefetched, u_int64_t & prefetch_tag, bool
     // prefetch){
-    check_dcache(0, 0, 1, 0, time_fetched, time_prefetched, prefetch_tag, false);
+    check_dcache(0, 0, 1, 0, time_fetched, time_prefetched, prefetch_tag,
+                 false);
 
     float *l_qkv = (float *)mallocCheck(B * T * 3 * C * sizeof(float));
     float *l_ln1 = (float *)mallocCheck(B * T * C * sizeof(float));
@@ -643,25 +687,34 @@ int task_n() {
 
 
     try {
-        layernorm_forward(l_ln1, residual, l_ln1w, l_ln1b, B, T, C, tile_exu, total_cycle);
+        layernorm_forward(l_ln1, residual, l_ln1w, l_ln1b, B, T, C, tile_exu,
+                          total_cycle);
         CHECK_C
-        matmul_forward_cycle(0, l_qkv, l_ln1, l_qkvw, l_qkvb, B, T, C, 3 * C, tile_exu, 0, 0, 0, 0, DATATYPE::INT8, total_cycle);
+        matmul_forward_cycle(0, l_qkv, l_ln1, l_qkvw, l_qkvb, B, T, C, 3 * C,
+                             tile_exu, 0, 0, 0, 0, DATATYPE::INT8, total_cycle);
         CHECK_C
-        attention_forward(l_atty, l_preatt, l_att, l_qkv, B, T, C, NH, tile_exu, total_cycle);
+        attention_forward(l_atty, l_preatt, l_att, l_qkv, B, T, C, NH, tile_exu,
+                          total_cycle);
         CHECK_C
-        matmul_forward(l_attproj, l_atty, l_attprojw, l_attprojb, B, T, C, C, tile_exu, total_cycle);
+        matmul_forward(l_attproj, l_atty, l_attprojw, l_attprojb, B, T, C, C,
+                       tile_exu, total_cycle);
         CHECK_C
-        residual_forward(l_residual2, residual, l_attproj, B * T * C, tile_exu, total_cycle);
+        residual_forward(l_residual2, residual, l_attproj, B * T * C, tile_exu,
+                         total_cycle);
         CHECK_C
-        layernorm_forward(l_ln2, l_residual2, l_ln2w, l_ln2b, B, T, C, tile_exu, total_cycle);
+        layernorm_forward(l_ln2, l_residual2, l_ln2w, l_ln2b, B, T, C, tile_exu,
+                          total_cycle);
         CHECK_C
-        matmul_forward(l_fch, l_ln2, l_fcw, l_fcb, B, T, C, 4 * C, tile_exu, total_cycle);
+        matmul_forward(l_fch, l_ln2, l_fcw, l_fcb, B, T, C, 4 * C, tile_exu,
+                       total_cycle);
         CHECK_C
         gelu_forward(l_fch_gelu, l_fch, B * T * 4 * C, tile_exu, total_cycle);
         CHECK_C
-        matmul_forward(l_fcproj, l_fch_gelu, l_fcprojw, l_fcprojb, B, T, 4 * C, C, tile_exu, total_cycle);
+        matmul_forward(l_fcproj, l_fch_gelu, l_fcprojw, l_fcprojb, B, T, 4 * C,
+                       C, tile_exu, total_cycle);
         CHECK_C
-        residual_forward(l_residual3, l_residual2, l_fcproj, B * T * C, tile_exu, total_cycle);
+        residual_forward(l_residual3, l_residual2, l_fcproj, B * T * C,
+                         tile_exu, total_cycle);
         CHECK_C
         // inp is (B,T,C), weight is (OC, C), bias is (OC)
         // out will be (B,T,OC)
@@ -745,8 +798,10 @@ int sc_main(int argc, char *argv[]) {
     initialize_cache_structures();
     init_perf_counters();
 
-    Event_engine *event_engine = new Event_engine("event-engine", g_flag_trace_window);
-    Monitor monitor("monitor", event_engine, g_flag_config_file.c_str(), g_flag_ttf.c_str());
+    Event_engine *event_engine =
+        new Event_engine("event-engine", g_flag_trace_window);
+    Monitor monitor("monitor", event_engine, g_flag_config_file.c_str(),
+                    g_flag_ttf.c_str());
     sc_trace_file *tf = sc_create_vcd_trace_file("Cchip_1");
     sc_clock clk("clk", CYCLE, SC_NS);
     // sc_trace(tf, clk, "clk");

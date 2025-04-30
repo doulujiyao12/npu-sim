@@ -5,6 +5,7 @@ using namespace std;
 
 // 在全局vtable中查找对应名字的参数
 int find_var(string var);
+void set_var_gpt2(int B, int T, int C, int NH);
 
 int ceiling_division(int a, int b);
 

@@ -7,9 +7,12 @@
 
 void Batchnorm_f::print_self(string prefix) {
     cout << prefix << "<batchnorm_forward>\n";
-    cout << prefix << "\tB: " << B << ", H: " << H << ", W: " << W << ", C: " << C << endl;
-    cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size << ", previous_inp_size: " << p_inp_size << endl;
-    cout << prefix << "\toutput_offset: " << out_offset << ", input_offset: " << inp_offset << endl;
+    cout << prefix << "\tB: " << B << ", H: " << H << ", W: " << W
+         << ", C: " << C << endl;
+    cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size
+         << ", previous_inp_size: " << p_inp_size << endl;
+    cout << prefix << "\toutput_offset: " << out_offset
+         << ", input_offset: " << inp_offset << endl;
 }
 
 void Batchnorm_f::parse_json(json j) {
@@ -118,7 +121,8 @@ int Batchnorm_f::task() {
             for (int h = 0; h < H; ++h) {
                 for (int w = 0; w < W; ++w) {
                     int index = b * (C * H * W) + c * (H * W) + h * W + w;
-                    output[index] = gamma[c] * ((input[index] - mean) / stddev) + beta[c];
+                    output[index] =
+                        gamma[c] * ((input[index] - mean) / stddev) + beta[c];
                 }
             }
         }

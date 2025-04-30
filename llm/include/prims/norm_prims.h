@@ -61,7 +61,10 @@ public:
 
     Recv_prim() { name = "Recv_prim"; }
     Recv_prim(RECV_TYPE type);
-    Recv_prim(RECV_TYPE type, int tag, int cnt) : type(type), tag_id(tag), recv_cnt(cnt) { name = "Recv_prim"; }
+    Recv_prim(RECV_TYPE type, int tag, int cnt)
+        : type(type), tag_id(tag), recv_cnt(cnt) {
+        name = "Recv_prim";
+    }
 };
 
 
@@ -89,9 +92,18 @@ public:
 
     Send_prim() { name = "Send_prim"; }
     Send_prim(SEND_TYPE type) : type(type) { name = "Send_prim"; }
-    Send_prim(SEND_TYPE type, int des, int tag) : type(type), des_id(des), tag_id(tag) { name = "Send_prim"; } // 用于SEND_ACK
-    Send_prim(SEND_TYPE type, int des, int des_offset, int local_offset, int max_packet, int tag)
-        : des_id(des), des_offset(des_offset), local_offset(local_offset), type(type), max_packet(max_packet), tag_id(tag) {
+    Send_prim(SEND_TYPE type, int des, int tag)
+        : type(type), des_id(des), tag_id(tag) {
+        name = "Send_prim";
+    } // 用于SEND_ACK
+    Send_prim(SEND_TYPE type, int des, int des_offset, int local_offset,
+              int max_packet, int tag)
+        : des_id(des),
+          des_offset(des_offset),
+          local_offset(local_offset),
+          type(type),
+          max_packet(max_packet),
+          tag_id(tag) {
         name = "Send_prim";
     }
 };
@@ -124,6 +136,28 @@ public:
     }
 };
 
+class Set_batch : public prim_base {
+public:
+    BatchInfo *target;
+    BatchInfo batchInfo;
+
+    int task();
+    int task_core(TaskCoreContext &context);
+
+    sc_bv<128> serialize();
+    void deserialize(sc_bv<128> buffer);
+
+    void parse_json(json j);
+    void print_self(string prefix);
+    int sram_utilization(DATATYPE datatype);
+
+    Set_batch() {}
+
+    Set_batch(BatchInfo *target) {
+        target = target;
+    }
+};
+
 class Store_prim : public prim_base {
 public:
     int dram_addr;
@@ -141,5 +175,7 @@ public:
     int sram_utilization(DATATYPE datatype);
 
     Store_prim() { name = "Store_prim"; }
-    Store_prim(int da, int sa, int s) : dram_addr(da), sram_addr(sa), size(s) { name = "Store_prim"; }
+    Store_prim(int da, int sa, int s) : dram_addr(da), sram_addr(sa), size(s) {
+        name = "Store_prim";
+    }
 };

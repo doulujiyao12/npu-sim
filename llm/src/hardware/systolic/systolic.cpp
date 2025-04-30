@@ -1,13 +1,17 @@
 #include "hardware/systolic/systolic.h"
 
 // systolice array
-SystolicArray::SystolicArray(const sc_module_name &n, Event_engine *event_engine, HardwareTaskConfig *config) : sc_module(n), event_engine(event_engine), config(config) {
+SystolicArray::SystolicArray(const sc_module_name &n,
+                             Event_engine *event_engine,
+                             HardwareTaskConfig *config)
+    : sc_module(n), event_engine(event_engine), config(config) {
     elements = new PE *[PE_GRID_SIZE];
     for (int i = 0; i < PE_GRID_SIZE; i++) {
         elements[i] = new PE(sc_gen_unique_name("pe"), i, this->event_engine);
     }
 
-    interface = new Systolic_interface(sc_gen_unique_name("sys-interface"), this->event_engine, this->config);
+    interface = new Systolic_interface(sc_gen_unique_name("sys-interface"),
+                                       this->event_engine, this->config);
     interface->elements = elements;
 
     data_c = new sc_signal<float>[PE_GRID_SIZE];
@@ -75,7 +79,8 @@ SystolicArray::SystolicArray(const sc_module_name &n, Event_engine *event_engine
         }
         // psum 的 输出使能
         if (i / PE_GRID_X == PE_GRID_X - 1) {
-            (interface->data_sent_i)[i % PE_GRID_X](psum_sent_back[i % PE_GRID_X]);
+            (interface->data_sent_i)[i % PE_GRID_X](
+                psum_sent_back[i % PE_GRID_X]);
             (*(elements[i])->data_sent_down_o)(psum_sent_back[i % PE_GRID_X]);
         }
     }
@@ -114,7 +119,10 @@ SystolicArray::~SystolicArray() {
 }
 
 // systolic interface
-Systolic_interface::Systolic_interface(const sc_module_name &n, Event_engine *event_engine, HardwareTaskConfig *config) : sc_module(n), event_engine(event_engine), config(config) {
+Systolic_interface::Systolic_interface(const sc_module_name &n,
+                                       Event_engine *event_engine,
+                                       HardwareTaskConfig *config)
+    : sc_module(n), event_engine(event_engine), config(config) {
     for (int i = 0; i < PE_GRID_X; i++) {
         psum_count[i] = 0;
     }
@@ -134,7 +142,8 @@ Systolic_interface::Systolic_interface(const sc_module_name &n, Event_engine *ev
     dont_initialize();
 }
 
-void Systolic_interface::distribute_weight(int batch, int h_index, int w_index) {
+void Systolic_interface::distribute_weight(int batch, int h_index,
+                                           int w_index) {
     // 将weight分发到各个PE, x和y代表weight的区块索引
     for (int i = 0; i < PE_GRID_SIZE; i++) {
         int row = h_index * PE_GRID_X + i / PE_GRID_X;
@@ -164,7 +173,9 @@ void Systolic_interface::systolic_interface_execute() {
             weight_w = config->args[3];
             weight_h = data_w;
 
-            cout << "batch_size: " << batch_size << ", data_h: " << data_h << ", data_w: " << data_w << ", weight_h: " << weight_h << ", weight_w: " << weight_w << ".\n";
+            cout << "batch_size: " << batch_size << ", data_h: " << data_h
+                 << ", data_w: " << data_w << ", weight_h: " << weight_h
+                 << ", weight_w: " << weight_w << ".\n";
 
             int weight_slice_h = weight_h / PE_GRID_X;
             int weight_slice_w = weight_w / PE_GRID_X;
@@ -175,11 +186,15 @@ void Systolic_interface::systolic_interface_execute() {
                 for (period_h = 0; period_h < weight_slice_h; period_h++) {
                     data_period_w = period_h;
                     for (period_w = 0; period_w < weight_slice_w; period_w++) {
-                        cout << "Sys[INFO]: at batch " << period_b << ", weight_h " << period_h << ", weight_w " << period_w << ".\n";
+                        cout << "Sys[INFO]: at batch " << period_b
+                             << ", weight_h " << period_h << ", weight_w "
+                             << period_w << ".\n";
                         distribute_weight(period_b, period_h, period_w);
                         // 输出的行切块，
-                        for (data_period_h = 0; data_period_h < data_slice_h; data_period_h++) {
-                            cout << "Sys[INFO]: at data_h " << data_period_h << ".\n";
+                        for (data_period_h = 0; data_period_h < data_slice_h;
+                             data_period_h++) {
+                            cout << "Sys[INFO]: at data_h " << data_period_h
+                                 << ".\n";
                             // 发送数据
                             int index[PE_GRID_X];
                             // 脉动 shift delay
@@ -196,7 +211,13 @@ void Systolic_interface::systolic_interface_execute() {
                                         // do nothing
                                     } else {
                                         flag = true;
-                                        float num = input[period_b * data_h * data_w + (data_period_h * PE_GRID_X + i) * data_w + data_period_w * PE_GRID_X + index[i]];
+                                        float num =
+                                            input[period_b * data_h * data_w +
+                                                  (data_period_h * PE_GRID_X +
+                                                   i) *
+                                                      data_w +
+                                                  data_period_w * PE_GRID_X +
+                                                  index[i]];
                                         data_o[i].write(num);
                                         data_sent_o[0][i].write(true);
 
@@ -245,11 +266,20 @@ void Systolic_interface::receive_psum() {
             if (data_sent_i[i].read()) {
                 flag = false;
                 float psum = psum_i[i].read();
-                output[period_b * data_h * weight_w + (data_period_h * PE_GRID_X + psum_count[i]) * weight_w + period_w * PE_GRID_X + i] += psum;
-                cout << period_b << " " << period_h << " " << period_w << " " << data_period_h << " " << i << " " << psum_count[i] << " " << psum << endl;
+                output[period_b * data_h * weight_w +
+                       (data_period_h * PE_GRID_X + psum_count[i]) * weight_w +
+                       period_w * PE_GRID_X + i] += psum;
+                cout << period_b << " " << period_h << " " << period_w << " "
+                     << data_period_h << " " << i << " " << psum_count[i] << " "
+                     << psum << endl;
                 psum_count[i]++;
 
-                cout << "Sys[RECV]: output[" << period_b * data_h * weight_w + (data_period_h * PE_GRID_X + psum_count[i] - 1) * weight_w + period_w * PE_GRID_X + i << "] += " << psum << ".\n";
+                cout << "Sys[RECV]: output["
+                     << period_b * data_h * weight_w +
+                            (data_period_h * PE_GRID_X + psum_count[i] - 1) *
+                                weight_w +
+                            period_w * PE_GRID_X + i
+                     << "] += " << psum << ".\n";
             }
         }
 

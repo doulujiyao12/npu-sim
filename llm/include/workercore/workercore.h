@@ -4,6 +4,7 @@
 #include "common/memory.h"
 #include "common/msg.h"
 #include "common/system.h"
+#include "common/pd.h"
 #include "defs/const.h"
 #include "hardware/systolic/systolic.h"
 #include "macros/macros.h"
@@ -66,12 +67,13 @@ public:
 
     Msg send_buffer; // 每一次调用write helper，从这里获取要发送的msg
 
-    queue<Msg> recv_buffer;       // 接收recv原语的buffer，用于重排
-    queue<Msg> start_data_buffer; // 专门用于存放start
-                                  // data的buffer，和普通的recv_buffer作区分。这么做主要是因为host发送给core时没有握手信号。
+    queue<Msg> recv_buffer; // 接收recv原语的buffer，用于重排
+    queue<Msg>
+        start_data_buffer; // 专门用于存放start
+                           // data的buffer，和普通的recv_buffer作区分。这么做主要是因为host发送给core时没有握手信号。
     queue<Msg> ack_buffer;
 
-    bool send_done;                     // 并行策略：send和recv并行
+    bool send_done; // 并行策略：send和recv并行
     bool send_last_packet;
     bool comp_done;                     // 并行策略：comp和send并行
     deque<prim_base *> prim_queue;      // 用于存储所有需要依次执行的原语
@@ -90,9 +92,12 @@ public:
     vector<Msg> request_buffer;
 
     /* ----------------SendHelper------------------- */
-    sc_time present_time = sc_time(0, SC_NS);   
+    sc_time present_time = sc_time(0, SC_NS);
     int send_helper_write; // 用于指示send
                            // helper是要向data_sent_o写入true还是false
+
+    /* ----------------PD complex------------------- */
+    BatchInfo *batchInfo;
 
     /* --------------------------------------------- */
 
@@ -120,7 +125,7 @@ public:
 #if USE_L1L2_CACHE == 1
     L1Cache *core_lv1_cache;
     // Processor *cache_processor;
-    GPUNB_dcacheIF * gpunb_dcache_if;
+    GPUNB_dcacheIF *gpunb_dcache_if;
     GpuPosLocator *gpu_pos_locator;
 #else
 #endif
@@ -128,17 +133,19 @@ public:
     high_bw_mem_access_unit *high_bw_mem_access_port;
 
     // sram相关
-    int *sram_addr;                         // 用于记录当前sram可分配的起始地址
-    sc_event *start_nb_dram_event;          // 用于启动非阻塞dram访存
-    sc_event *end_nb_dram_event;            // 非阻塞sram访存结束标志
-    sc_event *start_nb_gpu_dram_event;     // 用于启动非阻塞gpu dram访存
-    sc_event *end_nb_gpu_dram_event;       // 非阻塞gpu dram访存结束标志
-    SramPosLocator *sram_pos_locator;       // 记录sram中数据的位置，label(string)-int
-    AddrDatapassLabel *next_datapass_label; // 记录sram中数据的标签，这个变量由set
-                                            // sram修改，并由紧接着的comp原语读取并使用
+    int *sram_addr;                    // 用于记录当前sram可分配的起始地址
+    sc_event *start_nb_dram_event;     // 用于启动非阻塞dram访存
+    sc_event *end_nb_dram_event;       // 非阻塞sram访存结束标志
+    sc_event *start_nb_gpu_dram_event; // 用于启动非阻塞gpu dram访存
+    sc_event *end_nb_gpu_dram_event;   // 非阻塞gpu dram访存结束标志
+    SramPosLocator *sram_pos_locator; // 记录sram中数据的位置，label(string)-int
+    AddrDatapassLabel
+        *next_datapass_label; // 记录sram中数据的标签，这个变量由set
+                              // sram修改，并由紧接着的comp原语读取并使用
 
     SC_HAS_PROCESS(WorkerCoreExecutor);
-    WorkerCoreExecutor(const sc_module_name &n, int s_cid, Event_engine *event_engine);
+    WorkerCoreExecutor(const sc_module_name &n, int s_cid,
+                       Event_engine *event_engine);
     ~WorkerCoreExecutor();
 
     void worker_core_execute();

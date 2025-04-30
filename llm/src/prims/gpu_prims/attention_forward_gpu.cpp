@@ -13,12 +13,14 @@ int Attention_f_gpu::task_core(TaskCoreContext &context) {
     int data_size_input = B * T * 3 * C;   // QKV input
     int data_size_preatt = B * NH * T * T; // preatt
     int data_size_att = B * NH * T * T;    // att
-    int data_size_out = B * T * C;         // output
+    int data_size_out = 16;                // output
 
     int mem_time = 0;
     auto input_mem_offset = 0;
-    if (!gpu_pos_locator->findPair(datapass_label.indata[0], input_mem_offset)) {
-        printf("[ERROR] Attention_f_gpu: gpu_pos_locator cannot find the label: "
+    if (!gpu_pos_locator->findPair(datapass_label.indata[0],
+                                   input_mem_offset)) {
+        printf(
+            "[ERROR] Attention_f_gpu: gpu_pos_locator cannot find the label: "
             "%s\n",
             datapass_label.indata[0].c_str());
         sc_stop();
@@ -41,16 +43,22 @@ int Attention_f_gpu::task_core(TaskCoreContext &context) {
     AddrPosKey a_key = AddrPosKey(0, data_size_att);
     gpu_pos_locator->fetchPair(label_att, a_key);
 
-    cout << cid << " [Attention_f_gpu] before read1: " << mem_time << " at addr " << input_mem_offset << endl;
-    gpu_read_generic(context, input_mem_offset, data_byte*data_size_input/3*2, mem_time);
+    cout << cid << " [Attention_f_gpu] before read1: " << mem_time
+         << " at addr " << input_mem_offset << endl;
+    gpu_read_generic(context, input_mem_offset,
+                     data_byte * data_size_input / 3 * 2, mem_time);
     cout << cid << " [Attention_f_gpu] after read1: " << mem_time << endl;
-    cout << cid << " [Attention_f_gpu] before write1: " << mem_time << " at addr " << p_key.pos << endl;
-    gpu_write_generic(context, p_key.pos, data_byte*data_size_preatt, mem_time);
+    cout << cid << " [Attention_f_gpu] before write1: " << mem_time
+         << " at addr " << p_key.pos << endl;
+    gpu_write_generic(context, p_key.pos, data_byte * data_size_preatt,
+                      mem_time);
     cout << cid << " [Attention_f_gpu] after write1: " << mem_time << endl;
-    gpu_read_generic(context, p_key.pos, data_byte*data_size_preatt, mem_time);
-    gpu_write_generic(context, a_key.pos, data_byte*data_size_att, mem_time);
-    gpu_read_generic(context, a_key.pos, data_byte*data_size_att, mem_time);
-    gpu_read_generic(context, input_mem_offset, data_byte*data_size_input/3, mem_time);
+    gpu_read_generic(context, p_key.pos, data_byte * data_size_preatt,
+                     mem_time);
+    gpu_write_generic(context, a_key.pos, data_byte * data_size_att, mem_time);
+    gpu_read_generic(context, a_key.pos, data_byte * data_size_att, mem_time);
+    gpu_read_generic(context, input_mem_offset, data_byte * data_size_input / 3,
+                     mem_time);
 
     cout << cid << " [Attention_f_gpu] after this: " << mem_time << endl;
 

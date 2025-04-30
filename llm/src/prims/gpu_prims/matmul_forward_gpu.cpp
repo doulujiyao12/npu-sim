@@ -17,10 +17,11 @@ int Matmul_f_gpu::task_core(TaskCoreContext &context) {
 
     int mem_time = 0;
     auto input_mem_offset = 0;
-    if (!gpu_pos_locator->findPair(datapass_label.indata[0], input_mem_offset)) {
+    if (!gpu_pos_locator->findPair(datapass_label.indata[0],
+                                   input_mem_offset)) {
         printf("[ERROR] Matmul_f_gpu: gpu_pos_locator cannot find the label: "
-            "%s\n",
-            datapass_label.indata[0].c_str());
+               "%s\n",
+               datapass_label.indata[0].c_str());
         sc_stop();
     }
 
@@ -41,22 +42,29 @@ int Matmul_f_gpu::task_core(TaskCoreContext &context) {
     AddrPosKey b_key = AddrPosKey(0, data_size_bias);
     gpu_pos_locator->fetchPair(label_bias, b_key);
 
-    cout << cid << " [Matmul_f_gpu] before read1: " << mem_time << " at addr " << input_mem_offset << endl;
-    gpu_read_generic(context, input_mem_offset, data_byte*data_size_input, mem_time);
+    cout << cid << " [Matmul_f_gpu] before read1: " << mem_time << " at addr "
+         << input_mem_offset << endl;
+    gpu_read_generic(context, input_mem_offset, data_byte * data_size_input,
+                     mem_time);
     cout << cid << " [Matmul_f_gpu] after read1: " << mem_time << endl;
-    cout << cid << " [Matmul_f_gpu] before read2: " << mem_time << " at addr " << w_key.pos << endl;
-    gpu_read_generic(context, w_key.pos, data_byte*data_size_weight, mem_time);
+    cout << cid << " [Matmul_f_gpu] before read2: " << mem_time << " at addr "
+         << w_key.pos << endl;
+    gpu_read_generic(context, w_key.pos, data_byte * data_size_weight,
+                     mem_time);
     cout << cid << " [Matmul_f_gpu] after read2: " << mem_time << endl;
-    cout << cid << " [Matmul_f_gpu] before read3: " << mem_time << " at addr " << b_key.pos << endl;
-    gpu_read_generic(context, b_key.pos, data_byte*data_size_bias, mem_time);
+    cout << cid << " [Matmul_f_gpu] before read3: " << mem_time << " at addr "
+         << b_key.pos << endl;
+    gpu_read_generic(context, b_key.pos, data_byte * data_size_bias, mem_time);
     cout << cid << " [Matmul_f_gpu] after read3: " << mem_time << endl;
 
     // TODO: 模拟计算cycle数
     int overlap_time = mem_time;
     AddrPosKey out_key = AddrPosKey(0, data_byte * data_size_out);
     gpu_pos_locator->addPair(datapass_label.outdata, out_key);
-    cout << cid << " [Matmul_f_gpu] before write: " << mem_time << " at addr " << out_key.pos << endl;
-    gpu_write_generic(context, out_key.pos, data_byte*data_size_out, overlap_time);
+    cout << cid << " [Matmul_f_gpu] before write: " << mem_time << " at addr "
+         << out_key.pos << endl;
+    gpu_write_generic(context, out_key.pos, data_byte * data_size_out,
+                      overlap_time);
 
     cout << cid << " [Matmul_f_gpu] after write: " << overlap_time << endl;
 

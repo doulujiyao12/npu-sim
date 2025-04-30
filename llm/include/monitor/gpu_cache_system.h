@@ -1,8 +1,8 @@
 #pragma once
 #include "systemc.h"
 
-#include "memory/gpu/GPU_L1L2_Cache.h"
 #include "memory/dramsys_wrapper.h"
+#include "memory/gpu/GPU_L1L2_Cache.h"
 
 class L1L2CacheSystem : public sc_module {
 public:
@@ -14,12 +14,19 @@ public:
     ::DRAMSys::Config::Configuration testConfig;
     gem5::memory::DRAMSysWrapper *dramSysWrapper;
 
-    L1L2CacheSystem(sc_module_name name, int numProcessors, vector<L1Cache *> l1caches, vector<GPUNB_dcacheIF *> processors, std::string_view configuration, std::string_view resource_directory) : 
-    sc_module(name), testConfig(::DRAMSys::Config::from_path(configuration, resource_directory))  {
+    L1L2CacheSystem(sc_module_name name, int numProcessors,
+                    vector<L1Cache *> l1caches,
+                    vector<GPUNB_dcacheIF *> processors,
+                    std::string_view configuration,
+                    std::string_view resource_directory)
+        : sc_module(name),
+          testConfig(
+              ::DRAMSys::Config::from_path(configuration, resource_directory)) {
 
         l2Cache = new L2Cache("l2_cache", 65536, 64, 8, 16);
 
-        dramSysWrapper = new gem5::memory::DRAMSysWrapper("DRAMSysWrapper", testConfig, false);
+        dramSysWrapper = new gem5::memory::DRAMSysWrapper("DRAMSysWrapper",
+                                                          testConfig, false);
         // mainMemory = new MainMemory("main_memory");
         bus = new Bus("bus", numProcessors);
 

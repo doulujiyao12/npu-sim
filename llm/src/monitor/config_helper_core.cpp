@@ -8,7 +8,7 @@
 
 using json = nlohmann::json;
 
-CoreConfig *Config_helper_core::get_core(int id) {
+CoreConfig *config_helper_core::get_core(int id) {
     for (int i = 0; i < coreconfigs.size(); i++) {
         if (coreconfigs[i].id == id)
             return &(coreconfigs[i]);
@@ -20,7 +20,7 @@ CoreConfig *Config_helper_core::get_core(int id) {
     return NULL;
 }
 
-void Config_helper_core::print_self() {
+void config_helper_core::print_self() {
     for (auto core : coreconfigs) {
         cout << "[Core " << core.id << "]\n";
 
@@ -41,7 +41,11 @@ void Config_helper_core::print_self() {
         cout << "\tCore cast: \n";
         for (auto work : core.worklist) {
             for (auto cast : work.cast) {
-                cout << "\t-> " << cast.dest << ", weight = " << cast.weight << (cast.loopout == FALSE ? (" (loopout: FALSE)") : (cast.loopout == TRUE ? (" (loopout: TRUE)") : (" (loopout: BOTH)")))
+                cout << "\t-> " << cast.dest << ", weight = " << cast.weight
+                     << (cast.loopout == FALSE
+                             ? (" (loopout: FALSE)")
+                             : (cast.loopout == TRUE ? (" (loopout: TRUE)")
+                                                     : (" (loopout: BOTH)")))
                      << endl;
             }
             cout << "Work recv_cnt: " << work.recv_cnt << endl;
@@ -49,7 +53,7 @@ void Config_helper_core::print_self() {
     }
 }
 
-void Config_helper_core::random_core(string font_ttf) {
+void config_helper_core::random_core(string font_ttf) {
     int o2r[GRID_SIZE];
     int r2o[GRID_SIZE];
     for (int i = 0; i < GRID_SIZE; i++) {
@@ -129,7 +133,8 @@ void Config_helper_core::random_core(string font_ttf) {
     plot_dataflow(cores, source_ids, font_ttf);
 }
 
-Config_helper_core::Config_helper_core(string filename, string font_ttf, int config_chip_id) {
+config_helper_core::config_helper_core(string filename, string font_ttf,
+                                       int config_chip_id) {
     cout << "Loading config file " << filename << endl;
     json j;
     // cout << "Loading config file3 " << filename << endl;
@@ -149,10 +154,12 @@ Config_helper_core::Config_helper_core(string filename, string font_ttf, int con
         if (source.contains("loop")) {
             int loop_cnt = find_var(source["loop"]);
             for (int i = 0; i < loop_cnt; i++) {
-                source_info.push_back(make_pair(source["dest"], find_var(source["size"])));
+                source_info.push_back(
+                    make_pair(source["dest"], find_var(source["size"])));
             }
         } else {
-            source_info.push_back(make_pair(source["dest"], find_var(source["size"])));
+            source_info.push_back(
+                make_pair(source["dest"], find_var(source["size"])));
         }
     }
 
@@ -223,14 +230,11 @@ Config_helper_core::Config_helper_core(string filename, string font_ttf, int con
     print_self();
 }
 
-void Config_helper_core::fill_queue_config(queue<Msg> *q) {
-    cout << "here\n";
+void config_helper_core::fill_queue_config(queue<Msg> *q) {
     for (auto config : coreconfigs) {
         int index = config.id / GRID_X;
         int prim_seq = 0;
         vector<Msg> single_rep;
-
-        cout << "1113\n";
 
         for (auto work : config.worklist) {
             cout << "work:" << endl;
@@ -238,12 +242,15 @@ void Config_helper_core::fill_queue_config(queue<Msg> *q) {
                 cout << "lcnt:" << lcnt << endl;
                 for (auto prim : work.prims_in_loop) {
                     cout << "1\n";
-                    single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, config.id, prim->serialize()));
+                    single_rep.push_back(Msg(false, MSG_TYPE::CONFIG,
+                                             ++prim_seq, config.id,
+                                             prim->serialize()));
                 }
             }
 
             for (auto prim : work.prims_last_loop)
-                single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, config.id, prim->serialize()));
+                single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
+                                         config.id, prim->serialize()));
         }
 
         int single_rep_cnt = prim_seq;
@@ -264,11 +271,12 @@ void Config_helper_core::fill_queue_config(queue<Msg> *q) {
     }
 }
 
-void Config_helper_core::generate_prims(int i) {
+void config_helper_core::generate_prims(int i) {
     // 处理单个核的原语，将其放入Coreconfig.prims中
     CoreConfig *c = &coreconfigs[i];
 
-    c->worklist[0].prims_in_loop.push_back(new Recv_prim(RECV_TYPE::RECV_WEIGHT, c->worklist[0].recv_tag, 0));
+    c->worklist[0].prims_in_loop.push_back(
+        new Recv_prim(RECV_TYPE::RECV_WEIGHT, c->worklist[0].recv_tag, 0));
 
 
     for (int w = 0; w < c->worklist.size(); w++) {
@@ -279,17 +287,17 @@ void Config_helper_core::generate_prims(int i) {
 
         // 先生成loop中的原语
         // 首先是recv，对应 RECV_DATA
-        work.prims_in_loop.push_back(new Recv_prim(RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt));
+        work.prims_in_loop.push_back(
+            new Recv_prim(RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt));
 
         // 然后是comp，直接推c中的对应队列即可
         for (auto prim : work.prims) {
-            // //std::cout << "Coreiii2 " << i << " prims: " << prim->sram_addr
-            // << std::endl; 在Set_addr里面复制一份计算原语的datapass_label
             prim_base *p = new_prim("Set_addr");
             auto label = ((Set_addr *)p)->datapass_label;
             // Set_addr 的label 指向其后面的那条原语
             for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-                label->indata[i] = ((comp_base *)prim)->datapass_label.indata[i];
+                label->indata[i] =
+                    ((comp_base *)prim)->datapass_label.indata[i];
             }
             label->outdata = ((comp_base *)prim)->datapass_label.outdata;
 
@@ -306,7 +314,8 @@ void Config_helper_core::generate_prims(int i) {
 
             // 在sequential情况下，如果dest是-1,同样发送done信号
             if (ca.dest == -1) {
-                work.prims_in_loop.push_back(new Send_prim(SEND_TYPE::SEND_DONE));
+                work.prims_in_loop.push_back(
+                    new Send_prim(SEND_TYPE::SEND_DONE));
                 work.prims_in_loop.push_back(new_prim("Clear_sram"));
                 continue;
             }
@@ -318,20 +327,24 @@ void Config_helper_core::generate_prims(int i) {
             int dest = ca.dest;
             int tag = ca.tag;
 
-            work.prims_in_loop.push_back(new Send_prim(SEND_TYPE::SEND_REQ, dest, tag));
+            work.prims_in_loop.push_back(
+                new Send_prim(SEND_TYPE::SEND_REQ, dest, tag));
             work.prims_in_loop.push_back(new Recv_prim(RECV_TYPE::RECV_ACK));
-            work.prims_in_loop.push_back(new Send_prim(SEND_TYPE::SEND_DATA, dest, tag));
+            work.prims_in_loop.push_back(
+                new Send_prim(SEND_TYPE::SEND_DATA, dest, tag));
         }
 
         // 再生成最后一个loop的原语
-        work.prims_last_loop.push_back(new Recv_prim(RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt));
+        work.prims_last_loop.push_back(
+            new Recv_prim(RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt));
 
         for (auto prim : work.prims) {
             // 在Set_addr里面复制一份计算原语的datapass_label
             prim_base *p = new_prim("Set_addr");
             auto label = ((Set_addr *)p)->datapass_label;
             for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-                label->indata[i] = ((comp_base *)prim)->datapass_label.indata[i];
+                label->indata[i] =
+                    ((comp_base *)prim)->datapass_label.indata[i];
             }
             label->outdata = ((comp_base *)prim)->datapass_label.outdata;
 
@@ -355,9 +368,11 @@ void Config_helper_core::generate_prims(int i) {
             int dest = ca.dest;
             int tag = ca.tag;
 
-            work.prims_last_loop.push_back(new Send_prim(SEND_TYPE::SEND_REQ, dest, tag));
+            work.prims_last_loop.push_back(
+                new Send_prim(SEND_TYPE::SEND_REQ, dest, tag));
             work.prims_last_loop.push_back(new Recv_prim(RECV_TYPE::RECV_ACK));
-            work.prims_last_loop.push_back(new Send_prim(SEND_TYPE::SEND_DATA, dest, tag));
+            work.prims_last_loop.push_back(
+                new Send_prim(SEND_TYPE::SEND_DATA, dest, tag));
         }
 
         // 清理sram
@@ -367,12 +382,13 @@ void Config_helper_core::generate_prims(int i) {
     }
 }
 
-void Config_helper_core::calculate_address(bool do_loop) {
+void config_helper_core::calculate_address(bool do_loop) {
     // 遍历每一个核的prim，填写其中原语的收发地址
     for (int i = 0; i < coreconfigs.size(); i++) {
         // 初始化
         // id 表示实际的core id
-        delta_offset[coreconfigs[i].id] = ((comp_base *)coreconfigs[i].worklist[0].prims[0])->inp_offset;
+        delta_offset[coreconfigs[i].id] =
+            ((comp_base *)coreconfigs[i].worklist[0].prims[0])->inp_offset;
     }
 
     // 自动设置 send 和 receive 的地址
@@ -412,10 +428,15 @@ void Config_helper_core::calculate_address(bool do_loop) {
                         continue;
 
                     int weight = work.cast[index].weight;
-                    int slice_size = (output_size % weight) ? (output_size / weight + 1) : (output_size / weight);
+                    int slice_size = (output_size % weight)
+                                         ? (output_size / weight + 1)
+                                         : (output_size / weight);
                     int slice_size_in_bit = slice_size * sizeof(float);
-                    int pkg_nums = (slice_size_in_bit % M_D_DATA) ? (slice_size_in_bit / M_D_DATA + 1) : (slice_size_in_bit / M_D_DATA);
-                    int end_length = slice_size_in_bit - (pkg_nums - 1) * M_D_DATA;
+                    int pkg_nums = (slice_size_in_bit % M_D_DATA)
+                                       ? (slice_size_in_bit / M_D_DATA + 1)
+                                       : (slice_size_in_bit / M_D_DATA);
+                    int end_length =
+                        slice_size_in_bit - (pkg_nums - 1) * M_D_DATA;
 
                     // local offset
                     temp->local_offset = output_offset;
@@ -428,7 +449,8 @@ void Config_helper_core::calculate_address(bool do_loop) {
                     // des offset
                     if (work.cast[index].addr != -1) {
                         temp->des_offset = work.cast[index].addr;
-                        cout << "Core " << i << ": work gets actual dram des: " << temp->des_offset << endl;
+                        cout << "Core " << i << ": work gets actual dram des: "
+                             << temp->des_offset << endl;
                     } else {
                         temp->des_offset = delta_offset[temp->des_id];
                         delta_offset[temp->des_id] += slice_size;
@@ -444,7 +466,7 @@ void Config_helper_core::calculate_address(bool do_loop) {
     }
 }
 
-void Config_helper_core::fill_queue_start(queue<Msg> *q) {
+void config_helper_core::fill_queue_start(queue<Msg> *q) {
     for (int pipe = 0; pipe < pipeline; pipe++) {
         if (sequential == false) {
             for (auto source : source_info) {
@@ -454,8 +476,10 @@ void Config_helper_core::fill_queue_start(queue<Msg> *q) {
                 int index = i / GRID_X;
                 int pkg_index = 0;
                 int send_offset = delta_offset[i];
-                int send_size_in_bit = size * sizeof(float);
-                int pkg_num = (send_size_in_bit % M_D_DATA) ? (send_size_in_bit / M_D_DATA + 1) : (send_size_in_bit / M_D_DATA);
+                int send_size_in_bit = size * sizeof(float) * 8;
+                int pkg_num = (send_size_in_bit % M_D_DATA)
+                                  ? (send_size_in_bit / M_D_DATA + 1)
+                                  : (send_size_in_bit / M_D_DATA);
 
                 for (int j = 1; j <= pkg_num; j++) {
                     // CTODO: 拿到真正的数据
@@ -463,11 +487,14 @@ void Config_helper_core::fill_queue_start(queue<Msg> *q) {
                     int length = M_D_DATA;
                     bool is_end_packet = j == pkg_num;
                     if (is_end_packet) {
-                        length = size * sizeof(float) - M_D_DATA * (pkg_num - 1);
+                        length =
+                            size * sizeof(float) - M_D_DATA * (pkg_num - 1);
                     }
 
                     // CTODO: recv_tag default to i
-                    Msg m = Msg(j == pkg_num, MSG_TYPE::S_DATA, j + pkg_index, i, send_offset + M_D_DATA * (j - 1), i, length, d);
+                    Msg m =
+                        Msg(j == pkg_num, MSG_TYPE::S_DATA, j + pkg_index, i,
+                            send_offset + M_D_DATA * (j - 1), i, length, d);
                     m.source = GRID_SIZE;
                     q[index].push(m);
                 }
@@ -481,7 +508,9 @@ void Config_helper_core::fill_queue_start(queue<Msg> *q) {
             int pkg_index = 0;
             int send_offset = delta_offset[i];
             int send_size_in_bit = size * sizeof(float);
-            int pkg_num = (send_size_in_bit % M_D_DATA) ? (send_size_in_bit / M_D_DATA + 1) : (send_size_in_bit / M_D_DATA);
+            int pkg_num = (send_size_in_bit % M_D_DATA)
+                              ? (send_size_in_bit / M_D_DATA + 1)
+                              : (send_size_in_bit / M_D_DATA);
 
             for (int j = 1; j <= pkg_num; j++) {
                 // CTODO: 拿到真正的数据
@@ -493,7 +522,8 @@ void Config_helper_core::fill_queue_start(queue<Msg> *q) {
                 }
 
                 // CTODO: recv_tag default to i
-                Msg m = Msg(j == pkg_num, MSG_TYPE::S_DATA, j + pkg_index, i, send_offset + M_D_DATA * (j - 1), i, length, d);
+                Msg m = Msg(j == pkg_num, MSG_TYPE::S_DATA, j + pkg_index, i,
+                            send_offset + M_D_DATA * (j - 1), i, length, d);
                 m.source = GRID_SIZE;
                 q[index].push(m);
             }

@@ -93,4 +93,13 @@ enum CORE_PRIM {
 enum SIM_MODE {
     SIM_DATAFLOW = 0,
     SIM_GPU,
+    SIM_PD,
+};
+
+// PD阶段
+enum PD_PHASE {
+    PREFILL = 0,
+    DECODE,
+    UNTOUCHED,
+    PD_DONE,
 };

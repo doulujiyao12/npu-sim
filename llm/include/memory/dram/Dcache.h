@@ -41,19 +41,26 @@ public:
     int tY;
 
     SC_HAS_PROCESS(DCache);
-    DCache(const sc_module_name &n, int idX, int idY, Event_engine *event_engine, std::string_view configuration, std::string_view resource_directory)
-        : initiatorSocket("initiatorSocket"), testConfig(::DRAMSys::Config::from_path(configuration, resource_directory)) {
+    DCache(const sc_module_name &n, int idX, int idY,
+           Event_engine *event_engine, std::string_view configuration,
+           std::string_view resource_directory)
+        : initiatorSocket("initiatorSocket"),
+          testConfig(
+              ::DRAMSys::Config::from_path(configuration, resource_directory)) {
         // 初始化
-        dramSysWrapper = new gem5::memory::DRAMSysWrapper("DRAMSysWrapper", testConfig, false);
+        dramSysWrapper = new gem5::memory::DRAMSysWrapper("DRAMSysWrapper",
+                                                          testConfig, false);
         initiatorSocket.bind(dramSysWrapper->tSocket);
         tX = idX;
         tY = idY;
         socket.register_b_transport(this, &DCache::b_transport);
         socket.register_nb_transport_fw(this, &DCache::nb_transport_fw);
-        initiatorSocket.register_nb_transport_bw(this, &DCache::nb_transport_bw);
+        initiatorSocket.register_nb_transport_bw(this,
+                                                 &DCache::nb_transport_bw);
     }
     ~DCache() {}
-    void check_freq(std::unordered_map<u_int64_t, u_int16_t> &freq, u_int64_t *tags, u_int32_t set, u_int64_t elem_tag) {
+    void check_freq(std::unordered_map<u_int64_t, u_int16_t> &freq,
+                    u_int64_t *tags, u_int32_t set, u_int64_t elem_tag) {
         if (freq[elem_tag] == CACHE_MAX_FREQ) {
             // Halve the frequency of every line in the cache set
             u_int64_t set_base = set << CACHE_WAY_BITS;
@@ -66,7 +73,9 @@ public:
     }
 
 #if DCACHE
-    int dcache_replacement_policy(u_int32_t tileid, u_int64_t *tags, u_int64_t new_tag, u_int16_t &set_empty_lines) {
+    int dcache_replacement_policy(u_int32_t tileid, u_int64_t *tags,
+                                  u_int64_t new_tag,
+                                  u_int16_t &set_empty_lines) {
         // Search the element of tags whose index into freq has the lowest value
         int evict_dcache_idx, dcache_idx;
         u_int16_t line_freq, min_freq = UINT16_MAX;
@@ -111,16 +120,20 @@ public:
         u_int64_t word_index = (u_int64_t)addr >> 2; // 4bytes in a word
         // 全局的darray加起来，所有的tile
         // dataset_words_per_tile dram 大小在一个tile中
-        data_footprint_in_words = GRID_SIZE * dataset_words_per_tile; // global variable
+        data_footprint_in_words =
+            GRID_SIZE * dataset_words_per_tile; // global variable
         word_index = word_index % data_footprint_in_words;
         // 在全局darray中的索引
         return word_index >> dcache_words_in_line_log2;
     }
 
     bool is_dirty(u_int64_t tag) { return dcache_dirty[tag]; }
-    void peqCallback(tlm::tlm_generic_payload &payload, const tlm::tlm_phase &phase) {}
+    void peqCallback(tlm::tlm_generic_payload &payload,
+                     const tlm::tlm_phase &phase) {}
 
-    tlm::tlm_sync_enum nb_transport_bw(tlm::tlm_generic_payload &payload, tlm::tlm_phase &phase, sc_core::sc_time &bwDelay) {
+    tlm::tlm_sync_enum nb_transport_bw(tlm::tlm_generic_payload &payload,
+                                       tlm::tlm_phase &phase,
+                                       sc_core::sc_time &bwDelay) {
         socket->nb_transport_bw(payload, phase, bwDelay);
         return tlm::TLM_ACCEPTED;
     }
@@ -178,7 +191,8 @@ public:
 #if DCACHE <= 5 // If we allow some type of data hits
                 // dcache_freq is a global array (not per tile)
 
-            if (dcache_freq_v2.find(elem_tag) != dcache_freq_v2.end() && dcache_freq_v2[elem_tag] > 0) {
+            if (dcache_freq_v2.find(elem_tag) != dcache_freq_v2.end() &&
+                dcache_freq_v2[elem_tag] > 0) {
                 dcache_hits++;
             } else {
                 // if (dcache_freq[elem_tag] > 0){
@@ -193,7 +207,8 @@ public:
                 // printf("dcache misses ++ \n");
                 dcache_misses++;
                 int read_latency = 0;
-                u_int16_t mc_queue_id = die_id(tX, tY) * hbm_channels + (tY * DIE_W + tX) % hbm_channels;
+                u_int16_t mc_queue_id = die_id(tX, tY) * hbm_channels +
+                                        (tY * DIE_W + tX) % hbm_channels;
                 if (use_DramSys == false) {
                     // memory channel
 
@@ -204,7 +219,8 @@ public:
                     int64_t trans_count = (int64_t)mc_transactions[mc_queue_id];
                     mc_transactions[mc_queue_id] = trans_count + 1;
                     // 历史上所有的交易的总和，所以后面time_fetch的时间不能超过他
-                    int64_t pu_cy_last_mc_trans = ceil_macro(trans_count * pu_mem_ratio * CYCLE);
+                    int64_t pu_cy_last_mc_trans =
+                        ceil_macro(trans_count * pu_mem_ratio * CYCLE);
 
                     // Fetched when the last request has satisfieda
                     // time fetched 是拿到数据的时间
@@ -213,7 +229,8 @@ public:
 
                     // May be a negative number!
                     // time 是当前运行的时间
-                    int fetch_cycles_ahead = (int64_t)timer - (int64_t)time_fetched;
+                    int fetch_cycles_ahead =
+                        (int64_t)timer - (int64_t)time_fetched;
 
                     // If cycles ahead is smaller than HBM latency, then we
                     // calculate the real latency
@@ -249,7 +266,8 @@ public:
                 pu_penalty += read_latency;
 
                 u_int16_t set_empty_lines = 0;
-                int evict_dcache_idx = dcache_replacement_policy(tileid, tags, elem_tag, set_empty_lines);
+                int evict_dcache_idx = dcache_replacement_policy(
+                    tileid, tags, elem_tag, set_empty_lines);
 #if ASSERT_MODE && DCACHE <= 5
                 assert(dcache_freq_v2.find(elem_tag) == dcache_freq_v2.end());
                 assert(evict_dcache_idx < dcache_size);
@@ -272,7 +290,8 @@ public:
 #endif
                     // Mark the previous element as evicted (dcache_freq = 0)
                     // dcache_freq[evict_tag] = 0;
-                    if (dcache_freq_v2.find(evict_tag) != dcache_freq_v2.end()) {
+                    if (dcache_freq_v2.find(evict_tag) !=
+                        dcache_freq_v2.end()) {
                         dcache_freq_v2.erase(evict_tag);
                     } else {
                         assert(0);
@@ -333,7 +352,9 @@ public:
     //     return initiatorSocket->nb_transport_fw(trans, phase, delay);
     // }
 
-    tlm::tlm_sync_enum nb_transport_fw(tlm::tlm_generic_payload &trans, tlm::tlm_phase &phase, sc_core::sc_time &delay) {
+    tlm::tlm_sync_enum nb_transport_fw(tlm::tlm_generic_payload &trans,
+                                       tlm::tlm_phase &phase,
+                                       sc_core::sc_time &delay) {
         // 判断phase是否为begin_req
         if (phase != BEGIN_REQ) {
             // 如果不是begin_req,直接转发到initiatorSocket
@@ -391,7 +412,8 @@ public:
 #if DCACHE <= 5 // If we allow some type of data hits
                 // dcache_freq is a global array (not per tile)
 
-                if (dcache_freq_v2.find(elem_tag) != dcache_freq_v2.end() && dcache_freq_v2[elem_tag] > 0) {
+                if (dcache_freq_v2.find(elem_tag) != dcache_freq_v2.end() &&
+                    dcache_freq_v2[elem_tag] > 0) {
                     dcache_hits++;
                     if (use_DramSys == true) {
                         tlm_phase tPhase = END_RESP;
@@ -405,8 +427,10 @@ public:
                         // was in the dcache, freq is incremented by 1.
                         // dcache_freq[elem_tag]++; cout
                         // << sc_time_stamp() << ": Start DIRECT MAPPING \n" ;
-                        if (dcache_freq_v2.find(elem_tag) == dcache_freq_v2.end()) {
-                            dcache_freq_v2[elem_tag] = 1; // 如果不存在，则初始化为 1
+                        if (dcache_freq_v2.find(elem_tag) ==
+                            dcache_freq_v2.end()) {
+                            dcache_freq_v2[elem_tag] =
+                                1; // 如果不存在，则初始化为 1
                         } else {
                             dcache_freq_v2[elem_tag]++; // 如果存在，则自增
                         }
@@ -429,7 +453,8 @@ public:
                     // printf("dcache misses ++ \n");
                     dcache_misses++;
                     int read_latency = 0;
-                    u_int16_t mc_queue_id = die_id(tX, tY) * hbm_channels + (tY * DIE_W + tX) % hbm_channels;
+                    u_int16_t mc_queue_id = die_id(tX, tY) * hbm_channels +
+                                            (tY * DIE_W + tX) % hbm_channels;
 
                     // DAHU TODO Accuracy latency ??? // Use DramSys
 
@@ -437,9 +462,11 @@ public:
                     pu_penalty += read_latency;
 
                     u_int16_t set_empty_lines = 0;
-                    int evict_dcache_idx = dcache_replacement_policy(tileid, tags, elem_tag, set_empty_lines);
+                    int evict_dcache_idx = dcache_replacement_policy(
+                        tileid, tags, elem_tag, set_empty_lines);
 #if ASSERT_MODE && DCACHE <= 5
-                    assert(dcache_freq_v2.find(elem_tag) == dcache_freq_v2.end());
+                    assert(dcache_freq_v2.find(elem_tag) ==
+                           dcache_freq_v2.end());
                     assert(evict_dcache_idx < dcache_size);
 #endif
                     u_int64_t evict_tag = tags[evict_dcache_idx];
@@ -460,7 +487,8 @@ public:
 #endif
                         // Mark the previous element as evicted (dcache_freq =
                         // 0) dcache_freq[evict_tag] = 0;
-                        if (dcache_freq_v2.find(evict_tag) != dcache_freq_v2.end()) {
+                        if (dcache_freq_v2.find(evict_tag) !=
+                            dcache_freq_v2.end()) {
                             dcache_freq_v2.erase(evict_tag);
                         } else {
                             assert(0);
@@ -484,7 +512,8 @@ public:
                     tags[evict_dcache_idx] = elem_tag;
                     // dcache_freq[elem_tag]++;
                     if (dcache_freq_v2.find(elem_tag) == dcache_freq_v2.end()) {
-                        dcache_freq_v2[elem_tag] = 1; // 如果不存在，则初始化为 1
+                        dcache_freq_v2[elem_tag] =
+                            1; // 如果不存在，则初始化为 1
                     } else {
                         dcache_freq_v2[elem_tag]++; // 如果存在，则自增
                     }
@@ -495,10 +524,12 @@ public:
                         // the HBM channel since the beggining of the program
                         // Assume that the Mem. controller channel can take one
                         // request per HBM cycle 该通道历史上所有的交易总和
-                        int64_t trans_count = (int64_t)mc_transactions[mc_queue_id];
+                        int64_t trans_count =
+                            (int64_t)mc_transactions[mc_queue_id];
                         mc_transactions[mc_queue_id] = trans_count + 1;
                         // 历史上所有的交易的总和，所以后面time_fetch的时间不能超过他
-                        int64_t pu_cy_last_mc_trans = ceil_macro(trans_count * pu_mem_ratio * CYCLE);
+                        int64_t pu_cy_last_mc_trans =
+                            ceil_macro(trans_count * pu_mem_ratio * CYCLE);
 
                         // Fetched when the last request has satisfieda
                         // time fetched 是拿到数据的时间
@@ -507,7 +538,8 @@ public:
 
                         // May be a negative number!
                         // time 是当前运行的时间
-                        int fetch_cycles_ahead = (int64_t)timer - (int64_t)time_fetched;
+                        int fetch_cycles_ahead =
+                            (int64_t)timer - (int64_t)time_fetched;
 
                         // If cycles ahead is smaller than HBM latency, then we
                         // calculate the real latency
@@ -529,7 +561,8 @@ public:
                     }
                     if (use_DramSys == false) {
                         delay = sc_time(pu_penalty, SC_NS); // 模拟延迟
-                        assert(false && "can not use dramsys = false in ND DRAM");
+                        assert(false &&
+                               "can not use dramsys = false in ND DRAM");
                     } else {
                         sc_core::sc_time delay_dramsys = sc_core::SC_ZERO_TIME;
                         // DAHU CACHELINE 256b
@@ -538,8 +571,10 @@ public:
                         // was in the dcache, freq is incremented by 1.
                         // dcache_freq[elem_tag]++; cout
                         // << sc_time_stamp() << ": Start DIRECT MAPPING \n" ;
-                        if (dcache_freq_v2.find(elem_tag) == dcache_freq_v2.end()) {
-                            dcache_freq_v2[elem_tag] = 1; // 如果不存在，则初始化为 1
+                        if (dcache_freq_v2.find(elem_tag) ==
+                            dcache_freq_v2.end()) {
+                            dcache_freq_v2[elem_tag] =
+                                1; // 如果不存在，则初始化为 1
                         } else {
                             dcache_freq_v2[elem_tag]++; // 如果存在，则自增
                         }
@@ -550,7 +585,8 @@ public:
                         // cout << "DCache: nb_transport_fw " << sc_time_stamp()
                         // << " " << trans.get_command() << " " <<
                         // trans.get_address() << endl;
-                        return initiatorSocket->nb_transport_fw(trans, phase, delay);
+                        return initiatorSocket->nb_transport_fw(trans, phase,
+                                                                delay);
                     }
                 }
             }

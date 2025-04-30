@@ -1,10 +1,13 @@
 #include "router/router.h"
 
-RouterMonitor::RouterMonitor(const sc_module_name &n, Event_engine *event_engine) : sc_module(n), event_engine(event_engine) {
+RouterMonitor::RouterMonitor(const sc_module_name &n,
+                             Event_engine *event_engine)
+    : sc_module(n), event_engine(event_engine) {
     // WEAK: we now assume there are only 1*GRID_X tiles
     routers = new RouterUnit *[GRID_SIZE];
     for (int i = 0; i < GRID_SIZE; i++) {
-        routers[i] = new RouterUnit(sc_gen_unique_name("router"), i, this->event_engine);
+        routers[i] =
+            new RouterUnit(sc_gen_unique_name("router"), i, this->event_engine);
     }
 }
 
@@ -16,7 +19,9 @@ RouterMonitor::~RouterMonitor() {
     delete (routers);
 }
 
-RouterUnit::RouterUnit(const sc_module_name &n, int rid, Event_engine *event_engine) : sc_module(n), rid(rid), event_engine(event_engine) {
+RouterUnit::RouterUnit(const sc_module_name &n, int rid,
+                       Event_engine *event_engine)
+    : sc_module(n), rid(rid), event_engine(event_engine) {
     host_data_sent_i = nullptr;
     host_data_sent_o = nullptr;
     host_channel_i = nullptr;
@@ -44,10 +49,13 @@ RouterUnit::RouterUnit(const sc_module_name &n, int rid, Event_engine *event_eng
     }
 
     SC_THREAD(trans_next_trigger);
-    sensitive << data_sent_i[WEST].pos() << data_sent_i[EAST].pos() << data_sent_i[CENTER].pos() << data_sent_i[SOUTH].pos() << data_sent_i[NORTH].pos();
+    sensitive << data_sent_i[WEST].pos() << data_sent_i[EAST].pos()
+              << data_sent_i[CENTER].pos() << data_sent_i[SOUTH].pos()
+              << data_sent_i[NORTH].pos();
     if (is_margin_core(rid))
         sensitive << host_data_sent_i->pos();
-    sensitive << channel_avail_i[WEST].pos() << channel_avail_i[EAST].pos() << channel_avail_i[SOUTH].pos() << channel_avail_i[NORTH].pos();
+    sensitive << channel_avail_i[WEST].pos() << channel_avail_i[EAST].pos()
+              << channel_avail_i[SOUTH].pos() << channel_avail_i[NORTH].pos();
     sensitive << core_busy_i.neg();
     dont_initialize();
 
@@ -84,7 +92,8 @@ void RouterUnit::router_execute() {
             if (data_sent_i[i].read()) {
                 // move the data into the buffer
                 // if (rid >= 20)
-                //     cout << sc_time_stamp() << ": Router " << rid << ": get data at " << i << "\n";
+                //     cout << sc_time_stamp() << ": Router " << rid << ": get
+                //     data at " << i << "\n";
                 sc_bv<256> temp = channel_i[i].read();
 
                 buffer_i[i].emplace(temp);
@@ -191,7 +200,8 @@ void RouterUnit::router_execute() {
             Directions next = get_next_hop(d, rid);
             // cout << d << " <- " << rid << " next: " << next << endl;
 
-            if (buffer_o[next].size() < MAX_BUFFER_PACKET_SIZE && output_lock[next] == 0) {
+            if (buffer_o[next].size() < MAX_BUFFER_PACKET_SIZE &&
+                output_lock[next] == 0) {
                 host_buffer_i->pop();
                 buffer_o[next].emplace(temp);
 
@@ -206,7 +216,8 @@ void RouterUnit::router_execute() {
             int des = req.des;
             int source = req.source;
             Directions next = get_next_hop(des, source);
-            cout << "[INFO] Router " << rid << ", checking req from " << source << endl;
+            cout << "[INFO] Router " << rid << ", checking req from " << source
+                 << endl;
 
             if (output_lock[next] == 0 || output_lock[next] == req.tag_id) {
                 if (buffer_o[CENTER].size() < MAX_BUFFER_PACKET_SIZE) {
@@ -236,15 +247,23 @@ void RouterUnit::router_execute() {
                 buffer_i[i].pop();
                 req_queue.push_back(m);
 
-                cout << "[REQUEST] Router " << rid << " received REQ from " << m.source << ", put into req_queue.\n";
+                cout << "[REQUEST] Router " << rid << " received REQ from "
+                     << m.source << ", put into req_queue.\n";
                 continue;
             }
-            
-            if (m.des != GRID_SIZE && output_lock[out] != 0 && output_lock[out] != m.tag_id) // 如果不发往host，且目标通道上锁，且目标上锁tag不等同于自己的tag：continue
+
+            if (m.des != GRID_SIZE && output_lock[out] != 0 &&
+                output_lock[out] !=
+                    m.tag_id) // 如果不发往host，且目标通道上锁，且目标上锁tag不等同于自己的tag：continue
                 continue;
-            if (out == HOST && host_buffer_o->size() >= MAX_BUFFER_PACKET_SIZE) // 如果发往host，但通道已满：continue
+            if (out == HOST &&
+                host_buffer_o->size() >=
+                    MAX_BUFFER_PACKET_SIZE) // 如果发往host，但通道已满：continue
                 continue;
-            else if (out != HOST && buffer_o[out].size() >= MAX_BUFFER_PACKET_SIZE) // 如果不发往host，但通道已满：continue
+            else if (
+                out != HOST &&
+                buffer_o[out].size() >=
+                    MAX_BUFFER_PACKET_SIZE) // 如果不发往host，但通道已满：continue
                 continue;
 
             // if (rid >= 20) cout << sc_time_stamp() << ": Router " << rid <<
@@ -252,19 +271,24 @@ void RouterUnit::router_execute() {
 
             // [ACK] 非发往host的ACK包，需要上锁或者增加refcnt
             // FIX 上锁应该在第一个DATA 包
-            if (m.msg_type == DATA && m.seq_id == 1 && m.des != GRID_SIZE && m.source != GRID_SIZE) {
+            if (m.msg_type == DATA && m.seq_id == 1 && m.des != GRID_SIZE &&
+                m.source != GRID_SIZE) {
                 // i 是 ACK 的进入方向，需要计算 ACK 的输出方向
                 if (output_lock[out] == 0) {
                     // 上锁
                     output_lock[out] = m.tag_id;
                     output_lock_ref[out]++;
-                    cout << sc_time_stamp() << " " << ": Router " << rid << " lock: " << out << " " << output_lock[out] << " " << output_lock_ref[out] << endl;
+                    cout << sc_time_stamp() << " " << ": Router " << rid
+                         << " lock: " << out << " " << output_lock[out] << " "
+                         << output_lock_ref[out] << endl;
                 } else if (output_lock[out] == m.tag_id) {
                     // 添加refcnt
                     // Two Ack 多发一 DATA 包 乱序 接受核的接受地址由 Send
                     // 包中地址决定
                     output_lock_ref[out]++;
-                    cout << sc_time_stamp() << " " << ": Router " << rid << " addlock: " << out << " " << output_lock[out] << " " << output_lock_ref[out] << endl;
+                    cout << sc_time_stamp() << " " << ": Router " << rid
+                         << " addlock: " << out << " " << output_lock[out]
+                         << " " << output_lock_ref[out] << endl;
                 } else {
                     // 并非对应tag，不予通过
                     continue;
@@ -275,16 +299,20 @@ void RouterUnit::router_execute() {
             // DTODO
             // 排除了Config DATA 包，不会减少 lock
             // START DATA 包也不会上锁？
-            else if (m.msg_type == DATA && m.is_end && m.source != GRID_SIZE && m.des != GRID_SIZE) {
+            else if (m.msg_type == DATA && m.is_end && m.source != GRID_SIZE &&
+                     m.des != GRID_SIZE) {
                 // i 是 data 的进入方向，需要计算 data 的输出方向
                 out = get_next_hop(m.des, rid);
 
                 output_lock_ref[out]--;
 
-                cout << sc_time_stamp() << " " << ": Router " << rid << " unlock: " << out << " " << output_lock[out] << " " << output_lock_ref[out] << endl;
+                cout << sc_time_stamp() << " " << ": Router " << rid
+                     << " unlock: " << out << " " << output_lock[out] << " "
+                     << output_lock_ref[out] << endl;
 
                 if (output_lock_ref[out] < 0) {
-                    cout << sc_time_stamp() << ": Router " << rid << " output ref below zero.\n";
+                    cout << sc_time_stamp() << ": Router " << rid
+                         << " output ref below zero.\n";
                     sc_stop();
                 } else if (output_lock_ref[out] == 0) {
                     output_lock[out] = 0;
@@ -299,7 +327,8 @@ void RouterUnit::router_execute() {
                 flag_trigger = true;
             } else {
                 if (m.seq_id == 1)
-                    cout << sc_time_stamp() << " Router " << rid << " dir " << out << " sent\n";
+                    cout << sc_time_stamp() << " Router " << rid << " dir "
+                         << out << " sent\n";
                 buffer_i[i].pop();
                 buffer_o[out].emplace(temp);
 

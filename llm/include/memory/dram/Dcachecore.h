@@ -14,6 +14,7 @@ public:
     tlm_utils::simple_initiator_socket<DcacheCore> isocket;
 
     SC_HAS_PROCESS(DcacheCore);
-    DcacheCore(const sc_module_name &n, Event_engine *event_engine) : isocket("Dcache_socket") {};
+    DcacheCore(const sc_module_name &n, Event_engine *event_engine)
+        : isocket("Dcache_socket") {};
     ~DcacheCore() {}
 };

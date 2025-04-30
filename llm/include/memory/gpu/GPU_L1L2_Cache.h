@@ -1,4 +1,5 @@
 #pragma once
+#include "macros/macros.h"
 #include <cmath>
 #include <iostream>
 #include <map>
@@ -10,7 +11,6 @@
 #include <tlm_utils/simple_initiator_socket.h>
 #include <tlm_utils/simple_target_socket.h>
 #include <vector>
-#include "macros/macros.h"  
 
 using namespace sc_core;
 using namespace tlm;
@@ -77,7 +77,13 @@ struct MSHREntry {
     bool isPending;
     bool isIssue;
 
-    MSHREntry() : address(0), requestType(READ), requestTime(SC_ZERO_TIME), pendingTransaction(nullptr), isPending(false), isIssue(true) {}
+    MSHREntry()
+        : address(0),
+          requestType(READ),
+          requestTime(SC_ZERO_TIME),
+          pendingTransaction(nullptr),
+          isPending(false),
+          isIssue(true) {}
 };
 
 
@@ -92,9 +98,13 @@ struct MemOpExtension : public tlm::tlm_extension<MemOpExtension> {
 
     MemOpExtension(MemOp o = MemOp::LOAD) : op(o) {}
 
-    virtual tlm_extension_base *clone() const override { return new MemOpExtension(op); }
+    virtual tlm_extension_base *clone() const override {
+        return new MemOpExtension(op);
+    }
 
-    virtual void copy_from(const tlm_extension_base &ext) override { op = static_cast<const MemOpExtension &>(ext).op; }
+    virtual void copy_from(const tlm_extension_base &ext) override {
+        op = static_cast<const MemOpExtension &>(ext).op;
+    }
 };
 
 // 缓存行
@@ -105,7 +115,8 @@ struct CacheLine {
     bool valid;
     bool dirty;
 
-    CacheLine(int lineSize) : tag(0), state(INVALID), data(lineSize, 0), valid(false) {}
+    CacheLine(int lineSize)
+        : tag(0), state(INVALID), data(lineSize, 0), valid(false) {}
 };
 
 // 缓存集
@@ -126,7 +137,9 @@ struct BusRequest {
     int sourceId;
     tlm_generic_payload *transaction;
 
-    BusRequest(uint64_t addr, BusRequestType type, int id, tlm_generic_payload *trans) : address(addr), requestType(type), sourceId(id), transaction(trans) {}
+    BusRequest(uint64_t addr, BusRequestType type, int id,
+               tlm_generic_payload *trans)
+        : address(addr), requestType(type), sourceId(id), transaction(trans) {}
 };
 
 // 缓存基类
@@ -142,7 +155,8 @@ protected:
     vector<MSHREntry> mshrEntries;
 
     // 地址拆分
-    void parseAddress(uint64_t address, uint64_t &tag, uint64_t &setIndex, uint64_t &offset) {
+    void parseAddress(uint64_t address, uint64_t &tag, uint64_t &setIndex,
+                      uint64_t &offset) {
         int offsetBits = log2(lineSize);
         int setIndexBits = log2(numSets);
 
@@ -172,8 +186,13 @@ protected:
     }
 
 public:
-    CacheBase(sc_module_name name, int cacheSize, int lineSize, int associativity, int numMSHRs)
-        : sc_module(name), cacheSize(cacheSize), lineSize(lineSize), associativity(associativity), numMSHRs(numMSHRs) {
+    CacheBase(sc_module_name name, int cacheSize, int lineSize,
+              int associativity, int numMSHRs)
+        : sc_module(name),
+          cacheSize(cacheSize),
+          lineSize(lineSize),
+          associativity(associativity),
+          numMSHRs(numMSHRs) {
 
         numSets = cacheSize / (lineSize * associativity);
         sets.resize(numSets, CacheSet(associativity, lineSize));
@@ -198,9 +217,13 @@ struct WriteBackL1Extension : public tlm::tlm_extension<WriteBackL1Extension> {
 
     WriteBackL1Extension(WbL1Op o = WbL1Op::MSHR_L1) : op(o) {}
 
-    virtual tlm_extension_base *clone() const override { return new WriteBackL1Extension(op); }
+    virtual tlm_extension_base *clone() const override {
+        return new WriteBackL1Extension(op);
+    }
 
-    virtual void copy_from(const tlm_extension_base &ext) override { op = static_cast<const WriteBackL1Extension &>(ext).op; }
+    virtual void copy_from(const tlm_extension_base &ext) override {
+        op = static_cast<const WriteBackL1Extension &>(ext).op;
+    }
 };
 
 // L1缓存
@@ -220,7 +243,13 @@ private:
         int dataLength;
         tlm_generic_payload *originalTrans;
 
-        CacheRequest(RequestType t, uint64_t addr, uint8_t *d, int len, tlm_generic_payload *orig = nullptr) : type(t), address(addr), data(d), dataLength(len), originalTrans(orig) {}
+        CacheRequest(RequestType t, uint64_t addr, uint8_t *d, int len,
+                     tlm_generic_payload *orig = nullptr)
+            : type(t),
+              address(addr),
+              data(d),
+              dataLength(len),
+              originalTrans(orig) {}
     };
 
     // 添加写回请求队列和事件
@@ -242,8 +271,13 @@ public:
 
     SC_HAS_PROCESS(L1Cache);
 
-    L1Cache(sc_module_name name, int id, int cacheSize, int lineSize, int associativity, int numMSHRs)
-        : CacheBase(name, cacheSize, lineSize, associativity, numMSHRs), cacheId(id), payloadEventQueue(this, &L1Cache::peqCallback), bus_socket("bus_socket"), cpu_socket("cpu_socket") {
+    L1Cache(sc_module_name name, int id, int cacheSize, int lineSize,
+            int associativity, int numMSHRs)
+        : CacheBase(name, cacheSize, lineSize, associativity, numMSHRs),
+          cacheId(id),
+          payloadEventQueue(this, &L1Cache::peqCallback),
+          bus_socket("bus_socket"),
+          cpu_socket("cpu_socket") {
 
         cpu_socket.register_nb_transport_fw(this, &L1Cache::nb_transport_fw);
         bus_socket.register_nb_transport_bw(this, &L1Cache::nb_transport_bw);
@@ -255,13 +289,15 @@ public:
 
     // 修改writebackHandler线程，将写回请求转发到统一队列
 
-    void peqCallback(tlm::tlm_generic_payload &payload, const tlm::tlm_phase &phase) {
+    void peqCallback(tlm::tlm_generic_payload &payload,
+                     const tlm::tlm_phase &phase) {
 
         if (phase == tlm::END_RESP) {
             tlm_phase l2Phase = END_RESP;
             sc_time l2Delay = SC_ZERO_TIME;
 #if GPU_CACHE_DEBUG == 1
-            cout << "L1Cache [" << cacheId <<  "]: END RESP to Processor." << " Time stamp: " << sc_time_stamp() << endl;
+            cout << "L1Cache [" << cacheId << "]: END RESP to Processor."
+                 << " Time stamp: " << sc_time_stamp() << endl;
 #endif
             cpu_socket->nb_transport_bw(payload, l2Phase, l2Delay);
         } else if (phase == tlm::END_REQ) {
@@ -276,7 +312,8 @@ public:
         while (true) {
             if (writebackQueue.empty()) {
 #if DEBUG == 1
-                SC_REPORT_INFO("Event Wait,(Waiting for for: ", newWritebackRequest.name());
+                SC_REPORT_INFO("Event Wait,(Waiting for for: ",
+                               newWritebackRequest.name());
 #endif
 
                 wait(newWritebackRequest); // 等待新的写回请求
@@ -287,7 +324,8 @@ public:
             writebackQueue.pop();
 
             // 将写回请求添加到统一队列
-            CacheRequest unifiedReq(CacheRequest::WRITEBACK_REQ, req.address, req.data, req.lineSize);
+            CacheRequest unifiedReq(CacheRequest::WRITEBACK_REQ, req.address,
+                                    req.data, req.lineSize);
             requestQueue.push(unifiedReq);
             newRequest.notify(); // 通知请求处理线程
         }
@@ -317,7 +355,8 @@ public:
                     // 处理MSHR中的请求...
                     // wait(10,SC_NS);
                     mshrEntries[i].isIssue = true;
-                    tlm_generic_payload *trans = mshrEntries[i].pendingTransaction;
+                    tlm_generic_payload *trans =
+                        mshrEntries[i].pendingTransaction;
                     uint64_t addr = trans->get_address();
 
                     if (mshrEntries[i].requestType == READ) {
@@ -326,7 +365,8 @@ public:
                         // memcpy(data, trans->get_data_ptr(),
                         // trans->get_data_length());
 
-                        CacheRequest req(CacheRequest::READ_REQ, addr, data, trans->get_data_length(), trans);
+                        CacheRequest req(CacheRequest::READ_REQ, addr, data,
+                                         trans->get_data_length(), trans);
                         requestQueue.push(req);
                         newRequest.notify();
 
@@ -336,7 +376,8 @@ public:
                         // memcpy(data, trans->get_data_ptr(),
                         // trans->get_data_length());
 
-                        CacheRequest req(CacheRequest::WRITE_REQ, addr, data, trans->get_data_length(), trans);
+                        CacheRequest req(CacheRequest::WRITE_REQ, addr, data,
+                                         trans->get_data_length(), trans);
                         requestQueue.push(req);
                         newRequest.notify();
                     }
@@ -351,7 +392,8 @@ public:
         while (true) {
             if (requestQueue.empty()) {
 #if DEBUG == 1
-                SC_REPORT_INFO("Event Wait,(Waiting for for L1: ", newRequest.name());
+                SC_REPORT_INFO("Event Wait,(Waiting for for L1: ",
+                               newRequest.name());
 #endif
                 wait(newRequest); // 等待新请求
             }
@@ -368,7 +410,8 @@ public:
                 newTrans->set_command(TLM_READ_COMMAND);
                 MemOpExtension *op_ext = new MemOpExtension(MemOp::STORE);
                 newTrans->set_extension(op_ext);
-                WriteBackL1Extension *wb_ext = new WriteBackL1Extension(WbL1Op::MSHR_L1);
+                WriteBackL1Extension *wb_ext =
+                    new WriteBackL1Extension(WbL1Op::MSHR_L1);
                 newTrans->set_extension(wb_ext);
                 break;
             }
@@ -378,7 +421,8 @@ public:
                 MemOpExtension *op_ext = new MemOpExtension(MemOp::LOAD);
                 newTrans->set_extension(op_ext);
                 newTrans->set_command(TLM_WRITE_COMMAND);
-                WriteBackL1Extension *wb_ext = new WriteBackL1Extension(WbL1Op::MSHR_L1);
+                WriteBackL1Extension *wb_ext =
+                    new WriteBackL1Extension(WbL1Op::MSHR_L1);
                 newTrans->set_extension(wb_ext);
                 break;
             }
@@ -389,7 +433,8 @@ public:
                 MemOpExtension *op_ext = new MemOpExtension(MemOp::LOAD);
                 newTrans->set_extension(op_ext);
                 newTrans->set_command(TLM_WRITE_COMMAND);
-                WriteBackL1Extension *wb_ext = new WriteBackL1Extension(WbL1Op::WB_L1);
+                WriteBackL1Extension *wb_ext =
+                    new WriteBackL1Extension(WbL1Op::WB_L1);
                 newTrans->set_extension(wb_ext);
                 break;
             }
@@ -406,7 +451,9 @@ public:
             sc_time delay = SC_ZERO_TIME;
             tlm_phase phase = BEGIN_REQ;
 #if GPU_CACHE_DEBUG == 1
-            cout << "L1Cache [" << cacheId <<  "]: SEND REQ to BUS." << " Time stamp: " << sc_time_stamp() << " Address: " << req.address << endl;
+            cout << "L1Cache [" << cacheId << "]: SEND REQ to BUS."
+                 << " Time stamp: " << sc_time_stamp()
+                 << " Address: " << req.address << endl;
 
 #endif
             bus_socket->nb_transport_fw(*newTrans, phase, delay);
@@ -422,7 +469,8 @@ public:
     }
 
     // 处理CPU发来的请求
-    tlm_sync_enum nb_transport_fw(tlm_generic_payload &trans, tlm_phase &phase, sc_time &delay) {
+    tlm_sync_enum nb_transport_fw(tlm_generic_payload &trans, tlm_phase &phase,
+                                  sc_time &delay) {
         if (phase == BEGIN_REQ) {
             uint64_t addr = trans.get_address();
             uint64_t tag, setIndex, offset;
@@ -432,15 +480,19 @@ public:
                 // 检查是否命中
                 bool hit = false;
                 for (auto &line : sets[setIndex].lines) {
-                    if (line.valid && line.tag == tag && (line.state == SHARED || line.state == MODIFIED)) {
+                    if (line.valid && line.tag == tag &&
+                        (line.state == SHARED || line.state == MODIFIED)) {
                         hit = true;
 #if GPU_CACHE_DEBUG == 1
-                        cout << "L1Cache [" << cacheId <<  "]: READ HIT." << " Time stamp: " << sc_time_stamp() << " Address: " << addr << endl;
+                        cout << "L1Cache [" << cacheId << "]: READ HIT."
+                             << " Time stamp: " << sc_time_stamp()
+                             << " Address: " << addr << endl;
 #endif
                         delay += sc_time(CYCLE, SC_NS); // 命中延迟
 
                         phase = END_RESP;
-                        sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
+                        sc_time bwDelay =
+                            sc_core::sc_time(CYCLE, sc_core::SC_NS);
                         payloadEventQueue.notify(trans, phase, bwDelay);
                         return TLM_UPDATED;
                     }
@@ -449,7 +501,9 @@ public:
                 if (!hit) {
                     // 未命中，放入MSHR
 #if GPU_CACHE_DEBUG == 1
-                    cout << "L1Cache [" << cacheId <<  "]: READ MISS." << " Time stamp: " << sc_time_stamp() << " Address: " << addr << endl;
+                    cout << "L1Cache [" << cacheId << "]: READ MISS."
+                         << " Time stamp: " << sc_time_stamp()
+                         << " Address: " << addr << endl;
 #endif
                     int mshrIndex = findFreeMSHR();
                     if (mshrIndex >= 0) {
@@ -460,7 +514,8 @@ public:
                         mshrEntries[mshrIndex].isPending = true;
                         mshrEntries[mshrIndex].isIssue = false;
                         phase = END_REQ;
-                        sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
+                        sc_time bwDelay =
+                            sc_core::sc_time(CYCLE, sc_core::SC_NS);
                         payloadEventQueue.notify(trans, phase, bwDelay);
                         mshrevent.notify();
 
@@ -479,7 +534,9 @@ public:
                     if (line.valid && line.tag == tag) {
                         hit = true;
 #if GPU_CACHE_DEBUG == 1
-                        cout << "L1Cache [" << cacheId <<  "]: WRITE HIT." << " Time stamp: " << sc_time_stamp() << " Address: " << addr << endl;
+                        cout << "L1Cache [" << cacheId << "]: WRITE HIT."
+                             << " Time stamp: " << sc_time_stamp()
+                             << " Address: " << addr << endl;
 #endif
                         if (line.state == MODIFIED) {
                             // 如果是M状态，直接写入
@@ -488,7 +545,8 @@ public:
                             delay += sc_time(CYCLE, SC_NS); // 命中延迟
 
                             phase = END_RESP;
-                            sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
+                            sc_time bwDelay =
+                                sc_core::sc_time(CYCLE, sc_core::SC_NS);
                             payloadEventQueue.notify(trans, phase, bwDelay);
                             return TLM_UPDATED;
                         } else if (line.state == SHARED) {
@@ -497,16 +555,20 @@ public:
 
 
                             // 发送invalidate请求到总线
-                            tlm_generic_payload *invalidateTrans = new tlm_generic_payload();
+                            tlm_generic_payload *invalidateTrans =
+                                new tlm_generic_payload();
                             invalidateTrans->set_address(addr);
-                            MemOpExtension *op_ext = new MemOpExtension(MemOp::INVALID);
+                            MemOpExtension *op_ext =
+                                new MemOpExtension(MemOp::INVALID);
                             invalidateTrans->set_extension(op_ext);
 
                             sc_time busDelay = SC_ZERO_TIME;
                             tlm_phase busPhase = BEGIN_REQ;
-                            bus_socket->nb_transport_fw(*invalidateTrans, busPhase, busDelay);
+                            bus_socket->nb_transport_fw(*invalidateTrans,
+                                                        busPhase, busDelay);
                             phase = END_RESP;
-                            sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
+                            sc_time bwDelay =
+                                sc_core::sc_time(CYCLE, sc_core::SC_NS);
                             payloadEventQueue.notify(trans, phase, bwDelay);
                             return TLM_ACCEPTED;
                         }
@@ -517,7 +579,9 @@ public:
                     // 未命中，放入MSHR
                     int mshrIndex = findFreeMSHR();
 #if GPU_CACHE_DEBUG == 1
-                    cout << "L1Cache [" << cacheId <<  "]: READ MISS." << " Time stamp: " << sc_time_stamp() << " Address: " << addr << endl;
+                    cout << "L1Cache [" << cacheId << "]: READ MISS."
+                         << " Time stamp: " << sc_time_stamp()
+                         << " Address: " << addr << endl;
 #endif
                     if (mshrIndex >= 0) {
                         mshrEntries[mshrIndex].address = addr;
@@ -528,7 +592,8 @@ public:
                         mshrEntries[mshrIndex].isIssue = false;
 
                         phase = END_REQ;
-                        sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
+                        sc_time bwDelay =
+                            sc_core::sc_time(CYCLE, sc_core::SC_NS);
                         payloadEventQueue.notify(trans, phase, bwDelay);
                         mshrevent.notify();
                         return TLM_ACCEPTED;
@@ -544,7 +609,8 @@ public:
             sc_time delay = SC_ZERO_TIME;
             tlm_phase phase = END_RESP;
 #if GPU_CACHE_DEBUG == 1
-            cout << "L1Cache [" << cacheId <<  "]: END_RESP TO BUS." << " Time stamp: " << sc_time_stamp()<< endl;
+            cout << "L1Cache [" << cacheId << "]: END_RESP TO BUS."
+                 << " Time stamp: " << sc_time_stamp() << endl;
 #endif
             bus_socket->nb_transport_fw(trans, phase, delay);
             return TLM_COMPLETED;
@@ -554,9 +620,11 @@ public:
     }
 
     // 处理L2/总线发来的响应
-    tlm_sync_enum nb_transport_bw(tlm_generic_payload &trans, tlm_phase &phase, sc_time &delay) {
+    tlm_sync_enum nb_transport_bw(tlm_generic_payload &trans, tlm_phase &phase,
+                                  sc_time &delay) {
 
-        WriteBackL1Extension *op_ext = trans.get_extension<WriteBackL1Extension>();
+        WriteBackL1Extension *op_ext =
+            trans.get_extension<WriteBackL1Extension>();
         if (!op_ext) {
             SC_REPORT_FATAL("L1Cache", "Missing WB Type");
             return TLM_COMPLETED; // 修改为返回
@@ -569,7 +637,10 @@ public:
             uint64_t tag, setIndex, offset;
             parseAddress(addr, tag, setIndex, offset);
 #if GPU_CACHE_DEBUG == 1
-            cout << "L1Cache [" << cacheId <<  "]: BEGIN RESP FROM BUS for L1 MSHR." << " Time stamp: " << sc_time_stamp() << " Address: " << addr << endl;
+            cout << "L1Cache [" << cacheId
+                 << "]: BEGIN RESP FROM BUS for L1 MSHR."
+                 << " Time stamp: " << sc_time_stamp() << " Address: " << addr
+                 << endl;
 #endif
 
             // 查找对应的MSHR
@@ -590,14 +661,20 @@ public:
                     if (replaceIndex < 0) {
                         replaceIndex = 0;
                         // 如果要替换的行是M状态，需要写回
-                        if (sets[setIndex].lines[replaceIndex].state == MODIFIED) {
+                        if (sets[setIndex].lines[replaceIndex].state ==
+                            MODIFIED) {
                             // 计算写回地址
                             // 假设 lineSize 和 numSets 是固定的
-                            const int log2LineSize = static_cast<int>(log2(lineSize));
-                            const int log2NumSets = static_cast<int>(log2(numSets));
+                            const int log2LineSize =
+                                static_cast<int>(log2(lineSize));
+                            const int log2NumSets =
+                                static_cast<int>(log2(numSets));
 
                             // 使用预计算的值
-                            uint64_t writebackAddr = (sets[setIndex].lines[replaceIndex].tag << (log2LineSize + log2NumSets)) | (setIndex << log2LineSize);
+                            uint64_t writebackAddr =
+                                (sets[setIndex].lines[replaceIndex].tag
+                                 << (log2LineSize + log2NumSets)) |
+                                (setIndex << log2LineSize);
                             // 将写回请求加入队列
                             WritebackRequest req;
                             req.address = writebackAddr;
@@ -614,8 +691,11 @@ public:
                         }
                     }
 #if GPU_CACHE_DEBUG == 1
-                    cout << "L1Cache [" << cacheId <<  "]: REPLACE INDEX." << " Time stamp: " << sc_time_stamp() << " Address: " << addr << endl;
-                    cout <<  "setIndex "<< setIndex << " replaceIndex " << replaceIndex << " Tag " << tag << endl;
+                    cout << "L1Cache [" << cacheId << "]: REPLACE INDEX."
+                         << " Time stamp: " << sc_time_stamp()
+                         << " Address: " << addr << endl;
+                    cout << "setIndex " << setIndex << " replaceIndex "
+                         << replaceIndex << " Tag " << tag << endl;
 #endif
 
                     // 更新缓存行
@@ -626,7 +706,7 @@ public:
                     // trans.get_data_ptr(), lineSize);
 
                     // 更新原始事务数据
-                    tlm_generic_payload *origTrans = mshrEntries[mshrIndex].pendingTransaction;
+                    tlm_generic_payload *origTrans = &trans;//mshrEntries[mshrIndex].pendingTransaction;
                     // memcpy(origTrans->get_data_ptr(), trans.get_data_ptr(),
                     // origTrans->get_data_length());
 
@@ -650,15 +730,21 @@ public:
 
                     if (replaceIndex < 0) {
                         replaceIndex = 0;
-                        if (sets[setIndex].lines[replaceIndex].state == MODIFIED) {
+                        if (sets[setIndex].lines[replaceIndex].state ==
+                            MODIFIED) {
                             // 发起写回请求
                             // 计算写回地址
                             // 假设 lineSize 和 numSets 是固定的
-                            const int log2LineSize = static_cast<int>(log2(lineSize));
-                            const int log2NumSets = static_cast<int>(log2(numSets));
+                            const int log2LineSize =
+                                static_cast<int>(log2(lineSize));
+                            const int log2NumSets =
+                                static_cast<int>(log2(numSets));
 
                             // 使用预计算的值
-                            uint64_t writebackAddr = (sets[setIndex].lines[replaceIndex].tag << (log2LineSize + log2NumSets)) | (setIndex << log2LineSize);
+                            uint64_t writebackAddr =
+                                (sets[setIndex].lines[replaceIndex].tag
+                                 << (log2LineSize + log2NumSets)) |
+                                (setIndex << log2LineSize);
 
                             // 将写回请求加入队列
                             WritebackRequest req;
@@ -678,7 +764,7 @@ public:
                     sets[setIndex].lines[replaceIndex].valid = true;
                     sets[setIndex].lines[replaceIndex].state = MODIFIED;
 
-                    tlm_generic_payload *origTrans = mshrEntries[mshrIndex].pendingTransaction;
+                    tlm_generic_payload *origTrans = &trans;//mshrEntries[mshrIndex].pendingTransaction;
                     // memcpy(&sets[setIndex].lines[replaceIndex].data[0],
                     // origTrans->get_data_ptr(), origTrans->get_data_length());
 
@@ -694,7 +780,10 @@ public:
             uint64_t tag, setIndex, offset;
             parseAddress(addr, tag, setIndex, offset);
 #if GPU_CACHE_DEBUG == 1
-            cout << "L1Cache [" << cacheId <<  "]: END RESP FROM L2 HIT FOR L1 MSHR." << " Time stamp: " << sc_time_stamp() << " Address: " << addr << endl;
+            cout << "L1Cache [" << cacheId
+                 << "]: END RESP FROM L2 HIT FOR L1 MSHR."
+                 << " Time stamp: " << sc_time_stamp() << " Address: " << addr
+                 << endl;
 #endif
 
 
@@ -715,14 +804,20 @@ public:
                     if (replaceIndex < 0) {
                         replaceIndex = 0;
                         // 如果要替换的行是M状态，需要写回
-                        if (sets[setIndex].lines[replaceIndex].state == MODIFIED) {
+                        if (sets[setIndex].lines[replaceIndex].state ==
+                            MODIFIED) {
                             // 计算写回地址
                             // 假设 lineSize 和 numSets 是固定的
-                            const int log2LineSize = static_cast<int>(log2(lineSize));
-                            const int log2NumSets = static_cast<int>(log2(numSets));
+                            const int log2LineSize =
+                                static_cast<int>(log2(lineSize));
+                            const int log2NumSets =
+                                static_cast<int>(log2(numSets));
 
                             // 使用预计算的值
-                            uint64_t writebackAddr = (sets[setIndex].lines[replaceIndex].tag << (log2LineSize + log2NumSets)) | (setIndex << log2LineSize);
+                            uint64_t writebackAddr =
+                                (sets[setIndex].lines[replaceIndex].tag
+                                 << (log2LineSize + log2NumSets)) |
+                                (setIndex << log2LineSize);
                             // 将写回请求加入队列
                             WritebackRequest req;
                             req.address = writebackAddr;
@@ -747,7 +842,7 @@ public:
                     // trans.get_data_ptr(), lineSize);
 
                     // 更新原始事务数据
-                    tlm_generic_payload *origTrans = mshrEntries[mshrIndex].pendingTransaction;
+                    tlm_generic_payload *origTrans = &trans;//mshrEntries[mshrIndex].pendingTransaction;
                     // memcpy(origTrans->get_data_ptr(), trans.get_data_ptr(),
                     // origTrans->get_data_length());
 
@@ -771,15 +866,21 @@ public:
 
                     if (replaceIndex < 0) {
                         replaceIndex = 0;
-                        if (sets[setIndex].lines[replaceIndex].state == MODIFIED) {
+                        if (sets[setIndex].lines[replaceIndex].state ==
+                            MODIFIED) {
                             // 发起写回请求
                             // 计算写回地址
                             // 假设 lineSize 和 numSets 是固定的
-                            const int log2LineSize = static_cast<int>(log2(lineSize));
-                            const int log2NumSets = static_cast<int>(log2(numSets));
+                            const int log2LineSize =
+                                static_cast<int>(log2(lineSize));
+                            const int log2NumSets =
+                                static_cast<int>(log2(numSets));
 
                             // 使用预计算的值
-                            uint64_t writebackAddr = (sets[setIndex].lines[replaceIndex].tag << (log2LineSize + log2NumSets)) | (setIndex << log2LineSize);
+                            uint64_t writebackAddr =
+                                (sets[setIndex].lines[replaceIndex].tag
+                                 << (log2LineSize + log2NumSets)) |
+                                (setIndex << log2LineSize);
 
                             // 将写回请求加入队列
                             WritebackRequest req;
@@ -799,7 +900,7 @@ public:
                     sets[setIndex].lines[replaceIndex].valid = true;
                     sets[setIndex].lines[replaceIndex].state = MODIFIED;
 
-                    tlm_generic_payload *origTrans = mshrEntries[mshrIndex].pendingTransaction;
+                    tlm_generic_payload *origTrans = &trans;//mshrEntries[mshrIndex].pendingTransaction;
                     // memcpy(&sets[setIndex].lines[replaceIndex].data[0],
                     // origTrans->get_data_ptr(), origTrans->get_data_length());
 
@@ -814,9 +915,9 @@ public:
         } else if (op_ext->op == WbL1Op::WB_L1) {
 
 #if GPU_CACHE_DEBUG == 1
-            cout << "L1Cache [" << cacheId <<  "]: END RESP L1 WB." << " Time stamp: " << sc_time_stamp() << endl;
+            cout << "L1Cache [" << cacheId << "]: END RESP L1 WB."
+                 << " Time stamp: " << sc_time_stamp() << endl;
 #endif
-
 
 
             // DAHU 释放L1 WB
@@ -862,7 +963,9 @@ public:
     }
 
     // 必须实现的拷贝函数
-    void copy_from(tlm::tlm_extension_base const &ext) override { source_id = static_cast<SourceIDExtension const &>(ext).source_id; }
+    void copy_from(tlm::tlm_extension_base const &ext) override {
+        source_id = static_cast<SourceIDExtension const &>(ext).source_id;
+    }
 
 private:
     int source_id;
@@ -877,19 +980,23 @@ private:
 
 public:
     tlm_utils::simple_initiator_socket<Bus> l2_socket;
-    tlm_utils::simple_target_socket_tagged<Bus> *l1_sockets[NUML1Caches]; // 面向L1 Cache的目标socket
+    tlm_utils::simple_target_socket_tagged<Bus>
+        *l1_sockets[NUML1Caches]; // 面向L1 Cache的目标socket
 
 
     SC_HAS_PROCESS(Bus);
 
-    Bus(sc_module_name name, int numL1Caches) : sc_module(name), l2_socket("l2_socket") {
+    Bus(sc_module_name name, int numL1Caches)
+        : sc_module(name), l2_socket("l2_socket") {
 
 
         for (int i = 0; i < numL1Caches; i++) {
             char txt[20];
             sprintf(txt, "l1_socket_%d", i);
-            l1_sockets[i] = new tlm_utils::simple_target_socket_tagged<Bus>(txt);
-            l1_sockets[i]->register_nb_transport_fw(this, &Bus::nb_transport_fw, i);
+            l1_sockets[i] =
+                new tlm_utils::simple_target_socket_tagged<Bus>(txt);
+            l1_sockets[i]->register_nb_transport_fw(this, &Bus::nb_transport_fw,
+                                                    i);
         }
         l2_socket.register_nb_transport_bw(this, &Bus::nb_transport_bw);
 
@@ -902,7 +1009,8 @@ public:
         while (true) {
             if (requestQueue.empty()) {
 #if DEBUG == 1
-                SC_REPORT_INFO("Event Wait,(Waiting for for Bus: ", newRequest.name());
+                SC_REPORT_INFO("Event Wait,(Waiting for for Bus: ",
+                               newRequest.name());
 #endif
                 wait(newRequest);
             }
@@ -925,10 +1033,14 @@ public:
 
                 int targetId = id_ext->get_id();
 #if GPU_CACHE_DEBUG == 1
-                cout << "BUS FROM L1CACHE [" << targetId << "]: BUS SEND REQ TO L2" << " Time stamp: " << sc_time_stamp() << " Address: " << request.address << endl;
+                cout << "BUS FROM L1CACHE [" << targetId
+                     << "]: BUS SEND REQ TO L2"
+                     << " Time stamp: " << sc_time_stamp()
+                     << " Address: " << request.address << endl;
 #endif
 
-                status = l2_socket->nb_transport_fw(*request.transaction, phase, delay);
+                status = l2_socket->nb_transport_fw(*request.transaction, phase,
+                                                    delay);
                 if (status == TLM_COMPLETED) {
                     wait(CYCLE, SC_NS); // 总线仲裁延迟
 
@@ -958,7 +1070,8 @@ public:
     }
 
     // 处理L1发来的请求
-    tlm_sync_enum nb_transport_fw(int id, tlm_generic_payload &trans, tlm_phase &phase, sc_time &delay) {
+    tlm_sync_enum nb_transport_fw(int id, tlm_generic_payload &trans,
+                                  tlm_phase &phase, sc_time &delay) {
         if (phase == BEGIN_REQ) {
             // 确定请求类型和来源
             BusRequestType reqType;
@@ -994,7 +1107,9 @@ public:
             sc_time delay = SC_ZERO_TIME;
             tlm_phase phase = END_RESP;
 #if GPU_CACHE_DEBUG == 1
-            cout << "BUS FROM L1CACHE [" << id << "]: BUS SEND REQ TO L2" << " Time stamp: " << sc_time_stamp() << " Address: " << trans.get_address() << endl;
+            cout << "BUS FROM L1CACHE [" << id << "]: BUS SEND REQ TO L2"
+                 << " Time stamp: " << sc_time_stamp()
+                 << " Address: " << trans.get_address() << endl;
 #endif
             l2_socket->nb_transport_fw(trans, phase, delay);
             return TLM_COMPLETED;
@@ -1004,7 +1119,8 @@ public:
     }
 
     // 处理L2发来的响应
-    tlm_sync_enum nb_transport_bw(tlm_generic_payload &trans, tlm_phase &phase, sc_time &delay) {
+    tlm_sync_enum nb_transport_bw(tlm_generic_payload &trans, tlm_phase &phase,
+                                  sc_time &delay) {
         if (phase == BEGIN_RESP) {
 
             // 获取源ID扩展
@@ -1018,7 +1134,10 @@ public:
 
             int targetId = id_ext->get_id();
 #if GPU_CACHE_DEBUG == 1
-            cout << "BUS FROM L1CACHE [" << targetId << "]: BUS BEGIN RESP FROM L2" << " Time stamp: " << sc_time_stamp() << " Address: " << trans.get_address() << endl;
+            cout << "BUS FROM L1CACHE [" << targetId
+                 << "]: BUS BEGIN RESP FROM L2"
+                 << " Time stamp: " << sc_time_stamp()
+                 << " Address: " << trans.get_address() << endl;
 #endif
 
             // 我们需要直接调用 L1 缓存的 nb_transport_bw 方法
@@ -1060,7 +1179,10 @@ public:
             }
             int targetId = id_ext->get_id();
 #if GPU_CACHE_DEBUG == 1
-            cout << "BUS FROM L1CACHE [" << targetId << "]: BUS END RESP FROM L2 HIT" << " Time stamp: " << sc_time_stamp() << " Address: " << trans.get_address() << endl;
+            cout << "BUS FROM L1CACHE [" << targetId
+                 << "]: BUS END RESP FROM L2 HIT"
+                 << " Time stamp: " << sc_time_stamp()
+                 << " Address: " << trans.get_address() << endl;
 #endif
 
             sc_time busDelay = SC_ZERO_TIME;
@@ -1077,9 +1199,13 @@ struct WriteBackExtension : public tlm::tlm_extension<WriteBackExtension> {
 
     WriteBackExtension(WbOp o = WbOp::MSHR) : op(o) {}
 
-    virtual tlm_extension_base *clone() const override { return new WriteBackExtension(op); }
+    virtual tlm_extension_base *clone() const override {
+        return new WriteBackExtension(op);
+    }
 
-    virtual void copy_from(const tlm_extension_base &ext) override { op = static_cast<const WriteBackExtension &>(ext).op; }
+    virtual void copy_from(const tlm_extension_base &ext) override {
+        op = static_cast<const WriteBackExtension &>(ext).op;
+    }
 };
 
 // L2缓存
@@ -1097,7 +1223,13 @@ private:
         int dataLength;
         tlm_generic_payload *originalTrans;
 
-        CacheRequest(RequestType t, uint64_t addr, uint8_t *d, int len, tlm_generic_payload *orig = nullptr) : type(t), address(addr), data(d), dataLength(len), originalTrans(orig) {}
+        CacheRequest(RequestType t, uint64_t addr, uint8_t *d, int len,
+                     tlm_generic_payload *orig = nullptr)
+            : type(t),
+              address(addr),
+              data(d),
+              dataLength(len),
+              originalTrans(orig) {}
     };
 
     // 添加写回请求队列和事件
@@ -1123,7 +1255,8 @@ public:
 
     SC_HAS_PROCESS(L2Cache);
 
-    L2Cache(sc_module_name name, int cacheSize, int lineSize, int associativity, int numMSHRs)
+    L2Cache(sc_module_name name, int cacheSize, int lineSize, int associativity,
+            int numMSHRs)
         : CacheBase(name, cacheSize, lineSize, associativity, numMSHRs),
           bus_socket("bus_socket"),
           mem_socket("mem_socket"),
@@ -1138,7 +1271,8 @@ public:
         SC_THREAD(processRequestQueue); // 注册统一请求处理线程
     }
 
-    void peqCallback(tlm::tlm_generic_payload &payload, const tlm::tlm_phase &phase) {
+    void peqCallback(tlm::tlm_generic_payload &payload,
+                     const tlm::tlm_phase &phase) {
 
         if (phase == tlm::END_RESP) {
             tlm_phase l2Phase = END_RESP;
@@ -1152,7 +1286,10 @@ public:
             }
             int targetId = id_ext->get_id();
 #if GPU_CACHE_DEBUG == 1
-            cout << "L2CACHE FROM L1CACHE [" << targetId << "]: END RESP For L1CACHE MSHR" << " Time stamp: " << sc_time_stamp() << " Address: " << payload.get_address() << endl;
+            cout << "L2CACHE FROM L1CACHE [" << targetId
+                 << "]: END RESP For L1CACHE MSHR"
+                 << " Time stamp: " << sc_time_stamp()
+                 << " Address: " << payload.get_address() << endl;
 #endif
 
             bus_socket->nb_transport_bw(payload, l2Phase, l2Delay);
@@ -1164,7 +1301,8 @@ public:
             bus_socket->nb_transport_bw(payload, l2Phase, l2Delay);
         }
     }
-    void peqCallback_L2WB(tlm::tlm_generic_payload &payload, const tlm::tlm_phase &phase) {
+    void peqCallback_L2WB(tlm::tlm_generic_payload &payload,
+                          const tlm::tlm_phase &phase) {
 
         if (phase == tlm::END_RESP) {
             tlm_phase l2Phase = END_RESP;
@@ -1174,7 +1312,8 @@ public:
         }
     }
 
-    void peqCallback_L2L1WB(tlm::tlm_generic_payload &payload, const tlm::tlm_phase &phase) {
+    void peqCallback_L2L1WB(tlm::tlm_generic_payload &payload,
+                            const tlm::tlm_phase &phase) {
 
         if (phase == tlm::END_RESP) {
             tlm_phase l2Phase = END_RESP;
@@ -1188,7 +1327,8 @@ public:
     // 修改writeBack方法，将写回请求加入队列
     void writeBack(uint64_t address, int setIndex, int index) {
 #if GPU_CACHE_DEBUG == 1
-        cout << "L2CACHE WB." << " Time stamp: " << sc_time_stamp() << " Address: " << address<< endl;
+        cout << "L2CACHE WB." << " Time stamp: " << sc_time_stamp()
+             << " Address: " << address << endl;
 #endif
 
 
@@ -1211,7 +1351,8 @@ public:
         while (true) {
             if (writebackQueue.empty()) {
 #if DEBUG == 1
-                SC_REPORT_INFO("Event Wait,(Waiting for for L2: ", newWritebackRequest.name());
+                SC_REPORT_INFO("Event Wait,(Waiting for for L2: ",
+                               newWritebackRequest.name());
 #endif
 
                 wait(newWritebackRequest); // 等待新的写回请求
@@ -1222,7 +1363,8 @@ public:
             writebackQueue.pop();
 
             // 将写回请求添加到统一队列
-            CacheRequest unifiedReq(CacheRequest::WRITEBACK_REQ, req.address, req.data, req.lineSize);
+            CacheRequest unifiedReq(CacheRequest::WRITEBACK_REQ, req.address,
+                                    req.data, req.lineSize);
             requestQueue.push(unifiedReq);
             newRequest.notify(); // 通知请求处理线程
         }
@@ -1251,7 +1393,8 @@ public:
                     // 处理MSHR中的请求...
 
                     mshrEntries[i].isIssue = true;
-                    tlm_generic_payload *trans = mshrEntries[i].pendingTransaction;
+                    tlm_generic_payload *trans =
+                        mshrEntries[i].pendingTransaction;
                     uint64_t addr = trans->get_address();
 
                     if (mshrEntries[i].requestType == READ) {
@@ -1260,17 +1403,20 @@ public:
                         // memcpy(data, trans->get_data_ptr(),
                         // trans->get_data_length());
 
-                        CacheRequest req(CacheRequest::READ_REQ, addr, data, trans->get_data_length(), trans);
+                        CacheRequest req(CacheRequest::READ_REQ, addr, data,
+                                         trans->get_data_length(), trans);
                         requestQueue.push(req);
                         newRequest.notify();
 
-                    } else if (mshrEntries[i].requestType == WRITE || mshrEntries[i].requestType == WRITEBACK) {
+                    } else if (mshrEntries[i].requestType == WRITE ||
+                               mshrEntries[i].requestType == WRITEBACK) {
                         // 创建写请求并加入统一队列
                         uint8_t *data = new uint8_t[trans->get_data_length()];
                         // memcpy(data, trans->get_data_ptr(),
                         // trans->get_data_length());
 
-                        CacheRequest req(CacheRequest::WRITE_REQ, addr, data, trans->get_data_length(), trans);
+                        CacheRequest req(CacheRequest::WRITE_REQ, addr, data,
+                                         trans->get_data_length(), trans);
                         requestQueue.push(req);
                         newRequest.notify();
                     }
@@ -1286,7 +1432,8 @@ public:
         while (true) {
             if (requestQueue.empty()) {
 #if DEBUG == 1
-                SC_REPORT_INFO("Event Wait,(Waiting for for L2: ", newRequest.name());
+                SC_REPORT_INFO("Event Wait,(Waiting for for L2: ",
+                               newRequest.name());
 #endif
                 wait(newRequest); // 等待新请求
             }
@@ -1356,7 +1503,8 @@ public:
 
             sc_core::sc_time sendingTime = sc_core::sc_time_stamp() + delay;
 
-            bool needsOffset = (sendingTime % clkPeriod) != sc_core::SC_ZERO_TIME;
+            bool needsOffset =
+                (sendingTime % clkPeriod) != sc_core::SC_ZERO_TIME;
             if (needsOffset) {
                 sendingTime += clkPeriod;
                 sendingTime -= sendingTime % clkPeriod;
@@ -1370,14 +1518,17 @@ public:
 
             delay = sendingTime - sc_core::sc_time_stamp();
 #if GPU_CACHE_DEBUG == 1
-            cout << "L2CACHE SEND REQ TO MEMORY." << " Time stamp: " << sc_time_stamp() << " Address: " << req.address << endl;
+            cout << "L2CACHE SEND REQ TO MEMORY."
+                 << " Time stamp: " << sc_time_stamp()
+                 << " Address: " << req.address << endl;
 #endif
 
             mem_socket->nb_transport_fw(*newTrans, phase, delay);
 
             // 等待响应（简化处理）
 #if DEBUG == 1
-            SC_REPORT_INFO("Event Wait,(Waiting for for L2: ", end_req_event.name());
+            SC_REPORT_INFO("Event Wait,(Waiting for for L2: ",
+                           end_req_event.name());
 #endif
 
             wait(end_req_event);
@@ -1389,7 +1540,8 @@ public:
         }
     }
     // 处理总线发来的请求
-    tlm_sync_enum nb_transport_fw(tlm_generic_payload &trans, tlm_phase &phase, sc_time &delay) {
+    tlm_sync_enum nb_transport_fw(tlm_generic_payload &trans, tlm_phase &phase,
+                                  sc_time &delay) {
         if (phase == BEGIN_REQ) {
             // 加锁确保一次只处理一个请求
             SourceIDExtension *id_ext;
@@ -1417,7 +1569,8 @@ public:
 
                         requestMutex.unlock();
                         phase = END_RESP;
-                        sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
+                        sc_time bwDelay =
+                            sc_core::sc_time(CYCLE, sc_core::SC_NS);
                         payloadEventQueue.notify(trans, phase, bwDelay);
                         return TLM_UPDATED;
                     }
@@ -1436,7 +1589,8 @@ public:
 
                         requestMutex.unlock();
                         phase = END_REQ;
-                        sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
+                        sc_time bwDelay =
+                            sc_core::sc_time(CYCLE, sc_core::SC_NS);
                         payloadEventQueue.notify(trans, phase, bwDelay);
                         mshrevent.notify();
                         return TLM_ACCEPTED;
@@ -1460,7 +1614,8 @@ public:
 
                         requestMutex.unlock();
                         phase = END_RESP;
-                        sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
+                        sc_time bwDelay =
+                            sc_core::sc_time(CYCLE, sc_core::SC_NS);
                         payloadEventQueue.notify(trans, phase, bwDelay);
                         return TLM_UPDATED;
                     }
@@ -1478,7 +1633,8 @@ public:
 
                         requestMutex.unlock();
                         phase = END_REQ;
-                        sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
+                        sc_time bwDelay =
+                            sc_core::sc_time(CYCLE, sc_core::SC_NS);
                         payloadEventQueue.notify(trans, phase, bwDelay);
                         mshrevent.notify();
                         return TLM_ACCEPTED;
@@ -1495,7 +1651,8 @@ public:
             sc_time delay = SC_ZERO_TIME;
             tlm_phase phase = END_RESP;
 #if GPU_CACHE_DEBUG == 1
-            cout << "L2CACHE END RESP." << " Time stamp: " << sc_time_stamp() << " Address: " << trans.get_address() << endl;
+            cout << "L2CACHE END RESP." << " Time stamp: " << sc_time_stamp()
+                 << " Address: " << trans.get_address() << endl;
 #endif
 
             mem_socket->nb_transport_fw(trans, phase, delay);
@@ -1506,14 +1663,16 @@ public:
     }
 
     // 处理主存发来的响应
-    tlm_sync_enum nb_transport_bw(tlm_generic_payload &trans, tlm_phase &phase, sc_time &delay) {
+    tlm_sync_enum nb_transport_bw(tlm_generic_payload &trans, tlm_phase &phase,
+                                  sc_time &delay) {
         WriteBackExtension *op_ext = trans.get_extension<WriteBackExtension>();
         if (!op_ext) {
             SC_REPORT_FATAL("L2Cache", "Missing WB Type");
             return TLM_COMPLETED; // 修改为返回
         }
 
-        WriteBackL1Extension *opL1_ext = trans.get_extension<WriteBackL1Extension>();
+        WriteBackL1Extension *opL1_ext =
+            trans.get_extension<WriteBackL1Extension>();
         if (!opL1_ext) {
             opL1_ext = new WriteBackL1Extension(WbL1Op::MSHR_L1);
         }
@@ -1521,13 +1680,15 @@ public:
         if (phase == END_REQ) {
             end_req_event.notify();
 #if GPU_CACHE_DEBUG == 1
-            cout << "L2CACHE END REQ." << " Time stamp: " << sc_time_stamp() << " Address: " << trans.get_address() << endl;
+            cout << "L2CACHE END REQ." << " Time stamp: " << sc_time_stamp()
+                 << " Address: " << trans.get_address() << endl;
 #endif
             lastEndRequest = sc_core::sc_time_stamp();
 
             // sc_time busDelay = SC_ZERO_TIME;
             // bus_socket->nb_transport_bw(trans, phase, busDelay);
-        } else if (phase == BEGIN_RESP && op_ext->op == WbOp::MSHR && opL1_ext->op == WbL1Op::MSHR_L1) {
+        } else if (phase == BEGIN_RESP && op_ext->op == WbOp::MSHR &&
+                   opL1_ext->op == WbL1Op::MSHR_L1) {
             uint64_t addr = trans.get_address();
             uint64_t tag, setIndex, offset;
             parseAddress(addr, tag, setIndex, offset);
@@ -1541,21 +1702,26 @@ public:
             int targetId = id_ext->get_id();
 
 #if GPU_CACHE_DEBUG == 1
-            cout << "L2CACHE FROM L1CACHE [" << targetId << "]: BESP RESP For L1CACHE MSHR" << " Time stamp: " << sc_time_stamp() << " Address: " << trans.get_address() << endl;
+            cout << "L2CACHE FROM L1CACHE [" << targetId
+                 << "]: BESP RESP For L1CACHE MSHR"
+                 << " Time stamp: " << sc_time_stamp()
+                 << " Address: " << trans.get_address() << endl;
 
             // 打印所有MSHR条目的信息
             cout << "MSHR Entries Status:" << endl;
             for (int i = 0; i < numMSHRs; i++) {
-                cout << "MSHR " << i << ": " 
-                    << "Address: " << mshrEntries[i].address
-                    << " Type: " << (mshrEntries[i].requestType == READ ? "READ" : 
-                                    mshrEntries[i].requestType == WRITE ? "WRITE" : "WRITEBACK")
-                    << " Time: " << mshrEntries[i].requestTime 
-                    << " Pending: " << (mshrEntries[i].isPending ? "Yes" : "No")
-                    << " Issue: " << (mshrEntries[i].isIssue?  "Yes" : "No")
-                    << endl;
+                cout << "MSHR " << i << ": "
+                     << "Address: " << mshrEntries[i].address << " Type: "
+                     << (mshrEntries[i].requestType == READ    ? "READ"
+                         : mshrEntries[i].requestType == WRITE ? "WRITE"
+                                                               : "WRITEBACK")
+                     << " Time: " << mshrEntries[i].requestTime << " Pending: "
+                     << (mshrEntries[i].isPending ? "Yes" : "No")
+                     << " Issue: " << (mshrEntries[i].isIssue ? "Yes" : "No")
+                     << endl;
             }
-            cout << "address: " << addr << " tag: " << tag << " setIndex: " << setIndex << " offset: " << offset << endl;
+            cout << "address: " << addr << " tag: " << tag
+                 << " setIndex: " << setIndex << " offset: " << offset << endl;
 #endif
             // 查找对应的MSHR
             int mshrIndex = findMSHRByAddress(addr);
@@ -1574,12 +1740,18 @@ public:
 
                     if (replaceIndex < 0) {
                         replaceIndex = 0;
-                        if (sets[setIndex].lines[replaceIndex].state == MODIFIED) {
+                        if (sets[setIndex].lines[replaceIndex].state ==
+                            MODIFIED) {
                             // 计算写回地址
-                            const int log2LineSize = static_cast<int>(log2(lineSize));
-                            const int log2NumSets = static_cast<int>(log2(numSets));
+                            const int log2LineSize =
+                                static_cast<int>(log2(lineSize));
+                            const int log2NumSets =
+                                static_cast<int>(log2(numSets));
 
-                            uint64_t writebackAddr = (sets[setIndex].lines[replaceIndex].tag << (log2LineSize + log2NumSets)) | (setIndex << log2LineSize);
+                            uint64_t writebackAddr =
+                                (sets[setIndex].lines[replaceIndex].tag
+                                 << (log2LineSize + log2NumSets)) |
+                                (setIndex << log2LineSize);
 
                             // 使用writeBack方法
                             writeBack(writebackAddr, setIndex, replaceIndex);
@@ -1594,7 +1766,7 @@ public:
                     // trans.get_data_ptr(), lineSize);
 
                     // 更新原始事务数据
-                    tlm_generic_payload *origTrans = mshrEntries[mshrIndex].pendingTransaction;
+                    tlm_generic_payload *origTrans = &trans;//mshrEntries[mshrIndex].pendingTransaction;
                     // memcpy(origTrans->get_data_ptr(), trans.get_data_ptr(),
                     // origTrans->get_data_length());
 
@@ -1607,7 +1779,7 @@ public:
                     bus_socket->nb_transport_bw(*origTrans, busPhase, busDelay);
                 } else if (trans.get_command() == TLM_WRITE_COMMAND) {
                     // 处理写响应
-                    tlm_generic_payload *origTrans = mshrEntries[mshrIndex].pendingTransaction;
+                    tlm_generic_payload *origTrans = &trans;//mshrEntries[mshrIndex].pendingTransaction;
 
                     int replaceIndex = -1;
                     for (int i = 0; i < associativity; i++) {
@@ -1619,12 +1791,18 @@ public:
 
                     if (replaceIndex < 0) {
                         replaceIndex = 0;
-                        if (sets[setIndex].lines[replaceIndex].state == MODIFIED) {
+                        if (sets[setIndex].lines[replaceIndex].state ==
+                            MODIFIED) {
                             // 计算写回地址
-                            const int log2LineSize = static_cast<int>(log2(lineSize));
-                            const int log2NumSets = static_cast<int>(log2(numSets));
+                            const int log2LineSize =
+                                static_cast<int>(log2(lineSize));
+                            const int log2NumSets =
+                                static_cast<int>(log2(numSets));
 
-                            uint64_t writebackAddr = (sets[setIndex].lines[replaceIndex].tag << (log2LineSize + log2NumSets)) | (setIndex << log2LineSize);
+                            uint64_t writebackAddr =
+                                (sets[setIndex].lines[replaceIndex].tag
+                                 << (log2LineSize + log2NumSets)) |
+                                (setIndex << log2LineSize);
 
                             // 使用writeBack方法
                             writeBack(writebackAddr, setIndex, replaceIndex);
@@ -1646,22 +1824,27 @@ public:
             }
 
             return TLM_ACCEPTED;
-        } else if (phase == BEGIN_RESP && op_ext->op == WbOp::WB && opL1_ext->op != WbL1Op::WB_L1) {
+        } else if (phase == BEGIN_RESP && op_ext->op == WbOp::WB &&
+                   opL1_ext->op != WbL1Op::WB_L1) {
 
             // DAHU 释放L2 WB 数据
 #if GPU_CACHE_DEBUG == 1
-            cout << "L2CACHE WB." << " Time stamp: " << sc_time_stamp() << " Address: " << trans.get_address() << endl;
+            cout << "L2CACHE WB." << " Time stamp: " << sc_time_stamp()
+                 << " Address: " << trans.get_address() << endl;
 #endif
             phase = END_RESP;
             sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
             payloadEventQueue_L2WB.notify(trans, phase, bwDelay);
 
 
-        } else if (phase == BEGIN_RESP && op_ext->op != WbOp::WB && opL1_ext->op == WbL1Op::WB_L1) {
+        } else if (phase == BEGIN_RESP && op_ext->op != WbOp::WB &&
+                   opL1_ext->op == WbL1Op::WB_L1) {
 
             // DAHU 释放L2 WB 数据
 #if GPU_CACHE_DEBUG == 1
-            cout << "L2CACHE RESP TO L1 WB." << " Time stamp: " << sc_time_stamp() << " Address: " << trans.get_address() << endl;
+            cout << "L2CACHE RESP TO L1 WB."
+                 << " Time stamp: " << sc_time_stamp()
+                 << " Address: " << trans.get_address() << endl;
 #endif
 
             phase = END_RESP;
@@ -1683,12 +1866,17 @@ public:
     SC_HAS_PROCESS(MainMemory);
 
     MainMemory(sc_module_name name)
-        : sc_module(name), l2_socket("l2_socket"), payloadEventQueue(this, &MainMemory::peqCallback), payloadEventQueue_begin_resp(this, &MainMemory::peqCallback_begin_resp) {
+        : sc_module(name),
+          l2_socket("l2_socket"),
+          payloadEventQueue(this, &MainMemory::peqCallback),
+          payloadEventQueue_begin_resp(this,
+                                       &MainMemory::peqCallback_begin_resp) {
         l2_socket.register_nb_transport_fw(this, &MainMemory::nb_transport_fw);
     }
 
 
-    void peqCallback_begin_resp(tlm::tlm_generic_payload &payload, const tlm::tlm_phase &phase) {
+    void peqCallback_begin_resp(tlm::tlm_generic_payload &payload,
+                                const tlm::tlm_phase &phase) {
 
         if (phase == tlm::BEGIN_RESP) {
             tlm_phase l2Phase = BEGIN_RESP;
@@ -1697,8 +1885,9 @@ public:
             l2_socket->nb_transport_bw(payload, l2Phase, l2Delay);
         }
     }
-    
-    void peqCallback(tlm::tlm_generic_payload &payload, const tlm::tlm_phase &phase) {
+
+    void peqCallback(tlm::tlm_generic_payload &payload,
+                     const tlm::tlm_phase &phase) {
 
         if (phase == tlm::END_REQ) {
             tlm_phase l2Phase = END_REQ;
@@ -1718,7 +1907,8 @@ public:
         }
     }
     // 处理L2发来的请求
-    tlm_sync_enum nb_transport_fw(tlm_generic_payload &trans, tlm_phase &phase, sc_time &delay) {
+    tlm_sync_enum nb_transport_fw(tlm_generic_payload &trans, tlm_phase &phase,
+                                  sc_time &delay) {
         if (phase == BEGIN_REQ) {
             // 模拟内存访问
             delay += sc_time(100, SC_NS); // 内存访问延迟
@@ -1765,13 +1955,19 @@ public:
 
     SC_HAS_PROCESS(Processor);
 
-    Processor(sc_module_name name, uint64_t baseAddr = 0) : sc_module(name), baseAddr(baseAddr), cache_socket("cache_socket"), payloadEventQueue(this, &Processor::peqCallback) {
+    Processor(sc_module_name name, uint64_t baseAddr = 0)
+        : sc_module(name),
+          baseAddr(baseAddr),
+          cache_socket("cache_socket"),
+          payloadEventQueue(this, &Processor::peqCallback) {
 
         // SC_THREAD(generateTraffic);
-        cache_socket.register_nb_transport_bw(this, &Processor::nb_transport_bw);
+        cache_socket.register_nb_transport_bw(this,
+                                              &Processor::nb_transport_bw);
     }
 
-    void peqCallback(tlm::tlm_generic_payload &payload, const tlm::tlm_phase &phase) {
+    void peqCallback(tlm::tlm_generic_payload &payload,
+                     const tlm::tlm_phase &phase) {
 
         if (phase == tlm::BEGIN_RESP) {
 
@@ -1782,7 +1978,8 @@ public:
     }
 
 
-    tlm_sync_enum nb_transport_bw(tlm_generic_payload &trans, tlm_phase &phase, sc_time &delay) {
+    tlm_sync_enum nb_transport_bw(tlm_generic_payload &trans, tlm_phase &phase,
+                                  sc_time &delay) {
 
         if (phase == BEGIN_RESP) {
 
@@ -1823,7 +2020,8 @@ public:
                 trans->set_data_ptr(data);
                 trans->set_data_length(4);
 
-                cout << name() << ": Writing to address " << hex << addr << dec << endl;
+                cout << name() << ": Writing to address " << hex << addr << dec
+                     << endl;
             } else {
                 // 读请求
                 trans->set_command(TLM_READ_COMMAND);
@@ -1831,7 +2029,8 @@ public:
                 trans->set_data_ptr(data);
                 trans->set_data_length(4);
 
-                cout << name() << ": Reading from address " << hex << addr << dec << endl;
+                cout << name() << ": Reading from address " << hex << addr
+                     << dec << endl;
             }
 
             // 发送请求

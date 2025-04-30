@@ -2,11 +2,11 @@
 #include "defs/enums.h"
 #include "macros/macros.h"
 
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <cstdint>
 
 using namespace std;
 
@@ -66,7 +66,12 @@ extern u_int32_t ***frame_counters;
 
 
 // used for worker core and router
-enum worker_core_state { CORE_IDLE = 0, CORE_TASK = 1, CORE_DATA = 2, CORE_RECEIVE = 3 };
+enum worker_core_state {
+    CORE_IDLE = 0,
+    CORE_TASK = 1,
+    CORE_DATA = 2,
+    CORE_RECEIVE = 3
+};
 
 extern bool use_node;
 extern bool use_DramSys;

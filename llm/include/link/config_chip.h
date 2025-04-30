@@ -1,8 +1,8 @@
 #pragma once
 
 #include <optional>
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include "nlohmann/json.hpp"
 #include "systemc.h"
@@ -31,16 +31,17 @@ public:
     ChipConfig(TopConfig *top_config) : top_config(top_config) {}
     // virtual ~ChipConfig(){};
 
-    ChipConfig(TopConfig *top_config, BaseConfig *parent_config) : top_config(top_config), parent_config(parent_config) {}
+    ChipConfig(TopConfig *top_config, BaseConfig *parent_config)
+        : top_config(top_config), parent_config(parent_config) {}
 
-    ChipConfig* deep_copy() const {
+    ChipConfig *deep_copy() const {
         // ChipConfig* copy = new ChipConfig(top_config, parent_config);
         // copy->id = id;
         // copy->GridX = GridX;
         // copy->GridY = GridY;
         // copy->source_info = source_info;
         auto chip_ptr = new ChipConfig(*this);
-        
+
         if (chip != nullptr) {
             chip_ptr->chip = chip->clone();
         } else {
@@ -49,11 +50,9 @@ public:
         return chip_ptr;
     }
 
-    //load json函数
+    // load json函数
     void load_json(const json &j);
-    Type getType() const override{
-        return TYPE_CHIP;
-    }
+    Type getType() const override { return TYPE_CHIP; }
 };
 
 void from_json(const json &j, ChipConfig &c);

@@ -57,7 +57,8 @@ public:
 private:
     uint64_t numberOfAllocations = 0;
     uint64_t numberOfFrees = 0;
-    std::unordered_map<unsigned, std::stack<tlm::tlm_generic_payload *>> freePayloads;
+    std::unordered_map<unsigned, std::stack<tlm::tlm_generic_payload *>>
+        freePayloads;
     bool storageEnabled = false;
 };
 

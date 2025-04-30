@@ -613,6 +613,7 @@ void Controller::manageRequests(const sc_time& delay)
 
 void Controller::manageResponses()
 {
+// try{
     if (transToRelease.payload != nullptr)
     {
         assert(transToRelease.arrival >= sc_time_stamp());
@@ -689,6 +690,17 @@ void Controller::manageResponses()
         if (triggerTime != scMaxTime)
             dataResponseEvent.notify(triggerTime - sc_time_stamp());
     }
+// }
+
+//     catch (const std::exception& e)
+//     {
+//         std::cerr << "Standard exception caught in manageResponses(): " << e.what() << std::endl;
+//         // 可以添加日志或重新抛出
+//     }
+//     catch (...)
+//     {
+//         std::cerr << "Unknown exception caught in manageResponses()" << std::endl;
+//     }
 }
 
 void Controller::sendToFrontend(tlm_generic_payload& trans, tlm_phase& phase, sc_time& delay)

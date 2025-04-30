@@ -9,13 +9,15 @@ using namespace std;
 int AddrLabelTable::addRecord(const std::string &key) {
     for (int i = 0; i < table.size(); i++) {
         if (table[i] == key) {
-            cout << "LabelTable: Find existing label: " << key << " at " << i << endl;
+            cout << "LabelTable: Find existing label: " << key << " at " << i
+                 << endl;
             return i;
         }
     }
 
     table.push_back(key);
-    cout << "LabelTable: Add new label: " << key << " at " << table.size() - 1 << endl;
+    cout << "LabelTable: Add new label: " << key << " at " << table.size() - 1
+         << endl;
 
     return table.size() - 1;
 }
@@ -29,7 +31,8 @@ string AddrLabelTable::findRecord(int index) const {
 
 void AddrLabelTable::clearAll() { table.clear(); }
 
-void SramPosLocator::addPair(const std::string &key, AddrPosKey value, TaskCoreContext &context, u_int64_t &dram_time) {
+void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
+                             TaskCoreContext &context, u_int64_t &dram_time) {
     // 先放入sram
     visit += 1;
     value.record = visit;
@@ -65,9 +68,13 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value, TaskCoreC
         for (auto pair : data_map) {
             if (pair.first == key)
                 continue; // 不能spill自己
-            if (!pair.second.valid && pair.second.spill_size == pair.second.size)
+            if (!pair.second.valid &&
+                pair.second.spill_size == pair.second.size)
                 continue; // 已经全部spill到dram中去了
-            if (pair.first == ETERNAL_PREFIX + string(KVCACHE_PREFIX) + string("k") || pair.first == ETERNAL_PREFIX + string(KVCACHE_PREFIX) + string("v"))
+            if (pair.first ==
+                    ETERNAL_PREFIX + string(KVCACHE_PREFIX) + string("k") ||
+                pair.first ==
+                    ETERNAL_PREFIX + string(KVCACHE_PREFIX) + string("v"))
                 continue; // 简单策略：不spill kvcache
 
             if (pair.second.record < min_record) {
@@ -80,7 +87,8 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value, TaskCoreC
         cout << "[SRAM SPILL] Sram chose to spill label " << min_label << ".\n";
 
         if (min_record == 1e9 + 3) {
-            cout << "[ERROR] SRAM have no more data to spill " << max_sram_size << "<" << used << endl;
+            cout << "[ERROR] SRAM have no more data to spill " << max_sram_size
+                 << "<" << used << endl;
             sc_stop();
         }
 
@@ -89,7 +97,8 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value, TaskCoreC
         if (data_map[min_label].valid) {
             upper_spill_limit = data_map[min_label].size;
         } else {
-            upper_spill_limit = data_map[min_label].size - data_map[min_label].spill_size;
+            upper_spill_limit =
+                data_map[min_label].size - data_map[min_label].spill_size;
         }
 
         data_map[min_label].valid = false;
@@ -104,10 +113,12 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value, TaskCoreC
         // spill in nb_dcache utils
         sram_spill_back_generic(context, spill_size, 0, dram_time);
 
-        cout << "[SRAM SPILL] After spill: used: " << used << ", max sram size: " << max_sram_size << endl;
+        cout << "[SRAM SPILL] After spill: used: " << used
+             << ", max sram size: " << max_sram_size << endl;
     }
 
-    // 重排 每次addPair后都需要重排sram_addr地址，保证最前面的一块是连续使用的，sram指向最前面空闲的
+    // 重排
+    // 每次addPair后都需要重排sram_addr地址，保证最前面的一块是连续使用的，sram指向最前面空闲的
     *(context.sram_addr) = rearrangeAll(context);
 }
 
@@ -150,7 +161,8 @@ int SramPosLocator::rearrangeAll(TaskCoreContext &context) {
             size = 0;
 
         int dma_read_count = size * 8 / (int)(SRAM_BITWIDTH * SRAM_BANKS);
-        int byte_residue = size * 8 - dma_read_count * (SRAM_BITWIDTH * SRAM_BANKS);
+        int byte_residue =
+            size * 8 - dma_read_count * (SRAM_BITWIDTH * SRAM_BANKS);
         int single_read_count = ceiling_division(byte_residue, SRAM_BITWIDTH);
 
         AddrPosKey temp_key = AddrPosKey(pos, size);
@@ -163,7 +175,8 @@ int SramPosLocator::rearrangeAll(TaskCoreContext &context) {
             sc_stop();
         }
 
-        cout << "\tAdd label <" << record.first << "> at offset " << pos << endl;
+        cout << "\tAdd label <" << record.first << "> at offset " << pos
+             << endl;
 
         pos += dma_read_count * SRAM_BANKS + single_read_count;
     }
@@ -176,6 +189,9 @@ void GpuPosLocator::addPair(const std::string &key, AddrPosKey &value) {
     value.pos = addr_top;
     data_map[key] = value;
     addr_top += value.size;
+
+    // 对齐
+    addr_top = ceiling_division(addr_top, 64) * 64;
 }
 
 void GpuPosLocator::fetchPair(std::string &key, AddrPosKey &result) {
@@ -209,10 +225,6 @@ bool GpuPosLocator::findPair(std::string &key, AddrPosKey &result) {
     return false;
 }
 
-void GpuPosLocator::deletePair(std::string &key) {
-    data_map.erase(key);
-}
+void GpuPosLocator::deletePair(std::string &key) { data_map.erase(key); }
 
-void GpuPosLocator::clearAll() {
-    data_map.clear();
-}
+void GpuPosLocator::clearAll() { data_map.clear(); }

@@ -1,13 +1,14 @@
 #include "link/config_top.h"
 
-#include "utils/system_utils.h"
 #include "nlohmann/json.hpp"
+#include "utils/system_utils.h"
 #include <string>
 #include <vector>
 
 using json = nlohmann::json;
 
-TopConfig::TopConfig(std::string filename, std::string font_ttf) : filename(filename), font_ttf(font_ttf) {
+TopConfig::TopConfig(std::string filename, std::string font_ttf)
+    : filename(filename), font_ttf(font_ttf) {
     std::cout << "Loading Top config from " << filename << std::endl;
     std::ifstream file(filename);
     json j;
@@ -23,10 +24,12 @@ TopConfig::TopConfig(std::string filename, std::string font_ttf) : filename(file
         if (source.contains("loop")) {
             int loop_cnt = find_var(source["loop"]);
             for (int i = 0; i < loop_cnt; i++) {
-                source_info.push_back(make_pair(source["dest"], find_var(source["size"])));
+                source_info.push_back(
+                    make_pair(source["dest"], find_var(source["size"])));
             }
         } else {
-            source_info.push_back(make_pair(source["dest"], find_var(source["size"])));
+            source_info.push_back(
+                make_pair(source["dest"], find_var(source["size"])));
         }
     }
 
@@ -46,17 +49,18 @@ TopConfig::TopConfig(std::string filename, std::string font_ttf) : filename(file
     for (int i = 0; i < config_chips.size(); i++) {
         //[MYONIE] TODO : 可以考虑换成unique_ptr
         json j = config_chips[i];
-        if(j.contains("cores_copy")){
+        if (j.contains("cores_copy")) {
             int cores_copy = j.at("cores_copy");
-            assert(cores_copy >= 0 && cores_copy < component_.size() && "cores_copy is out of range");
-            auto chip_ptr = dynamic_cast<ChipConfig *>(component_[cores_copy])->deep_copy();
+            assert(cores_copy >= 0 && cores_copy < component_.size() &&
+                   "cores_copy is out of range");
+            auto chip_ptr =
+                dynamic_cast<ChipConfig *>(component_[cores_copy])->deep_copy();
             // auto chip_ptr = chip_[cores_copy]->deep_copy();
             // auto chip_ptr = new ChipConfig(*chip_[cores_copy]);
             chip_ptr->id = j.at("chip_id");
             // chip_.push_back(chip_ptr);
             component_.push_back(chip_ptr);
-        }
-        else{
+        } else {
             auto chip_ptr = new ChipConfig(this, this);
             chip_ptr->load_json(j);
             // chip_.push_back(chip_ptr);
@@ -66,7 +70,7 @@ TopConfig::TopConfig(std::string filename, std::string font_ttf) : filename(file
 }
 
 TopConfig::~TopConfig() {
-    //TODO
+    // TODO
 }
 
 void from_json(const json &j, TopConfig &c) {
@@ -76,7 +80,7 @@ void from_json(const json &j, TopConfig &c) {
     }
 }
 
-void TopConfig::print_self(){
+void TopConfig::print_self() {
     std::cout << "TopConfig: " << std::endl;
     std::cout << "pipeline: " << pipeline << std::endl;
     std::cout << "sequential: " << sequential << std::endl;
