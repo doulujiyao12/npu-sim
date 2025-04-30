@@ -34,6 +34,7 @@ config_helper_gpu::config_helper_gpu(string filename, string font_ttf,
         core.id = i;
         core.prim_refill = false;
         core.prim_copy = -1;
+        core.send_global_mem = -1;
         core.repeat = 1;
         core.loop = 1;
 

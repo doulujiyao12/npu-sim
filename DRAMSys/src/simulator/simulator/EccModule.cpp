@@ -211,12 +211,17 @@ void EccModule::peqCallback(tlm::tlm_generic_payload& cbPayload, const tlm::tlm_
                 payloadEventQueue.notify(cbPayload, tPhase, tDelay);
             }
 
-            Latency latency = sc_time_stamp() - payloadMap.at(&cbPayload);
-            payloadMap.erase(&cbPayload);
-
-            latency = roundLatency(latency);
-            latencyMap.try_emplace(latency, 0);
-            latencyMap.at(latency)++;
+            // Safely retrieve stored start time
+            auto it = payloadMap.find(&cbPayload);
+            if (it != payloadMap.end()) {
+                Latency latency = sc_time_stamp() - it->second;
+                payloadMap.erase(it);
+                latency = roundLatency(latency);
+                latencyMap.try_emplace(latency, 0);
+                latencyMap.at(latency)++;
+            } else {
+                SC_REPORT_WARNING("EccModule", "Received BEGIN_RESP for unknown payload. Skipping latency measurement.");
+            }
         }
         else
         {
@@ -308,11 +313,14 @@ sc_time EccModule::roundLatency(sc_time latency)
 
 bool EccModule::activeEccBlock(Bank bank, Row row, Block block) const
 {
-    auto eccIt = std::find_if(activeEccBlocks.at(bank).cbegin(),
-                              activeEccBlocks.at(bank).cend(),
-                              [block, row](EccIdentifier identifier) {
+    auto itQueue = activeEccBlocks.find(bank);
+    if (itQueue == activeEccBlocks.end()) {
+        return false;
+    }
+    const EccQueue &queue = itQueue->second;
+    auto eccIt = std::find_if(queue.cbegin(), queue.cend(),
+                              [block, row](const EccIdentifier &identifier) {
                                   return (identifier.first == block) && (identifier.second == row);
                               });
-
-    return eccIt != activeEccBlocks.at(bank).cend();
+    return eccIt != queue.cend();
 }

@@ -79,6 +79,9 @@ void config_helper_core::random_core(string font_ttf) {
         if (config.prim_copy != -1)
             config.prim_copy = o2r[config.prim_copy];
 
+        if (config.send_global_mem != -1)
+            config.send_global_mem = o2r[config.send_global_mem];
+
         for (auto &work : config.worklist) {
             if (work.recv_tag < GRID_SIZE)
                 work.recv_tag = o2r[oid];
@@ -138,7 +141,7 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
     cout << "Loading config file " << filename << endl;
     json j;
     // cout << "Loading config file3 " << filename << endl;
-    plot_dataflow(filename, font_ttf);
+    // plot_dataflow(filename, font_ttf);
     // cout << "Loading config file2 " << filename << endl;
     ifstream jfile(filename);
     jfile >> j;

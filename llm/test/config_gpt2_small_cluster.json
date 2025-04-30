@@ -268,7 +268,8 @@
           "id": 7,
           "cast": [
             {
-              "dest": -1
+              "dest": -1,
+              "gloabl" : true
             }
           ],
           "recv_cnt": 1,

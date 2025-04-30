@@ -1,5 +1,20 @@
 #pragma once
 
+//作用与SEND,RECV TYPE相同，仅仅起到区分作用
+enum GLOBAL_SEND_TYPE {
+    GLOBAL_SEND_ACK = 0,
+    GLOBAL_SEND_REQ,
+    GLOBAL_SEND_DATA,
+    GLOBAL_SEND_DONE,
+};
+
+enum GLOBAL_RECV_TYPE {
+    GLOBAL_RECV_ACK = 0,
+    GLOBAL_RECV_REQ,
+    GLOBAL_RECV_DATA,
+    GLOBAL_RECV_DONE,
+};
+
 // send原语的类型
 enum SEND_TYPE {
     // 向RECV核发送握手信号

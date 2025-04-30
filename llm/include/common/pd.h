@@ -31,7 +31,7 @@ public:
     int id;
 
     // 正在执行的任务
-    vector<int> reqs;
+    std::vector<int> reqs;
     bool available;
     bool data_sent;
 
@@ -50,7 +50,7 @@ public:
 
     BatchInfo() {}
 
-    BatchInfo(vector<RequestRecord> records) {
+    BatchInfo(std::vector<RequestRecord> records) {
         batch_size = records.size();
         for (int i = 0; i < batch_size; i++) {
             req_ids[i] = records[i].id;

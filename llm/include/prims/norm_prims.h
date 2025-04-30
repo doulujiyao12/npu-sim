@@ -2,6 +2,7 @@
 #include "systemc.h"
 
 #include "common/memory.h"
+#include "common/pd.h"
 #include "prims/prim_base.h"
 
 class Clear_sram : public prim_base {
@@ -154,7 +155,7 @@ public:
     Set_batch() {}
 
     Set_batch(BatchInfo *target) {
-        target = target;
+        this->target = target;
     }
 };
 

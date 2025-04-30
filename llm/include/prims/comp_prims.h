@@ -371,3 +371,38 @@ public:
     void parse_matmul(Matmul_f *matmul);
     Split_matmul() { name = "Split_matmul"; }
 };
+
+class Send_global_memory : public comp_base {
+public:
+
+    GLOBAL_SEND_TYPE type;
+    int des_id; // global memory's id (reserved for c2c)
+    int des_offset; // global memory's offset
+    int local_offset; // local memory's offset
+    int max_packet; // max packet size
+    int tag_id; // tag id
+    int end_length; // end length
+
+    int data_packet_id; //已经发送的包数量
+
+    int task();
+    int task_core(TaskCoreContext &context);
+
+    sc_bv<128> serialize(); 
+    void deserialize(sc_bv<128> buffer);
+
+    Send_global_memory() { name = "Send_global_memory"; }
+};
+
+class Recv_global_memory : public comp_base {
+public:
+
+
+    int task();
+    int task_core(TaskCoreContext &context);
+
+    sc_bv<128> serialize();
+    void deserialize(sc_bv<128> buffer);
+
+    Recv_global_memory() { name = "Recv_global_memory"; }
+};

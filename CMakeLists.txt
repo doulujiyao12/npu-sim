@@ -44,7 +44,7 @@ list(FILTER SRC_FILES EXCLUDE REGEX ".*/test_dramsys\\.cpp$")
 # find_package(Cairo REQUIRED)
 # include_directories(${CAIRO_INCLUDE_DIRS})
 
-option(BUILD_DEBUG_TARGETS "Build debug versions of executables" OFF)
+option(BUILD_DEBUG_TARGETS "Build debug versions of executables" ON)
 
 function(add_test_executable target_name test_main_file)
     add_executable(${target_name} ${SRC_FILES} ${test_main_file})
@@ -100,25 +100,25 @@ add_test_executable(npusim       "./llm/unittest/npusim.cpp")
 add_test_executable(load_config  "./llm/unittest/load_config.cpp")
 # add_test_executable(global_chip_test  "./llm/unittest/global_chip_test.cpp")
 
-function(add_debug_executable target_name test_main_file)
-    add_executable(${target_name}_debug ${SRC_FILES} ${test_main_file})
-    target_link_libraries(${target_name}_debug
-        PUBLIC
-            systemc 
-            cairo 
-            sfml-graphics 
-            sfml-system 
-            sfml-window 
-            m 
-            pthread
-            DRAMSys::libdramsys
-            DRAMSys::util
-            DRAMSys::config
-    )
-    target_compile_options(${target_name}_debug PRIVATE 
-        -g -O0 -Wall -Wextra -DBROAD_W=16 -DDEBUG
-    )
-endfunction()
+# function(add_debug_executable target_name test_main_file)
+#     add_executable(${target_name}_debug ${SRC_FILES} ${test_main_file})
+#     target_link_libraries(${target_name}_debug
+#         PUBLIC
+#             systemc 
+#             cairo 
+#             sfml-graphics 
+#             sfml-system 
+#             sfml-window 
+#             m 
+#             pthread
+#             DRAMSys::libdramsys
+#             DRAMSys::util
+#             DRAMSys::config
+#     )
+#     target_compile_options(${target_name}_debug PRIVATE 
+#         -g -O0 -Wall -Wextra -DBROAD_W=16 -DDEBUG
+#     )
+# endfunction()
 
 # 添加Debug构建目标
 # add_debug_executable(npusim       "./llm/unittest/npusim.cpp")
