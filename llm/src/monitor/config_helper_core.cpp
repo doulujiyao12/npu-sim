@@ -79,7 +79,8 @@ void config_helper_core::random_core(string font_ttf) {
         if (config.prim_copy != -1)
             config.prim_copy = o2r[config.prim_copy];
 
-        if(config.)
+        if (config.send_global_mem != -1)
+            config.send_global_mem = o2r[config.send_global_mem];
 
         for (auto &work : config.worklist) {
             if (work.recv_tag < GRID_SIZE)

@@ -323,6 +323,11 @@ void MemInterface::recv_done() {
         event_engine->add_event(this->name(), "Waiting Core busy", "E",
                                 Trace_event_util());
 
+        // Declare variables outside the switch
+        config_helper_gpu *helper = nullptr;
+        prim_base *prim = nullptr;
+        int core_inv = 0;
+
         switch (SYSTEM_MODE) {
         case SIM_DATAFLOW:
             if (g_recv_done_cnt >=
@@ -348,9 +353,9 @@ void MemInterface::recv_done() {
             }
             break;
         case SIM_GPU:
-            auto helper = (config_helper_gpu *)config_helper;
-            auto prim = helper->streams[0].prims[helper->gpu_index - 1];
-            auto core_inv = ((gpu_base *)prim)->req_sm;
+            helper = (config_helper_gpu *)config_helper;
+            prim = helper->streams[0].prims[helper->gpu_index - 1];
+            core_inv = ((gpu_base *)prim)->req_sm;
 
             if (core_inv >= GRID_SIZE)
                 core_inv = GRID_SIZE;

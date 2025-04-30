@@ -4,7 +4,7 @@
 #include "utils/system_utils.h"
 
 config_helper_pd::config_helper_pd(string filename, string font_ttf,
-                                   int config_chip_id = 0) {
+                                   int config_chip_id) {
     cout << "Loading config file " << filename << endl;
 
     json j;
@@ -167,6 +167,26 @@ void config_helper_pd::schedule() {
             generate_prims(status.id);
         }
     }
+}
+
+void config_helper_pd::print_self() {
+    cout << "[PD Config]" << endl;
+    cout << "Heads: " << heads << endl;
+    cout << "EOF Chance: " << eof_chance << endl;
+    cout << "Request Records: " << requestRecords.size() << endl;
+    
+    for (int i = 0; i < coreStatus.size(); i++) {
+        cout << "Core " << i << " Status:" << endl;
+        cout << "  Available: " << (coreStatus[i].available ? "Yes" : "No") << endl;
+        cout << "  Data Sent: " << (coreStatus[i].data_sent ? "Yes" : "No") << endl;
+        cout << "  Requests: ";
+        for (auto req : coreStatus[i].reqs) {
+            cout << req << " ";
+        }
+        cout << endl;
+    }
+    
+    cout << "Decode Done: " << decode_done << "/" << requestRecords.size() << endl;
 }
 
 void config_helper_pd::generate_prims(int i) {
