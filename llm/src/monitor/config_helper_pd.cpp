@@ -43,19 +43,6 @@ void config_helper_pd::fill_queue_config(queue<Msg> *q) {
     temp_config.clear();
 }
 
-bool config_helper_pd::judge_next_dis_config() {
-    return temp_config.size() > 0;
-}
-
-bool config_helper_pd::judge_next_dis_start() {
-    for (auto status : coreStatus) {
-        if (!status.available && !status.data_sent)
-            return true;
-    }
-
-    return false;
-}
-
 void config_helper_pd::fill_queue_start(queue<Msg> *q) {
     for (auto &status : coreStatus) {
         if (status.available || status.data_sent)
@@ -99,7 +86,7 @@ void config_helper_pd::fill_queue_start(queue<Msg> *q) {
     }
 }
 
-void config_helper_pd::process_core_done(int cid, Msg m) {
+void config_helper_pd::iter_done(vector<Msg> done_msg) {
     coreStatus[cid].available = true;
 
     for (int i = 0; i < coreStatus[cid].reqs.size(); i++) {
@@ -131,7 +118,7 @@ void config_helper_pd::process_core_done(int cid, Msg m) {
     }
 }
 
-void config_helper_pd::schedule() {
+void config_helper_pd::iter_start() {
     // 检查是否有available的核
     for (auto &status : coreStatus) {
         if (status.available) {

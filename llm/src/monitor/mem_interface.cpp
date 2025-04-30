@@ -137,7 +137,7 @@ void MemInterface::distribute_config() {
                                 Trace_event_util());
 
         if (SYSTEM_MODE == SIM_PD)
-            ((config_helper_pd *)config_helper)->schedule();
+            ((config_helper_pd *)config_helper)->iter_start();
 
         config_helper->fill_queue_config(write_buffer);
 
@@ -154,12 +154,6 @@ void MemInterface::distribute_config() {
         event_engine->add_event(this->name(), "Sending Config", "s",
                                 Trace_event_util(flow_name), sc_time(0, SC_NS),
                                 100);
-
-        // 如果是PD模式，则需要在此次config发送完毕之后再次检查是否有config需要发送
-        if (SYSTEM_MODE == SIM_PD) {
-            if (((config_helper_pd *)config_helper)->judge_next_dis_config())
-                ev_dis_config.notify(CYCLE, SC_NS);
-        }
 
         wait();
     }
@@ -250,17 +244,7 @@ void MemInterface::recv_ack() {
                      << ". total " << g_recv_ack_cnt + 1 << "/"
                      << config_helper->coreconfigs.size() << ".\n";
 
-                switch (SYSTEM_MODE) {
-                case SIM_DATAFLOW:
-                case SIM_GPU:
-                    g_recv_ack_cnt++;
-                    break;
-                case SIM_PD:
-                    ((config_helper_pd *)config_helper)
-                        ->coreStatus[cid]
-                        .data_sent = false;
-                    break;
-                }
+                g_recv_ack_cnt++;
             }
         }
 
@@ -284,7 +268,10 @@ void MemInterface::recv_ack() {
             }
             break;
         case SIM_PD:
-            ev_dis_start.notify(CYCLE, SC_NS);
+            if (g_recv_ack_cnt > 100) { // TODO
+                g_recv_ack_cnt = 0;
+                ev_dis_start.notify(CYCLE, SC_NS);
+            }
             break;
         }
 
@@ -307,16 +294,8 @@ void MemInterface::recv_done() {
                      << ": Mem Interface: received done packet from " << cid
                      << ", total " << g_recv_done_cnt + 1 << ".\n";
 
-                switch (SYSTEM_MODE) {
-                case SIM_DATAFLOW:
-                case SIM_GPU:
-                    g_recv_done_cnt++;
-                    break;
-                case SIM_PD:
-                    ((config_helper_pd *)config_helper)
-                        ->process_core_done(cid, m);
-                    break;
-                }
+                g_recv_done_cnt++;
+                g_done_msg.push_back(m);
             }
         }
 
@@ -368,7 +347,13 @@ void MemInterface::recv_done() {
             }
             break;
         case SIM_PD:
-            ev_dis_config.notify(CYCLE, SC_NS);
+            if (g_recv_done_cnt > 100) { // TODO
+                ((config_helper_pd *)config_helper)->iter_done(g_done_msg);
+
+                g_done_msg.clear();
+                g_recv_done_cnt = 0;
+                ev_dis_config.notify(CYCLE, SC_NS);
+            }
             break;
         }
 
