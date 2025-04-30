@@ -92,6 +92,7 @@ public:
 
     void addPair(const std::string &key, AddrPosKey value,
                  TaskCoreContext &context, u_int64_t &dram_time);
+    void addPair(const std::string &key, AddrPosKey value);
     // void addPair(const std::string &key, AddrPosKey value);
 
     int findPair(std::string &key, int &result);

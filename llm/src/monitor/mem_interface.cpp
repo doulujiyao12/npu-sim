@@ -138,6 +138,8 @@ void MemInterface::distribute_config() {
 
         if (SYSTEM_MODE == SIM_PD)
             ((config_helper_pd *)config_helper)->iter_start();
+        
+        cout << "here\n";
 
         config_helper->fill_queue_config(write_buffer);
 
@@ -194,13 +196,6 @@ void MemInterface::distribute_start_data() {
         wait(write_done.posedge_event());
         event_engine->add_event(this->name(), "Send Input Data", "E",
                                 Trace_event_util());
-
-        // 如果是PD模式，则需要在此次start发送完毕之后再次检查是否还有核需要发送start
-        // data
-        if (SYSTEM_MODE == SIM_PD) {
-            if (((config_helper_pd *)config_helper)->judge_next_dis_start())
-                ev_dis_start.notify(CYCLE, SC_NS);
-        }
 
         cout << "Mem Interface: start data sent done.\n";
         wait();

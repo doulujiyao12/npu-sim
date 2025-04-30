@@ -87,35 +87,35 @@ void config_helper_pd::fill_queue_start(queue<Msg> *q) {
 }
 
 void config_helper_pd::iter_done(vector<Msg> done_msg) {
-    coreStatus[cid].available = true;
+    // coreStatus[cid].available = true;
 
-    for (int i = 0; i < coreStatus[cid].reqs.size(); i++) {
-        auto req = coreStatus[cid].reqs[i];
-        auto &record = requestRecords[req];
-        record.lock = false;
+    // for (int i = 0; i < coreStatus[cid].reqs.size(); i++) {
+    //     auto req = coreStatus[cid].reqs[i];
+    //     auto &record = requestRecords[req];
+    //     record.lock = false;
 
-        switch (record.phase) {
-        case PREFILL:
-            record.prefill_counter++;
-            if (record.prefill_counter == record.prefill_iters) {
-                record.phase = DECODE;
-            }
-            break;
-        case DECODE:
-            record.decode_counter++;
-            if (m.data.range(i, i).to_uint64()) {
-                record.phase = PD_DONE;
-                decode_done++;
-                cout << "[PD] Decode done " << decode_done << "/"
-                     << requestRecords.size() << endl;
+    //     switch (record.phase) {
+    //     case PREFILL:
+    //         record.prefill_counter++;
+    //         if (record.prefill_counter == record.prefill_iters) {
+    //             record.phase = DECODE;
+    //         }
+    //         break;
+    //     case DECODE:
+    //         record.decode_counter++;
+    //         // if (m.data.range(i, i).to_uint64()) {
+    //         //     record.phase = PD_DONE;
+    //         //     decode_done++;
+    //         //     cout << "[PD] Decode done " << decode_done << "/"
+    //         //          << requestRecords.size() << endl;
 
-                if (decode_done == requestRecords.size()) {
-                    cout << "[PD] All request finished.\n";
-                    sc_stop();
-                }
-            }
-        }
-    }
+    //         //     if (decode_done == requestRecords.size()) {
+    //         //         cout << "[PD] All request finished.\n";
+    //         //         sc_stop();
+    //         //     }
+    //         // }
+    //     }
+    // }
 }
 
 void config_helper_pd::iter_start() {

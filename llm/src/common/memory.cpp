@@ -31,6 +31,14 @@ string AddrLabelTable::findRecord(int index) const {
 
 void AddrLabelTable::clearAll() { table.clear(); }
 
+void SramPosLocator::addPair(const std::string &key, AddrPosKey value) {
+    visit += 1;
+    value.record = visit;
+    data_map[key] = value;
+    cout << "[SRAM pos locator] id " << cid << " add pair.\n";
+    cout << "[Add pair]: label -> " << key << endl;
+}
+
 void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
                              TaskCoreContext &context, u_int64_t &dram_time) {
     // 先放入sram

@@ -253,7 +253,7 @@ void WorkerCoreExecutor::worker_core_execute() {
             bool flag = false;
             if (typeid(*p) == typeid(Recv_prim)) {
                 Recv_prim *rp = (Recv_prim *)p;
-                if (rp->type == RECV_CONF) {
+                if (rp->type == RECV_CONF || rp->type == RECV_WEIGHT) {
                     flag = true;
                 }
             }
@@ -966,43 +966,20 @@ void WorkerCoreExecutor::recv_logic() {
                     }
 
                     sc_bv<SRAM_BITWIDTH> msg_data_tmp;
+
 #if USE_NB_DRAMSYS == 1
-                    NB_DcacheIF *nb_dcache =
-                        this->nb_dcache_socket; // 实例化或获取 NB_DcacheIF
-                                                // 对象
+                    TaskCoreContext context(
+                        mem_access_port, high_bw_mem_access_port, msg_data_tmp,
+                        sram_addr, start_nb_dram_event, end_nb_dram_event,
+                        nb_dcache_socket);
 #else
-                    DcacheCore *wc =
-                        this->dcache_socket; // 实例化或获取 DcacheCore 对象
-#endif
-                    sc_event *s_nbdram =
-                        this->start_nb_dram_event; // 实例化或获取
-                                                   // start_nb_dram_event 对象
-                    sc_event *e_nbdram =
-                        this->end_nb_dram_event; // 实例化或获取
-                                                 // end_nb_dram_event 对象
-                    mem_access_unit *mau =
-                        this->mem_access_port; // 实例化或获取 mem_access_unit
-                                               // 对象
-                    high_bw_mem_access_unit *hmau =
-                        this->high_bw_mem_access_port; // 实例化或获取
-                                                       // high_bw_mem_access_unit
-                                                       // 对象
-                    sc_bv<SRAM_BITWIDTH> msg_data =
-                        msg_data_tmp; // 初始化 msg_data
-#if USE_NB_DRAMSYS == 1
-                    TaskCoreContext context(mau, hmau, msg_data, sram_addr,
-                                            s_nbdram, e_nbdram, nb_dcache);
-#else
-                    TaskCoreContext context(wc, mau, hmau, msg_data, sram_addr,
-                                            s_nbdram, e_nbdram);
+                    TaskCoreContext context(
+                        dcache_socket, mem_access_port, high_bw_mem_access_port,
+                        msg_data_tmp, sram_addr, start_nb_dram_event,
+                        end_nb_dram_event);
 #endif
 
                     if (has_msg) {
-                        // 复制到SRAM中
-
-                        if (cid == 22)
-                            cout << sc_time_stamp() << ": Worker " << cid
-                                 << ": received data " << temp.seq_id << ".\n";
                         recv_cnt++;
 
                         if (temp.msg_type != MSG_TYPE::P_DATA) {
@@ -1018,8 +995,7 @@ void WorkerCoreExecutor::recv_logic() {
                                 string input_label = format_label;
 
                                 u_int64_t temp;
-                                sram_pos_locator->addPair(input_label, inp_key,
-                                                          context, temp);
+                                sram_pos_locator->addPair(input_label, inp_key);
                             }
 
                             int delay = 0;
@@ -1028,27 +1004,8 @@ void WorkerCoreExecutor::recv_logic() {
 
                         // 如果是end包，则将recv_index归零，表示开始接收下一个core传来的数据（如果有的话）
                         if (temp.is_end) {
-                            // 来自上一个核的传输数据的end包
-                            if (temp.tag_id == prim->tag_id ||
-                                temp.source != GRID_SIZE) {
-                                end_cnt++;
-                            } else {
-                                // 来自 HOST P_DATA的end包弃用
-                                while (
-                                    !atomic_helper_lock(sc_time_stamp(), 3)) {
-                                    wait(CYCLE, SC_NS);
-                                }
+                            end_cnt++;
 
-                                // 这里是针对host data 和 start 包
-                                cout << sc_time_stamp() << ": Worker " << cid
-                                     << ": received all prepare data.\n";
-
-                                // 向host发送一个ack包
-                                send_buffer = Msg(MSG_TYPE::ACK, GRID_SIZE,
-                                                  prim->tag_id, cid);
-
-                                ev_send_helper.notify(0, SC_NS);
-                            }
                             max_recv += temp.seq_id;
 
                             cout << sc_time_stamp() << ": Worker " << cid
@@ -1056,9 +1013,6 @@ void WorkerCoreExecutor::recv_logic() {
                                  << ", recv_cnt " << recv_cnt << ", max_recv "
                                  << max_recv << endl;
 
-                            if (end_cnt == 0)
-                                max_recv =
-                                    0; // 对于P_DATA需要清空recv_cnt，以免对INPUT_LABEL产生影响
 
                             // prim->recv_cnt 记录的是 receive 原语 需要接受的
                             // end 包的数量 多发一的实现 max_recv 表示当前 DATA
@@ -1079,8 +1033,8 @@ void WorkerCoreExecutor::recv_logic() {
                                     inp_key.size = max_recv * M_D_DATA;
 
                                     u_int64_t temp;
-                                    sram_pos_locator->addPair(
-                                        input_label, inp_key, context, temp);
+                                    sram_pos_locator->addPair(input_label,
+                                                              inp_key);
                                 }
 
                                 job_done = true;
@@ -1105,13 +1059,6 @@ void WorkerCoreExecutor::recv_logic() {
                     Msg m = deserialize_msg(buffer_i.front());
                     buffer_i.pop();
                     prim_queue.emplace_back(parse_prim(m.data));
-                    // 遍历并打印每个prim_base对象的name
-                    // for (const auto& prim2 : prim_queue) {
-                    //     if (prim2) { // 确保指针有效
-                    //         std::cout << "PRIMNAME???????" << prim2->name <<
-                    //         std::endl;
-                    //     }
-                    // }
 
                     cout << sc_time_stamp() << ": Worker " << cid
                          << ": recv config " << m.seq_id << endl;
@@ -1212,6 +1159,7 @@ void WorkerCoreExecutor::task_logic() {
         } else if (typeid(*p) != typeid(Matmul_f)) {
             delay = p->task();
         }
+
         wait(sc_time(delay, SC_NS));
 
         sc_time start_time = sc_time_stamp();
