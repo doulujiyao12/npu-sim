@@ -21,6 +21,7 @@ void CoreConfig::print_self() {
     cout << "Core id: " << id << endl;
     cout << "\tprim_refill: " << (prim_refill ? "true" : "false") << endl;
     cout << "\tprim_copy: " << prim_copy << endl;
+    cout << "\tsend_global_mem: " << send_global_mem << endl;
     cout << "\tloop & repeat: " << loop << " " << repeat << endl;
     for (auto work : worklist) {
         work.print_self();
@@ -119,6 +120,12 @@ void from_json(const json &j, CoreConfig &c) {
         j.at("prim_copy").get_to(c.prim_copy);
     } else {
         c.prim_copy = -1;
+    }
+
+    if (j.contains("send_global_mem")) {
+        j.at("send_global_mem").get_to(c.send_global_mem);
+    } else {
+        c.send_global_mem = -1;
     }
 
     if (j.contains("repeat")) {

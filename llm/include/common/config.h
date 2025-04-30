@@ -57,7 +57,7 @@ public:
 
     bool prim_refill; // 是否通过原语重填的方式实现循环
     int prim_copy;    // 是否需要复制其他核的计算原语
-    int send_global_meml; //需要
+    int send_global_mem; //是否需要将计算结果发送给Global Mem
 
     int loop;
     int repeat;

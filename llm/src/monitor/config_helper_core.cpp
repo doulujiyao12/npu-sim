@@ -79,6 +79,8 @@ void config_helper_core::random_core(string font_ttf) {
         if (config.prim_copy != -1)
             config.prim_copy = o2r[config.prim_copy];
 
+        if(config.)
+
         for (auto &work : config.worklist) {
             if (work.recv_tag < GRID_SIZE)
                 work.recv_tag = o2r[oid];
