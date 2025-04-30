@@ -133,7 +133,7 @@ Config_helper_core::Config_helper_core(string filename, string font_ttf, int con
     cout << "Loading config file " << filename << endl;
     json j;
     // cout << "Loading config file3 " << filename << endl;
-    plot_dataflow(filename, font_ttf);
+    // plot_dataflow(filename, font_ttf);
     // cout << "Loading config file2 " << filename << endl;
     ifstream jfile(filename);
     jfile >> j;
