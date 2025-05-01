@@ -280,6 +280,8 @@ void config_helper_core::generate_prims(int i) {
 
     c->worklist[0].prims_in_loop.push_back(
         new Recv_prim(RECV_TYPE::RECV_WEIGHT, c->worklist[0].recv_tag, 0));
+    c->worklist[0].prims_last_loop.push_back(
+        new Recv_prim(RECV_TYPE::RECV_WEIGHT, c->worklist[0].recv_tag, 0));
 
 
     for (int w = 0; w < c->worklist.size(); w++) {

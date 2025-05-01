@@ -1,7 +1,7 @@
 {
   "mode": "sched_pd",
   "requests": {
-    "count": 20,
+    "count": 200,
     "seq_len": 128,
     "heads": 12,
     "eof_chance": 0.02

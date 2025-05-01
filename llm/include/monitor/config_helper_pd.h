@@ -34,8 +34,6 @@ public:
     void fill_queue_start(queue<Msg> *q);
     void fill_queue_config(queue<Msg> *q);
 
-    void schedule(); // 填充原语，发送在meminterface完成
-    bool judge_next_dis_start();
-    bool judge_next_dis_config();
-    void process_core_done(int cid, Msg m);
+    void iter_start(); // 填充原语，发送在meminterface完成
+    void iter_done(vector<Msg> done_msg);
 };

@@ -43,19 +43,6 @@ void config_helper_pd::fill_queue_config(queue<Msg> *q) {
     temp_config.clear();
 }
 
-bool config_helper_pd::judge_next_dis_config() {
-    return temp_config.size() > 0;
-}
-
-bool config_helper_pd::judge_next_dis_start() {
-    for (auto status : coreStatus) {
-        if (!status.available && !status.data_sent)
-            return true;
-    }
-
-    return false;
-}
-
 void config_helper_pd::fill_queue_start(queue<Msg> *q) {
     for (auto &status : coreStatus) {
         if (status.available || status.data_sent)
@@ -99,39 +86,39 @@ void config_helper_pd::fill_queue_start(queue<Msg> *q) {
     }
 }
 
-void config_helper_pd::process_core_done(int cid, Msg m) {
-    coreStatus[cid].available = true;
+void config_helper_pd::iter_done(vector<Msg> done_msg) {
+    // coreStatus[cid].available = true;
 
-    for (int i = 0; i < coreStatus[cid].reqs.size(); i++) {
-        auto req = coreStatus[cid].reqs[i];
-        auto &record = requestRecords[req];
-        record.lock = false;
+    // for (int i = 0; i < coreStatus[cid].reqs.size(); i++) {
+    //     auto req = coreStatus[cid].reqs[i];
+    //     auto &record = requestRecords[req];
+    //     record.lock = false;
 
-        switch (record.phase) {
-        case PREFILL:
-            record.prefill_counter++;
-            if (record.prefill_counter == record.prefill_iters) {
-                record.phase = DECODE;
-            }
-            break;
-        case DECODE:
-            record.decode_counter++;
-            if (m.data.range(i, i).to_uint64()) {
-                record.phase = PD_DONE;
-                decode_done++;
-                cout << "[PD] Decode done " << decode_done << "/"
-                     << requestRecords.size() << endl;
+    //     switch (record.phase) {
+    //     case PREFILL:
+    //         record.prefill_counter++;
+    //         if (record.prefill_counter == record.prefill_iters) {
+    //             record.phase = DECODE;
+    //         }
+    //         break;
+    //     case DECODE:
+    //         record.decode_counter++;
+    //         // if (m.data.range(i, i).to_uint64()) {
+    //         //     record.phase = PD_DONE;
+    //         //     decode_done++;
+    //         //     cout << "[PD] Decode done " << decode_done << "/"
+    //         //          << requestRecords.size() << endl;
 
-                if (decode_done == requestRecords.size()) {
-                    cout << "[PD] All request finished.\n";
-                    sc_stop();
-                }
-            }
-        }
-    }
+    //         //     if (decode_done == requestRecords.size()) {
+    //         //         cout << "[PD] All request finished.\n";
+    //         //         sc_stop();
+    //         //     }
+    //         // }
+    //     }
+    // }
 }
 
-void config_helper_pd::schedule() {
+void config_helper_pd::iter_start() {
     // 检查是否有available的核
     for (auto &status : coreStatus) {
         if (status.available) {
