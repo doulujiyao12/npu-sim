@@ -157,7 +157,7 @@ void config_helper_gpu::fill_queue_start(queue<Msg> *q) {
 
     for (int i = 0; i < min(sms, GRID_SIZE); i++) {
         auto config = coreconfigs[i];
-        int index = config.id / GRID_X;
+        int index = config.id / GRID_X;     
         int pkg_index = 0;
 
         sc_bv<128> d(0x1);
