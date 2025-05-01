@@ -138,8 +138,6 @@ void MemInterface::distribute_config() {
 
         if (SYSTEM_MODE == SIM_PD)
             ((config_helper_pd *)config_helper)->iter_start();
-        
-        cout << "here\n";
 
         config_helper->fill_queue_config(write_buffer);
 

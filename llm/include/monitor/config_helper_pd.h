@@ -17,6 +17,7 @@ public:
     // 模型配置
     int heads;
     double eof_chance;
+    int model_stage;
 
     config_helper_pd(string filename, string font_ttf, int config_chip_id = 0);
 

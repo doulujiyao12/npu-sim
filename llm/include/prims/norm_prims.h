@@ -139,8 +139,8 @@ public:
 
 class Set_batch : public prim_base {
 public:
-    BatchInfo *target;
-    BatchInfo batchInfo;
+    vector<Stage> *target;
+    vector<Stage> batchInfo;
 
     int task();
     int task_core(TaskCoreContext &context);
@@ -154,9 +154,9 @@ public:
 
     Set_batch() {}
 
-    Set_batch(BatchInfo *target) {
-        this->target = target;
-    }
+    Set_batch(vector<Stage> batchInfo) { this->batchInfo = batchInfo; }
+
+    Set_batch(vector<Stage> *target) { this->target = target; }
 };
 
 class Store_prim : public prim_base {

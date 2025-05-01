@@ -4,7 +4,8 @@
     "count": 200,
     "seq_len": 128,
     "heads": 12,
-    "eof_chance": 0.02
+    "eof_chance": 0.02,
+    "stage": 4
   },
   "chips": [
     {

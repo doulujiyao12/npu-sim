@@ -544,9 +544,9 @@ void WorkerCoreExecutor::send_logic() {
                     send_buffer = Msg(MSG_TYPE::DONE, GRID_SIZE, cid);
 
                     if (SYSTEM_MODE == SIM_PD) {
-                        for (int i = 0; i < batchInfo->batch_size; i++) {
+                        for (int i = 0; i < decode_done.size(); i++) {
                             send_buffer.data.range(i, i) =
-                                sc_bv<1>(batchInfo->types[i] == PD_DONE);
+                                sc_bv<1>(decode_done[i]);
                         }
                     }
 

@@ -97,7 +97,8 @@ public:
                            // helper是要向data_sent_o写入true还是false
 
     /* ----------------PD complex------------------- */
-    BatchInfo *batchInfo;
+    vector<Stage> *batchInfo;
+    vector<bool> decode_done;
 
     /* --------------------------------------------- */
 
