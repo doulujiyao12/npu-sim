@@ -97,6 +97,8 @@ public:
 
     int findPair(std::string &key, int &result);
     int findPair(std::string &key, AddrPosKey &result);
+    void updatePair(std::string &key, int size, TaskCoreContext &context,
+                    u_int64_t &dram_time);
 
     void deletePair(std::string &key);
     void clearAll();

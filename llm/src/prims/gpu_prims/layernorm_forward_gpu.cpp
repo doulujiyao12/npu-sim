@@ -44,6 +44,8 @@ int Layernorm_f_gpu::task_core(TaskCoreContext &context) {
     AddrPosKey b_key;
     gpu_pos_locator->fetchPair(label_bias, b_key);
 
+    int overlap_time = 0;
+#if USE_L1L2_CACHE == 1
     gpu_read_generic(context, input_mem_offset, data_byte * data_size_input,
                      mem_time);
     gpu_read_generic(context, w_key.pos, data_byte * data_size_weight,
@@ -51,11 +53,12 @@ int Layernorm_f_gpu::task_core(TaskCoreContext &context) {
     gpu_read_generic(context, b_key.pos, data_byte * data_size_bias, mem_time);
 
     // TODO: 模拟计算cycle数
-    int overlap_time = mem_time;
+    overlap_time = mem_time;
     AddrPosKey out_key = AddrPosKey(0, data_byte * data_size_out);
     gpu_pos_locator->addPair(datapass_label.outdata, out_key);
     gpu_write_generic(context, out_key.pos, data_byte * data_size_out,
                       overlap_time);
+#endif
 
     cout << "[Layernorm_f_gpu] after write: " << overlap_time << endl;
 

@@ -118,6 +118,9 @@ void config_helper_gpu::generate_prims(int i) {
     CoreConfig *c = &coreconfigs[i];
     cout << i << endl;
 
+    c->worklist[0].prims_last_loop.push_back(
+        new Recv_prim(RECV_TYPE::RECV_WEIGHT, c->worklist[0].recv_tag, 0));
+
     for (auto &work : c->worklist) {
         // 不向in_loop推入任何原语，只操作last_loop
         work.prims_last_loop.push_back(

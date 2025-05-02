@@ -190,7 +190,7 @@ int Max_pool::task_core(TaskCoreContext &context) {
                                   dram_time);
     } else {
         AddrPosKey inp_key;
-        bool flag = sram_pos_locator->findPair(datapass_label.indata[0],
+        int flag = sram_pos_locator->findPair(datapass_label.indata[0],
                                                inp_sram_offset);
         printf("[INFO] Max_pool: read from sram, label: %s, value: %d\n",
                datapass_label.indata[0].c_str(), inp_sram_offset);

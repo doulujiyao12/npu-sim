@@ -1,10 +1,13 @@
 #pragma once
-#include "systemc.h"
 
 #include "common/memory.h"
+#include "common/pd.h"
 #include "prims/prim_base.h"
 
-class comp_base : public prim_base {
+#include <vector>
+using namespace std;
+
+class pd_base : public prim_base {
 public:
     int inp_offset;
     int data_offset;
@@ -15,11 +18,12 @@ public:
     int p_inp_size;
     int out_size;
 
-    vector<int> out_dim;
+    double eof_chance;
 
-    // 用于dram和sram的数据搬运，以及原语之间的数据传递
     SramPosLocator *sram_pos_locator;
     AddrDatapassLabel datapass_label;
+    vector<Stage> batchInfo;
+    vector<bool> *decode_done;
 
     virtual void parse_json(json j) = 0;
 

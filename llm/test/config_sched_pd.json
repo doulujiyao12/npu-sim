@@ -1,7 +1,7 @@
 {
   "mode": "sched_pd",
   "requests": {
-    "count": 200,
+    "count": 4,
     "seq_len": 128,
     "heads": 12,
     "eof_chance": 0.02,
@@ -10,10 +10,11 @@
   "chips": [
     {
       "chip_id": 0,
-      "GridX": 4,
-      "GridY": 4,
+      "GridX": 2,
+      "GridY": 2,
       "cores": [
         {
+          "id": 0,
           "prim_refill": false,
           "worklist": [
             {
@@ -33,7 +34,7 @@
                   }
                 },
                 {
-                  "type": "Matmul_f_prefill",
+                  "type": "Matmul_f_pd",
                   "use_hw": false,
                   "B": "B",
                   "T": "T",

@@ -2,6 +2,7 @@
 #include "prims/comp_prims.h"
 #include "prims/gpu_prims.h"
 #include "prims/norm_prims.h"
+#include "prims/pd_prims.h"
 #include "prims/prim_base.h"
 #include "systemc.h"
 
@@ -28,6 +29,13 @@ bool is_gpu_prim(prim_base *p) {
         typeid(*p) == typeid(Gelu_f_gpu) ||
         typeid(*p) == typeid(Residual_f_gpu) ||
         typeid(*p) == typeid(Layernorm_f_gpu))
+        return true;
+
+    return false;
+}
+
+bool is_pd_prim(prim_base *p) {
+    if (typeid(*p) == typeid(matmul_forward_pd))
         return true;
 
     return false;
@@ -94,6 +102,8 @@ prim_base *new_prim(string type) {
         prim = new Layernorm_f_gpu();
     else if (type == "Residual_f_gpu")
         prim = new Residual_f_gpu();
+    else if (type == "Matmul_f_pd")
+        prim = new matmul_forward_pd();
 
     else {
         cout << "Parse config prim: Not Implemented.\n";

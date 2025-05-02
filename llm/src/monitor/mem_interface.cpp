@@ -261,7 +261,8 @@ void MemInterface::recv_ack() {
             }
             break;
         case SIM_PD:
-            if (g_recv_ack_cnt > 100) { // TODO
+            if (g_recv_ack_cnt >=
+                ((config_helper_pd *)config_helper)->coreStatus.size()) {
                 g_recv_ack_cnt = 0;
                 ev_dis_start.notify(CYCLE, SC_NS);
             }
@@ -345,7 +346,8 @@ void MemInterface::recv_done() {
             }
             break;
         case SIM_PD:
-            if (g_recv_done_cnt > 100) { // TODO
+            if (g_recv_done_cnt >=
+                ((config_helper_pd *)config_helper)->coreStatus.size()) {
                 ((config_helper_pd *)config_helper)->iter_done(g_done_msg);
 
                 g_done_msg.clear();

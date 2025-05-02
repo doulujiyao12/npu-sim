@@ -22,9 +22,10 @@ void Set_batch::deserialize(sc_bv<128> buffer) {
     int pos = 12;
     for (int i = 0; i < batch_size; i++) {
         Stage s = Stage(buffer.range(pos + 9, pos).to_uint64(),
-                        PD_PHASE(buffer.range(pos + 11, pos + 10).to_uint64()));
+                        PD_PHASE(buffer.range(pos + 11, pos + 10).to_uint64()),
+                        buffer.range(pos + 21, pos + 12).to_uint64());
         batchInfo.push_back(s);
-        pos += 12;
+        pos += 22;
     }
 }
 
@@ -37,6 +38,8 @@ sc_bv<128> Set_batch::serialize() {
     for (int i = 0; i < batchInfo.size(); i++) {
         d.range(pos + 9, pos) = sc_bv<10>(batchInfo[i].req_id);
         d.range(pos + 11, pos + 10) = sc_bv<2>(batchInfo[i].type);
+        d.range(pos + 21, pos + 12) = sc_bv<10>(batchInfo[i].token_num);
+        pos += 22;
     }
 
     return d;

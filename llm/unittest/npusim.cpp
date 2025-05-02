@@ -7,6 +7,7 @@
 #include "utils/simple_flags.h"
 #include "utils/system_utils.h"
 #include <iostream>
+#include <ctime>
 
 #include <SFML/Graphics.hpp>
 using namespace std;
@@ -757,6 +758,8 @@ int task_n() {
 }
 
 int sc_main(int argc, char *argv[]) {
+    srand((unsigned)time(NULL));
+
     use_node = false;
     use_DramSys = false;
 

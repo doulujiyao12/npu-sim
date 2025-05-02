@@ -14,6 +14,7 @@ public:
 
     // 需要修改
     PD_PHASE phase;
+    int prefill_distribute; // prefill已经派发几次iter
     int prefill_counter; // prefill已经执行几次iter
     int decode_counter;  // decode已经执行几次iter
 
@@ -22,6 +23,7 @@ public:
         decode_counter = 0;
         prefill_iters = seq_len * heads / MAX_PREFILL_WORKLOAD;
         prefill_counter = 0;
+        prefill_distribute = 0;
     }
 };
 
@@ -29,9 +31,10 @@ class Stage {
 public:
     int req_id;
     PD_PHASE type;
+    int token_num;
 
     Stage() {}
-    Stage(int id, PD_PHASE type) : req_id(id), type(type) {}
+    Stage(int id, PD_PHASE type, int token) : req_id(id), type(type), token_num(token) {}
 };
 
 class CoreStatus {

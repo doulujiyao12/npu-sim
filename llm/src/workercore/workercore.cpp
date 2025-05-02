@@ -12,6 +12,7 @@
 #include "memory/sram/Mem_access_unit.h"
 #include "prims/comp_prims.h"
 #include "prims/norm_prims.h"
+#include "prims/pd_prims.h"
 #include "prims/prim_base.h"
 #include "trace/Event_engine.h"
 #include "utils/file_utils.h"
@@ -118,6 +119,7 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
     end_nb_gpu_dram_event = new sc_event();
     next_datapass_label = new AddrDatapassLabel();
     sram_pos_locator = new SramPosLocator(s_cid);
+    batchInfo = new vector<Stage>;
 #if USE_NB_DRAMSYS == 1
     nb_dcache_socket =
         new NB_DcacheIF(sc_gen_unique_name("nb_dcache"), start_nb_dram_event,
@@ -355,6 +357,9 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     case 0xd2:
         task = new Clear_sram();
         break;
+    case 0xd3:
+        task = new Set_batch(this->batchInfo);
+        break;
     case 0xe0:
         task = new Matmul_f_gpu();
         break;
@@ -370,6 +375,9 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     case 0xe4:
         task = new Layernorm_f_gpu();
         break;
+    case 0xc0:
+        task = new matmul_forward_pd();
+        break;
     default:
         cout << "Unknown prim: " << type << ".\n";
         break;
@@ -382,9 +390,17 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
         comp_base *comp = (comp_base *)task;
         comp->sram_pos_locator = sram_pos_locator;
         comp->sram_pos_locator->cid = cid;
-    } else if (is_gpu_prim(task)) {
+    }
+#if USE_L1L2_CACHE == 1
+    else if (is_gpu_prim(task)) {
         gpu_base *gpu = (gpu_base *)task;
         gpu->gpu_pos_locator = gpu_pos_locator;
+    }
+#endif
+    else if (is_pd_prim(task)) {
+        pd_base *pd = (pd_base *)task;
+        pd->sram_pos_locator = sram_pos_locator;
+        pd->sram_pos_locator->cid = cid;
     }
 
     return task;
@@ -984,7 +1000,8 @@ void WorkerCoreExecutor::recv_logic() {
 
                         if (temp.msg_type != MSG_TYPE::P_DATA) {
                             if (temp.seq_id == 1 &&
-                                SYSTEM_MODE == SIM_DATAFLOW) {
+                                (SYSTEM_MODE == SIM_DATAFLOW ||
+                                 SYSTEM_MODE == SIM_PD)) {
                                 // 在pos locator中添加一个kv，label是input_label
                                 // 对于每一个核的第一算子的input来自与send
                                 // 核的输出，并且已经会由router保存在sram上
@@ -995,7 +1012,10 @@ void WorkerCoreExecutor::recv_logic() {
                                 string input_label = format_label;
 
                                 u_int64_t temp;
-                                sram_pos_locator->addPair(input_label, inp_key);
+                                if (sram_pos_locator->findPair(input_label,
+                                                               inp_key) == -1)
+                                    sram_pos_locator->addPair(input_label,
+                                                              inp_key);
                             }
 
                             int delay = 0;
@@ -1021,7 +1041,8 @@ void WorkerCoreExecutor::recv_logic() {
                                 recv_cnt >= max_recv) {
                                 // 收到了所有的数据，可以结束此原语，进入comp原语
                                 // 更新pos_locator中的kv的size
-                                if (SYSTEM_MODE == SIM_DATAFLOW) {
+                                if (SYSTEM_MODE == SIM_DATAFLOW ||
+                                    SYSTEM_MODE == SIM_PD) {
                                     AddrPosKey inp_key;
                                     char format_label[100];
                                     sprintf(format_label, "%s#%d", INPUT_LABEL,
@@ -1030,7 +1051,7 @@ void WorkerCoreExecutor::recv_logic() {
 
                                     sram_pos_locator->findPair(input_label,
                                                                inp_key);
-                                    inp_key.size = max_recv * M_D_DATA;
+                                    inp_key.size += max_recv * M_D_DATA;
 
                                     u_int64_t temp;
                                     sram_pos_locator->addPair(input_label,
@@ -1055,13 +1076,15 @@ void WorkerCoreExecutor::recv_logic() {
                     ev_send_helper.notify(0, SC_NS);
 
                     job_done = true;
+
+                    cout << "[RECV] Core " << cid << ": received all CONFIG.\n";
                 } else if (buffer_i.size()) {
                     Msg m = deserialize_msg(buffer_i.front());
                     buffer_i.pop();
                     prim_queue.emplace_back(parse_prim(m.data));
 
-                    cout << sc_time_stamp() << ": Worker " << cid
-                         << ": recv config " << m.seq_id << endl;
+                    // cout << sc_time_stamp() << ": Worker " << cid
+                    //      << ": recv config " << m.seq_id << endl;
 
                     // 检查是否为end config包，如果是，需要向host发送ack包
                     if (m.is_end) {
@@ -1128,8 +1151,11 @@ void WorkerCoreExecutor::task_logic() {
         TaskCoreContext context(mau, hmau, msg_data, sram_addr, s_nbdram,
                                 e_nbdram, nb_dcache, loop_cnt,
                                 start_nb_gpu_dram_event, end_nb_gpu_dram_event);
+#elif USE_NB_DRAMSYS == 1
+        TaskCoreContext context(mau, hmau, msg_data, sram_addr, s_nbdram,
+                                e_nbdram, nb_dcache, loop_cnt);
 #else
-        TaskCoreContext context(wc, mau, hmau, msg_data, sram_addr, s_nbdram,
+        TaskCoreContext context(mau, hmau, msg_data, sram_addr, s_nbdram,
                                 e_nbdram, loop_cnt);
 #endif
 
@@ -1141,7 +1167,9 @@ void WorkerCoreExecutor::task_logic() {
                 // comp原语 读取标签
                 comp_base *comp = (comp_base *)p;
                 comp->datapass_label = *next_datapass_label;
-            } else if (is_gpu_prim(p)) {
+            }
+#if USE_L1L2_CACHE == 1
+            else if (is_gpu_prim(p)) {
                 cout << "socket " << cid << endl;
                 context.gpunb_dcache_if = gpunb_dcache_if;
                 context.cid = &cid;
@@ -1150,6 +1178,13 @@ void WorkerCoreExecutor::task_logic() {
 
                 gpu_base *gpu = (gpu_base *)p;
                 gpu->datapass_label = *next_datapass_label;
+            }
+#endif
+            else if (is_pd_prim(p)) {
+                pd_base *pd = (pd_base *)p;
+                pd->datapass_label = *next_datapass_label;
+                pd->batchInfo = *batchInfo;
+                pd->decode_done = &decode_done;
             } else if (typeid(*p) == typeid(Clear_sram)) {
                 ((Clear_sram *)p)->sram_pos_locator = sram_pos_locator;
                 ((Clear_sram *)p)->loop_cnt = &loop_cnt;
