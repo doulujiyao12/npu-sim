@@ -30,6 +30,11 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
         requestRecords.push_back(record);
     }
 
+    for (int i = 0; i < GRID_SIZE / model_stage; i++) {
+        queue<int> q;
+        idle_decode.push_back(q);
+    }
+
     // 建立原语模板
     json_template = j["chips"][0]["cores"][0];
 }
@@ -48,7 +53,6 @@ void config_helper_pd::fill_queue_config(queue<Msg> *q) {
 void config_helper_pd::fill_queue_start(queue<Msg> *q) {
     // 只有在stage 1的core进行prefill的时候，才需要发送start data
     // 在调用这个函数的时候，已经完成对core的config发放
-    busy_core_cnt = 0;
 
     for (auto status : coreStatus) {
         if ((status.id + 1) % model_stage != 1)
@@ -58,16 +62,12 @@ void config_helper_pd::fill_queue_start(queue<Msg> *q) {
 
         for (auto stage : status.batchInfo) {
             if (stage.type == PREFILL) {
-                busy_core_cnt++;
-
                 auto record = requestRecords[stage.req_id];
                 int size = record.seq_len / record.prefill_iters * heads * 64;
                 int send_size_in_bit = size * sizeof(float) * 8;
                 int pkg_num = (send_size_in_bit % M_D_DATA)
                                   ? (send_size_in_bit / M_D_DATA + 1)
                                   : (send_size_in_bit / M_D_DATA);
-                cout << "QWERTY " << record.seq_len << " "
-                     << record.prefill_iters << endl;
 
                 for (int j = 1; j <= pkg_num; j++) {
                     sc_bv<M_D_DATA> d(0x1);
@@ -137,18 +137,6 @@ void config_helper_pd::iter_start() {
             // 为stage1核分配任务，取决于前一个iter的最后一个stage核的执行情况。如果任务打不满，主动寻找新的req任务
             int credit = 0;
             vector<Stage> new_stage_1;
-            for (auto stage : coreStatus[id + model_stage - 1].batchInfo) {
-                switch (stage.type) {
-                case PREFILL:
-                    break;
-                case DECODE:
-                    credit += 1;
-                    new_stage_1.push_back(stage);
-                    break;
-                case PD_DONE:
-                    break;
-                }
-            }
 
             for (auto stage : coreStatus[id].batchInfo) {
                 if (stage.type == PREFILL) {
@@ -158,6 +146,23 @@ void config_helper_pd::iter_start() {
                         new_stage_1.push_back(stage);
                         credit += PD_RATIO;
                     }
+                }
+            }
+
+            for (auto stage : coreStatus[id + model_stage - 1].batchInfo) {
+                switch (stage.type) {
+                case PREFILL:
+                    break;
+                case DECODE:
+                    if (credit < CORE_CREDIT) {
+                        credit += 1;
+                        new_stage_1.push_back(stage);
+                    } else {
+                        idle_decode[id / model_stage].push(stage.req_id);
+                    }
+                    break;
+                case PD_DONE:
+                    break;
                 }
             }
 
@@ -178,13 +183,24 @@ void config_helper_pd::iter_start() {
                             req.phase = PREFILL;
                             req.prefill_distribute++;
                             cout << "[PD SCHEDULE] Core " << id
-                                 << " push in new request " << req.id << endl;
+                                 << " push in new request PREFILL " << req.id
+                                 << endl;
                             break;
                         }
                     }
                 } else {
-                    // 这里不会分配任何DECODE任务
-                    new_reqs = false;
+                    // 这里从idle_decode中取
+                    auto &waiting_list = idle_decode[id / model_stage];
+                    if (waiting_list.size()) {
+                        int req_id = waiting_list.front();
+                        waiting_list.pop();
+                        credit += 1;
+                        new_stage_1.push_back(Stage(req_id, DECODE, 1));
+                        cout << "[PD SCHEDULE] Core " << id
+                             << " push in new request DECODE " << req_id << endl;
+                    } else {
+                        new_reqs = false;
+                    }
                 }
             }
 

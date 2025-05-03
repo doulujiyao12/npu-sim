@@ -1,7 +1,7 @@
 {
   "mode": "sched_pd",
   "requests": {
-    "count": 4,
+    "count": 10,
     "seq_len": 128,
     "heads": 12,
     "eof_chance": 0.02,
@@ -10,8 +10,8 @@
   "chips": [
     {
       "chip_id": 0,
-      "GridX": 2,
-      "GridY": 2,
+      "GridX": 4,
+      "GridY": 4,
       "cores": [
         {
           "id": 0,

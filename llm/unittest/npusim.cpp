@@ -759,6 +759,7 @@ int task_n() {
 
 int sc_main(int argc, char *argv[]) {
     srand((unsigned)time(NULL));
+    std::cout.setf(std::ios::unitbuf);
 
     use_node = false;
     use_DramSys = false;

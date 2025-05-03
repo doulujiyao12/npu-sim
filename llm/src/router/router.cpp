@@ -286,9 +286,9 @@ void RouterUnit::router_execute() {
                     // Two Ack 多发一 DATA 包 乱序 接受核的接受地址由 Send
                     // 包中地址决定
                     output_lock_ref[out]++;
-                    cout << sc_time_stamp() << " " << ": Router " << rid
-                         << " addlock: " << out << " " << output_lock[out]
-                         << " " << output_lock_ref[out] << endl;
+                    // cout << sc_time_stamp() << " " << ": Router " << rid
+                    //      << " addlock: " << out << " " << output_lock[out]
+                    //      << " " << output_lock_ref[out] << endl;
                 } else {
                     // 并非对应tag，不予通过
                     continue;
@@ -326,9 +326,6 @@ void RouterUnit::router_execute() {
 
                 flag_trigger = true;
             } else {
-                if (m.seq_id == 1)
-                    cout << sc_time_stamp() << " Router " << rid << " dir "
-                         << out << " sent\n";
                 buffer_i[i].pop();
                 buffer_o[out].emplace(temp);
 

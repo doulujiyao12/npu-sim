@@ -1083,8 +1083,8 @@ void WorkerCoreExecutor::recv_logic() {
                     buffer_i.pop();
                     prim_queue.emplace_back(parse_prim(m.data));
 
-                    // cout << sc_time_stamp() << ": Worker " << cid
-                    //      << ": recv config " << m.seq_id << endl;
+                    cout << sc_time_stamp() << ": Worker " << cid
+                         << ": recv config " << m.seq_id << endl;
 
                     // 检查是否为end config包，如果是，需要向host发送ack包
                     if (m.is_end) {

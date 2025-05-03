@@ -169,7 +169,8 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
         sram_pos_locator->updatePair(label_v, size, context, dram_time);
     }
 
-    // 决定是否终止（需要放在别的原语中）
+    // 决定是否终止（需要放在别的原语中）   
+    decode_done->clear();
     for (auto stage : batchInfo) {
         if (stage.type == DECODE && rand_result(5)) {
             decode_done->push_back(true);
