@@ -124,9 +124,9 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
     nb_dcache_socket =
         new NB_DcacheIF(sc_gen_unique_name("nb_dcache"), start_nb_dram_event,
                         end_nb_dram_event, event_engine);
-    nb_global_mem_socket = 
-        new NB_GlobalMemIF(sc_gen_unique_name("nb_global_mem"), start_global_mem_event, 
-            end_global_mem_event); //[yicheng] 加个enevt_engine
+    // nb_global_mem_socket = 
+    //     new NB_GlobalMemIF(sc_gen_unique_name("nb_global_mem"), start_global_mem_event, 
+    //         end_global_mem_event, event_engine);
 #else
     dcache_socket = new DcacheCore(sc_gen_unique_name("dcache"), event_engine);
 #endif
@@ -144,6 +144,12 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
                                           event_engine);
     high_bw_mem_access_port = new high_bw_mem_access_unit(
         sc_gen_unique_name("high_bw_mem_access_unit"), event_engine);
+}
+
+void WorkerCoreExecutor::init_global_mem(){
+    nb_global_mem_socket = 
+        new NB_GlobalMemIF(sc_gen_unique_name("nb_global_mem"), start_global_mem_event, 
+            end_global_mem_event, event_engine);
 }
 
 void WorkerCoreExecutor::end_of_elaboration() {

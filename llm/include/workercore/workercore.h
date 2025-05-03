@@ -155,6 +155,8 @@ public:
                        Event_engine *event_engine);
     ~WorkerCoreExecutor();
 
+    void init_global_mem();
+
     void worker_core_execute();
     void switch_prim_block();
     void poll_buffer_i(); // 每个时钟周期，将发送进core的数据包统一转移到input

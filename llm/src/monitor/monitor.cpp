@@ -58,13 +58,20 @@ void Monitor::init() {
                                         this->event_engine);
     }
 
-    assert(memInterface->has_global_mem.size() <= 1);
-    for(auto i : memInterface->has_global_mem){
-        // workerCores[i]->executor->nb_global_mem_socket = chipGlobalMemory;
-        workerCores[i]->executor->nb_dcache_socket->socket.bind(chipGlobalMemory->socket);
+    // 根据Config的设置连接到Globalmem
+    assert(memInterface->has_global_mem.size() <= 1 && "only allow one global mem");
+    if(memInterface->has_global_mem.size() == 1){
+        for (auto i : memInterface->has_global_mem) {
+            // instantiate the NB_GlobalMemIF for this executor
+            workerCores[i]->executor->init_global_mem();
+            // bind the NB_GlobalMemIF initiator socket to the ChipGlobalMemory target socket
+            workerCores[i]->executor->nb_global_mem_socket->socket.bind(chipGlobalMemory->socket);
+        }
     }
-
-    
+    else{ //如果谁都没有连接，直接绑定到第0个Core上
+        workerCores[0]->executor->init_global_mem();
+        workerCores[0]->executor->nb_global_mem_socket->socket.bind(chipGlobalMemory->socket);
+    }
 
 #if USE_L1L2_CACHE == 1
     // GPU
