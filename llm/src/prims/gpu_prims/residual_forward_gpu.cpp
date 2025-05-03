@@ -41,16 +41,19 @@ int Residual_f_gpu::task_core(TaskCoreContext &context) {
         }
     }
 
+    int overlap_time = 0;
+#if USE_L1L2_CACHE == 1
     for (int i = 0; i < in_label_cnt; i++) {
         gpu_read_generic(context, input_mem_offset[i],
                          data_byte * data_size_input, mem_time);
     }
 
-    int overlap_time = mem_time;
+    overlap_time = mem_time;
     AddrPosKey out_key = AddrPosKey(0, data_byte * data_size_out);
     gpu_pos_locator->addPair(datapass_label.outdata, out_key);
     gpu_write_generic(context, out_key.pos, data_byte * data_size_out,
                       overlap_time);
+#endif
 
     cout << "[Residual_f_gpu] after write: " << overlap_time << endl;
 

@@ -9,14 +9,14 @@ using namespace std;
 int AddrLabelTable::addRecord(const std::string &key) {
     for (int i = 0; i < table.size(); i++) {
         if (table[i] == key) {
-            cout << "LabelTable: Find existing label: " << key << " at " << i
-                 << endl;
+            // cout << "LabelTable: Find existing label: " << key << " at " << i
+            //      << endl;
             return i;
         }
     }
 
     table.push_back(key);
-    cout << "LabelTable: Add new label: " << key << " at " << table.size() - 1
+    cout << "[CONFIG] LabelTable: Add new label: " << key << " at " << table.size() - 1
          << endl;
 
     return table.size() - 1;
@@ -62,8 +62,9 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
     cout << "[SRAM CHECK] used: " << used << ", max: " << max_sram_size << endl;
 
     // 放得下
-    if (used <= max_sram_size)
+    if (used <= max_sram_size) {
         return;
+    }
 
     cout << "[SRAM CHECK] Sram fail to allocate enough space! Need to spill & "
             "rearrange.\n";
@@ -79,11 +80,11 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
             if (!pair.second.valid &&
                 pair.second.spill_size == pair.second.size)
                 continue; // 已经全部spill到dram中去了
-            if (pair.first ==
-                    ETERNAL_PREFIX + string(KVCACHE_PREFIX) + string("k") ||
-                pair.first ==
-                    ETERNAL_PREFIX + string(KVCACHE_PREFIX) + string("v"))
-                continue; // 简单策略：不spill kvcache
+            // if (pair.first ==
+            //         ETERNAL_PREFIX + string(KVCACHE_PREFIX) + string("k") ||
+            //     pair.first ==
+            //         ETERNAL_PREFIX + string(KVCACHE_PREFIX) + string("v"))
+            //     continue; // 简单策略：不spill kvcache
 
             if (pair.second.record < min_record) {
                 min_record = pair.second.record;
@@ -152,6 +153,32 @@ int SramPosLocator::findPair(std::string &key, AddrPosKey &result) {
     return -1;
 }
 
+// 为sram中标签为key的数据块增加size的大小。如果该数据块还不存在，则创建一个。
+void SramPosLocator::updatePair(std::string &key, int size,
+                                TaskCoreContext &context,
+                                u_int64_t &dram_time) {
+    visit += 1;
+
+    AddrPosKey result;
+    int spill_size = findPair(key, result);
+
+    if (spill_size == -1) {
+        result.pos = *context.sram_addr;
+        result.size = size;
+        addPair(key, result, context, dram_time);
+    } else if (spill_size > 0) {
+        // 需要先把所有内容取回
+        sram_first_write_generic(context, spill_size, result.pos, dram_time,
+                                 nullptr);
+        result.spill_size = 0;
+        result.size += size;
+    } else {
+        result.size += size;
+    }
+
+    addPair(key, result, context, dram_time);
+}
+
 void SramPosLocator::deletePair(std::string &key) { data_map.erase(key); }
 
 void SramPosLocator::clearAll() { data_map.clear(); }
@@ -200,6 +227,8 @@ void GpuPosLocator::addPair(const std::string &key, AddrPosKey &value) {
 
     // 对齐
     addr_top = ceiling_division(addr_top, 64) * 64;
+
+    cout << "[GPU]: add pair: " << key << endl;
 }
 
 void GpuPosLocator::fetchPair(std::string &key, AddrPosKey &result) {

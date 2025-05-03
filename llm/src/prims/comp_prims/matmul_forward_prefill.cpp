@@ -181,10 +181,8 @@ int Matmul_f_prefill::task_core(TaskCoreContext &context) {
     float *bias = dram_start + b_offset;
 #endif
 
-    // TODO vector load
     // DAHU dram_time 不对
     u_int64_t dram_time = 0;
-
 
     int data_size_input = B * T * C;
     int data_size_weight = OC * C;

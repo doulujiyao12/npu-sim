@@ -1,4 +1,5 @@
 #include <fstream>
+#include <cstdlib>
 
 #include "defs/const.h"
 #include "defs/enums.h"
@@ -8,6 +9,11 @@
 #include "nlohmann/json.hpp"
 
 using json = nlohmann::json;
+
+bool rand_result(int threshold) {
+    int num = rand() % 100 + 1;
+    return num <= threshold;
+}
 
 // 在全局vtable中查找对应名字的参数
 int find_var(string var) {

@@ -1,5 +1,6 @@
 #include "monitor/config_helper_pd.h"
 #include "prims/norm_prims.h"
+#include "prims/pd_base.h"
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
@@ -22,10 +23,16 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
     int req_cnt = config_reqs["count"];
     heads = config_reqs["heads"];
     eof_chance = config_reqs["eof_chance"];
+    model_stage = config_reqs["stage"];
 
-    for (int i = 1; i <= req_cnt; i++) {
-        RequestRecord record =
-            RequestRecord(i, config_reqs["seq_len"], config_reqs["heads"]);
+    for (int i = 0; i < req_cnt; i++) {
+        RequestRecord record = RequestRecord(i, config_reqs["seq_len"], heads);
+        requestRecords.push_back(record);
+    }
+
+    for (int i = 0; i < GRID_SIZE / model_stage; i++) {
+        queue<int> q;
+        idle_decode.push_back(q);
     }
 
     // 建立原语模板
@@ -44,115 +51,181 @@ void config_helper_pd::fill_queue_config(queue<Msg> *q) {
 }
 
 void config_helper_pd::fill_queue_start(queue<Msg> *q) {
-    for (auto &status : coreStatus) {
-        if (status.available || status.data_sent)
+    // 只有在stage 1的core进行prefill的时候，才需要发送start data
+    // 在调用这个函数的时候，已经完成对core的config发放
+
+    for (auto status : coreStatus) {
+        if ((status.id + 1) % model_stage != 1)
             continue;
 
         int index = status.id / GRID_X;
-        int size = 0;
-        for (auto request : status.reqs) {
-            auto record = requestRecords[request];
 
-            switch (record.phase) {
-            case PREFILL:
-                size += record.seq_len / record.prefill_iters * heads * 64;
-                break;
-            case DECODE:
-                size += 1 * heads * 64;
-                break;
+        for (auto stage : status.batchInfo) {
+            if (stage.type == PREFILL) {
+                auto record = requestRecords[stage.req_id];
+                int size = record.seq_len / record.prefill_iters * heads * 64;
+                int send_size_in_bit = size * sizeof(float) * 8;
+                int pkg_num = (send_size_in_bit % M_D_DATA)
+                                  ? (send_size_in_bit / M_D_DATA + 1)
+                                  : (send_size_in_bit / M_D_DATA);
+
+                for (int j = 1; j <= pkg_num; j++) {
+                    sc_bv<M_D_DATA> d(0x1);
+                    int length = M_D_DATA;
+                    bool is_end_packet = j == pkg_num;
+                    if (is_end_packet) {
+                        length =
+                            size * sizeof(float) - M_D_DATA * (pkg_num - 1);
+                    }
+
+                    Msg m = Msg(j == pkg_num, MSG_TYPE::S_DATA, j, status.id,
+                                M_D_DATA * (j - 1), status.id, length, d);
+                    m.source = GRID_SIZE;
+                    q[index].push(m);
+                }
             }
         }
-
-        int send_size_in_bit = size * sizeof(float) * 8;
-        int pkg_num = (send_size_in_bit % M_D_DATA)
-                          ? (send_size_in_bit / M_D_DATA + 1)
-                          : (send_size_in_bit / M_D_DATA);
-
-        for (int j = 1; j <= pkg_num; j++) {
-            sc_bv<M_D_DATA> d(0x1);
-            int length = M_D_DATA;
-            bool is_end_packet = j == pkg_num;
-            if (is_end_packet) {
-                length = size * sizeof(float) - M_D_DATA * (pkg_num - 1);
-            }
-
-            Msg m = Msg(j == pkg_num, MSG_TYPE::S_DATA, j, status.id,
-                        M_D_DATA * (j - 1), status.id, length, d);
-            m.source = GRID_SIZE;
-            q[index].push(m);
-        }
-
-        status.data_sent = true;
     }
 }
 
 void config_helper_pd::iter_done(vector<Msg> done_msg) {
-    // coreStatus[cid].available = true;
+    // 按照coreStatus更新requestRecords，理论来说只要获取所有core的batch的req_id即可
+    // 如果其中有DECODE done的话就额外更新一次
+    // 只有最后一个stage的core才能够更新
+    for (auto msg : done_msg) {
+        int id = msg.source;
+        if ((id + 1) % model_stage)
+            continue;
 
-    // for (int i = 0; i < coreStatus[cid].reqs.size(); i++) {
-    //     auto req = coreStatus[cid].reqs[i];
-    //     auto &record = requestRecords[req];
-    //     record.lock = false;
+        auto &status = coreStatus[id];
+        int stage_count = 0;
+        for (auto &stage : status.batchInfo) {
+            auto &record = requestRecords[stage.req_id];
+            switch (record.phase) {
+            case PREFILL:
+                if (++record.prefill_counter == record.prefill_iters) {
+                    stage.type = record.phase = DECODE;
+                    stage.token_num = 1;
+                }
+                break;
+            case DECODE:
+                record.decode_counter++;
+                if (msg.data.range(stage_count, stage_count).to_uint64()) {
+                    stage.type = record.phase = PD_DONE;
 
-    //     switch (record.phase) {
-    //     case PREFILL:
-    //         record.prefill_counter++;
-    //         if (record.prefill_counter == record.prefill_iters) {
-    //             record.phase = DECODE;
-    //         }
-    //         break;
-    //     case DECODE:
-    //         record.decode_counter++;
-    //         // if (m.data.range(i, i).to_uint64()) {
-    //         //     record.phase = PD_DONE;
-    //         //     decode_done++;
-    //         //     cout << "[PD] Decode done " << decode_done << "/"
-    //         //          << requestRecords.size() << endl;
+                    if (++decode_done == requestRecords.size()) {
+                        cout << "All reqs done.\n";
+                        sc_stop();
+                    }
+                }
+                break;
+            }
 
-    //         //     if (decode_done == requestRecords.size()) {
-    //         //         cout << "[PD] All request finished.\n";
-    //         //         sc_stop();
-    //         //     }
-    //         // }
-    //     }
-    // }
+            stage_count++;
+        }
+    }
 }
 
 void config_helper_pd::iter_start() {
-    // 检查是否有available的核
-    for (auto &status : coreStatus) {
-        if (status.available) {
-            // 分配新的request batch
-            vector<int> new_reqs;
-            for (auto req : status.reqs) {
-                auto &record = requestRecords[req];
-                if (record.phase != PD_DONE) {
-                    record.lock = true;
-                    new_reqs.push_back(record.id);
-                }
-            }
+    // 为每一个核进行schedule，如果这个核不是第一个stage，则复制前一个stage上一个iter的任务
+    vector<vector<Stage>> temp_stage;
+    for (auto status : coreStatus) {
+        int id = status.id;
+        if ((id + 1) % model_stage != 1) {
+            temp_stage.push_back(coreStatus[id - 1].batchInfo);
+        } else {
+            // 为stage1核分配任务，取决于前一个iter的最后一个stage核的执行情况。如果任务打不满，主动寻找新的req任务
+            int credit = 0;
+            vector<Stage> new_stage_1;
 
-            while (new_reqs.size() < CORE_CREDIT) {
-                // 添加一个新的request，从prefill开始
-                bool has_new = false;
-                for (auto &record : requestRecords) {
-                    if (record.phase == UNTOUCHED) {
-                        record.phase = PREFILL;
-                        record.lock = true;
-                        new_reqs.push_back(record.id);
-                        has_new = true;
-                        break;
+            for (auto stage : coreStatus[id].batchInfo) {
+                if (stage.type == PREFILL) {
+                    auto &record = requestRecords[stage.req_id];
+                    if (record.prefill_distribute + 1 <= record.prefill_iters) {
+                        record.prefill_distribute++;
+                        new_stage_1.push_back(stage);
+                        credit += PD_RATIO;
                     }
                 }
-
-                if (!has_new)
-                    break;
             }
 
-            // 重写原语，填入temp_config队列中
-            status.reqs = new_reqs;
-            generate_prims(status.id);
+            for (auto stage : coreStatus[id + model_stage - 1].batchInfo) {
+                switch (stage.type) {
+                case PREFILL:
+                    break;
+                case DECODE:
+                    if (credit < CORE_CREDIT) {
+                        credit += 1;
+                        new_stage_1.push_back(stage);
+                    } else {
+                        idle_decode[id / model_stage].push(stage.req_id);
+                    }
+                    break;
+                case PD_DONE:
+                    break;
+                }
+            }
+
+            bool new_reqs = true;
+            cout << "[PD SCHEDULE] Core " << id << " credit: " << credit
+                 << endl;
+            while (credit < CORE_CREDIT && new_reqs) {
+                // PREFILL new iter > UNTOUCHED
+                if (CORE_CREDIT - credit >= PD_RATIO) {
+                    new_reqs = false;
+                    for (auto &req : requestRecords) {
+                        if (req.phase == UNTOUCHED) {
+                            new_reqs = true;
+                            credit += PD_RATIO;
+                            new_stage_1.push_back(
+                                Stage(req.id, PREFILL,
+                                      req.seq_len / req.prefill_iters));
+                            req.phase = PREFILL;
+                            req.prefill_distribute++;
+                            cout << "[PD SCHEDULE] Core " << id
+                                 << " push in new request PREFILL " << req.id
+                                 << endl;
+                            break;
+                        }
+                    }
+                }
+                if (!new_reqs || CORE_CREDIT - credit < PD_RATIO ) {
+                    // 这里从idle_decode中取
+                    auto &waiting_list = idle_decode[id / model_stage];
+                    if (waiting_list.size()) {
+                        int req_id = waiting_list.front();
+                        waiting_list.pop();
+                        credit += 1;
+                        new_stage_1.push_back(Stage(req_id, DECODE, 1));
+                        cout << "[PD SCHEDULE] Core " << id
+                             << " push in new request DECODE " << req_id << endl;
+                    } else {
+                        new_reqs = false;
+                    }
+                }
+            }
+
+            temp_stage.push_back(new_stage_1);
         }
+    }
+
+    // 统一更新所有的batchInfo，生成原语
+    cout << "<<<<<<SCHEDULE ITER>>>>>>\n";
+    for (auto &status : coreStatus) {
+        status.batchInfo = temp_stage[status.id];
+
+        cout << "[SCHEDULE] Core " << status.id << endl;
+        for (auto stage : status.batchInfo) {
+            cout << "REQ: " << stage.req_id << ", TYPE: " << stage.type
+                 << ", finished iter: "
+                 << ((requestRecords[stage.req_id].phase == PREFILL)
+                         ? requestRecords[stage.req_id].prefill_counter
+                         : requestRecords[stage.req_id].decode_counter)
+                 << ", iter count "
+                 << requestRecords[stage.req_id].prefill_iters << endl;
+        }
+
+        generate_prims(status.id);
     }
 }
 
@@ -161,36 +234,37 @@ void config_helper_pd::print_self() {
     cout << "Heads: " << heads << endl;
     cout << "EOF Chance: " << eof_chance << endl;
     cout << "Request Records: " << requestRecords.size() << endl;
-    
-    for (int i = 0; i < coreStatus.size(); i++) {
-        cout << "Core " << i << " Status:" << endl;
-        cout << "  Available: " << (coreStatus[i].available ? "Yes" : "No") << endl;
-        cout << "  Data Sent: " << (coreStatus[i].data_sent ? "Yes" : "No") << endl;
-        cout << "  Requests: ";
-        for (auto req : coreStatus[i].reqs) {
-            cout << req << " ";
-        }
-        cout << endl;
-    }
-    
-    cout << "Decode Done: " << decode_done << "/" << requestRecords.size() << endl;
+
+    // for (int i = 0; i < coreStatus.size(); i++) {
+    //     cout << "Core " << i << " Status:" << endl;
+    //     cout << "  Available: " << (coreStatus[i].available ? "Yes" : "No")
+    //          << endl;
+    //     cout << "  Data Sent: " << (coreStatus[i].data_sent ? "Yes" : "No")
+    //          << endl;
+    //     cout << "  Requests: ";
+    //     for (auto req : coreStatus[i].reqs) {
+    //         cout << req << " ";
+    //     }
+    //     cout << endl;
+    // }
+
+    // cout << "Decode Done: " << decode_done << "/" << requestRecords.size()
+    //      << endl;
 }
 
 void config_helper_pd::generate_prims(int i) {
-    // 根据template
-    // json组织新的config，在每一个计算原语之间插入set_pd_work原语，用于告知混合batch内容
+    // 一个iter中有stage个core参与执行，id 1要流向id end，id end要传回id 1
+    // core中原语为单个corejob，需要配置收发规则
     auto status = coreStatus[i];
-    vector<RequestRecord> records;
-    for (auto req : status.reqs) {
-        records.push_back(requestRecords[req]);
-    }
 
-    BatchInfo batch(records);
-    int B = 1, NH = heads, T = 0, C = heads * 64;
-    for (auto record : records) {
-        switch (record.phase) {
+    int B = 1, NH = heads, T = 1, C = heads * 64;
+    bool exist_prefill = false;
+    for (auto stage : status.batchInfo) {
+        auto record = requestRecords[stage.req_id];
+        switch (stage.type) {
         case PREFILL:
             T += record.seq_len / record.prefill_iters;
+            exist_prefill = true;
             break;
         case DECODE:
             T += 1;
@@ -203,28 +277,95 @@ void config_helper_pd::generate_prims(int i) {
     CoreConfig core = json_template;
     auto &work = core.worklist[0];
 
+    // 手动填写recv_cnt
+    work.recv_tag = i;
+    if ((i + 1) % model_stage != 1)
+        work.recv_cnt = 0;
+    else if (exist_prefill)
+        work.recv_cnt = 1;
+    else
+        work.recv_cnt = 0;
+
     int index = i / GRID_X;
     int prim_seq = 0;
 
-    prim_base *recv_data =
+    prim_base *recv_data_1 =
         new Recv_prim(RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt);
     temp_config.push_back(
-        Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, recv_data->serialize()));
+        Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, recv_data_1->serialize()));
+    prim_base *set_batch = new Set_batch(status.batchInfo);
+    temp_config.push_back(
+        Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, set_batch->serialize()));
 
-    for (auto prim : work.prims) {
-        prim_base *set_addr = new_prim("Set_addr");
-        auto label = ((Set_addr *)set_addr)->datapass_label;
-        for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-            label->indata[i] = ((comp_base *)prim)->datapass_label.indata[i];
+    if (status.batchInfo.size()) {
+        for (auto prim : work.prims) {
+            prim_base *set_addr = new_prim("Set_addr");
+            auto label = ((Set_addr *)set_addr)->datapass_label;
+            for (int i = 0; i < MAX_SPLIT_NUM; i++) {
+                if (is_pd_prim(prim)) {
+                    label->indata[i] =
+                        ((pd_base *)prim)->datapass_label.indata[i];
+                } else if (is_comp_prim(prim)) {
+                    label->indata[i] =
+                        ((comp_base *)prim)->datapass_label.indata[i];
+                }
+            }
+            if (is_pd_prim(prim)) {
+                label->outdata = ((pd_base *)prim)->datapass_label.outdata;
+            } else if (is_comp_prim(prim)) {
+                label->outdata = ((comp_base *)prim)->datapass_label.outdata;
+            }
+
+            temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i,
+                                      set_addr->serialize()));
+            temp_config.push_back(
+                Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, prim->serialize()));
         }
-        label->outdata = ((comp_base *)prim)->datapass_label.outdata;
-
-        temp_config.push_back(
-            Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, set_addr->serialize()));
-        temp_config.push_back(
-            Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, prim->serialize()));
     }
 
+    // 处理数据流向下一个core
+    int send_dest = i + 1;
+    if (send_dest % model_stage == 0)
+        send_dest -= model_stage;
+    int send_tag = send_dest;
+
+    prim_base *recv_data_2 =
+        new Recv_prim(RECV_TYPE::RECV_DATA, work.recv_tag, 1);
+    prim_base *send_req =
+        new Send_prim(SEND_TYPE::SEND_REQ, send_dest, send_tag);
+    prim_base *recv_ack = new Recv_prim(RECV_TYPE::RECV_ACK);
+    Send_prim *send_data =
+        new Send_prim(SEND_TYPE::SEND_DATA, send_dest, send_tag);
+
+    int output_size = C * T * B * sizeof(float);
+    int pkg_nums = (output_size % M_D_DATA) ? (output_size / M_D_DATA + 1)
+                                            : (output_size / M_D_DATA);
+    int end_length = output_size - (pkg_nums - 1) * M_D_DATA;
+
+    send_data->max_packet = pkg_nums;
+    send_data->end_length = end_length;
+
+    if ((i + 1) % model_stage != 1) {
+        temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i,
+                                  recv_data_2->serialize()));
+        temp_config.push_back(
+            Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, send_req->serialize()));
+        temp_config.push_back(
+            Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, recv_ack->serialize()));
+        temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i,
+                                  send_data->serialize()));
+    } else {
+        temp_config.push_back(
+            Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, send_req->serialize()));
+        temp_config.push_back(
+            Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, recv_ack->serialize()));
+        temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i,
+                                  send_data->serialize()));
+        temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i,
+                                  recv_data_2->serialize()));
+    }
+
+    // 每一个核都需要向memInterface发送DONE信号
     prim_base *send_done = new Send_prim(SEND_TYPE::SEND_DONE);
     temp_config.push_back(
         Msg(true, MSG_TYPE::CONFIG, ++prim_seq, i, send_done->serialize()));

@@ -1,10 +1,11 @@
 {
   "mode": "sched_pd",
   "requests": {
-    "count": 200,
+    "count": 10,
     "seq_len": 128,
     "heads": 12,
-    "eof_chance": 0.02
+    "eof_chance": 0.02,
+    "stage": 4
   },
   "chips": [
     {
@@ -13,6 +14,7 @@
       "GridY": 4,
       "cores": [
         {
+          "id": 0,
           "prim_refill": false,
           "worklist": [
             {
@@ -32,7 +34,7 @@
                   }
                 },
                 {
-                  "type": "Matmul_f_prefill",
+                  "type": "Matmul_f_pd",
                   "use_hw": false,
                   "B": "B",
                   "T": "T",

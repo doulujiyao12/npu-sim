@@ -148,8 +148,6 @@ void MemInterface::distribute_config() {
 
         if (SYSTEM_MODE == SIM_PD)
             ((config_helper_pd *)config_helper)->iter_start();
-        
-        cout << "here\n";
 
         config_helper->fill_queue_config(write_buffer);
 
@@ -273,7 +271,8 @@ void MemInterface::recv_ack() {
             }
             break;
         case SIM_PD:
-            if (g_recv_ack_cnt > 100) { // TODO
+            if (g_recv_ack_cnt >=
+                ((config_helper_pd *)config_helper)->coreStatus.size()) {
                 g_recv_ack_cnt = 0;
                 ev_dis_start.notify(CYCLE, SC_NS);
             }
@@ -357,7 +356,8 @@ void MemInterface::recv_done() {
             }
             break;
         case SIM_PD:
-            if (g_recv_done_cnt > 100) { // TODO
+            if (g_recv_done_cnt >=
+                ((config_helper_pd *)config_helper)->coreStatus.size()) {
                 ((config_helper_pd *)config_helper)->iter_done(g_done_msg);
 
                 g_done_msg.clear();

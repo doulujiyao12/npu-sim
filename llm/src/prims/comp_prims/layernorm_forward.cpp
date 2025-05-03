@@ -151,7 +151,7 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
                                   dram_time);
     } else {
         AddrPosKey inp_key;
-        bool flag = sram_pos_locator->findPair(datapass_label.indata[0],
+        int flag = sram_pos_locator->findPair(datapass_label.indata[0],
                                                inp_sram_offset);
         if (flag == -1) {
             printf("[ERROR] Layernorm_f: sram_pos_locator cannot find the "
@@ -176,8 +176,6 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
     } else {
         prefix = datapass_label.outdata;
     }
-
-    cout << "[Layernorm_f] prefix: " << prefix << endl;
 
     auto label_weight = ETERNAL_PREFIX + prefix + "_w";
     AddrPosKey w_key;

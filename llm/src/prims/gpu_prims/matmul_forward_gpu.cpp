@@ -44,6 +44,9 @@ int Matmul_f_gpu::task_core(TaskCoreContext &context) {
 
     cout << cid << " [Matmul_f_gpu] before read1: " << mem_time << " at addr "
          << input_mem_offset << endl;
+
+    int overlap_time = 0;
+#if USE_L1L2_CACHE == 1
     gpu_read_generic(context, input_mem_offset, data_byte * data_size_input,
                      mem_time);
     cout << cid << " [Matmul_f_gpu] after read1: " << mem_time << endl;
@@ -58,13 +61,14 @@ int Matmul_f_gpu::task_core(TaskCoreContext &context) {
     cout << cid << " [Matmul_f_gpu] after read3: " << mem_time << endl;
 
     // TODO: 模拟计算cycle数
-    int overlap_time = mem_time;
+    overlap_time = mem_time;
     AddrPosKey out_key = AddrPosKey(0, data_byte * data_size_out);
     gpu_pos_locator->addPair(datapass_label.outdata, out_key);
     cout << cid << " [Matmul_f_gpu] before write: " << mem_time << " at addr "
          << out_key.pos << endl;
     gpu_write_generic(context, out_key.pos, data_byte * data_size_out,
                       overlap_time);
+#endif
 
     cout << cid << " [Matmul_f_gpu] after write: " << overlap_time << endl;
 
