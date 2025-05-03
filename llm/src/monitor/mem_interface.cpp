@@ -24,6 +24,17 @@ MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
     else if (SYSTEM_MODE == SIM_PD)
         config_helper = new config_helper_pd(config_name, font_ttf);
 
+    //[yicheng] 先写个简单的，之后改
+    for(int i = 0; i < config_helper->coreconfigs.size(); i++){
+        if(config_helper->coreconfigs[i].send_global_mem != -1){
+            if(has_global_mem.size() >= 1){
+                assert(false && "Only one core can send global memory");
+            }else{
+                has_global_mem.push_back(config_helper->coreconfigs[i].id); //记录其id，之后将此id与global memory接起来
+            }
+        }
+    }
+    
     init();
 }
 
@@ -98,7 +109,6 @@ MemInterface::~MemInterface() {
 
     delete config_helper;
 }
-
 
 void MemInterface::end_of_simulation() {
 

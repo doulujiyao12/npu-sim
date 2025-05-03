@@ -311,11 +311,11 @@ void config_helper_core::generate_prims(int i) {
             work.prims_in_loop.push_back(prim);
         }
 
-        // if (c->send_global_mem != -1) {
+        // if (c->send_global_mem != -1){
         //     work.prims_in_loop.push_back(new Send_global_memory());
         // }
-        
-        // 最后是send，如果是多播的话需要加入多个send原
+
+        // 最后是send，如果是多播的话需要加入多个send原语
         // 这里的发送地址和接收地址先不填，等到后续统一填
         // 按照cast 广播的方式添加对应数量的 send 原语数量
         for (int j = 0; j < work.cast.size(); j++) {
@@ -367,6 +367,8 @@ void config_helper_core::generate_prims(int i) {
             work.prims_last_loop.push_back(new_prim("Clear_sram"));
             continue;
         }
+
+        
 
         // if (is_end) {
         //     if (c->send_global_mem != -1) {

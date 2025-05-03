@@ -13,6 +13,7 @@
 #include "memory/gpu/GPU_L1L2_Cache.h"
 #include "memory/sram/dynamic_bandwidth_ram_row.h"
 #include "trace/Event_engine.h"
+#include "link/nb_global_memif.h"
 
 class WorkerCoreExecutor;
 
@@ -50,6 +51,7 @@ public:
     int cid;
     bool prim_refill; // 是否通过原语重填的方式实现循环
     int loop_cnt;     // 如果开启prim_refill，表明现在是第几个循环
+    int send_global_mem; // [yicheng] todo
 
     /* ------------------PRIM----------------------- */
     sc_signal<bool> prim_block;     // 用于指示当前运行的原语是否正在执行
@@ -117,6 +119,9 @@ public:
     sc_in<bool> channel_avail_i;
 
     Event_engine *event_engine;
+    
+    NB_GlobalMemIF *nb_global_mem_socket;
+
 #if USE_NB_DRAMSYS == 1
     NB_DcacheIF *nb_dcache_socket;
 #else
@@ -138,6 +143,8 @@ public:
     sc_event *end_nb_dram_event;       // 非阻塞sram访存结束标志
     sc_event *start_nb_gpu_dram_event; // 用于启动非阻塞gpu dram访存
     sc_event *end_nb_gpu_dram_event;   // 非阻塞gpu dram访存结束标志
+    sc_event *start_global_mem_event;  // 用于启动global memory访存
+    sc_event *end_global_mem_event;    // global memory访存结束标志
     SramPosLocator *sram_pos_locator; // 记录sram中数据的位置，label(string)-int
     AddrDatapassLabel
         *next_datapass_label; // 记录sram中数据的标签，这个变量由set

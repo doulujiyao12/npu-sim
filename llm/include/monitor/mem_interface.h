@@ -51,6 +51,7 @@ public:
 
     Event_engine *event_engine;
     int flow_id;
+    vector<int> has_global_mem;
 
     SC_HAS_PROCESS(MemInterface);
     MemInterface(const sc_module_name &n, Event_engine *event_engine,

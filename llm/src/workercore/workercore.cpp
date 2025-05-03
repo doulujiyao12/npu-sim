@@ -112,6 +112,8 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
     send_done = true;
     send_last_packet = false;
     loop_cnt = 1;
+    start_global_mem_event = new sc_event();
+    end_global_mem_event = new sc_event();
     start_nb_dram_event = new sc_event();
     start_nb_gpu_dram_event = new sc_event();
     end_nb_dram_event = new sc_event();
@@ -122,6 +124,9 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
     nb_dcache_socket =
         new NB_DcacheIF(sc_gen_unique_name("nb_dcache"), start_nb_dram_event,
                         end_nb_dram_event, event_engine);
+    nb_global_mem_socket = 
+        new NB_GlobalMemIF(sc_gen_unique_name("nb_global_mem"), start_global_mem_event, 
+            end_global_mem_event); //[yicheng] 加个enevt_engine
 #else
     dcache_socket = new DcacheCore(sc_gen_unique_name("dcache"), event_engine);
 #endif

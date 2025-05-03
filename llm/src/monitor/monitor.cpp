@@ -17,7 +17,6 @@ Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine,
     init();
 }
 
-
 Monitor::~Monitor() {
     delete[] core_busy;
     delete[] rc_channel;
@@ -44,10 +43,28 @@ void Monitor::init() {
     // memInterface = new MemInterface("mem-interface", this->event_engine,
     // config_name, font_ttf);
     workerCores = new WorkerCore *[GRID_SIZE];
+
+    //[yicheng] 初始化global memory
+    chipGlobalMemory = new ChipGlobalMemory(sc_gen_unique_name("chip-global-memory"), "../DRAMSys/configs/ddr4-example.json", "../DRAMSys/configs");
+    
+    
+    // dcache = new DCache(sc_gen_unique_name("dcache"), (int)cid / GRID_X,
+    //                     (int)cid % GRID_X, this->event_engine,
+    //                     "../DRAMSys/configs/ddr4-example.json",
+    //                     "../DRAMSys/configs");
+    
     for (int i = 0; i < GRID_SIZE; i++) {
         workerCores[i] = new WorkerCore(sc_gen_unique_name("workercore"), i,
                                         this->event_engine);
     }
+
+    assert(memInterface->has_global_mem.size() <= 1);
+    for(auto i : memInterface->has_global_mem){
+        // workerCores[i]->executor->nb_global_mem_socket = chipGlobalMemory;
+        workerCores[i]->executor->nb_dcache_socket->socket.bind(chipGlobalMemory->socket);
+    }
+
+    
 
 #if USE_L1L2_CACHE == 1
     // GPU
