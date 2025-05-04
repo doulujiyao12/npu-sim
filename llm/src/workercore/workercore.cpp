@@ -21,7 +21,7 @@
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 #include "workercore/workercore.h"
-
+#include "link/nb_global_memif_v2.h"
 
 using namespace std;
 

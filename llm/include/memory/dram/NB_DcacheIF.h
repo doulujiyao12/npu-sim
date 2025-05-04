@@ -68,7 +68,7 @@ public:
         data_length = line_size / 8;     // 假设每行按8字节分块
         current_request = 0;             // Reset request counter
         config_updated = true;           // Notify the main process
-        read_or_write = read_or_write;   // 读写标志位
+        this->read_or_write = read_or_write;   // 读写标志位
         (*start_nb_dram_event).notify(); // Trigger reconfiguration
     }
 

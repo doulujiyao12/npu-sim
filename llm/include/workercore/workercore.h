@@ -13,7 +13,8 @@
 #include "memory/gpu/GPU_L1L2_Cache.h"
 #include "memory/sram/dynamic_bandwidth_ram_row.h"
 #include "trace/Event_engine.h"
-#include "link/nb_global_memif.h"
+// #include "link/nb_global_memif.h"
+#include "link/nb_global_memif_v2.h"
 
 class WorkerCoreExecutor;
 
