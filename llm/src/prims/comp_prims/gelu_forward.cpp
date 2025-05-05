@@ -173,7 +173,9 @@ int Gelu_f::task_core(TaskCoreContext &context) {
     // 计算overlap
     int cycle = 0;
     if (tile_sfu.type == Linear) {
+        cout << "[GELU] N: " << N << ", x_dim: " << tile_sfu.x_dims << endl;
         cycle = (11 * N) / (tile_sfu.x_dims) * CYCLE;
+        cout << cycle << endl;
     } else {
         assert(false && "Unsupported tile type");
     }

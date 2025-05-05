@@ -1,5 +1,5 @@
 {
-  "random": true,
+  "random": false,
   "vars": {
     "B": 1,
     "T": 128,
@@ -31,7 +31,7 @@
     "split_matmul2_out": 5000,
     "residual2_out": 6500
   },
-  "pipeline": 10,
+  "pipeline": 2,
   "source": [
     {
       "dest": 0,
@@ -40,8 +40,8 @@
   ],
   "chip": [
     {
-      "GridX": 6,
-      "GridY": 6,
+      "GridX": 4,
+      "GridY": 4,
       "cores": [
         {
           "id": 0,

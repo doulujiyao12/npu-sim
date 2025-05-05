@@ -1,5 +1,5 @@
 {
-  "random": false,
+  "random": true,
   "vars": {
     "B": 1,
     "T": 128,

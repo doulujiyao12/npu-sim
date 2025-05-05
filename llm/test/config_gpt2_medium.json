@@ -28,7 +28,7 @@
     "residual2_out_": 13251584,
     "residual2_out": 12941
   },
-  "pipeline": 3,
+  "pipeline": 1,
   "source": [
     {
       "dest": 0,
@@ -57,11 +57,10 @@
               "T": "T",
               "C": "C",
               "sram_address": {
-                "indata": "dram_label layernorm1_in",
+                "indata": "_input_label",
                 "outdata": "layernorm1_out"
               },
               "dram_address": {
-                "input": 0,
                 "data": "layernorm1_data"
               }
             },
@@ -113,7 +112,7 @@
               "type": "Residual_f",
               "N": "BTC",
               "sram_address": {
-                "indata": "layernorm1_in matmul2_out",
+                "indata": "input_label matmul2_out",
                 "outdata": "residual1_out"
               },
               "dram_address": {
@@ -126,7 +125,7 @@
               "T": "T",
               "C": "C",
               "sram_address": {
-                "indata": "residual1_out",
+                "indata": "_residual1_out",
                 "outdata": "layernorm2_out"
               },
               "dram_address": {
@@ -254,6 +253,54 @@
         },
         {
           "id": 7,
+          "cast": [
+            {
+              "dest": 8,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_refill": true,
+          "prim_copy": 0
+        },
+        {
+          "id": 8,
+          "cast": [
+            {
+              "dest": 9,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_refill": true,
+          "prim_copy": 0
+        },
+        {
+          "id": 9,
+          "cast": [
+            {
+              "dest": 10,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_refill": true,
+          "prim_copy": 0
+        },
+        {
+          "id": 10,
+          "cast": [
+            {
+              "dest": 11,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_refill": true,
+          "prim_copy": 0
+        },
+        {
+          "id": 11,
           "cast": [
             {
               "dest": -1

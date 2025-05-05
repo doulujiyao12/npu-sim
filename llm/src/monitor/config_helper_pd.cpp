@@ -189,7 +189,7 @@ void config_helper_pd::iter_start() {
                         }
                     }
                 }
-                if (!new_reqs || CORE_CREDIT - credit < PD_RATIO ) {
+                if (!new_reqs || CORE_CREDIT - credit < PD_RATIO) {
                     // 这里从idle_decode中取
                     auto &waiting_list = idle_decode[id / model_stage];
                     if (waiting_list.size()) {

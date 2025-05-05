@@ -28,7 +28,7 @@
     "residual2_out_": 20496640,
     "residual2_out": 20022
   },
-  "pipeline": 3,
+  "pipeline": 1,
   "source": [
     {
       "dest": 0,
@@ -38,14 +38,15 @@
   "chips": [
     {
       "chip_id": 0,
-      "GridX": 6,
-      "GridY": 6,
+      "GridX": 4,
+      "GridY": 4,
       "cores": [
         {
           "id": 0,
           "cast": [
             {
-              "dest": 1
+              "dest": 1,
+              "critical": true
             }
           ],
           "recv_cnt": 1,
@@ -57,11 +58,10 @@
               "T": "T",
               "C": "C",
               "sram_address": {
-                "indata": "dram_label layernorm1_in",
+                "indata": "_input_label",
                 "outdata": "layernorm1_out"
               },
               "dram_address": {
-                "input": 0,
                 "data": "layernorm1_data"
               }
             },
@@ -113,7 +113,7 @@
               "type": "Residual_f",
               "N": "BTC",
               "sram_address": {
-                "indata": "layernorm1_in matmul2_out",
+                "indata": "input_label matmul2_out",
                 "outdata": "residual1_out"
               },
               "dram_address": {
@@ -126,7 +126,7 @@
               "T": "T",
               "C": "C",
               "sram_address": {
-                "indata": "residual1_out",
+                "indata": "_residual1_out",
                 "outdata": "layernorm2_out"
               },
               "dram_address": {
@@ -190,7 +190,8 @@
           "id": 1,
           "cast": [
             {
-              "dest": 2
+              "dest": 2,
+              "critical": true
             }
           ],
           "recv_cnt": 1,
@@ -201,7 +202,8 @@
           "id": 2,
           "cast": [
             {
-              "dest": 3
+              "dest": 3,
+              "critical": true
             }
           ],
           "recv_cnt": 1,
@@ -212,7 +214,8 @@
           "id": 3,
           "cast": [
             {
-              "dest": 4
+              "dest": 4,
+              "critical": true
             }
           ],
           "recv_cnt": 1,
@@ -223,7 +226,8 @@
           "id": 4,
           "cast": [
             {
-              "dest": 5
+              "dest": 5,
+              "critical": true
             }
           ],
           "recv_cnt": 1,
@@ -234,7 +238,8 @@
           "id": 5,
           "cast": [
             {
-              "dest": 6
+              "dest": 6,
+              "critical": true
             }
           ],
           "recv_cnt": 1,
@@ -245,7 +250,8 @@
           "id": 6,
           "cast": [
             {
-              "dest": 7
+              "dest": 7,
+              "critical": true
             }
           ],
           "recv_cnt": 1,
@@ -254,6 +260,54 @@
         },
         {
           "id": 7,
+          "cast": [
+            {
+              "dest": 8,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_refill": true,
+          "prim_copy": 0
+        },
+        {
+          "id": 8,
+          "cast": [
+            {
+              "dest": 9,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_refill": true,
+          "prim_copy": 0
+        },
+        {
+          "id": 9,
+          "cast": [
+            {
+              "dest": 10,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_refill": true,
+          "prim_copy": 0
+        },
+        {
+          "id": 10,
+          "cast": [
+            {
+              "dest": 11,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_refill": true,
+          "prim_copy": 0
+        },
+        {
+          "id": 11,
           "cast": [
             {
               "dest": -1

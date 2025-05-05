@@ -16,8 +16,8 @@ int AddrLabelTable::addRecord(const std::string &key) {
     }
 
     table.push_back(key);
-    cout << "[CONFIG] LabelTable: Add new label: " << key << " at " << table.size() - 1
-         << endl;
+    cout << "[CONFIG] LabelTable: Add new label: " << key << " at "
+         << table.size() - 1 << endl;
 
     return table.size() - 1;
 }
@@ -114,7 +114,9 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
 
         int delta_space = used - max_sram_size;
         // 表示已经被放到dram中的数据大小
-        int spill_size = min(int(delta_space), upper_spill_limit);
+        int spill_size =
+            min(double(delta_space) * 1, (double)upper_spill_limit);
+        // int spill_size = upper_spill_limit;
         used -= spill_size;
         data_map[min_label].spill_size += spill_size;
 
