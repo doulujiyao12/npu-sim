@@ -61,3 +61,8 @@ int Send_global_memory::task_core(TaskCoreContext &context) {
     // // 返回模拟的写延迟（纳秒）
     // return static_cast<uint64_t>(delay.to_seconds() * 1e9);
 }
+
+
+void Send_global_memory::parse_json(json j) {
+    assert(0 && "Not Implemented yet");
+}

@@ -17,7 +17,6 @@ Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine,
     init();
 }
 
-
 Monitor::~Monitor() {
     delete[] core_busy;
     delete[] rc_channel;
@@ -44,9 +43,34 @@ void Monitor::init() {
     // memInterface = new MemInterface("mem-interface", this->event_engine,
     // config_name, font_ttf);
     workerCores = new WorkerCore *[GRID_SIZE];
+
+    //[yicheng] 初始化global memory
+    chipGlobalMemory = new ChipGlobalMemory(sc_gen_unique_name("chip-global-memory"), "../DRAMSys/configs/ddr4-example.json", "../DRAMSys/configs");
+    
+    
+    // dcache = new DCache(sc_gen_unique_name("dcache"), (int)cid / GRID_X,
+    //                     (int)cid % GRID_X, this->event_engine,
+    //                     "../DRAMSys/configs/ddr4-example.json",
+    //                     "../DRAMSys/configs");
+    
     for (int i = 0; i < GRID_SIZE; i++) {
         workerCores[i] = new WorkerCore(sc_gen_unique_name("workercore"), i,
                                         this->event_engine);
+    }
+
+    // 根据Config的设置连接到Globalmem
+    assert(memInterface->has_global_mem.size() <= 1 && "only allow one global mem");
+    if(memInterface->has_global_mem.size() == 1){
+        for (auto i : memInterface->has_global_mem) {
+            // instantiate the NB_GlobalMemIF for this executor
+            workerCores[i]->executor->init_global_mem();
+            // bind the NB_GlobalMemIF initiator socket to the ChipGlobalMemory target socket
+            workerCores[i]->executor->nb_global_mem_socket->socket.bind(chipGlobalMemory->socket);
+        }
+    }
+    else{ //如果谁都没有连接，直接绑定到第0个Core上
+        workerCores[0]->executor->init_global_mem();
+        workerCores[0]->executor->nb_global_mem_socket->socket.bind(chipGlobalMemory->socket);
     }
 
 #if USE_L1L2_CACHE == 1

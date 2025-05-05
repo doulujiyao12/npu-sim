@@ -92,7 +92,7 @@ public:
     // ===== 构造 / 进程注册 ===================================================
     SC_HAS_PROCESS(NB_GlobalMemIF);
     NB_GlobalMemIF(sc_core::sc_module_name name, sc_core::sc_event *start_event,
-                   sc_core::sc_event *done_event)
+                   sc_core::sc_event *done_event, Event_engine *event_engine)
         : sc_module(name),
           socket("NB_GlobalMemIF_socket"),
           start_evt(start_event),

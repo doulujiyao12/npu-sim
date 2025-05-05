@@ -268,13 +268,13 @@
           "id": 7,
           "cast": [
             {
-              "dest": -1,
-              "gloabl" : true
+              "dest": -1
             }
           ],
           "recv_cnt": 1,
           "prim_refill": true,
-          "prim_copy": 0
+          "prim_copy": 0,
+          "send_global_mem": 0
         }
       ]
     },
