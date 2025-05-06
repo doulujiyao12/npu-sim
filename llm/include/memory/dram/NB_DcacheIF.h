@@ -12,6 +12,8 @@
 #include "trace/Event_engine.h"
 
 
+
+
 // DMA Producer SystemC Module
 class NB_DcacheIF : public sc_core::sc_module {
 public:
@@ -111,18 +113,20 @@ private:
                      const tlm::tlm_phase &phase) {
         // 打印phase类型
         // 打印当前时间戳
-        // std::cout << "Current time: " << sc_core::sc_time_stamp() <<
-        // std::endl; std::cout << "Phase: "; if (phase == tlm::BEGIN_REQ) {
-        //     std::cout << "BEGIN_REQ" << std::endl;
-        // } else if (phase == tlm::END_REQ) {
-        //     std::cout << "END_REQ" << std::endl;
-        // } else if (phase == tlm::BEGIN_RESP) {
-        //     std::cout << "BEGIN_RESP" << std::endl;
-        // } else if (phase == tlm::END_RESP) {
-        //     std::cout << "END_RESP" << std::endl;
-        // } else {
-        //     std::cout << "UNKNOWN" << std::endl;
-        // }
+#if NB_CACHE_DEBUG == 1
+        std::cout << "Current time: " << sc_core::sc_time_stamp() <<
+        std::endl; std::cout << "Phase: "; if (phase == tlm::BEGIN_REQ) {
+            std::cout << "BEGIN_REQ" << std::endl;
+        } else if (phase == tlm::END_REQ) {
+            std::cout << "END_REQ" << std::endl;
+        } else if (phase == tlm::BEGIN_RESP) {
+            std::cout << "BEGIN_RESP" << std::endl;
+        } else if (phase == tlm::END_RESP) {
+            std::cout << "END_RESP" << std::endl;
+        } else {
+            std::cout << "UNKNOWN" << std::endl;
+        }
+#endif
         if (phase == tlm::END_REQ) {
             lastEndRequest = sc_core::sc_time_stamp();
 
@@ -184,6 +188,10 @@ private:
             }
 
             // If all answers were received:
+#if NB_CACHE_DEBUG == 1
+            cout << "transactionsSent: " << transactionsSent << " transactionsReceived: " << transactionsReceived << endl;
+            cout << "finish" << finished << endl;
+#endif
             if (finished && transactionsSent == transactionsReceived) {
                 finished = false;
                 transactionsSent = 0;
@@ -200,6 +208,10 @@ private:
     void generateRequests() {
         while (true) {
             wait(*start_nb_dram_event);
+#if NB_CACHE_DEBUG == 1
+            std::cout << "Event: start_nb_dram_event notified at time "
+                      << sc_core::sc_time_stamp() << " total request " << total_requests << std::endl;
+#endif
             if (total_requests > 0) {
                 while (current_request < total_requests) {
                     // Wait for configuration to be set
@@ -239,16 +251,19 @@ private:
                         pendingWriteRequests++;
 
                     transactionsSent++;
+#if NB_CACHE_DEBUG == 1
                     // 打印事件通知信息
-                    // std::cout << "Event: next_dram_event notified at time "
-                    // << sc_core::sc_time_stamp() << std::endl;
+                    std::cout << "Event: next_dram_event notified at time "
+                    << sc_core::sc_time_stamp() << std::endl;
+#endif
+                    finished = true;
                     wait(*next_dram_event);
 
                     // Wait for some delay (if needed)
                     // wait(sc_core::sc_time(10, sc_core::SC_NS)); // Example
                     // delay
                 }
-                finished = true;
+                // finished = true;
             } else {
                 end_nb_dram_event->notify();
             }
@@ -295,6 +310,10 @@ private:
         }
 
         delay = sendingTime - sc_core::sc_time_stamp();
+#if NB_CACHE_DEBUG == 1
+        cout << "send Request: " << request.address << " delay: " << delay
+             << endl;
+#endif
         socket->nb_transport_fw(trans, phase, delay);
 
         // Check response status
