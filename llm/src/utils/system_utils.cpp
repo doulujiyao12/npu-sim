@@ -1,5 +1,6 @@
 #include <fstream>
 #include <cstdlib>
+#include "systemc.h"
 
 #include "defs/const.h"
 #include "defs/enums.h"
@@ -98,6 +99,10 @@ void init_grid(string config_path) {
             SYSTEM_MODE = SIM_DATAFLOW;
         } else if (mode == "gpu") {
             SYSTEM_MODE = SIM_GPU;
+            if (USE_L1L2_CACHE != 1) {
+                cout << "Please activate \'USE_L1L2_CACHE\' macro.";
+                sc_stop();
+            }
         } else if (mode == "sched_pd") {
             SYSTEM_MODE = SIM_PD;
         }

@@ -15,7 +15,7 @@
 #define USE_SRAM 1            // otherwise use Dcache
 #define MAX_SRAM_SIZE 7000000 // byte
 #define USE_NB_DRAMSYS 1
-#define USE_L1L2_CACHE 0
+#define USE_L1L2_CACHE 1
 #define FAST_WARMUP 1
 #define SR_PARA 0
 #define GPU_CACHE_DEBUG 0

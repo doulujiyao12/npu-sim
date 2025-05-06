@@ -65,11 +65,11 @@ public:
         base_address = base_addr;
         total_requests = dma_read_cnt * cache_cnt;
         // cache_lines = line_size;
-        data_length = line_size / 8;     // 假设每行按8字节分块
-        current_request = 0;             // Reset request counter
-        config_updated = true;           // Notify the main process
-        this->read_or_write = read_or_write;   // 读写标志位
-        (*start_nb_dram_event).notify(); // Trigger reconfiguration
+        data_length = line_size / 8;         // 假设每行按8字节分块
+        current_request = 0;                 // Reset request counter
+        config_updated = true;               // Notify the main process
+        this->read_or_write = read_or_write; // 读写标志位
+        (*start_nb_dram_event).notify();     // Trigger reconfiguration
     }
 
 private:
@@ -209,15 +209,14 @@ private:
                     //     config_updated = false; // Reset the flag
                     // }
                     // 打印当前请求信息
-                    // std::cout << "Request " << current_request + 1 << " of "
-                    // << total_requests
-                    //         << ": address=0x" << std::hex << (base_address +
-                    //         current_request * cache_lines)
-                    //         << ", length=" << std::dec << data_length
-                    //         << ", command=Read" << std::endl;
-                    // std::cout << "Event: Before notified at time " <<
-                    // sc_core::sc_time_stamp() << std::endl; Create a new
-                    // request
+                    std::cout << "Request " << current_request + 1 << " of "
+                              << total_requests << ": address=0x" << std::hex
+                              << (base_address + current_request * data_length)
+                              << ", length=" << std::dec << data_length
+                              << ", command=Read" << std::endl;
+                    std::cout << "Event: Before notified at time "
+                              << sc_core::sc_time_stamp() << std::endl;
+                              
                     Request request;
                     request.address =
                         base_address + current_request * data_length;
@@ -242,13 +241,14 @@ private:
                     // 打印事件通知信息
                     // std::cout << "Event: next_dram_event notified at time "
                     // << sc_core::sc_time_stamp() << std::endl;
+                    finished = true;
                     wait(*next_dram_event);
 
                     // Wait for some delay (if needed)
                     // wait(sc_core::sc_time(10, sc_core::SC_NS)); // Example
                     // delay
                 }
-                finished = true;
+                
             } else {
                 end_nb_dram_event->notify();
             }

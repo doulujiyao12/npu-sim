@@ -6,6 +6,9 @@
 int matmul_forward_pd::task() { return 0; }
 
 int matmul_forward_pd::task_core(TaskCoreContext &context) {
+    if (T == 0)
+        return 0;
+        
 #if USE_NB_DRAMSYS == 0
     auto wc = context.wc;
 #endif
@@ -169,10 +172,10 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
         sram_pos_locator->updatePair(label_v, size, context, dram_time);
     }
 
-    // 决定是否终止（需要放在别的原语中）   
+    // 决定是否终止（需要放在别的原语中）
     decode_done->clear();
     for (auto stage : batchInfo) {
-        if (stage.type == DECODE && rand_result(5)) {
+        if (stage.type == DECODE && rand_result(2)) {
             decode_done->push_back(true);
         } else {
             decode_done->push_back(false);
@@ -292,7 +295,7 @@ void matmul_forward_pd::deserialize(sc_bv<128> buffer) {
     b_offset = OC * C + w_offset;
 
     initialize();
-} 
+}
 
 sc_bv<128> matmul_forward_pd::serialize() {
     sc_bv<128> d;

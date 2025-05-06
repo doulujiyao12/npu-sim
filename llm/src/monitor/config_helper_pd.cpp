@@ -198,7 +198,8 @@ void config_helper_pd::iter_start() {
                         credit += 1;
                         new_stage_1.push_back(Stage(req_id, DECODE, 1));
                         cout << "[PD SCHEDULE] Core " << id
-                             << " push in new request DECODE " << req_id << endl;
+                             << " push in new request DECODE " << req_id
+                             << endl;
                     } else {
                         new_reqs = false;
                     }
@@ -255,9 +256,10 @@ void config_helper_pd::print_self() {
 void config_helper_pd::generate_prims(int i) {
     // 一个iter中有stage个core参与执行，id 1要流向id end，id end要传回id 1
     // core中原语为单个corejob，需要配置收发规则
+    cout << "Generate prims: Core " << i << endl;
     auto status = coreStatus[i];
 
-    int B = 1, NH = heads, T = 1, C = heads * 64;
+    int B = 1, NH = heads, T = 0, C = heads * 64;
     bool exist_prefill = false;
     for (auto stage : status.batchInfo) {
         auto record = requestRecords[stage.req_id];
@@ -337,7 +339,7 @@ void config_helper_pd::generate_prims(int i) {
     Send_prim *send_data =
         new Send_prim(SEND_TYPE::SEND_DATA, send_dest, send_tag);
 
-    int output_size = C * T * B * sizeof(float);
+    int output_size = max(int(C * T * B * sizeof(float)), 1);
     int pkg_nums = (output_size % M_D_DATA) ? (output_size / M_D_DATA + 1)
                                             : (output_size / M_D_DATA);
     int end_length = output_size - (pkg_nums - 1) * M_D_DATA;

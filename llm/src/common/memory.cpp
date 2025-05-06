@@ -122,7 +122,7 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
 
         // spill 耗时
         // spill in nb_dcache utils
-        sram_spill_back_generic(context, spill_size, 0, dram_time);
+        sram_spill_back_generic(context, spill_size, 1024, dram_time);
 
         cout << "[SRAM SPILL] After spill: used: " << used
              << ", max sram size: " << max_sram_size << endl;
@@ -223,9 +223,13 @@ int SramPosLocator::rearrangeAll(TaskCoreContext &context) {
 
 // 以下为GpuPosLocator相关
 void GpuPosLocator::addPair(const std::string &key, AddrPosKey &value) {
+    cout << key << " rwggreger " << value.size << endl;
+    cout << "addr_t " << this->addr_top << endl;
     value.pos = addr_top;
     data_map[key] = value;
     addr_top += value.size;
+
+    cout << key << " " << value.size << endl;
 
     // 对齐
     addr_top = ceiling_division(addr_top, 64) * 64;
