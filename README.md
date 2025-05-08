@@ -59,3 +59,8 @@ make -j8
 ./train_gpt2 --config-file /root/fdh/drca/src/llm/test/config_gpt2_small_tp_24_new.json --use-dramsys true
 ```
 
+
+
+https://zhuanlan.zhihu.com/p/388640347
+
+https://blog.csdn.net/m0_58552717/article/details/135525589
