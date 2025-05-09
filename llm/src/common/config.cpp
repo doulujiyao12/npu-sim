@@ -70,7 +70,7 @@ void from_json(const json &j, CoreJob &c) {
             c.cast.push_back(temp);
         }
     } else {
-        cout << "[WARN] You need to designate CAST field unless you are running SIM_PD.\n";
+        // cout << "[WARN] You need to designate CAST field unless you are running SIM_PD.\n";
     } // NOTE: 如果配置文件中没有cast，需要手动指派。
 
     j.at("recv_cnt").get_to(c.recv_cnt);

@@ -35,8 +35,8 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value) {
     visit += 1;
     value.record = visit;
     data_map[key] = value;
-    cout << "[SRAM pos locator] id " << cid << " add pair.\n";
-    cout << "[Add pair]: label -> " << key << endl;
+    // cout << "[SRAM pos locator] id " << cid << " add pair.\n";
+    // cout << "[Add pair]: label -> " << key << endl;
 }
 
 void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
@@ -45,8 +45,8 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
     visit += 1;
     value.record = visit;
     data_map[key] = value;
-    cout << "[SRAM pos locator] id " << cid << " add pair.\n";
-    cout << "[Add pair]: label -> " << key << endl;
+    // cout << "[SRAM pos locator] id " << cid << " add pair.\n";
+    // cout << "[Add pair]: label -> " << key << ", size: " << value.size << endl;
 
     // 检查所有的大小是否超过能够容纳的上限
     int used = 0;
@@ -59,7 +59,7 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
             used += pair.second.size - pair.second.spill_size;
     }
 
-    cout << "[SRAM CHECK] used: " << used << ", max: " << max_sram_size << endl;
+    // cout << "[SRAM CHECK] used: " << used << ", max: " << max_sram_size << endl;
 
     // 放得下
     if (used <= max_sram_size) {
@@ -93,7 +93,9 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
             }
         }
 
-        cout << "[SRAM SPILL] Sram chose to spill label " << min_label << ".\n";
+        // cout << "[SRAM SPILL] Core " << cid << ": Sram chose to spill label "
+        //      << min_label << ", size " << data_map[min_label].size
+        //      << ", spill_size: " << data_map[min_label].spill_size << endl;
 
         if (min_record == 1e9 + 3) {
             cout << "[ERROR] SRAM have no more data to spill " << max_sram_size
@@ -114,9 +116,9 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
 
         int delta_space = used - max_sram_size;
         // 表示已经被放到dram中的数据大小
-        int spill_size =
-            min(double(delta_space) * 1, (double)upper_spill_limit);
-        // int spill_size = upper_spill_limit;
+        // int spill_size =
+        //     min(double(delta_space) * 1, (double)upper_spill_limit);
+        int spill_size = upper_spill_limit;
         used -= spill_size;
         data_map[min_label].spill_size += spill_size;
 
@@ -124,8 +126,11 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
         // spill in nb_dcache utils
         sram_spill_back_generic(context, spill_size, 1024, dram_time);
 
-        cout << "[SRAM SPILL] After spill: used: " << used
-             << ", max sram size: " << max_sram_size << endl;
+        // cout << "[SRAM SPILL] Core " << cid << ": After spill: used: " << used
+        //      << ", max sram size: " << max_sram_size << endl;
+        // cout << "[SRAM SPILL] Core " << cid
+        //      << ": label size: " << data_map[min_label].size
+        //      << ", spill_size: " << data_map[min_label].spill_size << endl;
     }
 
     // 重排
@@ -167,18 +172,20 @@ void SramPosLocator::updatePair(std::string &key, int size,
     if (spill_size == -1) {
         result.pos = *context.sram_addr;
         result.size = size;
-        addPair(key, result, context, dram_time);
     } else if (spill_size > 0) {
         // 需要先把所有内容取回
         sram_first_write_generic(context, spill_size, result.pos, dram_time,
                                  nullptr);
         result.spill_size = 0;
         result.size += size;
+
     } else {
         result.size += size;
     }
 
     addPair(key, result, context, dram_time);
+    // cout << "Core " << cid << " update label " << key
+    //      << ", new size: " << data_map[key].size << endl;
 }
 
 void SramPosLocator::deletePair(std::string &key) { data_map.erase(key); }
@@ -194,26 +201,24 @@ int SramPosLocator::rearrangeAll(TaskCoreContext &context) {
     int pos = 0;
     for (auto record : temp_list) {
         auto size = record.second.size;
-        if (!record.second.valid)
-            size = 0;
+        auto spill_size = record.second.spill_size;
 
-        int dma_read_count = size * 8 / (int)(SRAM_BITWIDTH * SRAM_BANKS);
+        int dma_read_count = spill_size * 8 / (int)(SRAM_BITWIDTH * SRAM_BANKS);
         int byte_residue =
-            size * 8 - dma_read_count * (SRAM_BITWIDTH * SRAM_BANKS);
+        spill_size * 8 - dma_read_count * (SRAM_BITWIDTH * SRAM_BANKS);
         int single_read_count = ceiling_division(byte_residue, SRAM_BITWIDTH);
 
-        AddrPosKey temp_key = AddrPosKey(pos, size);
         int temp_pos = *(context.sram_addr);
         u_int64_t temp_addr = 0;
-        addPair(record.first, temp_key, context, temp_addr);
+        addPair(record.first, record.second, context, temp_addr);
 
         if (temp_pos != *(context.sram_addr)) {
             cout << "[ERROR] Loop rearrange in spill DRAM." << endl;
             sc_stop();
         }
 
-        cout << "\tAdd label <" << record.first << "> at offset " << pos
-             << endl;
+        // cout << "\tAdd label <" << record.first << "> at offset " << pos
+        //      << endl;
 
         pos += dma_read_count * SRAM_BANKS + single_read_count;
     }
@@ -223,8 +228,6 @@ int SramPosLocator::rearrangeAll(TaskCoreContext &context) {
 
 // 以下为GpuPosLocator相关
 void GpuPosLocator::addPair(const std::string &key, AddrPosKey &value) {
-    cout << key << " rwggreger " << value.size << endl;
-    cout << "addr_t " << this->addr_top << endl;
     value.pos = addr_top;
     data_map[key] = value;
     addr_top += value.size;

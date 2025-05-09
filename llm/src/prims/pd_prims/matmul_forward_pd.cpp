@@ -166,8 +166,10 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
         string label_v = format_label_v;
 
         // 如果没有对应的kvcache，则创建一个标签；如果已经有了，则直接更新大小
+        cout << "[Matmul_pd_f] Core " << cid << " Ready to add label: " << label_k << ", size: " << size << endl;
         sram_write_append_generic(context, size, dram_time);
         sram_pos_locator->updatePair(label_k, size, context, dram_time);
+        cout << "[Matmul_pd_f] Core " << cid << " Ready to add label: " << label_v << ", size: " << size << endl;
         sram_write_append_generic(context, size, dram_time);
         sram_pos_locator->updatePair(label_v, size, context, dram_time);
     }

@@ -1,5 +1,5 @@
 {
-  "random": true,
+  "random": false,
   "vars": {
     "B": 1,
     "T": 128,
@@ -31,7 +31,7 @@
     "split_matmul2_out": 5000,
     "residual2_out": 6500
   },
-  "pipeline": 10,
+  "pipeline": 1,
   "source": [
     {
       "dest": 0,

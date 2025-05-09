@@ -59,9 +59,13 @@ void config_helper_pd::fill_queue_start(queue<Msg> *q) {
             continue;
 
         int index = status.id / GRID_X;
+        int total_pkg = 0;
+        bool has_prefill = false;
 
-        for (auto stage : status.batchInfo) {
+        for (int i = 0; i < status.batchInfo.size(); i++) {
+            auto stage = status.batchInfo[i];
             if (stage.type == PREFILL) {
+                has_prefill = true;
                 auto record = requestRecords[stage.req_id];
                 int size = record.seq_len / record.prefill_iters * heads * 64;
                 int send_size_in_bit = size * sizeof(float) * 8;
@@ -71,19 +75,22 @@ void config_helper_pd::fill_queue_start(queue<Msg> *q) {
 
                 for (int j = 1; j <= pkg_num; j++) {
                     sc_bv<M_D_DATA> d(0x1);
-                    int length = M_D_DATA;
-                    bool is_end_packet = j == pkg_num;
-                    if (is_end_packet) {
-                        length =
-                            size * sizeof(float) - M_D_DATA * (pkg_num - 1);
-                    }
 
-                    Msg m = Msg(j == pkg_num, MSG_TYPE::S_DATA, j, status.id,
-                                M_D_DATA * (j - 1), status.id, length, d);
+                    Msg m =
+                        Msg(false, MSG_TYPE::S_DATA, j + total_pkg, status.id,
+                            M_D_DATA * (j - 1), status.id, M_D_DATA, d);
                     m.source = GRID_SIZE;
                     q[index].push(m);
                 }
+
+                total_pkg += pkg_num;
             }
+        }
+
+        if (has_prefill) {
+            sc_bv<M_D_DATA> d(0x1);
+            q[index].push(Msg(true, MSG_TYPE::S_DATA, total_pkg + 1, status.id,
+                              0, status.id, 1, d));
         }
     }
 }
@@ -110,7 +117,8 @@ void config_helper_pd::iter_done(vector<Msg> done_msg) {
                 break;
             case DECODE:
                 record.decode_counter++;
-                if (msg.data.range(stage_count, stage_count).to_uint64()) {
+                if (msg.data.range(stage_count, stage_count).to_uint64() ||
+                    record.decode_counter >= (1.5) / (eof_chance)) {
                     stage.type = record.phase = PD_DONE;
 
                     if (++decode_done == requestRecords.size()) {

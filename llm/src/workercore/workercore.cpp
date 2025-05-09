@@ -1009,6 +1009,9 @@ void WorkerCoreExecutor::recv_logic() {
                     if (has_msg) {
                         recv_cnt++;
 
+                        // cout << "Core " << cid << " recv DATA seq " <<
+                        // temp.seq_id << endl;
+
                         if (temp.msg_type != MSG_TYPE::P_DATA) {
                             if (temp.seq_id == 1 &&
                                 (SYSTEM_MODE == SIM_DATAFLOW ||
@@ -1094,8 +1097,8 @@ void WorkerCoreExecutor::recv_logic() {
                     buffer_i.pop();
                     prim_queue.emplace_back(parse_prim(m.data));
 
-                    cout << sc_time_stamp() << ": Worker " << cid
-                         << ": recv config " << m.seq_id << endl;
+                    // cout << sc_time_stamp() << ": Worker " << cid
+                    //      << ": recv config " << m.seq_id << endl;
 
                     // 检查是否为end config包，如果是，需要向host发送ack包
                     if (m.is_end) {
@@ -1351,7 +1354,8 @@ bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status) {
 void WorkerCoreExecutor::send_helper() {
     while (true) {
         // if (send_helper_write > 0)
-        //     cout << sc_time_stamp() << ": core " << cid << "send_helper switch "
+        //     cout << sc_time_stamp() << ": core " << cid << "send_helper
+        //     switch "
         //          << send_helper_write << endl;
 
         if (send_helper_write >= 2) {
