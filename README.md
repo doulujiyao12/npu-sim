@@ -1,5 +1,8 @@
 # NPU-SIM 项目安装指南
 
+## 文档
+
+点击[这里](https://npu-sim.readthedocs.io/zh-cn/latest/)访问NPU-SIM项目的官方文档。
 ## 1. 安装 SystemC
 
 ```bash
