@@ -392,8 +392,8 @@ public:
     void deserialize(sc_bv<128> buffer);
 
     void parse_json(json j);
-    // void print_self(string prefix);
-    // int sram_utilization(DATATYPE datatype);
+    void print_self(string prefix);
+    int sram_utilization(DATATYPE datatype);
 
     Send_global_memory() { name = "Send_global_memory"; }
 };

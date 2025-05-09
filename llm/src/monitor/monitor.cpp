@@ -40,8 +40,6 @@ Monitor::~Monitor() {
 
 void Monitor::init() {
     routerMonitor = new RouterMonitor("router-monitor", this->event_engine);
-    // memInterface = new MemInterface("mem-interface", this->event_engine,
-    // config_name, font_ttf);
     workerCores = new WorkerCore *[GRID_SIZE];
 
     //[yicheng] 初始化global memory
@@ -62,6 +60,7 @@ void Monitor::init() {
     assert(memInterface->has_global_mem.size() <= 1 && "only allow one global mem");
     if(memInterface->has_global_mem.size() == 1){
         for (auto i : memInterface->has_global_mem) {
+            std::cout << "[Global Mem]: global link inited " <<  i << std::endl;
             // instantiate the NB_GlobalMemIF for this executor
             workerCores[i]->executor->init_global_mem();
             // bind the NB_GlobalMemIF initiator socket to the ChipGlobalMemory target socket
@@ -69,6 +68,7 @@ void Monitor::init() {
         }
     }
     else{ //如果谁都没有连接，直接绑定到第0个Core上
+        std::cout << "[Global Mem]: global link not inited " << std::endl;
         workerCores[0]->executor->init_global_mem();
         workerCores[0]->executor->nb_global_mem_socket->socket.bind(chipGlobalMemory->socket);
     }

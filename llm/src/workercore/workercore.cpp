@@ -389,7 +389,14 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     case 0xc0:
         task = new matmul_forward_pd();
         break;
+    case 0x20:
+        task = new Send_global_memory();
+        break;
+    // case 0x21:
+    //     task = new Recv_global_memory();
+    //     break;
     default:
+        assert(0 && "Unknown prim");
         cout << "Unknown prim: " << type << ".\n";
         break;
     }
@@ -1132,6 +1139,12 @@ void WorkerCoreExecutor::task_logic() {
         int delay = 0;
         sc_bv<SRAM_BITWIDTH> msg_data_tmp;
 
+        NB_GlobalMemIF *nb_global_memif = this->nb_global_mem_socket;
+        sc_event *start_global_event = this->start_global_mem_event;
+        sc_event *end_global_event = this->end_global_mem_event;
+
+
+
 #if USE_NB_DRAMSYS == 1
         NB_DcacheIF *nb_dcache =
             this->nb_dcache_socket; // 实例化或获取 NB_DcacheIF 对象
@@ -1169,6 +1182,9 @@ void WorkerCoreExecutor::task_logic() {
         TaskCoreContext context(mau, hmau, msg_data, sram_addr, s_nbdram,
                                 e_nbdram, loop_cnt);
 #endif
+
+        //添加GlobalMem
+        context.SetGlobalMemIF(nb_global_memif, start_global_event, end_global_event);
 
         if (!p->use_hw || typeid(*p) != typeid(Matmul_f)) {
             if (typeid(*p) == typeid(Set_addr)) {

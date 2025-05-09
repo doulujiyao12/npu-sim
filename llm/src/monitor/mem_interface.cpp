@@ -23,6 +23,18 @@ MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
         config_helper = new config_helper_gpu(config_name, font_ttf);
     else if (SYSTEM_MODE == SIM_PD)
         config_helper = new config_helper_pd(config_name, font_ttf);
+    
+    init();
+}
+
+MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
+                           config_helper_base *input_config)
+    : event_engine(event_engine), config_helper(input_config) {
+    //从更高Level注册MemInterface
+    init();
+}
+
+void MemInterface::init() {
 
     //[yicheng] 先写个简单的，之后改
     for(int i = 0; i < config_helper->coreconfigs.size(); i++){
@@ -34,17 +46,7 @@ MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
             }
         }
     }
-    
-    init();
-}
 
-MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
-                           config_helper_base *input_config)
-    : event_engine(event_engine), config_helper(input_config) {
-    init();
-}
-
-void MemInterface::init() {
     host_data_sent_i = new sc_in<bool>[GRID_X];
     host_data_sent_o = new sc_out<bool>[GRID_X];
 

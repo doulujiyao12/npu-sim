@@ -8,6 +8,7 @@
 #include "memory/sram/High_mem_access_unit.h"
 #include "memory/sram/Mem_access_unit.h"
 #include "trace/Event_engine.h"
+#include "link/nb_global_memif_v2.h"
 
 #include <vector>
 
@@ -40,8 +41,22 @@ public:
     sc_event *s_nbdram;
     sc_event *e_nbdram;
     int loop_cnt;
+    
+    NB_GlobalMemIF *nb_global_memif;
+    sc_event *start_global_event;
+    sc_event *end_global_event;
+
+    void SetGlobalMemIF(NB_GlobalMemIF *nb_global_memif, sc_event *start_global_event, sc_event *end_global_event) {
+        this->nb_global_memif = nb_global_memif;
+        this->start_global_event = start_global_event;
+        this->end_global_event = end_global_event;
+    }
+
 #if USE_NB_DRAMSYS == 1
+    
     NB_DcacheIF *nb_dcache;
+
+
 #else
     DcacheCore *wc;
 #endif

@@ -311,9 +311,11 @@ void config_helper_core::generate_prims(int i) {
             work.prims_in_loop.push_back(prim);
         }
 
-        // if (c->send_global_mem != -1){
-        //     work.prims_in_loop.push_back(new Send_global_memory());
-        // }
+        // [传输global memory的原语]
+        if (c->send_global_mem != -1){
+            std::cout << "[Global Mem]: add send_global_memory prim" << std::endl;
+            work.prims_in_loop.push_back(new Send_global_memory());
+        }
 
         // 最后是send，如果是多播的话需要加入多个send原语
         // 这里的发送地址和接收地址先不填，等到后续统一填
@@ -343,6 +345,7 @@ void config_helper_core::generate_prims(int i) {
                 new Send_prim(SEND_TYPE::SEND_DATA, dest, tag));
         }
 
+
         // 再生成最后一个loop的原语
         work.prims_last_loop.push_back(
             new Recv_prim(RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt));
@@ -362,23 +365,17 @@ void config_helper_core::generate_prims(int i) {
             work.prims_last_loop.push_back(prim);
         }
 
+        if (c->send_global_mem != -1){
+            std::cout << "[Global Mem]: add send_global_memory prim 2" << std::endl;
+            work.prims_last_loop.push_back(new Send_global_memory());
+        }
+
         if (is_end) {
             work.prims_last_loop.push_back(new Send_prim(SEND_TYPE::SEND_DONE));
             work.prims_last_loop.push_back(new_prim("Clear_sram"));
             continue;
         }
 
-        
-
-        // if (is_end) {
-        //     if (c->send_global_mem != -1) {
-        //         work.prims_last_loop.push_back(new Send_global_memory());
-        //     } else {
-        //         work.prims_last_loop.push_back(new Send_prim(SEND_TYPE::SEND_DONE));
-        //     }
-        //     work.prims_last_loop.push_back(new_prim("Clear_sram"));
-        //     continue;
-        // }
 
         for (int j = 0; j < work.cast.size(); j++) {
             auto ca = work.cast[j];
