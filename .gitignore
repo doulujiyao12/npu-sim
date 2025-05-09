@@ -15,3 +15,4 @@ batch.sh
 
 !**/CMakeLists.txt
 !CMakeLists.txt
+!/doc/requirements.txt
