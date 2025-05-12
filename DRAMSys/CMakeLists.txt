@@ -97,7 +97,7 @@ option(DRAMSYS_BUILD_BENCHMARKS "Build DRAMSys benchmarks" OFF)
 option(DRAMSYS_BUILD_CLI "Build DRAMSys Command Line Tool" OFF)
 option(DRAMSYS_BUILD_TRACE_ANALYZER "Build DRAMSys Trace Analyzer" OFF)
 option(DRAMSYS_WITH_DRAMPOWER "Build with DRAMPower support enabled." OFF)
-option(DRAMSYS_USE_EXTERNAL_SYSTEMC "Use an external SystemC installation." ON)
+option(DRAMSYS_USE_EXTERNAL_SYSTEMC "Use an external SystemC installation." OFF)
 
 ###############################################
 ###           Library Settings              ###

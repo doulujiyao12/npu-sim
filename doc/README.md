@@ -8,4 +8,7 @@ pip install -r requirements.txt
 make clean
 make html
 sphinx-autobuild source build/html
+# bind local port to sercer IP
+ssh -L 8000:127.0.0.1:8000 root@server_ip
+
 ```

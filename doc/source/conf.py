@@ -16,7 +16,8 @@
 
 
 # -- Project information -----------------------------------------------------
-
+from sphinx.ext import autodoc
+# import sphinxcontrib.redoc
 project = 'npu-sim'
 copyright = '2025, dahu feng'
 author = 'dahu feng'
@@ -49,10 +50,39 @@ exclude_patterns = []
 # a list of builtin themes.
 #
 # html_theme = 'alabaster'
-html_theme = 'sphinx_rtd_theme'
-extensions = ['recommonmark','sphinx_markdown_tables']
+# html_theme = 'pydata_sphinx_theme'
+html_title = project
+
+html_theme = "sphinx_book_theme"
+html_static_path = ['_static']
+html_css_files = [
+    'custom.css',
+]
+
+# html_theme = 'sphinx_rtd_theme'
+html_logo = "assets/logo/npusim.png"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+
+html_theme_options = {
+    "path_to_docs": "../source",
+    "repository_url": "https://gitee.com/doulujiyao/npu-sim",
+    "repository_provider": "github",
+    "use_repository_button": True,
+}
+extensions = ["sphinx_markdown_tables", "sphinx.ext.napoleon", "sphinx.ext.viewcode", "sphinx.ext.intersphinx", "sphinx_copybutton",
+"sphinx.ext.autodoc", "sphinx.ext.autosummary", "sphinxarg.ext", "sphinxcontrib.redoc", "myst_parser"]
+    # "sphinx.ext.napoleon",
+    # "sphinx.ext.viewcode",
+    # "sphinx.ext.intersphinx",
+    # "sphinx_copybutton",
+    # "sphinx.ext.autodoc",
+    # "sphinx.ext.autosummary",
+    # "myst_parser",
+    # "sphinxarg.ext",
+    # "sphinxcontrib.redoc"]
+
+
+
