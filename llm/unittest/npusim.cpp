@@ -6,8 +6,8 @@
 #include "utils/file_utils.h"
 #include "utils/simple_flags.h"
 #include "utils/system_utils.h"
-#include <iostream>
 #include <ctime>
+#include <iostream>
 
 #include <SFML/Graphics.hpp>
 using namespace std;
@@ -758,6 +758,8 @@ int task_n() {
 }
 
 int sc_main(int argc, char *argv[]) {
+    clock_t start = clock();
+
     srand((unsigned)time(NULL));
     std::cout.setf(std::ios::unitbuf);
 
@@ -825,6 +827,9 @@ int sc_main(int argc, char *argv[]) {
     sc_close_vcd_trace_file(tf);
 
     system_cleanup();
+    
+    clock_t end = clock();
+    cout << "花费了" << (double)(end - start) / CLOCKS_PER_SEC << "秒" << endl;
 
     delete event_engine;
     return 0;

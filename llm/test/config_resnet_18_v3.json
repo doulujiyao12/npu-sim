@@ -99,7 +99,7 @@
     "matmul20_data": 25,
     "matmul20_dout": 537
   },
-  "pipeline": 10,
+  "pipeline": 1,
   "source": [
     {
       "dest": 0,

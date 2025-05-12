@@ -31,7 +31,7 @@
     "split_matmul2_out": 5000,
     "residual2_out": 6500
   },
-  "pipeline": 1,
+  "pipeline": 10,
   "source": [
     {
       "dest": 0,

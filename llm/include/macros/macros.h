@@ -13,7 +13,7 @@
 #define DUMMY 1
 #define DUMMY_SRAM 1
 #define USE_SRAM 1            // otherwise use Dcache
-#define MAX_SRAM_SIZE 7000000 // byte
+#define MAX_SRAM_SIZE 8388608 // byte
 #define USE_NB_DRAMSYS 1
 #define USE_L1L2_CACHE 1
 #define FAST_WARMUP 1
