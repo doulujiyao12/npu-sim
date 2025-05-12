@@ -68,6 +68,7 @@ void Matmul_f::parse_json(json j) {
     if (j.contains("dram_address")) {
         parse_address(j["dram_address"]);
     }
+    
 
     if (j.contains("sram_address")) {
         parse_sram_label(j["sram_address"]);
