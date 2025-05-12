@@ -59,9 +59,13 @@ void config_helper_pd::fill_queue_start(queue<Msg> *q) {
             continue;
 
         int index = status.id / GRID_X;
+        int total_pkg = 0;
+        bool has_prefill = false;
 
-        for (auto stage : status.batchInfo) {
+        for (int i = 0; i < status.batchInfo.size(); i++) {
+            auto stage = status.batchInfo[i];
             if (stage.type == PREFILL) {
+                has_prefill = true;
                 auto record = requestRecords[stage.req_id];
                 int size = record.seq_len / record.prefill_iters * heads * 64;
                 int send_size_in_bit = size * sizeof(float) * 8;
@@ -71,19 +75,22 @@ void config_helper_pd::fill_queue_start(queue<Msg> *q) {
 
                 for (int j = 1; j <= pkg_num; j++) {
                     sc_bv<M_D_DATA> d(0x1);
-                    int length = M_D_DATA;
-                    bool is_end_packet = j == pkg_num;
-                    if (is_end_packet) {
-                        length =
-                            size * sizeof(float) - M_D_DATA * (pkg_num - 1);
-                    }
 
-                    Msg m = Msg(j == pkg_num, MSG_TYPE::S_DATA, j, status.id,
-                                M_D_DATA * (j - 1), status.id, length, d);
+                    Msg m =
+                        Msg(false, MSG_TYPE::S_DATA, j + total_pkg, status.id,
+                            M_D_DATA * (j - 1), status.id, M_D_DATA, d);
                     m.source = GRID_SIZE;
                     q[index].push(m);
                 }
+
+                total_pkg += pkg_num;
             }
+        }
+
+        if (has_prefill) {
+            sc_bv<M_D_DATA> d(0x1);
+            q[index].push(Msg(true, MSG_TYPE::S_DATA, total_pkg + 1, status.id,
+                              0, status.id, 1, d));
         }
     }
 }
@@ -110,7 +117,8 @@ void config_helper_pd::iter_done(vector<Msg> done_msg) {
                 break;
             case DECODE:
                 record.decode_counter++;
-                if (msg.data.range(stage_count, stage_count).to_uint64()) {
+                if (msg.data.range(stage_count, stage_count).to_uint64() ||
+                    record.decode_counter >= (1.5) / (eof_chance)) {
                     stage.type = record.phase = PD_DONE;
 
                     if (++decode_done == requestRecords.size()) {
@@ -198,7 +206,8 @@ void config_helper_pd::iter_start() {
                         credit += 1;
                         new_stage_1.push_back(Stage(req_id, DECODE, 1));
                         cout << "[PD SCHEDULE] Core " << id
-                             << " push in new request DECODE " << req_id << endl;
+                             << " push in new request DECODE " << req_id
+                             << endl;
                     } else {
                         new_reqs = false;
                     }
@@ -255,9 +264,10 @@ void config_helper_pd::print_self() {
 void config_helper_pd::generate_prims(int i) {
     // 一个iter中有stage个core参与执行，id 1要流向id end，id end要传回id 1
     // core中原语为单个corejob，需要配置收发规则
+    cout << "Generate prims: Core " << i << endl;
     auto status = coreStatus[i];
 
-    int B = 1, NH = heads, T = 1, C = heads * 64;
+    int B = 1, NH = heads, T = 0, C = heads * 64;
     bool exist_prefill = false;
     for (auto stage : status.batchInfo) {
         auto record = requestRecords[stage.req_id];
@@ -337,7 +347,7 @@ void config_helper_pd::generate_prims(int i) {
     Send_prim *send_data =
         new Send_prim(SEND_TYPE::SEND_DATA, send_dest, send_tag);
 
-    int output_size = C * T * B * sizeof(float);
+    int output_size = max(int(C * T * B * sizeof(float)), 1);
     int pkg_nums = (output_size % M_D_DATA) ? (output_size / M_D_DATA + 1)
                                             : (output_size / M_D_DATA);
     int end_length = output_size - (pkg_nums - 1) * M_D_DATA;

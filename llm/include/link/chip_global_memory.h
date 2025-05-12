@@ -18,9 +18,6 @@
 #include "macros/macros.h"
 #include "utils/system_utils.h"
 
-// 不应该用MultiportRamArray，因为这个类是用来模拟SRAM的，而global memory是DRAM
-//  GlobalMemory -> DramSysWrapper -> DramSys
-
 using namespace sc_core;
 using namespace tlm;
 

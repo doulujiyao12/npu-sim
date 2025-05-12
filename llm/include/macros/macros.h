@@ -15,7 +15,7 @@
 #define USE_SRAM 1            // otherwise use Dcache
 #define MAX_SRAM_SIZE 7000000 // byte
 #define USE_NB_DRAMSYS 1
-#define USE_L1L2_CACHE 0
+#define USE_L1L2_CACHE 1
 #define FAST_WARMUP 1
 #define SR_PARA 0
 #define GPU_CACHE_DEBUG 0
@@ -72,7 +72,7 @@
 // PD中的分块策略
 #define MAX_PREFILL_WORKLOAD 384
 #define PD_RATIO 2
-#define CORE_CREDIT 3
+#define CORE_CREDIT 5
 
 // 函数宏
 #define ceil_macro(x) ((x) - (int)(x) > 0.1 ? (int)(x) + 1 : (int)(x))

@@ -123,15 +123,16 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
     if (single_read_count > 0) {
 
 #if USE_NB_DRAMSYS == 1
-std::cout << "inp_global_addr: " << inp_global_addr << std::endl;
-std::cout << "cache_lines: " << cache_lines << std::endl;
-std::cout << "cache_count: " << cache_count << std::endl;
-std::cout << "dma_read_count: " << dma_read_count << std::endl;
+        std::cout << "inp_global_addr: " << inp_global_addr << std::endl;
+        std::cout << "cache_lines: " << cache_lines << std::endl;
+        std::cout << "cache_count: " << cache_count << std::endl;
+        std::cout << "dma_read_count: " << dma_read_count << std::endl;
         nb_dcache->reconfigure(inp_global_addr +
                                    cache_lines * cache_count * dma_read_count,
                                1, cache_count, cache_lines, 0);
         start_nbdram = sc_time_stamp();
-        cout << "start write back padding nbdram: " << sc_time_stamp().to_string() << endl;
+        cout << "start write back padding nbdram: "
+             << sc_time_stamp().to_string() << endl;
         wait(*e_nbdram);
         end_nbdram = sc_time_stamp();
         cout << "end padding nbdram: " << sc_time_stamp().to_string() << endl;
@@ -238,12 +239,12 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
 #if USE_NB_DRAMSYS == 1
 
     nb_dcache->reconfigure(inp_global_addr, dma_read_count, cache_count,
-                           cache_lines, 1);
+                           cache_lines, 0);
     sc_time start_nbdram = sc_time_stamp();
     cout << "start spill back nbdram: " << sc_time_stamp().to_string() << endl;
     wait(*e_nbdram);
     sc_time end_nbdram = sc_time_stamp();
-    cout << "end nbdram: " << sc_time_stamp().to_string() << endl;
+    cout << "spill back end nbdram: " << sc_time_stamp().to_string() << endl;
     u_int64_t nbdram_time = (end_nbdram - start_nbdram).to_seconds() * 1e9;
 
     for (int i = 0; i < dma_read_count; i++) {
@@ -266,8 +267,10 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
 #if USE_NB_DRAMSYS == 1
         nb_dcache->reconfigure(inp_global_addr +
                                    cache_lines * cache_count * dma_read_count,
-                               1, cache_count, cache_lines, 1);
+                               1, cache_count, cache_lines, 0);
         start_nbdram = sc_time_stamp();
+        cout << inp_global_addr + cache_lines * cache_count * dma_read_count
+             << " " << 1 << " " << cache_count << " " << cache_lines << endl;
         cout << "start padding nbdram: " << sc_time_stamp().to_string() << endl;
         wait(*e_nbdram);
         end_nbdram = sc_time_stamp();

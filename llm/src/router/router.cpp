@@ -112,9 +112,9 @@ void RouterUnit::router_execute() {
                 sc_bv<256> temp = host_channel_i->read();
 
                 Msg tt = deserialize_msg(temp);
-                // cout << sc_time_stamp() << ": Router " << rid << ": get des
-                // seqid " << tt.des << " " << tt.seq_id << " from host." <<
-                // endl;
+                // cout << sc_time_stamp() << ": Router " << rid
+                //      << ": get des seqid " << tt.des << " " << tt.seq_id
+                //      << " from host." << endl;
 
                 host_buffer_i->emplace(temp);
 
@@ -198,7 +198,6 @@ void RouterUnit::router_execute() {
             int d = get_msg_des_id(temp);
             // 先x后y的路由
             Directions next = get_next_hop(d, rid);
-            // cout << d << " <- " << rid << " next: " << next << endl;
 
             if (buffer_o[next].size() < MAX_BUFFER_PACKET_SIZE &&
                 output_lock[next] == 0) {
@@ -299,8 +298,8 @@ void RouterUnit::router_execute() {
             // DTODO
             // 排除了Config DATA 包，不会减少 lock
             // START DATA 包也不会上锁？
-            else if (m.msg_type == DATA && m.is_end && m.source != GRID_SIZE &&
-                     m.des != GRID_SIZE) {
+            if (m.msg_type == DATA && m.is_end && m.source != GRID_SIZE &&
+                m.des != GRID_SIZE) {
                 // i 是 data 的进入方向，需要计算 data 的输出方向
                 out = get_next_hop(m.des, rid);
 

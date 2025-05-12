@@ -37,8 +37,8 @@ unordered_map<int, Display::Core> extract_core_data(const json &config) {
     for (const auto &core_json : config["chips"][0]["cores"]) {
         Display::Core core;
         core.id = core_json["id"];
-        core.x = core_id % gridX; // X 坐标
-        core.y = core_id / gridX; // Y 坐标
+        core.x = core.id % gridX; // X 坐标
+        core.y = core.id / gridX; // Y 坐标
 
         // 提取每个 core 的 dest 信息
         if (!core_json.contains("worklist")) {

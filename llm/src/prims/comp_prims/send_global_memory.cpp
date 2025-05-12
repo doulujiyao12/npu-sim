@@ -58,12 +58,7 @@ int Send_global_memory::task_core(TaskCoreContext &context) {
     // Dispatch the transaction via the DRAM interface
     sc_core::sc_time delay = sc_core::SC_ZERO_TIME;
     context.nb_global_memif->socket->b_transport(trans, delay);
-//  [yicheng] 要修改
-// #if USE_NB_DRAMSYS == 0
-//     context.wc->isocket->b_transport(trans, delay);
-// #else
-//     context.nb_dcache->socket->b_transport(trans, delay);
-// #endif
+
 
     // Return the simulated write latency in nanoseconds
     return static_cast<int>(delay.to_seconds() * 1e9);

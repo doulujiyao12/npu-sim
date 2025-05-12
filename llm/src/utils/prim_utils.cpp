@@ -106,6 +106,8 @@ prim_base *new_prim(string type) {
         prim = new matmul_forward_pd();
     else if (type == "Send_global_memory")
         prim = new Send_global_memory();
+    else if (type == "Recv_global_memory")
+        prim = new Recv_global_memory();
     else {
         cout << "Parse config prim: Not Implemented.\n";
 

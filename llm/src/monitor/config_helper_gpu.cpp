@@ -149,7 +149,8 @@ void config_helper_gpu::calculate_address(bool do_loop) {}
 
 void config_helper_gpu::fill_queue_start(queue<Msg> *q) {
     cout << "GPU fill start queue, phase " << gpu_index << "\n";
-    int sms = ((gpu_base *)streams[0].prims[gpu_index])->req_sm;
+    int sms = ((gpu_base *)(streams[0].prims[gpu_index]))->req_sm;
+    cout << "her1e\n";
 
     for (auto stream : streams) {
         for (auto source : stream.sources) {
@@ -157,6 +158,7 @@ void config_helper_gpu::fill_queue_start(queue<Msg> *q) {
             gpu_pos_locator->addPair(source.first + "#1", source_key);
         }
     }
+    cout << "here\n";
 
     for (int i = 0; i < min(sms, GRID_SIZE); i++) {
         auto config = coreconfigs[i];

@@ -9,6 +9,10 @@
 batch.sh
 
 /build/*
+/doc/build
+/doc/make.bat
+/doc/Makefile
 
 !**/CMakeLists.txt
 !CMakeLists.txt
+!/doc/requirements.txt

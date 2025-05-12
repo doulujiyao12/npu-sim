@@ -142,7 +142,7 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
                 datapass_label.indata[0].substr(space_pos + 1);
         }
 
-        printf("[INFO] Layernorm_f: read from dram, label: %s\n",
+        printf("[INFO] core %d, Layernorm_f: read from dram, label: %s\n", cid,
                datapass_label.indata[0].c_str());
 
         AddrPosKey inp_key =
@@ -152,11 +152,12 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
     } else {
         AddrPosKey inp_key;
         int flag = sram_pos_locator->findPair(datapass_label.indata[0],
-                                               inp_sram_offset);
+                                              inp_sram_offset);
         if (flag == -1) {
-            printf("[ERROR] Layernorm_f: sram_pos_locator cannot find the "
+            printf("[ERROR] core %d, Layernorm_f: sram_pos_locator cannot find "
+                   "the "
                    "label: %s\n",
-                   datapass_label.indata[0].c_str());
+                   cid, datapass_label.indata[0].c_str());
             sc_stop();
         } else if (flag > 0) {
             sram_first_write_generic(context, flag, inp_global_addr, dram_time,
@@ -211,7 +212,7 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
         sram_pos_locator->addPair(label_bias, b_key, context, dram_time);
     }
 
-    printf("layernorm_forward: dram time 1: %ld\n", dram_time);
+    printf("core %d, layernorm_forward: dram time 1: %ld\n", cid, dram_time);
 
     // 简化读出所有数据即可
     int w_sram_offset, b_sram_offset;
@@ -230,7 +231,7 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
         sram_pos_locator->deletePair(datapass_label.indata[0]);
     }
 
-    printf("layernorm_forward: dram time 2: %ld\n", dram_time);
+    printf("core %d, layernorm_forward: dram time 2: %ld\n", cid, dram_time);
 #else
     // CTODO: do dram only
 #endif
@@ -269,12 +270,13 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
     // label kv in sram locator
     AddrPosKey out_key = AddrPosKey(*sram_addr, data_byte * data_size_out);
     sram_pos_locator->addPair(datapass_label.outdata, out_key, context,
-                              dram_time);
+                              overlap_time);
     sram_write_append_generic(context, data_byte * data_size_out, overlap_time);
 #else
     // CTODO: do dram only
 #endif
-    printf("layernorm_forward: overlap_time: %ld\n", overlap_time);
+    printf("core %d, layernorm_forward: overlap_time: %ld\n", cid,
+           overlap_time);
     return overlap_time;
 }
 int Layernorm_f::task() {

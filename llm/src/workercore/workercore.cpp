@@ -7,6 +7,7 @@
 
 #include "defs/const.h"
 #include "defs/global.h"
+#include "link/nb_global_memif_v2.h"
 #include "memory/dram/GPUNB_DcacheIF.h"
 #include "memory/gpu/GPU_L1L2_Cache.h"
 #include "memory/sram/Mem_access_unit.h"
@@ -21,7 +22,6 @@
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 #include "workercore/workercore.h"
-#include "link/nb_global_memif_v2.h"
 
 using namespace std;
 
@@ -126,8 +126,9 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
     nb_dcache_socket =
         new NB_DcacheIF(sc_gen_unique_name("nb_dcache"), start_nb_dram_event,
                         end_nb_dram_event, event_engine);
-    // nb_global_mem_socket = 
-    //     new NB_GlobalMemIF(sc_gen_unique_name("nb_global_mem"), start_global_mem_event, 
+    // nb_global_mem_socket =
+    //     new NB_GlobalMemIF(sc_gen_unique_name("nb_global_mem"),
+    //     start_global_mem_event,
     //         end_global_mem_event, event_engine);
 #else
     dcache_socket = new DcacheCore(sc_gen_unique_name("dcache"), event_engine);
@@ -148,10 +149,10 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
         sc_gen_unique_name("high_bw_mem_access_unit"), event_engine);
 }
 
-void WorkerCoreExecutor::init_global_mem(){
-    nb_global_mem_socket = 
-        new NB_GlobalMemIF(sc_gen_unique_name("nb_global_mem"), start_global_mem_event, 
-            end_global_mem_event, event_engine);
+void WorkerCoreExecutor::init_global_mem() {
+    nb_global_mem_socket = new NB_GlobalMemIF(
+        sc_gen_unique_name("nb_global_mem"), start_global_mem_event,
+        end_global_mem_event, event_engine);
 }
 
 void WorkerCoreExecutor::end_of_elaboration() {
@@ -392,9 +393,9 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     case 0x20:
         task = new Send_global_memory();
         break;
-    // case 0x21:
-    //     task = new Recv_global_memory();
-    //     break;
+    case 0x21:
+        task = new Recv_global_memory();
+        break;
     default:
         assert(0 && "Unknown prim");
         cout << "Unknown prim: " << type << ".\n";
@@ -962,8 +963,7 @@ void WorkerCoreExecutor::recv_logic() {
                         int des = ack_queue.front();
                         ack_queue.pop();
 
-                        send_buffer =
-                            Msg(MSG_TYPE::ACK, des, prim->tag_id, cid);
+                        send_buffer = Msg(MSG_TYPE::ACK, des, des, cid);
 
                         ev_send_helper.notify(0, SC_NS);
                         cout << "Core " << cid << " sent ACK to " << des
@@ -1015,6 +1015,9 @@ void WorkerCoreExecutor::recv_logic() {
 
                     if (has_msg) {
                         recv_cnt++;
+
+                        // cout << "Core " << cid << " recv DATA seq " <<
+                        // temp.seq_id << endl;
 
                         if (temp.msg_type != MSG_TYPE::P_DATA) {
                             if (temp.seq_id == 1 &&
@@ -1101,8 +1104,8 @@ void WorkerCoreExecutor::recv_logic() {
                     buffer_i.pop();
                     prim_queue.emplace_back(parse_prim(m.data));
 
-                    cout << sc_time_stamp() << ": Worker " << cid
-                         << ": recv config " << m.seq_id << endl;
+                    // cout << sc_time_stamp() << ": Worker " << cid
+                    //      << ": recv config " << m.seq_id << endl;
 
                     // 检查是否为end config包，如果是，需要向host发送ack包
                     if (m.is_end) {
@@ -1366,8 +1369,10 @@ bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status) {
 // 只要data_sent_o = true 就能发送
 void WorkerCoreExecutor::send_helper() {
     while (true) {
-        // if (cid <= 1) cout << sc_time_stamp() << ": core " << cid << "
-        // send_helper switch " << send_helper_write << endl; 负责发送一个包
+        // if (send_helper_write > 0)
+        //     cout << sc_time_stamp() << ": core " << cid << "send_helper
+        //     switch "
+        //          << send_helper_write << endl;
 
         if (send_helper_write >= 2) {
             channel_o.write(serialize_msg(send_buffer));

@@ -141,7 +141,7 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
     cout << "Loading config file " << filename << endl;
     json j;
     // cout << "Loading config file3 " << filename << endl;
-    // plot_dataflow(filename, font_ttf);
+    plot_dataflow(filename, font_ttf);
     // cout << "Loading config file2 " << filename << endl;
     ifstream jfile(filename);
     jfile >> j;
@@ -313,7 +313,6 @@ void config_helper_core::generate_prims(int i) {
 
         // [传输global memory的原语]
         if (c->send_global_mem != -1){
-            std::cout << "[Global Mem]: add send_global_memory prim" << std::endl;
             work.prims_in_loop.push_back(new Send_global_memory());
         }
 
@@ -366,7 +365,6 @@ void config_helper_core::generate_prims(int i) {
         }
 
         if (c->send_global_mem != -1){
-            std::cout << "[Global Mem]: add send_global_memory prim 2" << std::endl;
             work.prims_last_loop.push_back(new Send_global_memory());
         }
 
@@ -479,6 +477,26 @@ void config_helper_core::calculate_address(bool do_loop) {
 
                     index++;
                 }
+                else if(typeid(*prim) == typeid(Send_global_memory)){
+                    int weight = 1; //先假设是-1
+                    Send_global_memory *g = (Send_global_memory *)prim;
+                    g->type = GLOBAL_SEND_DATA;
+                    g->des_id = coreconfigs[i].send_global_mem;
+                    int slice_size = (output_size % weight)
+                        ? (output_size / weight + 1)
+                        : (output_size / weight);
+                    int slice_size_in_bit = slice_size * sizeof(float);
+                    int pkg_nums = (slice_size_in_bit % M_D_DATA)
+                                       ? (slice_size_in_bit / M_D_DATA + 1)
+                                       : (slice_size_in_bit / M_D_DATA);
+                    int end_length = slice_size_in_bit - (pkg_nums - 1) * M_D_DATA;
+                    g->local_offset = output_offset;
+                    g->max_packet = pkg_nums;
+                    g->end_length = end_length;
+                    g->des_offset = delta_offset[g->des_id];
+                    delta_offset[g->des_id] += slice_size;
+                    g->tag_id = 0;
+                }
             }
         }
     }
@@ -549,4 +567,4 @@ void config_helper_core::fill_queue_start(queue<Msg> *q) {
             seq_index++;
         }
     }
-}
+}   

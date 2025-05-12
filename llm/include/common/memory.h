@@ -110,7 +110,7 @@ public:
 class GpuPosLocator { // 一个系统维护一个
 public:
     std::unordered_map<std::string, AddrPosKey> data_map;
-    int addr_top;
+    int addr_top = 1024;
 
     GpuPosLocator() { addr_top = 1024; }
 
