@@ -11,7 +11,7 @@ public:
     int tag;
     int weight;
     int addr;
-    bool critical;
+    bool critical; // 用于绘制数据流图
     LOOP_TYPE loopout;
 
     Cast() {}
@@ -36,12 +36,10 @@ public:
     vector<prim_base *> prims_last_loop;
     vector<prim_base *> prims_in_loop;
 
-    int loop;
-
     void print_self();
     CoreJob() {}
     CoreJob(int recv_cnt, int recv_tag, int loop)
-        : recv_cnt(recv_cnt), recv_tag(recv_tag), loop(loop) {
+        : recv_cnt(recv_cnt), recv_tag(recv_tag) {
         Cast new_cast;
         new_cast.dest = -1;
         cast.push_back(new_cast);
@@ -54,13 +52,10 @@ void from_json(const json &j, CoreJob &c);
 class CoreConfig {
 public:
     int id;
-
-    bool prim_refill; // 是否通过原语重填的方式实现循环
     int prim_copy;    // 是否需要复制其他核的计算原语
     int send_global_mem; //是否需要将计算结果发送给Global Mem
 
-    int loop;
-    int repeat;
+    int loop; // 用于指定所有CoreJob需要重复执行的次数
 
     vector<CoreJob> worklist;
 

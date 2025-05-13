@@ -750,16 +750,14 @@ void gpu_write_generic(TaskCoreContext &context, uint64_t global_addr,
     cout << "start gpu_nbdram: " << sc_time_stamp().to_string() << " id "
          << gpunb_dcache_if->id << endl;
 #endif
-    // cout << "dahudahu" <<endl;
     gpunb_dcache_if->reconfigure(inp_global_addr, cache_count, cache_lines, 1);
-
     wait(*e_nbdram);
 #if GPU_CACHE_DEBUG == 1
 
     cout << "end gpu_nbdram: " << sc_time_stamp().to_string() << " id "
          << gpunb_dcache_if->id << endl;
 #endif
-
+cout << "dahudahu2" <<endl;
 
 #if USE_NB_DRAMSYS
     sc_time end_first_write_time = sc_time_stamp();
@@ -769,3 +767,46 @@ void gpu_write_generic(TaskCoreContext &context, uint64_t global_addr,
 #endif
 }
 #endif
+
+TaskCoreContext generate_context(WorkerCoreExecutor *workercore) {
+    sc_bv<SRAM_BITWIDTH> msg_data;
+
+#if USE_NB_DRAMSYS == 1
+    NB_DcacheIF *nb_dcache =
+        workercore->nb_dcache_socket; // 实例化或获取 NB_DcacheIF 对象
+#else
+
+    DcacheCore *wc = this->dcache_socket; // 实例化或获取 DcacheCore 对象
+#endif
+    sc_event *end_nb_gpu_dram_event =
+        workercore->end_nb_gpu_dram_event; // 实例化或获取 end_nb_gpu_dram_event
+                                           // 对象
+    sc_event *start_nb_gpu_dram_event =
+        workercore->start_nb_gpu_dram_event; // 实例化或获取
+                                             // start_nb_gpu_dram_event 对象
+    sc_event *s_nbdram =
+        workercore
+            ->start_nb_dram_event; // 实例化或获取 start_nb_dram_event 对象
+    sc_event *e_nbdram =
+        workercore->end_nb_dram_event; // 实例化或获取 end_nb_dram_event 对象
+    mem_access_unit *mau =
+        workercore->mem_access_port; // 实例化或获取 mem_access_unit 对象
+    high_bw_mem_access_unit *hmau =
+        workercore->high_bw_mem_access_port; // 实例化或获取
+                                             // high_bw_mem_access_unit 对象
+#if USE_L1L2_CACHE == 1
+    // 创建类实例
+    TaskCoreContext context(mau, hmau, msg_data, workercore->sram_addr,
+                            s_nbdram, e_nbdram, nb_dcache, workercore->loop_cnt,
+                            start_nb_gpu_dram_event, end_nb_gpu_dram_event);
+#elif USE_NB_DRAMSYS == 1
+    TaskCoreContext context(mau, hmau, msg_data, workercore->sram_addr,
+                            s_nbdram, e_nbdram, nb_dcache,
+                            workercore->loop_cnt);
+#else
+        TaskCoreContext context(mau, hmau, msg_data, workercore->sram_addr,
+                                s_nbdram, e_nbdram, workercore->loop_cnt);
+#endif
+
+    return context;
+}

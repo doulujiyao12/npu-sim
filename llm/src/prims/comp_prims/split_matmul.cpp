@@ -27,16 +27,6 @@ void Split_matmul::parse_json(json j) {
     out_size = B * T * C;
     p_inp_size = inp_size;
 
-    if (dim == 1) {
-        out_dim.push_back(B);
-        out_dim.push_back(T / slice);
-        out_dim.push_back(C);
-    } else if (dim == 2) {
-        out_dim.push_back(B);
-        out_dim.push_back(T);
-        out_dim.push_back(C);
-    }
-
     if (j.contains("dram_address")) {
         parse_address(j["dram_address"]);
     }
@@ -52,16 +42,6 @@ void Split_matmul::parse_matmul(Matmul_f *p) {
     inp_size = B * T * C;
     out_size = B * T * C;
     p_inp_size = inp_size;
-
-    if (dim == 1) {
-        out_dim.push_back(B);
-        out_dim.push_back(T);
-        out_dim.push_back(C);
-    } else if (dim == 2) {
-        out_dim.push_back(B);
-        out_dim.push_back(T);
-        out_dim.push_back(C / slice);
-    }
 }
 
 void Split_matmul::deserialize(sc_bv<128> buffer) {

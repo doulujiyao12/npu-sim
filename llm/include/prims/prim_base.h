@@ -13,10 +13,12 @@ using json = nlohmann::json;
 class prim_base {
 public:
     int cid;
+    PRIM_TYPE prim_type;
+    string name;
+
     bool use_hw;
     int sram_addr;
     DATATYPE datatype = INT8;
-    string name;
 
     virtual int task() = 0;
     // task_core hardware accuracy simulation
@@ -26,6 +28,9 @@ public:
     virtual void print_self(string prefix) = 0;
     virtual int sram_utilization(DATATYPE datatype) = 0;
 
-    prim_base() { name = "prim_base"; }
+    prim_base() {
+        name = "prim_base";
+        prim_type = NORM_PRIM;
+    }
     virtual ~prim_base() = default;
 };

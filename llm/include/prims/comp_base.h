@@ -15,8 +15,6 @@ public:
     int p_inp_size;
     int out_size;
 
-    vector<int> out_dim;
-
     // 用于dram和sram的数据搬运，以及原语之间的数据传递
     SramPosLocator *sram_pos_locator;
     AddrDatapassLabel datapass_label;
@@ -25,4 +23,6 @@ public:
 
     void parse_address(json j);
     void parse_sram_label(json j);
+
+    comp_base() { prim_type = COMP_PRIM; }
 };

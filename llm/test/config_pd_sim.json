@@ -5,7 +5,7 @@
     "C": 768,
     "NH": 12,
     "NH/2": 6,
-    "L": 12,
+    "L": 15,
     "3C": 2304,
     "4C": 3072,
     "BTC": 98304,
@@ -25,16 +25,10 @@
     "d_attention1_data": 1100,
     "d_attention1_out": 1200
   },
-  "sequential": true,
   "source": [
     {
       "dest": 0,
       "size": "BTC"
-    },
-    {
-      "dest": 3,
-      "size": "C",
-      "loop": "L"
     }
   ],
   "chips": [
@@ -45,7 +39,6 @@
       "cores": [
         {
           "id": 0,
-          "prim_refill": true,
           "worklist": [
             {
               "recv_cnt": 1,
@@ -454,23 +447,54 @@
             }
           ],
           "recv_cnt": 1,
-          "prim_refill": true,
           "prim_copy": 0
         },
         {
           "id": 2,
           "cast": [
             {
-              "dest": -1
+              "dest": 10
             }
           ],
           "recv_cnt": 1,
-          "prim_refill": true,
           "prim_copy": 0
         },
         {
+          "id": 10,
+          "cast": [
+            {
+              "dest": 3
+            }
+          ],
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 3
+                }
+              ],
+              "prims": [
+                {
+                  "type": "switch_data",
+                  "IN": "BTC",
+                  "OUT": "C",
+                  "sram_address": {
+                    "indata": "input_label",
+                    "outdata": "switch_out"
+                  },
+                  "dram_address": {
+                    "data": -1,
+                    "out": "switch_out"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
           "id": 3,
-          "prim_refill": true,
+          "loop": "L",
           "worklist": [
             {
               "recv_cnt": 1,
@@ -619,24 +643,29 @@
         },
         {
           "id": 4,
+          "loop": "L",
           "cast": [
             {
               "dest": 5
             }
           ],
           "recv_cnt": 1,
-          "prim_refill": true,
           "prim_copy": 3
         },
         {
           "id": 5,
+          "loop": "L",
           "cast": [
             {
-              "dest": -1
+              "dest": -1,
+              "loopout": "true"
+            },
+            {
+              "dest": 3,
+              "loopout": "false"
             }
           ],
           "recv_cnt": 1,
-          "prim_refill": true,
           "prim_copy": 3
         }
       ]

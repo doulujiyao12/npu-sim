@@ -29,11 +29,6 @@ void Conv_f::initialize() {
     out_size = B * oC * oH * oW;
     p_inp_size = B * C * H * W;
     inp_size = B * C * H * W + F * C * kX * kY + F;
-
-    out_dim.push_back(B);
-    out_dim.push_back(oC);
-    out_dim.push_back(oH);
-    out_dim.push_back(oW);
 }
 
 void Conv_f::parse_json(json j) {

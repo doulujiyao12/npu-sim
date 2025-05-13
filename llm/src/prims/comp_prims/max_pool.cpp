@@ -29,11 +29,6 @@ void Max_pool::initialize() {
     out_size = B * oC * oH * oW;
     p_inp_size = B * C * H * W;
     inp_size = B * C * H * W;
-
-    out_dim.push_back(B);
-    out_dim.push_back(oC);
-    out_dim.push_back(oH);
-    out_dim.push_back(oW);
 }
 
 void Max_pool::parse_json(json j) {
