@@ -68,11 +68,31 @@ void Matmul_f::parse_json(json j) {
     if (j.contains("dram_address")) {
         parse_address(j["dram_address"]);
     }
+    if (inp_offset == -1 && out_offset == -1 && data_offset == -1){
+
+        assert(0 && "no dram address found");    
+    }
+    // assert(0 && "no dram address found");
+
+    
+
+    if (inp_offset == -1 && data_offset != -1){
+        inp_offset = (data_offset * 1024 - B * T * C) / 1024;
+    }
+    if (out_offset == -1 && data_offset != -1){
+        out_offset = (data_offset * 1024 + OC * C + OC) / 1024;
+    }
+    // 添加以下三行以打印相关信息
+    cout << "\033[1;33m" << "matmul" << "\033[0m" << endl;
+    cout << "inp_offset: " << inp_offset << endl;
+    cout << "out_offset: " << out_offset << endl;
+    cout << "data_offset: " << data_offset << endl;
     
 
     if (j.contains("sram_address")) {
         parse_sram_label(j["sram_address"]);
     }
+    // assert(0 && "no dram address found");
 }
 
 int Matmul_f::sram_utilization(DATATYPE datatype) {

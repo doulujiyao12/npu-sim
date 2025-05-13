@@ -39,6 +39,10 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
         sc_gen_unique_name("ram_array"), 0, BANK_DEPTH, SIMU_READ_PORT,
         SIMU_WRITE_PORT, BANK_PORT_NUM + SRAM_BANKS, BANK_PORT_NUM,
         BANK_HIGH_READ_PORT_NUM, event_engine);
+    temp_ram_array = new DynamicBandwidthRamRow<sc_bv<SRAM_BITWIDTH>, SRAM_BANKS>(
+        sc_gen_unique_name("temp_ram_array"), 0, BANK_DEPTH_TMP, SIMU_READ_PORT,
+        SIMU_WRITE_PORT, BANK_PORT_NUM + SRAM_BANKS, BANK_PORT_NUM,
+        BANK_HIGH_READ_PORT_NUM, event_engine);
     executor = new WorkerCoreExecutor(sc_gen_unique_name("workercore-exec"),
                                       cid, this->event_engine);
     executor->systolic_config = systolic_config;
@@ -54,6 +58,10 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
     executor->mem_access_port->mem_read_port(*ram_array);
     executor->mem_access_port->mem_write_port(*ram_array);
     executor->high_bw_mem_access_port->mem_read_port(*ram_array);
+
+    executor->temp_mem_access_port->mem_read_port(*temp_ram_array);
+    executor->temp_mem_access_port->mem_write_port(*temp_ram_array);
+    executor->high_bw_temp_mem_access_port->mem_read_port(*temp_ram_array);
 
     systolic = new SystolicArray(sc_gen_unique_name("systolic-array"),
                                  this->event_engine, systolic_config);
@@ -71,6 +79,7 @@ WorkerCore::~WorkerCore() {
     delete systolic_config;
     delete other_config;
     delete ram_array;
+    delete temp_ram_array;
 }
 
 // workercore executor
@@ -147,6 +156,10 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
                                           event_engine);
     high_bw_mem_access_port = new high_bw_mem_access_unit(
         sc_gen_unique_name("high_bw_mem_access_unit"), event_engine);
+    temp_mem_access_port = new mem_access_unit(sc_gen_unique_name("temp_mem_access_unit"),
+                                            event_engine);
+    high_bw_temp_mem_access_port = new high_bw_mem_access_unit(
+        sc_gen_unique_name("high_bw_temp_mem_access_unit"), event_engine);
 }
 
 void WorkerCoreExecutor::init_global_mem() {
@@ -486,37 +499,16 @@ void WorkerCoreExecutor::send_logic() {
                     sc_bv<SRAM_BITWIDTH> msg_data_tmp;
                     // cout << sc_time_stamp() << ": Before Send Msg \n" ;
 
-#if USE_NB_DRAMSYS == 1
-                    NB_DcacheIF *nb_dcache =
-                        this->nb_dcache_socket; // 实例化或获取 NB_DcacheIF
-                                                // 对象
-#else
-                    DcacheCore *wc =
-                        this->dcache_socket; // 实例化或获取 DcacheCore 对象
-#endif
-                    sc_event *s_nbdram =
-                        this->start_nb_dram_event; // 实例化或获取
-                                                   // start_nb_dram_event 对象
-                    sc_event *e_nbdram =
-                        this->end_nb_dram_event; // 实例化或获取
-                                                 // end_nb_dram_event 对象
-                    mem_access_unit *mau =
-                        this->mem_access_port; // 实例化或获取 mem_access_unit
-                                               // 对象
-                    high_bw_mem_access_unit *hmau =
-                        this->high_bw_mem_access_port; // 实例化或获取
-                                                       // high_bw_mem_access_unit
-                                                       // 对象
                     sc_bv<SRAM_BITWIDTH> msg_data =
                         msg_data_tmp; // 初始化 msg_data
                                       // int* sram_addr = this->sram_addr;
 #if USE_NB_DRAMSYS == 1
                     // 创建类实例
-                    TaskCoreContext context(mau, hmau, msg_data, sram_addr,
-                                            s_nbdram, e_nbdram, nb_dcache);
+                    TaskCoreContext context(this->mem_access_port, this->high_bw_mem_access_port, this->temp_mem_access_port, this->high_bw_temp_mem_access_port, msg_data, sram_addr,
+                        this->start_nb_dram_event, this->end_nb_dram_event,  this->nb_dcache_socket);
 #else
-                    TaskCoreContext context(wc, mau, hmau, msg_data, sram_addr,
-                                            s_nbdram, e_nbdram);
+                    TaskCoreContext context(this->dcache_socket, this->mem_access_port, this->high_bw_mem_access_port, this->temp_mem_access_port, this->high_bw_temp_mem_access_port, msg_data, sram_addr,
+                        this->start_nb_dram_event, this->end_nb_dram_event);
 #endif
 
                     // std::cout << "msg_data (hex) before send: " <<
@@ -671,38 +663,17 @@ void WorkerCoreExecutor::send_para_logic() {
                         // DAHU
                         sc_bv<SRAM_BITWIDTH> msg_data_tmp;
 
-#if USE_NB_DRAMSYS == 1
-                        NB_DcacheIF *nb_dcache =
-                            this->nb_dcache_socket; // 实例化或获取
-                                                    // NB_DcacheIF 对象
-#else
-                        DcacheCore *wc =
-                            this->dcache_socket; // 实例化或获取 DcacheCore 对象
-#endif
-                        sc_event *s_nbdram =
-                            this->start_nb_dram_event; // 实例化或获取
-                                                       // start_nb_dram_event
-                                                       // 对象
-                        sc_event *e_nbdram =
-                            this->end_nb_dram_event; // 实例化或获取
-                                                     // end_nb_dram_event 对象
-                        mem_access_unit *mau =
-                            this->mem_access_port; // 实例化或获取
-                                                   // mem_access_unit 对象
-                        high_bw_mem_access_unit *hmau =
-                            this->high_bw_mem_access_port; // 实例化或获取
-                                                           // high_bw_mem_access_unit
-                                                           // 对象
+
                         sc_bv<SRAM_BITWIDTH> msg_data =
                             msg_data_tmp; // 初始化 msg_data
                                           // int* sram_addr = this->sram_addr;
 #if USE_NB_DRAMSYS == 1
                         // 创建类实例
-                        TaskCoreContext context(mau, hmau, msg_data, sram_addr,
-                                                s_nbdram, e_nbdram, nb_dcache);
+                        TaskCoreContext context(this->mem_access_port, this->high_bw_mem_access_port, this->temp_mem_access_port, this->high_bw_temp_mem_access_port,msg_data, sram_addr,
+                            this->start_nb_dram_event, this->end_nb_dram_event, this->nb_dcache_socket);
 #else
-                        TaskCoreContext context(wc, mau, hmau, msg_data,
-                                                sram_addr, s_nbdram, e_nbdram);
+                        TaskCoreContext context(this->dcache_socket, this->mem_access_port, this->high_bw_mem_access_port, msg_data,
+                                                sram_addr, this->start_nb_dram_event, this->end_nb_dram_event);
 #endif
 
                         delay = prim->task_core(context);
@@ -996,14 +967,17 @@ void WorkerCoreExecutor::recv_logic() {
 
 #if USE_NB_DRAMSYS == 1
                     TaskCoreContext context(
-                        mem_access_port, high_bw_mem_access_port, msg_data_tmp,
-                        sram_addr, start_nb_dram_event, end_nb_dram_event,
-                        nb_dcache_socket);
+                        this->mem_access_port, this->high_bw_mem_access_port, 
+                        this->temp_mem_access_port, this->high_bw_temp_mem_access_port,
+                        msg_data_tmp,
+                        this->sram_addr, this->start_nb_dram_event, this->end_nb_dram_event,
+                        this->nb_dcache_socket);
 #else
                     TaskCoreContext context(
-                        dcache_socket, mem_access_port, high_bw_mem_access_port,
-                        msg_data_tmp, sram_addr, start_nb_dram_event,
-                        end_nb_dram_event);
+                        this->dcache_socket, this->mem_access_port, this->high_bw_mem_access_port,
+                        this->temp_mem_access_port, this->high_bw_temp_mem_access_port,
+                        msg_data_tmp, this->sram_addr, this->start_nb_dram_event,
+                        this->end_nb_dram_event);
 #endif
 
                     if (has_msg) {
@@ -1135,42 +1109,48 @@ void WorkerCoreExecutor::task_logic() {
         int delay = 0;
         sc_bv<SRAM_BITWIDTH> msg_data_tmp;
 
-#if USE_NB_DRAMSYS == 1
-        NB_DcacheIF *nb_dcache =
-            this->nb_dcache_socket; // 实例化或获取 NB_DcacheIF 对象
-#else
+// #if USE_NB_DRAMSYS == 1
+//         NB_DcacheIF *nb_dcache =
+//             this->nb_dcache_socket; // 实例化或获取 NB_DcacheIF 对象
+// #else
 
-        DcacheCore *wc = this->dcache_socket; // 实例化或获取 DcacheCore 对象
-#endif
-        sc_event *end_nb_gpu_dram_event =
-            this->end_nb_gpu_dram_event; // 实例化或获取 end_nb_gpu_dram_event
-                                         // 对象
-        sc_event *start_nb_gpu_dram_event =
-            this->start_nb_gpu_dram_event; // 实例化或获取
-                                           // start_nb_gpu_dram_event 对象
-        sc_event *s_nbdram =
-            this->start_nb_dram_event; // 实例化或获取 start_nb_dram_event 对象
-        sc_event *e_nbdram =
-            this->end_nb_dram_event; // 实例化或获取 end_nb_dram_event 对象
-        mem_access_unit *mau =
-            this->mem_access_port; // 实例化或获取 mem_access_unit 对象
-        high_bw_mem_access_unit *hmau =
-            this->high_bw_mem_access_port; // 实例化或获取
-                                           // high_bw_mem_access_unit 对象
+//         DcacheCore *wc = this->dcache_socket; // 实例化或获取 DcacheCore 对象
+// #endif
+//         sc_event *end_nb_gpu_dram_event =
+//             this->end_nb_gpu_dram_event; // 实例化或获取 end_nb_gpu_dram_event
+//                                          // 对象
+//         sc_event *start_nb_gpu_dram_event =
+//             this->start_nb_gpu_dram_event; // 实例化或获取
+//                                            // start_nb_gpu_dram_event 对象
+//         sc_event *s_nbdram =
+//             this->start_nb_dram_event; // 实例化或获取 start_nb_dram_event 对象
+//         sc_event *e_nbdram =
+//             this->end_nb_dram_event; // 实例化或获取 end_nb_dram_event 对象
+//         mem_access_unit *mau =
+//             this->mem_access_port; // 实例化或获取 mem_access_unit 对象
+//         high_bw_mem_access_unit *hmau =
+//             this->high_bw_mem_access_port; // 实例化或获取
+//                                            // high_bw_mem_access_unit 对象
         sc_bv<SRAM_BITWIDTH> msg_data =
             msg_data_tmp; // 初始化 msg_data
                           // int* sram_addr = &(p->sram_addr);
 #if USE_L1L2_CACHE == 1
         // 创建类实例
-        TaskCoreContext context(mau, hmau, msg_data, sram_addr, s_nbdram,
-                                e_nbdram, nb_dcache, loop_cnt,
-                                start_nb_gpu_dram_event, end_nb_gpu_dram_event);
+        TaskCoreContext context(this->mem_access_port, this->high_bw_mem_access_port, 
+            this->temp_mem_access_port, this->high_bw_temp_mem_access_port,
+            msg_data, sram_addr, this->start_nb_dram_event,
+            this->end_nb_dram_event, this->nb_dcache_socket, loop_cnt,
+                                this->start_nb_gpu_dram_event, this->end_nb_gpu_dram_event);
 #elif USE_NB_DRAMSYS == 1
-        TaskCoreContext context(mau, hmau, msg_data, sram_addr, s_nbdram,
-                                e_nbdram, nb_dcache, loop_cnt);
+        TaskCoreContext context(this->mem_access_port, this->high_bw_mem_access_port, 
+            this->temp_mem_access_port, this->high_bw_temp_mem_access_port,
+            msg_data, sram_addr, this->start_nb_dram_event,
+            this->end_nb_dram_event, this->nb_dcache_socket, loop_cnt);
 #else
-        TaskCoreContext context(mau, hmau, msg_data, sram_addr, s_nbdram,
-                                e_nbdram, loop_cnt);
+        TaskCoreContext context(this->dcache_socket, this->mem_access_port, this->high_bw_mem_access_port, 
+            this->temp_mem_access_port, this->high_bw_temp_mem_access_port,
+            msg_data,
+            sram_addr, this->start_nb_dram_event, this->end_nb_dram_event);
 #endif
 
         if (!p->use_hw || typeid(*p) != typeid(Matmul_f)) {
@@ -1394,6 +1374,8 @@ WorkerCoreExecutor::~WorkerCoreExecutor() {
 #endif
     delete mem_access_port;
     delete high_bw_mem_access_port;
+    delete temp_mem_access_port;
+    delete high_bw_temp_mem_access_port;
     delete start_nb_dram_event;
     delete end_nb_dram_event;
 }

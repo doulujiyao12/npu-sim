@@ -67,7 +67,8 @@ vars : dict
 
   
   .. note::
-     如果配置 sram 的地址的话，需要 1024 BYTE 对齐，除以  1024 取整。
+     如果配置 sram 的地址的话，需要 1024 个元素对齐，即所需要的数据量除以1024（这里不会乘上每个数据的BYTE数，或默认为INT8存储所需要的地址偏移）。
+     这样的设计可以避免数据类型变化对地址索引的影响。
 
 
 source : list of dicts
@@ -596,3 +597,7 @@ core 配置
 
             - out : string or int, optional
                 默认为 0。此原语输出在 DRAM 中的位置。
+
+            <div class="custom-todo">
+                    spill back 的 dram 地址现在都是inp_address。
+            </div>

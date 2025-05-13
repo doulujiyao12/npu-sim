@@ -33,6 +33,7 @@ public:
     // SIMU_READ_PORT, SIMU_WRITE_PORT, BANK_PORT_NUM + SRAM_BANKS,
     // BANK_PORT_NUM, BANK_HIGH_READ_PORT_NUM, event_engine);
     DynamicBandwidthRamRow<sc_bv<SRAM_BITWIDTH>, SRAM_BANKS> *ram_array;
+    DynamicBandwidthRamRow<sc_bv<SRAM_BITWIDTH>, SRAM_BANKS> *temp_ram_array;
 
     HardwareTaskConfig *systolic_config;
     HardwareTaskConfig *other_config;
@@ -138,6 +139,8 @@ public:
 #endif
     mem_access_unit *mem_access_port;
     high_bw_mem_access_unit *high_bw_mem_access_port;
+    mem_access_unit *temp_mem_access_port;
+    high_bw_mem_access_unit *high_bw_temp_mem_access_port;
 
     // sram相关
     int *sram_addr;                    // 用于记录当前sram可分配的起始地址

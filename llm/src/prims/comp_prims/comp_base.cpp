@@ -13,7 +13,7 @@ void comp_base::parse_address(json j) {
         else
             inp_offset = find_var(j["input"]);
     } else
-        inp_offset = 0;
+        inp_offset = -1;
 
     if (j.contains("data")) {
         const auto &dataVal = j["data"];
@@ -22,7 +22,7 @@ void comp_base::parse_address(json j) {
         else
             data_offset = find_var(j["data"]);
     } else
-        data_offset = 0;
+        data_offset = -1;
 
     if (j.contains("out")) {
         const auto &outputVal = j["out"];
@@ -31,7 +31,7 @@ void comp_base::parse_address(json j) {
         else
             out_offset = find_var(j["out"]);
     } else
-        out_offset = 0;
+        out_offset = -1;
 }
 
 void comp_base::parse_sram_label(json j) {
