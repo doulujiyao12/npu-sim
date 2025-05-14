@@ -91,9 +91,9 @@ void RouterUnit::router_execute() {
         for (int i = 0; i < DIRECTIONS; i++) {
             if (data_sent_i[i].read()) {
                 // move the data into the buffer
-                // if (rid >= 20)
-                //     cout << sc_time_stamp() << ": Router " << rid << ": get
-                //     data at " << i << "\n";
+                // if (rid == 1)
+                //     cout << sc_time_stamp() << ": Router " << rid << "getdata
+                //     at " << i << "\n";
                 sc_bv<256> temp = channel_i[i].read();
 
                 buffer_i[i].emplace(temp);

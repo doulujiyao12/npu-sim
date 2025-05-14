@@ -24,10 +24,6 @@ void Matmul_f_prefill::initialize() {
     out_size = B * T * OC;
     p_inp_size = B * T * C;
     inp_size = B * T * C + OC * C + OC;
-
-    out_dim.push_back(B);
-    out_dim.push_back(T);
-    out_dim.push_back(OC);
 }
 
 HardwareTaskConfig *Matmul_f_prefill::generate_hw_config() {

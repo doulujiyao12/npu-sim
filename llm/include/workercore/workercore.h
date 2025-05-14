@@ -75,8 +75,20 @@ public:
                            // data的buffer，和普通的recv_buffer作区分。这么做主要是因为host发送给core时没有握手信号。
     queue<Msg> ack_buffer;
 
+    // 收到数据包之后，触发此event
+    sc_event ev_recv_ack;
+    sc_event ev_recv_request;
+    sc_event ev_recv_start_data;
+    sc_event ev_recv_data;
+    sc_event ev_recv_prepare_data;
+    sc_event ev_recv_config;
+    sc_event ev_prim_recv_notice; // 当执行recv_data时触发
+    sc_event ev_next_write_clear; // 当write_helper写完一次之后在下一个时钟周期触发
+
     bool send_done; // 并行策略：send和recv并行
     bool send_last_packet;
+    sc_event ev_send_last_packet; // send和recv并行，只有在comp执行完毕之后，send才能发送最后一个数据包。
+
     bool comp_done;                     // 并行策略：comp和send并行
     deque<prim_base *> prim_queue;      // 用于存储所有需要依次执行的原语
     queue<prim_base *> send_para_queue; // 并行策略：send和recv并行
@@ -114,10 +126,12 @@ public:
 
     // 告知数据已经发送，通道使能信号
     sc_in<bool> data_sent_i;
+    sc_event ev_data_sent_i;
     sc_out<bool> data_sent_o;
 
     // 通道未满的握手信号
     sc_in<bool> channel_avail_i;
+    sc_event ev_channel_avail_i; // 当channel_avail_i的电平由低改为高，则触发这个event
 
     Event_engine *event_engine;
     
@@ -158,6 +172,10 @@ public:
 
     void init_global_mem();
 
+    void catch_channel_avail_i(); 
+    void catch_data_sent_i(); 
+    void next_write_clear();      
+
     void worker_core_execute();
     void switch_prim_block();
     void poll_buffer_i(); // 每个时钟周期，将发送进core的数据包统一转移到input
@@ -167,6 +185,7 @@ public:
     void send_para_logic();
     void recv_logic();
     void task_logic();
+    void req_logic();
 
     void send_helper(); // 同时在send和recv中被调用
     void call_systolic_array();

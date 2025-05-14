@@ -20,8 +20,6 @@ void Residual_f::initialize() {
     out_size = N;
     p_inp_size = 2 * N;
     inp_size = 2 * N;
-
-    out_dim.push_back(N);
 }
 
 void Residual_f::parse_json(json j) {

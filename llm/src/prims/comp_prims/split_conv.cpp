@@ -36,11 +36,6 @@ void Split_conv::parse_conv(Conv_f *p) {
     new_H = (pH - 1) * S + K;
 
     out_size = B * C * new_H * (W + 2 * pX) * slice;
-
-    out_dim.push_back(B);
-    out_dim.push_back(C);
-    out_dim.push_back(new_H);
-    out_dim.push_back(W + 2 * pX);
 }
 
 void Split_conv::deserialize(sc_bv<128> buffer) {

@@ -19,8 +19,6 @@ void Relu_f::initialize() {
     out_size = N;
     p_inp_size = N;
     inp_size = N;
-
-    out_dim.push_back(N);
 }
 
 void Relu_f::parse_json(json j) {

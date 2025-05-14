@@ -19,10 +19,9 @@ void CoreJob::print_self() {
 
 void CoreConfig::print_self() {
     cout << "Core id: " << id << endl;
-    cout << "\tprim_refill: " << (prim_refill ? "true" : "false") << endl;
     cout << "\tprim_copy: " << prim_copy << endl;
     cout << "\tsend_global_mem: " << send_global_mem << endl;
-    cout << "\tloop & repeat: " << loop << " " << repeat << endl;
+    cout << "\tloop: " <<  " " << loop << endl;
     for (auto work : worklist) {
         work.print_self();
     }
@@ -99,22 +98,10 @@ void from_json(const json &j, CoreJob &c) {
             c.prims.push_back((prim_base *)p);
         }
     }
-
-    if (j.contains("loop")) {
-        c.loop = find_var(j["loop"]);
-    } else {
-        c.loop = 1;
-    }
 }
 
 void from_json(const json &j, CoreConfig &c) {
     j.at("id").get_to(c.id);
-
-    if (j.contains("prim_refill")) {
-        j.at("prim_refill").get_to(c.prim_refill);
-    } else {
-        c.prim_refill = false;
-    }
 
     if (j.contains("prim_copy")) {
         j.at("prim_copy").get_to(c.prim_copy);
@@ -128,10 +115,10 @@ void from_json(const json &j, CoreConfig &c) {
         c.send_global_mem = -1;
     }
 
-    if (j.contains("repeat")) {
-        c.repeat = find_var(j["repeat"]);
+    if (j.contains("loop")) {
+        c.loop = find_var(j["loop"]);
     } else {
-        c.repeat = 1;
+        c.loop = 1;
     }
 
     if (j.contains("worklist")) {

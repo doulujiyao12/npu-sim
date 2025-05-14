@@ -1,0 +1,502 @@
+[33mcommit 3ef8c410a800253840835ce364bd4fe006a63ee1[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m)[m
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Mon May 12 10:34:12 2025 +0800
+
+    revise
+
+[33mcommit 8663593176e7b621853543b0d6c7d0fd06acfcf9[m
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Mon May 12 10:33:59 2025 +0800
+
+    revise
+
+[33mcommit 96171929ed1c522c814024b42f6be14e20a5b768[m
+Merge: cf0aa24 5eca60a
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Mon May 12 10:22:01 2025 +0800
+
+    Merge branch 'master' of https://gitee.com/doulujiyao/npu-sim
+
+[33mcommit cf0aa248aabb79eed4d052efe42fd1903f40b70e[m
+Merge: c4c37af 1b40306
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Mon May 12 10:21:57 2025 +0800
+
+    add chip interface
+
+[33mcommit 5eca60ae668070d65eb2612caa70248d45a43221[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Sun May 11 23:23:35 2025 +0800
+
+    revise doc
+
+[33mcommit 437358dc43c4fd50bbb220d139caf8cc3c2fcfe7[m
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Sun May 11 00:10:46 2025 +0800
+
+    revise doc
+
+[33mcommit 6c797696026f48753fdd7862ebc2846c9ca59025[m
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Sat May 10 22:15:13 2025 +0800
+
+    revise doc
+
+[33mcommit c4c37af2065ea1d9b39e86aee07b7afe0c54a278[m
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Fri May 9 15:28:10 2025 +0800
+
+    add global mem
+
+[33mcommit 1b40306a50c474e3befd38c64356852bb094489a[m
+Merge: 152b630 fc826ef
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Fri May 9 11:56:44 2025 +0800
+
+    Merge branch 'master' of https://gitee.com/doulujiyao/npu-sim
+
+[33mcommit 152b6308ec952a31f7bbc95c647607819548819d[m
+Merge: 1e0709b 1a83631
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Fri May 9 11:56:25 2025 +0800
+
+    test: fix tests
+
+[33mcommit fc826ef2e3cb0531ba96d72d3ad5ff3f1f73a219[m
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Fri May 9 11:08:45 2025 +0800
+
+    doc
+
+[33mcommit cf34c39ed3c56248172639ac1a580e7606a22a15[m
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Fri May 9 10:28:23 2025 +0800
+
+    doc
+
+[33mcommit 48ce726f961293fca301d630f9aa8605dfe713a6[m
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Fri May 9 10:19:10 2025 +0800
+
+    doc
+
+[33mcommit 7b639dbdec5772e6a29947571182c7fdf2cd272f[m
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Fri May 9 10:16:58 2025 +0800
+
+    doc
+
+[33mcommit acaa5cc6e49ad47158532d798255c564fce0a5f1[m
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Fri May 9 09:15:32 2025 +0800
+
+    doc
+
+[33mcommit 0c58ed5b755c0fa765753e913c4cb8d8259386cd[m
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Fri May 9 00:06:48 2025 +0800
+
+    doc
+
+[33mcommit 4ac0f619fcf2dc661f2d219006e0156ef1c9c7f8[m
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Thu May 8 22:52:30 2025 +0800
+
+    minor
+
+[33mcommit 1e0709beded2eadf36cbbcea1e3b1d41c4653c56[m
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Tue May 6 14:38:05 2025 +0800
+
+    fix: bugs
+
+[33mcommit 1a83631360b7ebcfda83b041d9d7562ece3066e2[m
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Tue May 6 14:37:20 2025 +0800
+
+    fix nb_dcache
+
+[33mcommit 677e750ba41d31163399d0619e8593f842794570[m
+Merge: 16f1de3 1933e63
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Mon May 5 20:27:27 2025 +0800
+
+    Merge branch 'master' of https://gitee.com/doulujiyao/npu-sim
+
+[33mcommit 16f1de33d21eae1bb51656fb82f6bad0a44f87cb[m
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Mon May 5 20:27:07 2025 +0800
+
+    test: refine tests
+
+[33mcommit 1933e63aa95051d258690e0525b4af33fe3f07fe[m
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Sun May 4 23:01:27 2025 +0800
+
+    fix bugs
+
+[33mcommit c02be0cbb446b34dc00532f371f3cc4743530816[m
+Merge: e1ebb42 c59e75d
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Sun May 4 01:23:11 2025 +0800
+
+    Merge branch 'master' of https://gitee.com/doulujiyao/npu-sim
+
+[33mcommit e1ebb42a42e1c5441c1be3e01b8fee52ecb85d1d[m
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Sun May 4 01:20:23 2025 +0800
+
+    connect the tlm to chip
+
+[33mcommit 1ee54b84053f11baae4770e1a79ea0411a830bd2[m
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Sat May 3 23:48:46 2025 +0800
+
+    add nb_globalmemif
+
+[33mcommit c59e75de5676f1e0b4d0aac4e6c7adf380f768aa[m
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Sat May 3 13:29:33 2025 +0800
+
+    fix: schedule policy
+
+[33mcommit 2a8fe653d465fd42b03c2f555189908f4ab997c0[m
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Sat May 3 12:45:26 2025 +0800
+
+    feat: pd chunk prefill & iteration schedule
+
+[33mcommit 7abb1bd6fc5bdd78661becb4d38806ab5e012c60[m
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Sat May 3 03:26:29 2025 +0800
+
+    feat: pd sched(need fix)
+
+[33mcommit 5382f6fb63178415259d0e0d99073b45810a50d7[m
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Fri May 2 00:23:40 2025 +0800
+
+    feat: pd结合 + chunk prefill (原语未完成)
+
+[33mcommit e55a72d6e10084d73a60728a756ba9daee95ea5f[m
+Merge: 6434b88 9f3c247
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Thu May 1 13:20:11 2025 +0800
+
+    Merge branch 'master' of https://gitee.com/doulujiyao/npu-sim
+
+[33mcommit 6434b8855407b20248c35be5d3e5d06bfe5e5d18[m
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Thu May 1 13:20:09 2025 +0800
+
+    merge
+
+[33mcommit 9f3c2475f87dd647314a9f83f6747919671142de[m
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Thu May 1 00:16:01 2025 +0800
+
+    fix: multi driver signal + RECV_WEIGHT
+
+[33mcommit cb7f0b75ab4b168e9559956197d7795f74666504[m
+Merge: c0d3183 162670a
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Wed Apr 30 17:50:29 2025 +0800
+
+    Merge branch 'master' of https://gitee.com/doulujiyao/npu-sim
+
+[33mcommit c0d318310ecb8c508946e05b2cfbdd3232e4fcd1[m
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Wed Apr 30 17:50:24 2025 +0800
+
+    fix
+
+[33mcommit 162670af558395bee0da221a07e49d8cc1295257[m
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Wed Apr 30 17:13:45 2025 +0800
+
+    fix some bugs
+
+[33mcommit b0580efae1dbd90058bc85596c1250c97fa5c5ce[m
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Wed Apr 30 17:03:26 2025 +0800
+
+    add send global mem prim
+
+[33mcommit 69300da9d28b2c30120b7c909a2dd24032f8f105[m
+Merge: a963bc2 a90d212
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Wed Apr 30 16:50:39 2025 +0800
+
+    add tlm
+
+[33mcommit a963bc2ea2e855887a2246568b9901d9f8877324[m
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Wed Apr 30 16:43:07 2025 +0800
+
+    add tlm
+
+[33mcommit a90d212e6073d4d74124a07aef697bf0f27be20b[m
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Tue Apr 29 15:36:01 2025 +0800
+
+    feat: more on pd cmplex
+
+[33mcommit 4c5eed3d554ac2be68486a6c0e1892930dfa0689[m
+Merge: e80559e 094e346
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Mon Apr 28 22:09:46 2025 +0800
+
+    fix: merge
+
+[33mcommit e80559eea8d9373e34021d056a6aa57cf0706bc9[m
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Mon Apr 28 22:07:37 2025 +0800
+
+    feat: pd iteration scheduling (未完成)
+
+[33mcommit 094e346acf096bff81efd64def48f12dac26ecba[m
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Mon Apr 28 20:59:53 2025 +0800
+
+    fix mshr trans
+
+[33mcommit 13a79dc0493531aaf6b2a90590be79e5cfce08ec[m
+Merge: 0d5bc90 9236b85
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Sun Apr 27 23:36:32 2025 +0800
+
+    Merge branch 'master' of https://gitee.com/doulujiyao/npu-sim
+
+[33mcommit 9236b852199fd88d2ca50da32a869c228f7379b9[m
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Sun Apr 27 22:10:11 2025 +0800
+
+    fix: seg fault in att_f_gpu
+
+[33mcommit 0d5bc904ea5e36c8a986866ef6f5ac8bc2273de8[m
+Merge: 316290b ba45b1e
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Sun Apr 27 19:59:04 2025 +0800
+
+    Merge branch 'master' of https://gitee.com/doulujiyao/npu-sim
+
+[33mcommit ba45b1e3c71cabcd6e4a6308c7ff570c3ade750f[m
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Sun Apr 27 19:58:00 2025 +0800
+
+    64B aligned
+
+[33mcommit 316290b618ad3a64e813925fc4aac5c8d3256cdd[m
+Merge: ec023d1 8e79a35
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Sun Apr 27 19:47:12 2025 +0800
+
+    merge
+
+[33mcommit ec023d1314dd11217c0cd740b51500aea31295dd[m
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Sun Apr 27 19:46:16 2025 +0800
+
+    merge
+
+[33mcommit 8e79a35a538ff0f5e0fbe5a773e236c5fa6aa4e8[m
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Sun Apr 27 19:22:00 2025 +0800
+
+    fix: delete gpu.cpp
+
+[33mcommit 88dd24c39e1db2963ad8d51b8f22872ade415d98[m
+Merge: 661d173 4e9fb27
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Sun Apr 27 18:54:13 2025 +0800
+
+    fix: merge
+
+[33mcommit 661d17362353dfc5c1ca2b6929ad7e9ce428fce2[m
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Sun Apr 27 18:50:26 2025 +0800
+
+    feat: gpu mem system
+
+[33mcommit 4e9fb27d755aff81e89bae644b8874dfb7527590[m
+Merge: d0ea4b0 a317099
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Sat Apr 26 16:59:00 2025 +0800
+
+    fix: complete merge
+
+[33mcommit d0ea4b0ca000db356e57ca7a8c983121e18bfdae[m
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Sat Apr 26 16:57:50 2025 +0800
+
+    feat: req fix
+
+[33mcommit a3170996bef8a22665f8502ec6b0e508b999d2c9[m
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Mon Apr 21 23:30:03 2025 +0800
+
+    minor load config
+
+[33mcommit e81b7fc01a46cee500f033abbf04853da2337b82[m
+Merge: d2ea9af b082523
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Mon Apr 21 23:20:01 2025 +0800
+
+    Merge branch 'master' of https://gitee.com/doulujiyao/npu-sim
+
+[33mcommit d2ea9af1d6e381f420c1b5d7d31345b50eea7f28[m
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Mon Apr 21 23:18:21 2025 +0800
+
+    Merge branch 'master' of https://gitee.com/doulujiyao/npu-sim
+
+[33mcommit b082523602fdcbc22cab8d98fbb2e3e34deeea1f[m
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Mon Apr 21 15:16:10 2025 +0800
+
+    feat: gpu模式（需要测试）
+
+[33mcommit fe5a26415dbad091921af8f4a8eb3d1464dd3ba2[m
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Mon Apr 21 13:59:19 2025 +0800
+
+    fix: 修复sr并行存在的问题
+
+[33mcommit abc3459472cc112a617bb89529ee2a2b636c507a[m
+Merge: 50e5a21 c91ec76
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Mon Apr 21 11:37:58 2025 +0800
+
+    Merge branch 'master' of https://gitee.com/doulujiyao/npu-sim
+
+[33mcommit c91ec76ab9e7751f4bc4f0ac10951aa2759ed569[m
+Merge: f78975f f9e6a64
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Mon Apr 21 11:33:25 2025 +0800
+
+    Merge branch 'master' of https://gitee.com/doulujiyao/npu-sim
+
+[33mcommit f78975f829ad14d98b529ac1e5e7dabbbc8f9fa1[m
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Mon Apr 21 11:33:18 2025 +0800
+
+    add top monitor
+
+[33mcommit 59902944db3105d6e89f5d4abf0b3520f0b9f6c8[m
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Mon Apr 21 11:32:51 2025 +0800
+
+    add top monitor
+
+[33mcommit 50e5a2188ed307a4abcd7920ae8153b514f3fd91[m
+Merge: 2d7e331 f9e6a64
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Mon Apr 21 11:14:03 2025 +0800
+
+    Merge branch 'master' of https://gitee.com/doulujiyao/npu-sim
+
+[33mcommit 2d7e3315c076417c0064f5f7b3de5dfd26c601cf[m
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Mon Apr 21 11:13:51 2025 +0800
+
+    fix: 收发并行bug
+
+[33mcommit f9e6a641870edb8d7c64681f241169d3e9d0ce65[m
+Merge: a0e7419 059a5d6
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Sat Apr 19 17:44:08 2025 +0800
+
+    Merge branch 'master' of https://gitee.com/doulujiyao/npu-sim
+
+[33mcommit a0e7419ee18bb8c04879fe963f43aa4e7b49543c[m
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Sat Apr 19 17:43:53 2025 +0800
+
+    add gpu_dcacheif
+
+[33mcommit 059a5d63bb7e649572823ebbdef20e8ab01eb1f8[m
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Sat Apr 19 17:04:27 2025 +0800
+
+    fix the nb bug
+
+[33mcommit b179f4ca3135a5ca5f42b01ea8cc575b4a976a29[m
+Merge: e36cf4a ef335ed
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Sat Apr 19 15:50:54 2025 +0800
+
+    Merge branch 'master' of https://gitee.com/doulujiyao/npu-sim
+
+[33mcommit e36cf4a81c66de970e4c8e436da36dac14e58a37[m
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Sat Apr 19 15:50:45 2025 +0800
+
+    add top_monitor
+
+[33mcommit ef335ed8cf13acef55c48db53ccdd2fa82e33498[m
+Merge: a5c78c6 b2b5155
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Sat Apr 19 14:10:30 2025 +0800
+
+    add gpu_dcacheif
+
+[33mcommit a5c78c62ee9b5981c6d22a2aa9192589a3e5ac26[m
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Fri Apr 18 21:10:29 2025 +0800
+
+    comment
+
+[33mcommit b2b5155835c85541c656965462e78b27ee039d24[m
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Tue Apr 15 20:51:37 2025 +0800
+
+    revise streams
+
+[33mcommit 63e67f1bbfae983f49f5a1adeee1e394ab8b1c3d[m
+Merge: 9d105dd 10169e3
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Tue Apr 15 18:26:35 2025 +0800
+
+    Merge branch 'master' of https://gitee.com/doulujiyao/npu-sim
+
+[33mcommit 9d105dd6a3399165d75d783892d19d637dfedbb6[m
+Author: myonie-git <myonie.0724@gmail.com>
+Date:   Tue Apr 15 18:26:26 2025 +0800
+
+    add the config of link and chip
+
+[33mcommit 10169e382df2658cfb1ffd1610f8e2bb89e74a34[m
+Author: Zhu Tianhao <influenza-lv3@sjtu.edu.cn>
+Date:   Mon Apr 14 22:49:19 2025 +0800
+
+    fix: max_recv 导致sram溢出bug
+
+[33mcommit cff7b8e270ca724af11a35b01ddfacd321f996e4[m
+Author: fengerhu1 <2976303243@qq.com>
+Date:   Mon Apr 14 16:11:49 2025 +0800
+
+    add RECV_WEIGHT
+
+[33mcommit 8ccdf2d73eb2517957272a62880f3f2ad46bdb6c[m
+Author: fengerhu1 <2748250768@qq.com>
+Date:   Mon Apr 14 13:35:19 2025 +0800
+
+    add comment in workercore
+
+[33mcommit 6a4092e980603ac85e4fb24468c629c51510803b[m
+Author: fengerhu1 <2748250768@qq.com>
+Date:   Sun Apr 13 16:32:36 2025 +0800
+
+    revise send/recv
+
+[33mcommit aff07c9bd4ceb31f44a825dc841fda64214f3d0a[m
+Author: fengerhu1 <2748250768@qq.com>
+Date:   Sat Apr 12 23:20:01 2025 +0800
+
+    revise README
+
+[33mcommit 9d572edaaf00bae7c6c73c4b99f7e649647623ab[m
+Author: fengerhu1 <2748250768@qq.com>
+Date:   Sat Apr 12 23:16:38 2025 +0800
+
+    first commit

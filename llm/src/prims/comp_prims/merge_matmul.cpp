@@ -27,14 +27,8 @@ void Merge_matmul::parse_matmul(Matmul_f *p) {
 
     if (dim == 1) {
         out_size = slice * B * T * C;
-        out_dim.push_back(B);
-        out_dim.push_back(T);
-        out_dim.push_back(slice * C);
     } else if (dim == 2) {
         out_size = B * T * C;
-        out_dim.push_back(B);
-        out_dim.push_back(T);
-        out_dim.push_back(C);
     }
 }
 

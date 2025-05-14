@@ -28,9 +28,7 @@
     "residual2_out_": 7382784,
     "residual2_out": 7220
   },
-  "random" : false,
   "pipeline": 1,
-  "sequence": true,
   "source": [
     {
       "dest": 0,
@@ -52,7 +50,6 @@
             }
           ],
           "recv_cnt": 1,
-          "prim_refill": true,
           "prims": [
             {
               "type": "Layernorm_f",
@@ -197,7 +194,6 @@
             }
           ],
           "recv_cnt": 1,
-          "prim_refill": true,
           "prim_copy": 0
         },
         {
@@ -209,7 +205,6 @@
             }
           ],
           "recv_cnt": 1,
-          "prim_refill": true,
           "prim_copy": 0
         },
         {
@@ -221,7 +216,6 @@
             }
           ],
           "recv_cnt": 1,
-          "prim_refill": true,
           "prim_copy": 0
         },
         {
@@ -233,7 +227,6 @@
             }
           ],
           "recv_cnt": 1,
-          "prim_refill": true,
           "prim_copy": 0
         },
         {
@@ -245,7 +238,6 @@
             }
           ],
           "recv_cnt": 1,
-          "prim_refill": true,
           "prim_copy": 0
         },
         {
@@ -257,7 +249,6 @@
             }
           ],
           "recv_cnt": 1,
-          "prim_refill": true,
           "prim_copy": 0
         },
         {
@@ -269,7 +260,6 @@
             }
           ],
           "recv_cnt": 1,
-          "prim_refill": true,
           "prim_copy": 0
         },
         {
@@ -281,7 +271,6 @@
             }
           ],
           "recv_cnt": 1,
-          "prim_refill": true,
           "prim_copy": 0
         },
         {
@@ -293,7 +282,6 @@
             }
           ],
           "recv_cnt": 1,
-          "prim_refill": true,
           "prim_copy": 0
         },
         {
@@ -305,7 +293,6 @@
             }
           ],
           "recv_cnt": 1,
-          "prim_refill": true,
           "prim_copy": 0
         },
         {
@@ -316,7 +303,6 @@
             }
           ],
           "recv_cnt": 1,
-          "prim_refill": true,
           "prim_copy": 0
         }
       ]
