@@ -409,6 +409,8 @@ core 配置
                                 注意现在cast中的addr地址还有问题，理论上应该指向sram的地址。
                         </div>
 
+                        
+
                         </li>
                         <li><strong>cast</strong> : list of dicts
                             <p>在此 worklist 元素的所有原语完成之后，需要将结果发送到哪些核。</p>
@@ -496,6 +498,12 @@ core 配置
                                         <li><strong>out</strong> : string or int, optional
                                             <p>默认为 0。此原语输出在 DRAM 中的位置。</p>
                                         </li>
+
+                                        <div class="custom-todo">
+                                                spill back 的 dram 地址现在都是inp_address。
+                                        </div>
+
+                                        
                                     </ul>
                                 </li>
                             </ul>
@@ -567,6 +575,9 @@ core 配置
 
         每个 prim 元素包含以下字段：
 
+        
+
+
         - type : string
             原语类型（需填写指定字符串）。
 
@@ -598,6 +609,5 @@ core 配置
             - out : string or int, optional
                 默认为 0。此原语输出在 DRAM 中的位置。
 
-            <div class="custom-todo">
-                    spill back 的 dram 地址现在都是inp_address。
-            </div>
+        
+
