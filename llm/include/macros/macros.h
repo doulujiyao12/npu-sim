@@ -19,6 +19,7 @@
 #define FAST_WARMUP 1
 #define SR_PARA 0
 #define GPU_CACHE_DEBUG 0
+#define GPU_TMP_DEBUG 1
 #define NB_CACHE_DEBUG 0
 
 // 数据包占位

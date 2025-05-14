@@ -804,7 +804,7 @@ void gpu_write_generic(TaskCoreContext &context, uint64_t global_addr,
     cout << "end gpu_nbdram: " << sc_time_stamp().to_string() << " id "
          << gpunb_dcache_if->id << endl;
 #endif
-cout << "dahudahu2" <<endl;
+
 
 #if USE_NB_DRAMSYS
     sc_time end_first_write_time = sc_time_stamp();
@@ -841,6 +841,12 @@ TaskCoreContext generate_context(WorkerCoreExecutor *workercore) {
     high_bw_mem_access_unit *hmau =
         workercore->high_bw_mem_access_port; // 实例化或获取
                                              // high_bw_mem_access_unit 对象
+
+    mem_access_unit *temp_mau =
+        workercore->temp_mem_access_port; // 实例化或获取 mem_access_unit 对象
+    high_bw_mem_access_unit *temp_hmau =
+        workercore->high_bw_temp_mem_access_port; // 实例化或获取
+                                             // high_bw_mem_access_unit 对象 
 #if USE_L1L2_CACHE == 1
     // 创建类实例
     TaskCoreContext context(mau, hmau, temp_mau, temp_hmau, msg_data, workercore->sram_addr,
