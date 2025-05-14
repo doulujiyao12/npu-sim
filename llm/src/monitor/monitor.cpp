@@ -42,9 +42,10 @@ void Monitor::init() {
     routerMonitor = new RouterMonitor("router-monitor", this->event_engine);
     workerCores = new WorkerCore *[GRID_SIZE];
 
+    globalMemInterface = new GlobalMemInterface();
+
     //[yicheng] 初始化global memory
-    chipGlobalMemory = new ChipGlobalMemory(sc_gen_unique_name("chip-global-memory"), "../DRAMSys/configs/ddr4-example.json", "../DRAMSys/configs");
-    
+    // chipGlobalMemory = new ChipGlobalMemory(sc_gen_unique_name("chip-global-memory"), "../DRAMSys/configs/ddr4-example.json", "../DRAMSys/configs");
     
     // dcache = new DCache(sc_gen_unique_name("dcache"), (int)cid / GRID_X,
     //                     (int)cid % GRID_X, this->event_engine,
@@ -64,13 +65,13 @@ void Monitor::init() {
             // instantiate the NB_GlobalMemIF for this executor
             workerCores[i]->executor->init_global_mem();
             // bind the NB_GlobalMemIF initiator socket to the ChipGlobalMemory target socket
-            workerCores[i]->executor->nb_global_mem_socket->socket.bind(chipGlobalMemory->socket);
+            workerCores[i]->executor->nb_global_mem_socket->socket.bind(globalMemInterface->chipGlobalMemory->socket);
         }
     }
     else{ //如果谁都没有连接，直接绑定到第0个Core上
         std::cout << "[Global Mem]: global link not inited " << std::endl;
         workerCores[0]->executor->init_global_mem();
-        workerCores[0]->executor->nb_global_mem_socket->socket.bind(chipGlobalMemory->socket);
+        workerCores[0]->executor->nb_global_mem_socket->socket.bind(globalMemInterface->chipGlobalMemory->socket);
     }
 
 #if USE_L1L2_CACHE == 1

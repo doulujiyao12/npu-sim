@@ -16,11 +16,15 @@
 
 class GlobalMemInterface {
 public:
-    GlobalMemInterface::GlobalMemInterface(const sc_module_name &n, Event_engine *event_engine,
+    GlobalMemInterface(const sc_module_name &n, Event_engine *event_engine,
                         const char *config_name, const char *font_ttf);
+
+
+    GlobalMemInterface();
 
     void init();
 
     ChipGlobalMemory *chipGlobalMemory;
+    NB_GlobalMemIF *nb_global_mem_socket;
 
 };

@@ -155,6 +155,13 @@ void WorkerCoreExecutor::init_global_mem() {
         end_global_mem_event, event_engine);
 }
 
+// void WorkerCoreExecutor::init_global_mem_interface() {
+//     assert(0);
+//     nb_global_mem_socket = new NB_GlobalMemIF(
+//         sc_gen_unique_name("nb_global_mem"), start_global_mem_event,
+//         end_global_mem_event, event_engine);
+// }
+
 void WorkerCoreExecutor::end_of_elaboration() {
     // 在构造函数之后设置信号的初始值
     data_sent_o.write(false);

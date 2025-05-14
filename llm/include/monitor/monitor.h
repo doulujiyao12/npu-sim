@@ -8,6 +8,8 @@
 #include "monitor/gpu_cache_system.h"
 #include "monitor/mem_interface.h"
 #include "trace/Event_engine.h"
+#include "link/global_mem_interface.h"
+
 using namespace std;
 
 class Monitor : public sc_module {
@@ -35,7 +37,9 @@ public:
     RouterMonitor *routerMonitor;
     WorkerCore **workerCores;
     MemInterface *memInterface;
-    ChipGlobalMemory *chipGlobalMemory;
+    
+    GlobalMemInterface *globalMemInterface;
+    // ChipGlobalMemory *chipGlobalMemory;
 
 #if USE_L1L2_CACHE == 1
     L1L2CacheSystem *cacheSystem;

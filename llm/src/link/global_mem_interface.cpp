@@ -9,9 +9,12 @@ GlobalMemInterface::GlobalMemInterface(const sc_module_name &n, Event_engine *ev
     init();
 }
 
+GlobalMemInterface::GlobalMemInterface() {
+    init();
+}
+
 void GlobalMemInterface::init() {
-    assert(0);
-    //[yicheng] 初始化global memory
-    // chipGlobalMemory = new ChipGlobalMemory(sc_gen_unique_name("chip-global-memory"), "../DRAMSys/configs/ddr4-example.json", "../DRAMSys/configs");
+
+    chipGlobalMemory = new ChipGlobalMemory(sc_gen_unique_name("chip-global-memory"), "../DRAMSys/configs/ddr4-example.json", "../DRAMSys/configs");
     
 }

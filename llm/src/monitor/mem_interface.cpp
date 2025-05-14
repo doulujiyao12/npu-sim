@@ -36,7 +36,6 @@ MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
 
 void MemInterface::init() {
 
-    //[yicheng] 先写个简单的，之后改
     for (int i = 0; i < config_helper->coreconfigs.size(); i++) {
         if (config_helper->coreconfigs[i].send_global_mem != -1) {
             if (has_global_mem.size() >= 1) {
