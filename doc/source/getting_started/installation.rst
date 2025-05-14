@@ -34,6 +34,15 @@ NPU-SMI 是一个用SystemC库写的轻量级众核仿真器，可灵活适配�
     make install
     # 如果想用GDB对SystemC进行调试，可以加上下面的参数
     # ../configure --prefix=/path/to/install/systemc-2.3.3_debug --enable-debug  CXXFLAGS="-std=c++17"
+安装CMake 3.31.3
+~~~~~~~~~~~~~~~~~
+.. code-block:: console
+
+    #https://cmake.org/download/ Cmake 官网上下载源码或者对应的二进制文件
+    wget https://cmake.org/files/v3.31/cmake-3.31.3-linux-x86_64.tar.gz
+    tar -zxvf cmake-3.31.3-linux-x86_64.tar.gz 
+
+
 
 安装JSON 库
 ~~~~~~~~~~~~~
