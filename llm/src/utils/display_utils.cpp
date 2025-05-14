@@ -712,7 +712,7 @@ void plot_dataflow(string filename, string font_ttf) {
 
     // 创建 Cairo 渲染表面
     int width = 800 * 2;
-    int height = 600 * 2;
+    int height = 700 * 2;
     cairo_surface_t *surface =
         cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
     cairo_t *cr = cairo_create(surface);

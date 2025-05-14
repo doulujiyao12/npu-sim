@@ -1,5 +1,6 @@
 #pragma once
 #include "common/system.h"
+#include "workercore/workercore.h"
 
 void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
                               int global_addr, u_int64_t &dram_time,
@@ -17,6 +18,7 @@ void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
 
 void check_freq(std::unordered_map<u_int64_t, u_int16_t> &freq, u_int64_t *tags,
                 u_int32_t set, u_int64_t elem_tag);
+
 #if DCACHE
 int dcache_replacement_policy(u_int32_t tileid, u_int64_t *tags,
                               u_int64_t new_tag, u_int16_t &set_empty_lines);
@@ -34,3 +36,5 @@ void gpu_read_generic(TaskCoreContext &context, uint64_t addr, int size,
 void gpu_write_generic(TaskCoreContext &context, uint64_t addr, int size,
                        int &mem_time);
 #endif
+
+TaskCoreContext generate_context(WorkerCoreExecutor *workercore);

@@ -6,41 +6,6 @@
 #include "prims/prim_base.h"
 #include "systemc.h"
 
-bool is_comp_prim(prim_base *p) {
-    if (typeid(*p) == typeid(Attention_f) || typeid(*p) == typeid(Conv_f) ||
-        typeid(*p) == typeid(Max_pool) || typeid(*p) == typeid(Dummy_p) ||
-        typeid(*p) == typeid(Gelu_f) || typeid(*p) == typeid(Layernorm_f) ||
-        typeid(*p) == typeid(Matmul_f) || typeid(*p) == typeid(Relu_f) ||
-        typeid(*p) == typeid(Residual_f) || typeid(*p) == typeid(Batchnorm_f) ||
-        typeid(*p) == typeid(Attention_f_decode) ||
-        typeid(*p) == typeid(Matmul_f_decode) ||
-        typeid(*p) == typeid(Matmul_f_prefill) ||
-        typeid(*p) == typeid(Merge_matmul) ||
-        typeid(*p) == typeid(Split_matmul) ||
-        typeid(*p) == typeid(Merge_conv) || typeid(*p) == typeid(Split_conv))
-        return true;
-
-    return false;
-}
-
-bool is_gpu_prim(prim_base *p) {
-    if (typeid(*p) == typeid(Matmul_f_gpu) ||
-        typeid(*p) == typeid(Attention_f_gpu) ||
-        typeid(*p) == typeid(Gelu_f_gpu) ||
-        typeid(*p) == typeid(Residual_f_gpu) ||
-        typeid(*p) == typeid(Layernorm_f_gpu))
-        return true;
-
-    return false;
-}
-
-bool is_pd_prim(prim_base *p) {
-    if (typeid(*p) == typeid(matmul_forward_pd))
-        return true;
-
-    return false;
-}
-
 prim_base *new_prim(string type) {
     prim_base *prim = nullptr;
 
@@ -104,6 +69,8 @@ prim_base *new_prim(string type) {
         prim = new Residual_f_gpu();
     else if (type == "Matmul_f_pd")
         prim = new matmul_forward_pd();
+    else if (type == "switch_data")
+        prim = new switch_data();
 
     else {
         cout << "Parse config prim: Not Implemented.\n";
@@ -140,6 +107,7 @@ std::string get_recv_type_name(RECV_TYPE type) {
         {RECV_TYPE::RECV_DATA, "RECV_DATA"},
         {RECV_TYPE::RECV_SRAM, "RECV_SRAM"},
         {RECV_TYPE::RECV_WEIGHT, "RECV_WEIGHT"},
+        {RECV_TYPE::RECV_START, "RECV_START"}
     };
 
     auto it = RECV_TYPE_NAMES.find(type);

@@ -325,7 +325,6 @@ void MemInterface::recv_done() {
                          << ", recv_cnt: " << g_recv_done_cnt << endl;
 
                     g_recv_done_cnt = 0;
-                    wait(CYCLE, SC_NS);
                     sc_stop();
                 } else {
                     cout << "Mem Interface: one work done. "
@@ -393,11 +392,12 @@ void MemInterface::write_helper() {
             bool stop_flag = true;
             for (int i = 0; i < GRID_X; i++) {
                 host_data_sent_o[i].write(false);
-                if (!temp_buffer[i].size())
+                if (!temp_buffer[i].size()) {
                     continue;
+                }
 
                 stop_flag = false;
-                if (host_channel_avail_i[i].read() == false)
+                if (host_channel_avail_i[i].read() == false) 
                     continue;
 
                 // send data

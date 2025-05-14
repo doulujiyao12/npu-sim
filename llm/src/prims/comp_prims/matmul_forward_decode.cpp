@@ -22,10 +22,6 @@ void Matmul_f_decode::initialize() {
     out_size = B * T * C;
     p_inp_size = B * T * C;
     inp_size = B * T * C + OC * C + OC;
-
-    out_dim.push_back(B);
-    out_dim.push_back(T);
-    out_dim.push_back(C);
 }
 
 HardwareTaskConfig *Matmul_f_decode::generate_hw_config() {

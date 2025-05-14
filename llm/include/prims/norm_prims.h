@@ -20,6 +20,8 @@ public:
     void print_self(string prefix);
 
     Clear_sram() {}
+    Clear_sram(SramPosLocator *sram_pos_locator, int *loop_cnt)
+        : sram_pos_locator(sram_pos_locator), loop_cnt(loop_cnt) {}
 };
 
 

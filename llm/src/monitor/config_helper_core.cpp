@@ -26,6 +26,11 @@ void config_helper_core::print_self() {
 
         cout << "\tCore prims: \n";
         for (auto work : core.worklist) {
+            cout << "IN LOOP\n";
+            for (auto prim : work.prims_in_loop) {
+                prim->print_self("\t\t");
+            }
+            cout << "LAST LOOP\n";
             for (auto prim : work.prims_last_loop) {
                 prim->print_self("\t\t");
             }
@@ -236,40 +241,43 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
 void config_helper_core::fill_queue_config(queue<Msg> *q) {
     for (auto config : coreconfigs) {
         int index = config.id / GRID_X;
-        int prim_seq = 0;
-        vector<Msg> single_rep;
+        vector<Msg> single_rep_in_loop;
+        vector<Msg> single_rep_last_loop;
 
         for (auto work : config.worklist) {
-            cout << "work:" << endl;
-            for (auto lcnt = 0; lcnt < work.loop - 1; lcnt++) {
-                cout << "lcnt:" << lcnt << endl;
-                for (auto prim : work.prims_in_loop) {
-                    cout << "1\n";
-                    single_rep.push_back(Msg(false, MSG_TYPE::CONFIG,
-                                             ++prim_seq, config.id,
-                                             prim->serialize()));
-                }
+            for (auto prim : work.prims_in_loop) {
+                single_rep_in_loop.push_back(Msg(false, MSG_TYPE::CONFIG,
+                                                 single_rep_in_loop.size() + 1,
+                                                 config.id, prim->serialize()));
             }
 
             for (auto prim : work.prims_last_loop)
-                single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                         config.id, prim->serialize()));
+                single_rep_last_loop.push_back(
+                    Msg(false, MSG_TYPE::CONFIG, single_rep_in_loop.size() + 1,
+                        config.id, prim->serialize()));
         }
 
-        int single_rep_cnt = prim_seq;
+        prim_base *recv_weight = new Recv_prim(RECV_TYPE::RECV_WEIGHT,
+                                               config.worklist[0].recv_tag, 0);
+        q[index].push(Msg(false, MSG_TYPE::CONFIG, 1, config.id,
+                          recv_weight->serialize()));
 
-        for (int i = 0; i < config.repeat; i++) {
-            for (int j = 1; j <= single_rep.size(); j++) {
-                Msg m = single_rep[j - 1];
-                m.seq_id = j + prim_seq * i;
+        cout << "core " << config.id << ", loop: " << config.loop << endl;
 
-                if (i == config.repeat - 1 && j == single_rep.size())
-                    m.is_end = true;
-                if (m.is_end)
-                    m.refill = config.prim_refill;
-
+        for (int i = 0; i < config.loop; i++) {
+            for (int j = 1; j <= single_rep_in_loop.size(); j++) {
+                Msg m = single_rep_in_loop[j - 1];
+                m.seq_id = j + single_rep_in_loop.size() * i + 1;
                 q[index].push(m);
             }
+        }
+
+        for (int j = 1; j <= single_rep_last_loop.size(); j++) {
+            Msg m = single_rep_last_loop[j - 1];
+            m.seq_id = j + single_rep_in_loop.size() * config.loop + 1;
+            m.refill = m.is_end = j == single_rep_last_loop.size();
+
+            q[index].push(m);
         }
     }
 }
@@ -278,11 +286,13 @@ void config_helper_core::generate_prims(int i) {
     // 处理单个核的原语，将其放入Coreconfig.prims中
     CoreConfig *c = &coreconfigs[i];
 
-    c->worklist[0].prims_in_loop.push_back(
-        new Recv_prim(RECV_TYPE::RECV_WEIGHT, c->worklist[0].recv_tag, 0));
-    c->worklist[0].prims_last_loop.push_back(
-        new Recv_prim(RECV_TYPE::RECV_WEIGHT, c->worklist[0].recv_tag, 0));
-
+    bool is_source = false;
+    for (auto source : source_info) {
+        if (source.first == i) {
+            is_source = true;
+            break;
+        }
+    }
 
     for (int w = 0; w < c->worklist.size(); w++) {
         auto &work = c->worklist[w];
@@ -292,8 +302,12 @@ void config_helper_core::generate_prims(int i) {
 
         // 先生成loop中的原语
         // 首先是recv，对应 RECV_DATA
-        work.prims_in_loop.push_back(
-            new Recv_prim(RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt));
+        if (is_source)
+            work.prims_in_loop.push_back(new Recv_prim(
+                RECV_TYPE::RECV_START, work.recv_tag, work.recv_cnt));
+        else
+            work.prims_in_loop.push_back(new Recv_prim(
+                RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt));
 
         // 然后是comp，直接推c中的对应队列即可
         for (auto prim : work.prims) {
@@ -311,23 +325,11 @@ void config_helper_core::generate_prims(int i) {
             work.prims_in_loop.push_back(prim);
         }
 
-        // if (c->send_global_mem != -1){
-        //     work.prims_in_loop.push_back(new Send_global_memory());
-        // }
-
         // 最后是send，如果是多播的话需要加入多个send原语
         // 这里的发送地址和接收地址先不填，等到后续统一填
         // 按照cast 广播的方式添加对应数量的 send 原语数量
         for (int j = 0; j < work.cast.size(); j++) {
             auto ca = work.cast[j];
-
-            // 在sequential情况下，如果dest是-1,同样发送done信号
-            if (ca.dest == -1) {
-                work.prims_in_loop.push_back(
-                    new Send_prim(SEND_TYPE::SEND_DONE));
-                work.prims_in_loop.push_back(new_prim("Clear_sram"));
-                continue;
-            }
 
             // 只需要在末尾循环发送，默认BOTH
             if (ca.loopout == TRUE)
@@ -344,8 +346,12 @@ void config_helper_core::generate_prims(int i) {
         }
 
         // 再生成最后一个loop的原语
-        work.prims_last_loop.push_back(
-            new Recv_prim(RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt));
+        if (is_source)
+            work.prims_last_loop.push_back(new Recv_prim(
+                RECV_TYPE::RECV_START, work.recv_tag, work.recv_cnt));
+        else
+            work.prims_last_loop.push_back(new Recv_prim(
+                RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt));
 
         for (auto prim : work.prims) {
             // 在Set_addr里面复制一份计算原语的datapass_label
@@ -368,13 +374,13 @@ void config_helper_core::generate_prims(int i) {
             continue;
         }
 
-        
 
         // if (is_end) {
         //     if (c->send_global_mem != -1) {
         //         work.prims_last_loop.push_back(new Send_global_memory());
         //     } else {
-        //         work.prims_last_loop.push_back(new Send_prim(SEND_TYPE::SEND_DONE));
+        //         work.prims_last_loop.push_back(new
+        //         Send_prim(SEND_TYPE::SEND_DONE));
         //     }
         //     work.prims_last_loop.push_back(new_prim("Clear_sram"));
         //     continue;
@@ -433,7 +439,7 @@ void config_helper_core::calculate_address(bool do_loop) {
             // 拿到这个核的output size
             for (int j = v->size() - 1; j >= 0; j--) {
                 auto p = (*v)[j];
-                if (is_comp_prim(p)) {
+                if (p->prim_type == COMP_PRIM) {
                     comp_base *cp = (comp_base *)p;
                     output_size = cp->out_size;
                     output_offset = cp->out_offset;

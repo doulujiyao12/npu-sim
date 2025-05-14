@@ -218,6 +218,24 @@ public:
                               const float *bias, int B, int T, int C, int OC);
 };
 
+class switch_data : public comp_base {
+public:
+    int IN, OUT;
+
+    int task();
+    int task_core(TaskCoreContext &context);
+
+    sc_bv<128> serialize();
+    void deserialize(sc_bv<128> buffer);
+
+    void parse_json(json j);
+    void print_self(string prefix);
+    int sram_utilization(DATATYPE datatype);
+
+    void initialize();
+    switch_data() { name = "switch_data"; }
+};
+
 
 class Max_pool : public comp_base {
 public:

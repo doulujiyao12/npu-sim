@@ -25,10 +25,6 @@ void Matmul_f::initialize() {
     out_size = B * T * OC;
     p_inp_size = B * T * C;
     inp_size = B * T * C + OC * C + OC;
-
-    out_dim.push_back(B);
-    out_dim.push_back(T);
-    out_dim.push_back(OC);
 }
 
 HardwareTaskConfig *Matmul_f::generate_hw_config() {
@@ -88,7 +84,6 @@ void Matmul_f::parse_json(json j) {
     cout << "out_offset: " << out_offset << endl;
     cout << "data_offset: " << data_offset << endl;
     
-
     if (j.contains("sram_address")) {
         parse_sram_label(j["sram_address"]);
     }

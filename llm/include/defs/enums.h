@@ -43,6 +43,8 @@ enum RECV_TYPE {
     RECV_SRAM,
     // 接收HOST下发的WEIGHT数据
     RECV_WEIGHT,
+    // 接收初始数据
+    RECV_START,
 };
 
 // 路由方向
@@ -102,4 +104,11 @@ enum PD_PHASE {
     DECODE,
     UNTOUCHED,
     PD_DONE,
+};
+
+enum PRIM_TYPE {
+    NORM_PRIM = 0,
+    COMP_PRIM,
+    GPU_PRIM,
+    PD_PRIM,
 };

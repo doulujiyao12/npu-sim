@@ -32,10 +32,8 @@ config_helper_gpu::config_helper_gpu(string filename, string font_ttf,
     for (int i = 0; i < GRID_SIZE; i++) {
         CoreConfig core;
         core.id = i;
-        core.prim_refill = false;
         core.prim_copy = -1;
         core.send_global_mem = -1;
-        core.repeat = 1;
         core.loop = 1;
 
         coreconfigs.push_back(core);
@@ -78,35 +76,24 @@ config_helper_gpu::config_helper_gpu(string filename, string font_ttf,
 void config_helper_gpu::fill_queue_config(queue<Msg> *q) {
     for (auto config : coreconfigs) {
         int index = config.id / GRID_X;
-        int prim_seq = 0;
         vector<Msg> single_rep;
 
         for (auto work : config.worklist) {
-            // single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-            // config.id, work.prims_in_loop[0]->serialize())); for (auto lcnt =
-            // 0; lcnt < work.loop; lcnt++) {
-            //     for (auto prim : work.prim_last_loop)
-            //         single_rep.push_back(Msg(false, MSG_TYPE::CONFIG,
-            //         ++prim_seq, config.id, prim->serialize()));
-            // }
-
             for (auto prim : work.prims_last_loop)
-                single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                         config.id, prim->serialize()));
+                single_rep.push_back(Msg(false, MSG_TYPE::CONFIG,
+                                         single_rep.size() + 1, config.id,
+                                         prim->serialize()));
         }
 
-        int single_rep_cnt = prim_seq;
-        cout << "single size " << single_rep.size() << endl;
-
-        for (int i = 0; i < config.repeat; i++) {
+        for (int i = 0; i < config.loop; i++) {
             for (int j = 1; j <= single_rep.size(); j++) {
                 Msg m = single_rep[j - 1];
-                m.seq_id = j + prim_seq * i;
+                m.seq_id = j + single_rep.size() * i;
 
-                if (i == config.repeat - 1 && j == single_rep.size())
+                if (i == config.loop - 1 && j == single_rep.size()) {
                     m.is_end = true;
-                if (m.is_end)
-                    m.refill = config.prim_refill;
+                    m.refill = true;
+                }
 
                 q[index].push(m);
             }
@@ -124,7 +111,7 @@ void config_helper_gpu::generate_prims(int i) {
     for (auto &work : c->worklist) {
         // 不向in_loop推入任何原语，只操作last_loop
         work.prims_last_loop.push_back(
-            new Recv_prim(RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt));
+            new Recv_prim(RECV_TYPE::RECV_START, work.recv_tag, work.recv_cnt));
 
         for (auto prim : work.prims) {
             prim_base *p = new_prim("Set_addr");
@@ -150,7 +137,6 @@ void config_helper_gpu::calculate_address(bool do_loop) {}
 void config_helper_gpu::fill_queue_start(queue<Msg> *q) {
     cout << "GPU fill start queue, phase " << gpu_index << "\n";
     int sms = ((gpu_base *)(streams[0].prims[gpu_index]))->req_sm;
-    cout << "her1e\n";
 
     for (auto stream : streams) {
         for (auto source : stream.sources) {
@@ -158,11 +144,10 @@ void config_helper_gpu::fill_queue_start(queue<Msg> *q) {
             gpu_pos_locator->addPair(source.first + "#1", source_key);
         }
     }
-    cout << "here\n";
 
     for (int i = 0; i < min(sms, GRID_SIZE); i++) {
         auto config = coreconfigs[i];
-        int index = config.id / GRID_X;     
+        int index = config.id / GRID_X;
         int pkg_index = 0;
 
         sc_bv<128> d(0x1);

@@ -299,8 +299,9 @@ void config_helper_pd::generate_prims(int i) {
     int index = i / GRID_X;
     int prim_seq = 0;
 
-    prim_base *recv_data_1 =
-        new Recv_prim(RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt);
+    prim_base *recv_data_1 = new Recv_prim(work.recv_cnt ? RECV_TYPE::RECV_START
+                                                         : RECV_TYPE::RECV_DATA,
+                                           work.recv_tag, work.recv_cnt);
     temp_config.push_back(
         Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, recv_data_1->serialize()));
     prim_base *set_batch = new Set_batch(status.batchInfo);
@@ -312,17 +313,17 @@ void config_helper_pd::generate_prims(int i) {
             prim_base *set_addr = new_prim("Set_addr");
             auto label = ((Set_addr *)set_addr)->datapass_label;
             for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-                if (is_pd_prim(prim)) {
+                if (prim->prim_type == PD_PRIM) {
                     label->indata[i] =
                         ((pd_base *)prim)->datapass_label.indata[i];
-                } else if (is_comp_prim(prim)) {
+                } else if (prim->prim_type == COMP_PRIM) {
                     label->indata[i] =
                         ((comp_base *)prim)->datapass_label.indata[i];
                 }
             }
-            if (is_pd_prim(prim)) {
+            if (prim->prim_type == PD_PRIM) {
                 label->outdata = ((pd_base *)prim)->datapass_label.outdata;
-            } else if (is_comp_prim(prim)) {
+            } else if (prim->prim_type == COMP_PRIM) {
                 label->outdata = ((comp_base *)prim)->datapass_label.outdata;
             }
 
@@ -377,6 +378,7 @@ void config_helper_pd::generate_prims(int i) {
 
     // 每一个核都需要向memInterface发送DONE信号
     prim_base *send_done = new Send_prim(SEND_TYPE::SEND_DONE);
-    temp_config.push_back(
-        Msg(true, MSG_TYPE::CONFIG, ++prim_seq, i, send_done->serialize()));
+    Msg m = Msg(true, MSG_TYPE::CONFIG, ++prim_seq, i, send_done->serialize());
+    m.refill = false;
+    temp_config.push_back(m);
 }
