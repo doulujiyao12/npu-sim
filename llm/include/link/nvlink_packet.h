@@ -15,7 +15,6 @@ public:
 };
 
 
-
 class nvMsg{
 public: 
     int crc; // 127 - 103

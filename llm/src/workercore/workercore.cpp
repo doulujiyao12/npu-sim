@@ -522,6 +522,7 @@ void WorkerCoreExecutor::send_logic() {
 
                 int delay = 0;
                 TaskCoreContext context = generate_context(this);
+
                 delay = prim->task_core(context);
 
                 if (!channel_avail_i.read())
@@ -1027,22 +1028,11 @@ void WorkerCoreExecutor::task_logic() {
         prim_base *p = prim_queue.front();
 
         int delay = 0;
-<<<<<<< HEAD
         sc_bv<SRAM_BITWIDTH> msg_data_tmp;
 
-        NB_GlobalMemIF *nb_global_memif = this->nb_global_mem_socket;
-        sc_event *start_global_event = this->start_global_mem_event;
-        sc_event *end_global_event = this->end_global_mem_event;
-
-
-
-#if USE_NB_DRAMSYS == 1
-        NB_DcacheIF *nb_dcache =
-            this->nb_dcache_socket; // 实例化或获取 NB_DcacheIF 对象
-#else
-=======
         TaskCoreContext context = generate_context(this);
->>>>>>> 2f9456bb4944b8c00fdff4d71ca2528a6bdfb143
+        
+            // context.SetGlobalMemIF(nb_global_memif, start_global_event, end_global_event);
 
         if (p->prim_type == COMP_PRIM) {
             comp_base *comp = (comp_base *)p;
@@ -1054,35 +1044,9 @@ void WorkerCoreExecutor::task_logic() {
             context.cid = &cid;
             context.event_engine = event_engine;
 
-<<<<<<< HEAD
-        //添加GlobalMem
-        context.SetGlobalMemIF(nb_global_memif, start_global_event, end_global_event);
-
-        if (!p->use_hw || typeid(*p) != typeid(Matmul_f)) {
-            if (typeid(*p) == typeid(Set_addr)) {
-                // set sram 修改标签
-                // 已经在 parse_prim 中设置了 datapass_label，这里do nothing
-            } else if (is_comp_prim(p)) {
-                // comp原语 读取标签
-                comp_base *comp = (comp_base *)p;
-                comp->datapass_label = *next_datapass_label;
-            }
-#if USE_L1L2_CACHE == 1
-            else if (is_gpu_prim(p)) {
-                cout << "socket " << cid << endl;
-                context.gpunb_dcache_if = gpunb_dcache_if;
-                context.cid = &cid;
-                context.event_engine = event_engine;
-                cout << "socket2 " << cid << endl;
-
-                gpu_base *gpu = (gpu_base *)p;
-                gpu->datapass_label = *next_datapass_label;
-            }
-=======
             gpu_base *gpu = (gpu_base *)p;
             gpu->datapass_label = *next_datapass_label;
         }
->>>>>>> 2f9456bb4944b8c00fdff4d71ca2528a6bdfb143
 #endif
         else if (p->prim_type == PD_PRIM) {
             pd_base *pd = (pd_base *)p;

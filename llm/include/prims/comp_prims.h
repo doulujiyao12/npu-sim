@@ -394,6 +394,7 @@ class Send_global_memory : public comp_base {
 public:
 
     GLOBAL_SEND_TYPE type;
+    int enable;
     int des_id; // global memory's id (reserved for c2c)
     int des_offset; // global memory's offset
     int local_offset; // local memory's offset

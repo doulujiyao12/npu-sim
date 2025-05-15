@@ -486,7 +486,6 @@ int dcache_replacement_policy(u_int32_t tileid, u_int64_t *tags,
 }
 #endif
 
-
 u_int64_t cache_tag(u_int64_t addr) {
     u_int64_t word_index = (u_int64_t)addr >> 2; // 4bytes in a word
     // 全局的darray加起来，所有的tile
@@ -794,6 +793,11 @@ TaskCoreContext generate_context(WorkerCoreExecutor *workercore) {
     high_bw_mem_access_unit *hmau =
         workercore->high_bw_mem_access_port; // 实例化或获取
                                              // high_bw_mem_access_unit 对象
+
+    NB_GlobalMemIF *nb_global_memif = workercore->nb_global_mem_socket;
+    sc_event *start_global_event = workercore->start_global_mem_event;
+    sc_event *end_global_event = workercore->end_global_mem_event;
+
 #if USE_L1L2_CACHE == 1
     // 创建类实例
     TaskCoreContext context(mau, hmau, msg_data, workercore->sram_addr,
@@ -807,6 +811,6 @@ TaskCoreContext generate_context(WorkerCoreExecutor *workercore) {
         TaskCoreContext context(mau, hmau, msg_data, workercore->sram_addr,
                                 s_nbdram, e_nbdram, workercore->loop_cnt);
 #endif
-
+    context.SetGlobalMemIF(nb_global_memif, start_global_event, end_global_event);
     return context;
 }

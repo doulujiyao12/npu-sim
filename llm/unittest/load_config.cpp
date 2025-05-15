@@ -18,7 +18,7 @@ using namespace std;
 Define_bool_opt("--help", g_flag_help, false, "show these help information");
 Define_bool_opt("--node-mode", g_flag_node, false, "whether to sim in a node");
 Define_string_opt("--config-file", g_flag_config_file,
-                  "../llm/test/config_gpt2_small_cluster.json", "config file");
+                  "../llm/test/config_gpt2_tiny_cluster.json", "config file");
 Define_string_opt("--ttf-file", g_flag_ttf, "../font/NotoSansDisplay-Bold.ttf",
                   "font ttf file");
 Define_bool_opt("--use-dramsys", g_flag_dramsys, true,

@@ -39,6 +39,7 @@ int Send_global_memory::task() {
 
 int Send_global_memory::task_core(TaskCoreContext &context) {
     std::cout << "[Global Mem]: Send_global_memory::task_core" << std::endl;
+    std::cout << "[Global Mem]: Send_global_memory::tag_id: " << tag_id << std::endl;
     // Determine element size (INT8=1 byte, FP16=2 bytes)
     int elem_bytes = (datatype == DATATYPE::FP16 ? 2 : 1);
     // Total bytes to send (end_length elements)
@@ -60,12 +61,29 @@ int Send_global_memory::task_core(TaskCoreContext &context) {
     context.nb_global_memif->socket->b_transport(trans, delay);
 
 
+    std::cout << "[Global Mem]: Send_global_memory::end " << std::endl;
     // Return the simulated write latency in nanoseconds
     return static_cast<int>(delay.to_seconds() * 1e9);
 }
 
 void Send_global_memory::parse_json(json j) {
-    assert(0 && "Not Implemented yet");
+    // assert(0 && "Not Implemented yet");
+
+    enable = 0;
+    if (j.contains("enable")) {
+        enable = j["enable"].is_number() ? j["enable"].get<int>()
+                                         : (j["enable"].get<bool>() ? 1 : 0);
+    }
+
+    if(j.contains("addr")) {
+        auto &addr_field = j["addr"];
+        if (addr_field.is_string()) {
+            des_offset = find_var(addr_field.get<string>());
+        } else {
+            des_offset = addr_field.get<int>();
+        }
+    }
+
 }
 
 void Send_global_memory::print_self(string prefix) {

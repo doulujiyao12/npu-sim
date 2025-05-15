@@ -325,14 +325,11 @@ void config_helper_core::generate_prims(int i) {
             work.prims_in_loop.push_back(prim);
         }
 
-<<<<<<< HEAD
-        // [传输global memory的原语]
-        if (c->send_global_mem != -1){
-            work.prims_in_loop.push_back(new Send_global_memory());
-        }
+        // // [传输global memory的原语]
+        // if (c->send_global_mem != -1){
+        //     work.prims_in_loop.push_back(new Send_global_memory());
+        // }
 
-=======
->>>>>>> 2f9456bb4944b8c00fdff4d71ca2528a6bdfb143
         // 最后是send，如果是多播的话需要加入多个send原语
         // 这里的发送地址和接收地址先不填，等到后续统一填
         // 按照cast 广播的方式添加对应数量的 send 原语数量
@@ -377,9 +374,9 @@ void config_helper_core::generate_prims(int i) {
             work.prims_last_loop.push_back(prim);
         }
 
-        if (c->send_global_mem != -1){
-            work.prims_last_loop.push_back(new Send_global_memory());
-        }
+        // if (c->send_global_mem != -1){
+        //     work.prims_last_loop.push_back(new Send_global_memory());
+        // }
 
         if (is_end) {
             work.prims_last_loop.push_back(new Send_prim(SEND_TYPE::SEND_DONE));
@@ -387,8 +384,6 @@ void config_helper_core::generate_prims(int i) {
             continue;
         }
 
-<<<<<<< HEAD
-=======
 
         // if (is_end) {
         //     if (c->send_global_mem != -1) {
@@ -400,7 +395,6 @@ void config_helper_core::generate_prims(int i) {
         //     work.prims_last_loop.push_back(new_prim("Clear_sram"));
         //     continue;
         // }
->>>>>>> 2f9456bb4944b8c00fdff4d71ca2528a6bdfb143
 
         for (int j = 0; j < work.cast.size(); j++) {
             auto ca = work.cast[j];
@@ -522,7 +516,7 @@ void config_helper_core::calculate_address(bool do_loop) {
                     g->end_length = end_length;
                     g->des_offset = delta_offset[g->des_id];
                     delta_offset[g->des_id] += slice_size;
-                    g->tag_id = 0;
+                    g->tag_id = 15;
                 }
             }
         }
