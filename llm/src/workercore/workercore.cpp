@@ -384,6 +384,9 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     case 0x12:
         task = new Attention_f_decode();
         break;
+    case 0x15:
+        task = new Attention_f_prefill();
+        break;
     case 0x13:
         task = new Max_pool();
         break;

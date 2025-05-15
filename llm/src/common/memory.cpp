@@ -149,6 +149,12 @@ int SramPosLocator::findPair(std::string &key, int &result) {
     return -1;
 }
 
+void SramPosLocator::printAllKeys() {
+    for (const auto& pair : data_map) {
+        std::cout << "Key: " << pair.first << std::endl;
+    }
+}
+
 int SramPosLocator::findPair(std::string &key, AddrPosKey &result) {
     visit += 1;
     auto it = data_map.find(key);

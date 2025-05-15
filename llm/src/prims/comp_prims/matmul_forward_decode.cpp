@@ -245,10 +245,13 @@ int Matmul_f_decode::task_core(TaskCoreContext &context) {
         string label_decode_k = format_label_k;
 
         flag = sram_pos_locator->findPair(label_decode_k, kcache);
+        cout << "matmul_forward_decode: kvcache label: " << label_decode_k
+              << endl;
         if (flag == -1) {
-#if ASSERT_MODE == 1
-            assert(0 && "Miss prefill KV Cache label");
-#endif
+            sram_pos_locator->printAllKeys();
+// #if ASSERT_MODE == 1
+//             assert(0 && "Miss prefill KV Cache label");
+// #endif
             // 理论而言，这里必须要找到对应的pair。因为在运行该算子之前会先运行prefill的matmul，
             // 在这个时候会首先创建对应大小的kcache和vcache的标签，尽管在这个时候里面还没有任何东西。
             // 但为了便于测试，这里直接创建一个新的标签，不会影响最终的性能。

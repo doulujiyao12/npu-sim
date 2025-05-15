@@ -6,7 +6,7 @@
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
-void Attention_f::print_self(string prefix) {
+void Attention_f_prefill::print_self(string prefix) {
     cout << prefix << "<attention_forward>\n";
     cout << prefix << "\tB: " << B << ", T: " << T << ", C: " << C << endl;
     cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size
@@ -15,7 +15,7 @@ void Attention_f::print_self(string prefix) {
          << ", input_offset: " << inp_offset << endl;
 }
 
-void Attention_f::parse_json(json j) {
+void Attention_f_prefill::parse_json(json j) {
     B = find_var(j["B"]);
     T = find_var(j["T"]);
     C = find_var(j["C"]);
@@ -44,7 +44,7 @@ void Attention_f::parse_json(json j) {
         parse_sram_label(j["sram_address"]);
     }
 }
-int Attention_f::sram_utilization(DATATYPE datatype) {
+int Attention_f_prefill::sram_utilization(DATATYPE datatype) {
     int total_sram = 0;
     int data_byte = 0;
 
@@ -65,7 +65,7 @@ int Attention_f::sram_utilization(DATATYPE datatype) {
     return total_sram;
 }
 
-void Attention_f::deserialize(sc_bv<128> buffer) {
+void Attention_f_prefill::deserialize(sc_bv<128> buffer) {
     inp_offset = buffer.range(23, 8).to_uint64();
     inp_offset *= 1024;
     out_offset = buffer.range(39, 24).to_uint64();
@@ -80,9 +80,9 @@ void Attention_f::deserialize(sc_bv<128> buffer) {
     a_offset = B * NH * T * T + prea_offset;
 }
 
-sc_bv<128> Attention_f::serialize() {
+sc_bv<128> Attention_f_prefill::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(0x3);
+    d.range(7, 0) = sc_bv<8>(0x15);
     d.range(23, 8) = sc_bv<16>(inp_offset);
     d.range(39, 24) = sc_bv<16>(out_offset);
     d.range(55, 40) = sc_bv<16>(B);
@@ -94,7 +94,7 @@ sc_bv<128> Attention_f::serialize() {
     return d;
 }
 
-int Attention_f::task_core(TaskCoreContext &context) {
+int Attention_f_prefill::task_core(TaskCoreContext &context) {
 #if USE_NB_DRAMSYS == 0
     auto wc = context.wc;
 #endif
@@ -157,7 +157,7 @@ int Attention_f::task_core(TaskCoreContext &context) {
                 datapass_label.indata[0].substr(space_pos + 1);
         }
 
-        printf("[INFO] Attention_f: read from dram, label: %s\n",
+        printf("[INFO] Attention_f_prefill: read from dram, label: %s\n",
                datapass_label.indata[0].c_str());
 
         AddrPosKey inp_key =
@@ -169,7 +169,7 @@ int Attention_f::task_core(TaskCoreContext &context) {
         int flag =
             sram_pos_locator->findPair(datapass_label.indata[0], inp_key);
         if (flag == -1) {
-            printf("[ERROR] Attention_f: sram_pos_locator cannot find the "
+            printf("[ERROR] Attention_f_prefill: sram_pos_locator cannot find the "
                    "label: %s\n",
                    datapass_label.indata[0].c_str());
             sc_stop();
@@ -205,9 +205,47 @@ int Attention_f::task_core(TaskCoreContext &context) {
 
     printf("attention_forward: dram time 1: %ld\n", dram_time);
 
-    // 读出Q,K
+    int cur_tokens = 0;
+
+    // 查找kvcache! 需要使用相应的kvcache label 读出KV
+    int batch = 0;
+        AddrPosKey kcache;
+        char format_label_k[100];
+        sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+                batch);
+        string label_decode_k = format_label_k;
+
+        int flag = sram_pos_locator->findPair(label_decode_k, kcache);
+        if (flag == -1) {
+            printf("[ERROR] attention_forward_decode: failed to find label %s, "
+                   "exit.\n",
+                   label_decode_k.c_str());
+            sc_stop();
+        }
+
+        AddrPosKey vcache;
+        char format_label_v[100];
+        sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+                batch);
+        string label_decode_v = format_label_v;
+
+        flag = sram_pos_locator->findPair(label_decode_v, vcache);
+        if (flag == -1) {
+            printf("[ERROR] attention_forward_decode: failed to find label %s, "
+                   "exit.\n",
+                   label_decode_v.c_str());
+            sc_stop();
+        }
+
+        // 读出k,v
+        sram_read_generic(context, kcache.size, kcache.pos, dram_time);
+        sram_read_generic(context, vcache.size, vcache.pos, dram_time);
+
+        cur_tokens = kcache.size / (B * C * data_byte);
+
+    // 读出Q
     sram_pos_locator->findPair(datapass_label.indata[0], inp_sram_offset);
-    sram_read_generic(context, data_byte * data_size_input / 3 * 2,
+    sram_read_generic(context, data_byte * data_size_input / 3,
                       inp_sram_offset, dram_time);
     // 写入preatt中间结果
     int temp_sram_addr = 0;
@@ -224,11 +262,7 @@ int Attention_f::task_core(TaskCoreContext &context) {
     // 读出att和V
     sram_read_generic_temp(context, data_byte * data_size_att, temp_sram_addr_piror,
                       dram_time);
-    sram_read_generic(context, data_byte * data_size_input / 3,
-                      inp_sram_offset +
-                      data_byte * data_size_input * 2 / 3,
-                      dram_time);
-
+    
     // 删除标签
     if (!input_reuse) {
         sram_pos_locator->deletePair(datapass_label.indata[0]);
@@ -281,7 +315,7 @@ int Attention_f::task_core(TaskCoreContext &context) {
     printf("attention_forward: overlap_time: %ld\n", overlap_time);
     return overlap_time;
 }
-int Attention_f::task() {
+int Attention_f_prefill::task() {
     int C3 = C * 3;
     int hs = C / NH; // head size
     float scale = 1.0 / sqrtf(hs);
