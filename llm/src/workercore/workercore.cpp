@@ -40,6 +40,10 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
         sc_gen_unique_name("ram_array"), 0, BANK_DEPTH, SIMU_READ_PORT,
         SIMU_WRITE_PORT, BANK_PORT_NUM + SRAM_BANKS, BANK_PORT_NUM,
         BANK_HIGH_READ_PORT_NUM, event_engine);
+    temp_ram_array = new DynamicBandwidthRamRow<sc_bv<SRAM_BITWIDTH>, SRAM_BANKS>(
+        sc_gen_unique_name("temp_ram_array"), 0, BANK_DEPTH_TMP, SIMU_READ_PORT,
+        SIMU_WRITE_PORT, BANK_PORT_NUM + SRAM_BANKS, BANK_PORT_NUM,
+        BANK_HIGH_READ_PORT_NUM, event_engine);
     executor = new WorkerCoreExecutor(sc_gen_unique_name("workercore-exec"),
                                       cid, this->event_engine);
     executor->systolic_config = systolic_config;
@@ -55,6 +59,10 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
     executor->mem_access_port->mem_read_port(*ram_array);
     executor->mem_access_port->mem_write_port(*ram_array);
     executor->high_bw_mem_access_port->mem_read_port(*ram_array);
+
+    executor->temp_mem_access_port->mem_read_port(*temp_ram_array);
+    executor->temp_mem_access_port->mem_write_port(*temp_ram_array);
+    executor->high_bw_temp_mem_access_port->mem_read_port(*temp_ram_array);
 
     systolic = new SystolicArray(sc_gen_unique_name("systolic-array"),
                                  this->event_engine, systolic_config);
@@ -72,6 +80,7 @@ WorkerCore::~WorkerCore() {
     delete systolic_config;
     delete other_config;
     delete ram_array;
+    delete temp_ram_array;
 }
 
 // workercore executor
@@ -164,6 +173,10 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
                                           event_engine);
     high_bw_mem_access_port = new high_bw_mem_access_unit(
         sc_gen_unique_name("high_bw_mem_access_unit"), event_engine);
+    temp_mem_access_port = new mem_access_unit(sc_gen_unique_name("temp_mem_access_unit"),
+                                            event_engine);
+    high_bw_temp_mem_access_port = new high_bw_mem_access_unit(
+        sc_gen_unique_name("high_bw_temp_mem_access_unit"), event_engine);
 }
 
 void WorkerCoreExecutor::init_global_mem() {
@@ -923,6 +936,7 @@ void WorkerCoreExecutor::recv_logic() {
                         u_int64_t temp;
                         if (sram_pos_locator->findPair(input_label, inp_key) ==
                             -1)
+                            // TWO DRIVER
                             sram_pos_locator->addPair(input_label, inp_key);
                     }
 
@@ -1298,6 +1312,8 @@ WorkerCoreExecutor::~WorkerCoreExecutor() {
 #endif
     delete mem_access_port;
     delete high_bw_mem_access_port;
+    delete temp_mem_access_port;
+    delete high_bw_temp_mem_access_port;
     delete start_nb_dram_event;
     delete end_nb_dram_event;
 }

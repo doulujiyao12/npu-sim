@@ -29,6 +29,17 @@ void Attention_f::parse_json(json j) {
         parse_address(j["dram_address"]);
     }
 
+    // if (inp_offset == -1){
+    //     assert(0 && "attention_forward: inp_offset not set");
+    // }
+    
+    // 添加以下三行以打印相关信息
+    cout << "\033[1;33m" << "attention_forward" << "\033[0m" << endl;
+    cout << "inp_offset: " << inp_offset << endl;
+    cout << "out_offset: " << out_offset << endl;
+    cout << "data_offset: " << data_offset << endl;
+    
+
     if (j.contains("sram_address")) {
         parse_sram_label(j["sram_address"]);
     }
@@ -89,6 +100,8 @@ int Attention_f::task_core(TaskCoreContext &context) {
 #endif
     auto mau = context.mau;
     auto hmau = context.hmau;
+    auto temp_mau = context.temp_mau;
+    auto temp_hmau = context.temp_hmau;
     auto &msg_data = context.msg_data;
     auto sram_addr = context.sram_addr;
     int data_byte = 0;
@@ -179,16 +192,16 @@ int Attention_f::task_core(TaskCoreContext &context) {
         prefix = datapass_label.outdata;
     }
 
-    auto label_preatt = ETERNAL_PREFIX + prefix + "_preatt";
-    AddrPosKey preatt_key =
-        AddrPosKey(*sram_addr, data_byte * data_size_preatt);
-    sram_pos_locator->addPair(label_preatt, preatt_key, context, dram_time);
-    sram_write_append_generic(context, data_byte * data_size_preatt, dram_time);
+    // auto label_preatt = ETERNAL_PREFIX + prefix + "_preatt";
+    // AddrPosKey preatt_key =
+    //     AddrPosKey(*sram_addr, data_byte * data_size_preatt);
+    // sram_pos_locator->addPair(label_preatt, preatt_key, context, dram_time);
+    // sram_write_append_generic(context, data_byte * data_size_preatt, dram_time);
 
-    auto label_att = ETERNAL_PREFIX + prefix + "_att";
-    AddrPosKey att_key = AddrPosKey(*sram_addr, data_byte * data_size_att);
-    sram_pos_locator->addPair(label_att, att_key, context, dram_time);
-    sram_write_append_generic(context, data_byte * data_size_att, dram_time);
+    // auto label_att = ETERNAL_PREFIX + prefix + "_att";
+    // AddrPosKey att_key = AddrPosKey(*sram_addr, data_byte * data_size_att);
+    // sram_pos_locator->addPair(label_att, att_key, context, dram_time);
+    // sram_write_append_generic(context, data_byte * data_size_att, dram_time);
 
     printf("attention_forward: dram time 1: %ld\n", dram_time);
 
@@ -197,20 +210,20 @@ int Attention_f::task_core(TaskCoreContext &context) {
     sram_read_generic(context, data_byte * data_size_input / 3 * 2,
                       inp_sram_offset, dram_time);
     // 写入preatt中间结果
-    int preatt_sram_offset, att_sram_offset;
-    sram_write_back_generic(context, data_byte * data_size_preatt,
-                            preatt_sram_offset, dram_time);
+    int temp_sram_addr = 10;
+    sram_write_back_temp(context, data_byte * data_size_preatt,
+        temp_sram_addr, dram_time);
     // 读出preatt，计算自然指数，写入att
-    sram_read_generic(context, data_byte * data_size_preatt, preatt_sram_offset,
+    sram_read_generic_temp(context, data_byte * data_size_preatt, temp_sram_addr,
                       dram_time);
-    sram_write_back_generic(context, data_byte * data_size_att, att_sram_offset,
+    sram_write_back_temp(context, data_byte * data_size_att, temp_sram_addr,
                             dram_time);
     // 读出att和V
-    sram_read_generic(context, data_byte * data_size_att, att_sram_offset,
+    sram_read_generic_temp(context, data_byte * data_size_att, temp_sram_addr,
                       dram_time);
     sram_read_generic(context, data_byte * data_size_input / 3,
                       inp_sram_offset +
-                          (preatt_sram_offset - inp_sram_offset) / 3 * 2,
+                      data_byte * data_size_input / 3,
                       dram_time);
 
     // 删除标签

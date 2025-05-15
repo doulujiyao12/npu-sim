@@ -348,6 +348,53 @@ void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
     }
 }
 
+
+void sram_read_generic_temp(TaskCoreContext &context, int data_size_in_byte,
+                            int sram_addr_offset, u_int64_t &dram_time) {
+    int dma_read_count =
+    data_size_in_byte * 8 / (int)(SRAM_BITWIDTH * SRAM_BANKS);
+    int byte_residue =
+    data_size_in_byte * 8 - dma_read_count * (SRAM_BITWIDTH * SRAM_BANKS);
+    int single_read_count = ceiling_division(byte_residue, SRAM_BITWIDTH);
+
+    // cout << "[INFO] sram_read_generic: dma_read_count: " << dma_read_count <<
+    // ", single_read_count: " << single_read_count << endl; cout << "[INFO]
+    // sram_read_generic: data_size_in_byte: " << data_size_in_byte << ",
+    // sram_addr_offset: " << sram_addr_offset << endl;
+
+    #if USE_NB_DRAMSYS == 0
+    auto wc = context.wc;
+    #endif
+    auto mau = context.temp_mau;
+    auto hmau = context.temp_hmau;
+
+    vector<sc_bv<SRAM_BITWIDTH>> data_tmp(SRAM_BANKS);
+    for (int i = 0; i < SRAM_BANKS; i++) {
+    data_tmp[i] = 0;
+    }
+
+    for (int i = 0; i < dma_read_count; i++) {
+    sc_time elapsed_time;
+    hmau->mem_read_port->multiport_read(sram_addr_offset, data_tmp,
+                            elapsed_time);
+    u_int64_t sram_timer = elapsed_time.to_seconds() * 1e9;
+    dram_time += sram_timer;
+    sram_addr_offset = sram_addr_offset + SRAM_BANKS;
+    }
+
+    sc_bv<SRAM_BITWIDTH> data_tmp2;
+    data_tmp2 = 0;
+
+    sc_time elapsed_time;
+    for (int i = 0; i < single_read_count; i++) {
+    mau->mem_read_port->read(sram_addr_offset, data_tmp2, elapsed_time);
+    sram_addr_offset = sram_addr_offset + 1;
+    u_int64_t sram_timer = elapsed_time.to_seconds() * 1e9;
+    dram_time += sram_timer;
+    }
+}
+
+// 会修改 context.sram_addr 的数值
 void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
                                u_int64_t &dram_time) {
     int dma_read_count =
@@ -391,9 +438,9 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
 
     *sram_addr = sram_addr_temp;
 }
-
-void sram_write_back_generic(TaskCoreContext &context, int data_size_in_byte,
-                             int sram_addr, u_int64_t &dram_time) {
+// 不会修改 context.sram_addr 的数值
+void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
+                             int &temp_sram_addr, u_int64_t &dram_time) {
     int dma_read_count =
         data_size_in_byte * 8 / (int)(SRAM_BITWIDTH * SRAM_BANKS);
     int byte_residue =
@@ -403,8 +450,8 @@ void sram_write_back_generic(TaskCoreContext &context, int data_size_in_byte,
 #if USE_NB_DRAMSYS == 0
     auto wc = context.wc;
 #endif
-    auto mau = context.mau;
-    auto hmau = context.hmau;
+    auto mau = context.temp_mau;
+    auto hmau = context.temp_hmau;
 
     vector<sc_bv<SRAM_BITWIDTH>> data_tmp(SRAM_BANKS);
     for (int i = 0; i < SRAM_BANKS; i++) {
@@ -413,10 +460,10 @@ void sram_write_back_generic(TaskCoreContext &context, int data_size_in_byte,
 
     for (int i = 0; i < dma_read_count; i++) {
         sc_time elapsed_time;
-        hmau->mem_read_port->multiport_write(sram_addr, data_tmp, elapsed_time);
+        hmau->mem_read_port->multiport_write(temp_sram_addr, data_tmp, elapsed_time);
         u_int64_t sram_timer = elapsed_time.to_seconds() * 1e9;
         // dram_time += sram_timer;
-        sram_addr = sram_addr + SRAM_BANKS;
+        temp_sram_addr = temp_sram_addr + SRAM_BANKS;
     }
 
     sc_bv<SRAM_BITWIDTH> data_tmp2;
@@ -424,8 +471,8 @@ void sram_write_back_generic(TaskCoreContext &context, int data_size_in_byte,
 
     sc_time elapsed_time;
     for (int i = 0; i < single_read_count; i++) {
-        mau->mem_write_port->write(sram_addr, data_tmp2, elapsed_time);
-        sram_addr = sram_addr + 1;
+        mau->mem_write_port->write(temp_sram_addr, data_tmp2, elapsed_time);
+        temp_sram_addr = temp_sram_addr + 1;
         u_int64_t sram_timer = elapsed_time.to_seconds() * 1e9;
         // dram_time += sram_timer;
     }
@@ -756,7 +803,7 @@ void gpu_write_generic(TaskCoreContext &context, uint64_t global_addr,
     cout << "end gpu_nbdram: " << sc_time_stamp().to_string() << " id "
          << gpunb_dcache_if->id << endl;
 #endif
-cout << "dahudahu2" <<endl;
+
 
 #if USE_NB_DRAMSYS
     sc_time end_first_write_time = sc_time_stamp();
@@ -769,7 +816,9 @@ cout << "dahudahu2" <<endl;
 
 TaskCoreContext generate_context(WorkerCoreExecutor *workercore) {
     sc_bv<SRAM_BITWIDTH> msg_data;
-
+    NB_GlobalMemIF *nb_global_memif = workercore->nb_global_mem_socket;
+    sc_event *start_global_event = workercore->start_global_mem_event;
+    sc_event *end_global_event = workercore->end_global_mem_event;
 #if USE_NB_DRAMSYS == 1
     NB_DcacheIF *nb_dcache =
         workercore->nb_dcache_socket; // 实例化或获取 NB_DcacheIF 对象
@@ -794,21 +843,23 @@ TaskCoreContext generate_context(WorkerCoreExecutor *workercore) {
         workercore->high_bw_mem_access_port; // 实例化或获取
                                              // high_bw_mem_access_unit 对象
 
-    NB_GlobalMemIF *nb_global_memif = workercore->nb_global_mem_socket;
-    sc_event *start_global_event = workercore->start_global_mem_event;
-    sc_event *end_global_event = workercore->end_global_mem_event;
-
+    mem_access_unit *temp_mau =
+        workercore->temp_mem_access_port; // 实例化或获取 mem_access_unit 对象
+    high_bw_mem_access_unit *temp_hmau =
+        workercore->high_bw_temp_mem_access_port; // 实例化或获取
+                                             // high_bw_mem_access_unit 对象 
 #if USE_L1L2_CACHE == 1
     // 创建类实例
-    TaskCoreContext context(mau, hmau, msg_data, workercore->sram_addr,
+    TaskCoreContext context(mau, hmau, temp_mau, temp_hmau, msg_data, workercore->sram_addr,
                             s_nbdram, e_nbdram, nb_dcache, workercore->loop_cnt,
                             start_nb_gpu_dram_event, end_nb_gpu_dram_event);
 #elif USE_NB_DRAMSYS == 1
-    TaskCoreContext context(mau, hmau, msg_data, workercore->sram_addr,
+    TaskCoreContext context(mau, hmau, temp_mau, temp_hmau, msg_data, workercore->sram_addr,
                             s_nbdram, e_nbdram, nb_dcache,
                             workercore->loop_cnt);
 #else
-        TaskCoreContext context(mau, hmau, msg_data, workercore->sram_addr,
+
+        TaskCoreContext context(wc, mau, hmau, temp_mau, temp_hmau, msg_data, workercore->sram_addr,
                                 s_nbdram, e_nbdram, workercore->loop_cnt);
 #endif
     context.SetGlobalMemIF(nb_global_memif, start_global_event, end_global_event);

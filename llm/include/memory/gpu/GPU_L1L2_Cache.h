@@ -9,6 +9,7 @@
 #include <tlm>
 #include <tlm_utils/peq_with_cb_and_phase.h>
 #include <tlm_utils/simple_initiator_socket.h>
+#include "memory/MemoryManager_v2.h"
 #include <tlm_utils/simple_target_socket.h>
 #include <vector>
 
@@ -153,6 +154,7 @@ protected:
 
     vector<CacheSet> sets;
     vector<MSHREntry> mshrEntries;
+    MemoryManager_v2 mm;
 
     // 地址拆分
     void parseAddress(uint64_t address, uint64_t &tag, uint64_t &setIndex,
@@ -192,6 +194,7 @@ public:
           cacheSize(cacheSize),
           lineSize(lineSize),
           associativity(associativity),
+          mm(false),
           numMSHRs(numMSHRs) {
 
         numSets = cacheSize / (lineSize * associativity);
@@ -428,8 +431,9 @@ public:
             }
             case CacheRequest::WRITEBACK_REQ: {
 
-                tlm_generic_payload *newTrans2 = new tlm_generic_payload();
+                tlm_generic_payload *newTrans2 = &(mm.allocate(req.dataLength));
                 newTrans = newTrans2;
+                newTrans->acquire();
                 MemOpExtension *op_ext = new MemOpExtension(MemOp::LOAD);
                 newTrans->set_extension(op_ext);
                 newTrans->set_command(TLM_WRITE_COMMAND);
@@ -555,8 +559,8 @@ public:
 
 
                             // 发送invalidate请求到总线
-                            tlm_generic_payload *invalidateTrans =
-                                new tlm_generic_payload();
+                            tlm_generic_payload *invalidateTrans = &(mm.allocate(1));
+                            invalidateTrans->acquire();
                             invalidateTrans->set_address(addr);
                             MemOpExtension *op_ext =
                                 new MemOpExtension(MemOp::INVALID);
@@ -1107,7 +1111,7 @@ public:
             sc_time delay = SC_ZERO_TIME;
             tlm_phase phase = END_RESP;
 #if GPU_CACHE_DEBUG == 1
-            cout << "BUS FROM L1CACHE [" << id << "]: BUS SEND REQ TO L2"
+            cout << "BUS FROM L1CACHE [" << id << "]: BUS SEND END RESP TO L2"
                  << " Time stamp: " << sc_time_stamp()
                  << " Address: " << trans.get_address() << endl;
 #endif
@@ -1461,8 +1465,9 @@ public:
             }
             case CacheRequest::WRITEBACK_REQ: {
                 // 为写回请求创建新的事务
-                tlm_generic_payload *newTrans2 = new tlm_generic_payload();
+                tlm_generic_payload *newTrans2 = &(mm.allocate(req.dataLength));
                 newTrans = newTrans2;
+                newTrans->acquire();
                 newTrans->set_command(TLM_WRITE_COMMAND);
                 // newTrans->set_address(req.address);
                 // newTrans->set_data_ptr(req.data);
@@ -1579,6 +1584,21 @@ public:
                 if (!hit) {
                     // 未命中，放入MSHR
                     int mshrIndex = findFreeMSHR();
+// #if GPU_CACHE_DEBUG == 1
+
+//                     cout << "MSHR Entries Status:" << endl;
+//                     for (int i = 0; i < numMSHRs; i++) {
+//                         cout << "MSHR " << i << ": "
+//                             << "Address: " << mshrEntries[i].address << " Type: "
+//                             << (mshrEntries[i].requestType == READ ? "READ"
+//                                 : mshrEntries[i].requestType == WRITE ? "WRITE" : "WRITEBACK")
+//                             << " Time: " << mshrEntries[i].requestTime << " Pending: "
+//                             << (mshrEntries[i].isPending ? "Yes" : "No")
+//                             << " Issue: " << (mshrEntries[i].isIssue ? "Yes" : "No")
+//                             << endl;
+//                     }
+//                     cout << "MSHR Index: " << mshrIndex << " READ COMMAND " << endl;
+// #endif
                     if (mshrIndex >= 0) {
                         mshrEntries[mshrIndex].address = addr;
                         mshrEntries[mshrIndex].requestType = READ;
@@ -1623,6 +1643,21 @@ public:
 
                 if (!hit) {
                     int mshrIndex = findFreeMSHR();
+// #if GPU_CACHE_DEBUG == 1
+
+//                     cout << "MSHR Entries Status:" << endl;
+//                     for (int i = 0; i < numMSHRs; i++) {
+//                         cout << "MSHR " << i << ": "
+//                             << "Address: " << mshrEntries[i].address << " Type: "
+//                             << (mshrEntries[i].requestType == READ ? "READ"
+//                                 : mshrEntries[i].requestType == WRITE ? "WRITE" : "WRITEBACK")
+//                             << " Time: " << mshrEntries[i].requestTime << " Pending: "
+//                             << (mshrEntries[i].isPending ? "Yes" : "No")
+//                             << " Issue: " << (mshrEntries[i].isIssue ? "Yes" : "No")
+//                             << endl;
+//                     }
+//                     cout << "MSHR Index: " << mshrIndex << " WRITE COMMAND " << endl;
+// #endif
                     if (mshrIndex >= 0) {
                         mshrEntries[mshrIndex].address = addr;
                         mshrEntries[mshrIndex].requestType = WRITE;
@@ -1754,6 +1789,10 @@ public:
                                 (setIndex << log2LineSize);
 
                             // 使用writeBack方法
+#if GPU_CACHE_DEBUG == 1
+                            cout << "L2CACHE read WRITEBACK: " << writebackAddr
+                                 << endl;
+#endif
                             writeBack(writebackAddr, setIndex, replaceIndex);
                         }
                     }
@@ -1805,6 +1844,10 @@ public:
                                 (setIndex << log2LineSize);
 
                             // 使用writeBack方法
+#if GPU_CACHE_DEBUG == 1
+                            cout << "L2CACHE write WRITEBACK: " << writebackAddr
+                                 << endl;
+#endif
                             writeBack(writebackAddr, setIndex, replaceIndex);
                         }
                     }
@@ -1829,7 +1872,7 @@ public:
 
             // DAHU 释放L2 WB 数据
 #if GPU_CACHE_DEBUG == 1
-            cout << "L2CACHE WB." << " Time stamp: " << sc_time_stamp()
+            cout << "L2CACHE L2WB." << " Time stamp: " << sc_time_stamp()
                  << " Address: " << trans.get_address() << endl;
 #endif
             phase = END_RESP;
@@ -1839,6 +1882,141 @@ public:
 
         } else if (phase == BEGIN_RESP && op_ext->op != WbOp::WB &&
                    opL1_ext->op == WbL1Op::WB_L1) {
+
+            uint64_t addr = trans.get_address();
+            uint64_t tag, setIndex, offset;
+            parseAddress(addr, tag, setIndex, offset);
+            SourceIDExtension *id_ext;
+            trans.get_extension(id_ext);
+
+
+            if (!id_ext) {
+                SC_REPORT_ERROR("Bus", "Missing source ID extension");
+            }
+            int targetId = id_ext->get_id();
+
+#if GPU_CACHE_DEBUG == 1
+            cout << "L2CACHE FROM L1CACHE [" << targetId
+                    << "]: BESP RESP For L1CACHE MSHR"
+                    << " Time stamp: " << sc_time_stamp()
+                    << " Address: " << trans.get_address() << endl;
+
+            // 打印所有MSHR条目的信息
+            cout << "MSHR WB_L1 Entries Status:" << endl;
+            for (int i = 0; i < numMSHRs; i++) {
+                cout << "MSHR " << i << ": "
+                        << "Address: " << mshrEntries[i].address << " Type: "
+                        << (mshrEntries[i].requestType == READ    ? "READ"
+                            : mshrEntries[i].requestType == WRITE ? "WRITE"
+                                                                : "WRITEBACK")
+                        << " Time: " << mshrEntries[i].requestTime << " Pending: "
+                        << (mshrEntries[i].isPending ? "Yes" : "No")
+                        << " Issue: " << (mshrEntries[i].isIssue ? "Yes" : "No")
+                        << endl;
+            }
+            cout << "address: " << addr << " tag: " << tag
+                    << " setIndex: " << setIndex << " offset: " << offset << endl;
+#endif
+            // 查找对应的MSHR
+            int mshrIndex = findMSHRByAddress(addr);
+            assert(mshrIndex >= 0 && "MSHR not found");
+            if (mshrIndex >= 0) {
+                if (trans.get_command() == TLM_READ_COMMAND) {
+                    // 处理读响应
+                    // 为缓存行分配空间
+                    int replaceIndex = -1;
+                    for (int i = 0; i < associativity; i++) {
+                        if (!sets[setIndex].lines[i].valid) {
+                            replaceIndex = i;
+                            break;
+                        }
+                    }
+
+                    if (replaceIndex < 0) {
+                        replaceIndex = 0;
+                        if (sets[setIndex].lines[replaceIndex].state ==
+                            MODIFIED) {
+                            // 计算写回地址
+                            const int log2LineSize =
+                                static_cast<int>(log2(lineSize));
+                            const int log2NumSets =
+                                static_cast<int>(log2(numSets));
+
+                            uint64_t writebackAddr =
+                                (sets[setIndex].lines[replaceIndex].tag
+                                    << (log2LineSize + log2NumSets)) |
+                                (setIndex << log2LineSize);
+
+                            // 使用writeBack方法
+#if GPU_CACHE_DEBUG == 1
+                            cout << "L2CACHE read WRITEBACK: " << writebackAddr
+                                    << endl;
+#endif
+                            writeBack(writebackAddr, setIndex, replaceIndex);
+                        }
+                    }
+
+                    // 更新缓存行
+                    sets[setIndex].lines[replaceIndex].tag = tag;
+                    sets[setIndex].lines[replaceIndex].valid = true;
+                    sets[setIndex].lines[replaceIndex].state = SHARED;
+                    // memcpy(&sets[setIndex].lines[replaceIndex].data[0],
+                    // trans.get_data_ptr(), lineSize);
+
+                    // 更新原始事务数据
+                    tlm_generic_payload *origTrans = &trans;//mshrEntries[mshrIndex].pendingTransaction;
+                    // memcpy(origTrans->get_data_ptr(), trans.get_data_ptr(),
+                    // origTrans->get_data_length());
+
+                    // 标记MSHR为空闲
+                    mshrEntries[mshrIndex].isPending = false;
+
+                } else if (trans.get_command() == TLM_WRITE_COMMAND) {
+                    // 处理写响应
+                    tlm_generic_payload *origTrans = &trans;//mshrEntries[mshrIndex].pendingTransaction;
+
+                    int replaceIndex = -1;
+                    for (int i = 0; i < associativity; i++) {
+                        if (!sets[setIndex].lines[i].valid) {
+                            replaceIndex = i;
+                            break;
+                        }
+                    }
+
+                    if (replaceIndex < 0) {
+                        replaceIndex = 0;
+                        if (sets[setIndex].lines[replaceIndex].state ==
+                            MODIFIED) {
+                            // 计算写回地址
+                            const int log2LineSize =
+                                static_cast<int>(log2(lineSize));
+                            const int log2NumSets =
+                                static_cast<int>(log2(numSets));
+
+                            uint64_t writebackAddr =
+                                (sets[setIndex].lines[replaceIndex].tag
+                                    << (log2LineSize + log2NumSets)) |
+                                (setIndex << log2LineSize);
+
+                            // 使用writeBack方法
+#if GPU_CACHE_DEBUG == 1
+                            cout << "L2CACHE write WRITEBACK: " << writebackAddr
+                                    << endl;
+#endif
+                            writeBack(writebackAddr, setIndex, replaceIndex);
+                        }
+                    }
+
+                    sets[setIndex].lines[replaceIndex].tag = tag;
+                    sets[setIndex].lines[replaceIndex].valid = true;
+                    sets[setIndex].lines[replaceIndex].state = MODIFIED;
+                    // memcpy(&sets[setIndex].lines[replaceIndex].data[0],
+                    // origTrans->get_data_ptr(), origTrans->get_data_length());
+
+                    mshrEntries[mshrIndex].isPending = false;
+
+                }
+            }
 
             // DAHU 释放L2 WB 数据
 #if GPU_CACHE_DEBUG == 1
@@ -1850,6 +2028,10 @@ public:
             phase = END_RESP;
             sc_time bwDelay = sc_core::sc_time(CYCLE, sc_core::SC_NS);
             payloadEventQueue_L2L1WB.notify(trans, phase, bwDelay);
+        }else {
+#if GPU_CACHE_DEBUG == 1
+            cout << "ERROR!!!! "<< endl;
+#endif
         }
 
         return TLM_ACCEPTED;

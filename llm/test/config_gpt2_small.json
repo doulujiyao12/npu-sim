@@ -26,7 +26,8 @@
     "matmul4_data_": 5022720,
     "matmul4_data": 4915,
     "residual2_out_": 7382784,
-    "residual2_out": 7220
+    "residual2_out": 7220,
+    "TODO": 110
   },
   "pipeline": 1,
   "source": [
@@ -90,7 +91,7 @@
                 "outdata": "attention1_out"
               },
               "dram_address": {
-                "data": "attention1_data"
+                "input": "TODO"
               }
             },
             {

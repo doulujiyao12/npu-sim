@@ -67,7 +67,8 @@ vars : dict
 
   
   .. note::
-     如果配置 sram 的地址的话，需要 1024 BYTE 对齐，除以  1024 取整。
+     如果配置 sram 的地址的话，需要 1024 个元素对齐，即所需要的数据量除以1024（这里不会乘上每个数据的BYTE数，或默认为INT8存储所需要的地址偏移）。
+     这样的设计可以避免数据类型变化对地址索引的影响。
 
 
 source : list of dicts
@@ -408,6 +409,8 @@ core 配置
                                 注意现在cast中的addr地址还有问题，理论上应该指向sram的地址。
                         </div>
 
+                        
+
                         </li>
                         <li><strong>cast</strong> : list of dicts
                             <p>在此 worklist 元素的所有原语完成之后，需要将结果发送到哪些核。</p>
@@ -495,6 +498,12 @@ core 配置
                                         <li><strong>out</strong> : string or int, optional
                                             <p>默认为 0。此原语输出在 DRAM 中的位置。</p>
                                         </li>
+
+                                        <div class="custom-todo">
+                                                spill back 的 dram 地址现在都是inp_address。
+                                        </div>
+
+                                        
                                     </ul>
                                 </li>
                             </ul>
@@ -566,6 +575,9 @@ core 配置
 
         每个 prim 元素包含以下字段：
 
+        
+
+
         - type : string
             原语类型（需填写指定字符串）。
 
@@ -596,3 +608,6 @@ core 配置
 
             - out : string or int, optional
                 默认为 0。此原语输出在 DRAM 中的位置。
+
+        
+
