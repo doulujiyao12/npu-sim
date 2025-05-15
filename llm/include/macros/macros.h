@@ -19,6 +19,7 @@
 #define FAST_WARMUP 1
 #define SR_PARA 0
 #define GPU_CACHE_DEBUG 0
+#define GPU_TMP_DEBUG 1
 #define NB_CACHE_DEBUG 0
 
 // 数据包占位
@@ -52,6 +53,7 @@
 #define SRAM_BITWIDTH 128
 #define SRAM_BANKS 16
 #define BANK_DEPTH 256
+#define BANK_DEPTH_TMP 256
 #define BANK_PORT_NUM 4
 #define BANK_HIGH_READ_PORT_NUM 1
 #define SIMU_READ_PORT 2

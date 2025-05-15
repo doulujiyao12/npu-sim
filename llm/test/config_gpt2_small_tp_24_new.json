@@ -167,7 +167,6 @@
                     "outdata": "residual1_out"
                   },
                   "dram_address": {
-                    "input": 0,
                     "data": -1
                   }
                 },
@@ -277,7 +276,6 @@
                     "outdata": "residual2_out"
                   },
                   "dram_address": {
-                    "input": 0,
                     "data": -1,
                     "out": "residual2_out"
                   }

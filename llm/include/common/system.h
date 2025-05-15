@@ -35,6 +35,8 @@ class TaskCoreContext {
 public:
     mem_access_unit *mau;
     high_bw_mem_access_unit *hmau;
+    mem_access_unit *temp_mau;
+    high_bw_mem_access_unit *temp_hmau;
     sc_bv<SRAM_BITWIDTH> msg_data;
     int *sram_addr;
     sc_event *s_nbdram;
@@ -55,23 +57,29 @@ public:
 #endif
 #if USE_NB_DRAMSYS == 1
     // 构造函数
-    TaskCoreContext(mem_access_unit *mau, high_bw_mem_access_unit *hmau,
+    TaskCoreContext(mem_access_unit *mau, high_bw_mem_access_unit *hmau, 
+                    mem_access_unit *temp_mau, high_bw_mem_access_unit *temp_hmau,
                     const sc_bv<SRAM_BITWIDTH> &msg_data, int *sram_addr,
                     sc_event *s_nbdram, sc_event *e_nbdram,
                     NB_DcacheIF *nb_dcache)
         : mau(mau),
           hmau(hmau),
+          temp_mau(temp_mau),
+          temp_hmau(temp_hmau),
           msg_data(msg_data),
           sram_addr(sram_addr),
           s_nbdram(s_nbdram),
           e_nbdram(e_nbdram),
           nb_dcache(nb_dcache) {}
     TaskCoreContext(mem_access_unit *mau, high_bw_mem_access_unit *hmau,
+                    mem_access_unit *temp_mau, high_bw_mem_access_unit *temp_hmau,
                     const sc_bv<SRAM_BITWIDTH> &msg_data, int *sram_addr,
                     sc_event *s_nbdram, sc_event *e_nbdram,
                     NB_DcacheIF *nb_dcache, int loop_cnt)
         : mau(mau),
           hmau(hmau),
+          temp_mau(temp_mau),
+          temp_hmau(temp_hmau),
           msg_data(msg_data),
           sram_addr(sram_addr),
           s_nbdram(s_nbdram),
@@ -82,11 +90,14 @@ public:
     // 构造函数
     TaskCoreContext(DcacheCore *wc, mem_access_unit *mau,
                     high_bw_mem_access_unit *hmau,
+                    mem_access_unit *temp_mau, high_bw_mem_access_unit *temp_hmau,
                     const sc_bv<SRAM_BITWIDTH> &msg_data, int *sram_addr,
                     sc_event *s_nbdram, sc_event *e_nbdram)
         : wc(wc),
           mau(mau),
           hmau(hmau),
+          temp_mau(temp_mau),
+          temp_hmau(temp_hmau),
           msg_data(msg_data),
           sram_addr(sram_addr),
           s_nbdram(s_nbdram),
@@ -95,6 +106,7 @@ public:
 
 #if USE_L1L2_CACHE == 1
     TaskCoreContext(mem_access_unit *mau, high_bw_mem_access_unit *hmau,
+                    mem_access_unit *temp_mau, high_bw_mem_access_unit *temp_hmau,
                     const sc_bv<SRAM_BITWIDTH> &msg_data, int *sram_addr,
                     sc_event *s_nbdram, sc_event *e_nbdram,
                     NB_DcacheIF *nb_dcache, int loop_cnt,
@@ -102,6 +114,8 @@ public:
                     sc_event *end_nb_gpu_dram_event)
         : mau(mau),
           hmau(hmau),
+          temp_mau(temp_mau),
+          temp_hmau(temp_hmau),
           msg_data(msg_data),
           sram_addr(sram_addr),
           s_nbdram(s_nbdram),
