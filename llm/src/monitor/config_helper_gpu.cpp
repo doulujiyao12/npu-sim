@@ -68,7 +68,6 @@ config_helper_gpu::config_helper_gpu(string filename, string font_ttf,
 
     end_cores = GRID_SIZE;
     pipeline = 1;
-    sequential = false;
 
     print_self();
 }

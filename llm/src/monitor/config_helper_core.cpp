@@ -189,11 +189,6 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
         pipeline = 1;
     }
 
-    if (j.contains("sequential")) {
-        j.at("sequential").get_to(sequential);
-    } else {
-        sequential = false;
-    }
     seq_index = 0;
 
     // 检查是否需要复制原语的核，config书写要求：需要重新写明所有work的cast、recv_cnt,数量等同于需要复制的那个核的work数量
@@ -214,6 +209,8 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
         }
     }
 
+    end_cores = 0;
+
     for (int i = 0; i < coreconfigs.size(); i++) {
         // //std::cout << "Coreiii " << i << " prims: " <<
         // coreconfigs[i].prims.size() << std::endl;
@@ -227,9 +224,6 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
         }
         cout << "core\n";
     }
-
-    if (sequential)
-        end_cores = 1;
 
     // 再去重新填写send的收发地址
     calculate_address(true);
@@ -495,46 +489,14 @@ void config_helper_core::calculate_address(bool do_loop) {
 
 void config_helper_core::fill_queue_start(queue<Msg> *q) {
     for (int pipe = 0; pipe < pipeline; pipe++) {
-        if (sequential == false) {
-            for (auto source : source_info) {
-                int i = source.first;
-                int size = source.second;
-
-                int index = i / GRID_X;
-                int pkg_index = 0;
-                int send_offset = delta_offset[i];
-                int send_size_in_bit = size * sizeof(float) * 8;
-                int pkg_num = (send_size_in_bit % M_D_DATA)
-                                  ? (send_size_in_bit / M_D_DATA + 1)
-                                  : (send_size_in_bit / M_D_DATA);
-
-                for (int j = 1; j <= pkg_num; j++) {
-                    // CTODO: 拿到真正的数据
-                    sc_bv<M_D_DATA> d(0x1);
-                    int length = M_D_DATA;
-                    bool is_end_packet = j == pkg_num;
-                    if (is_end_packet) {
-                        length =
-                            size * sizeof(float) - M_D_DATA * (pkg_num - 1);
-                    }
-
-                    // CTODO: recv_tag default to i
-                    Msg m =
-                        Msg(j == pkg_num, MSG_TYPE::S_DATA, j + pkg_index, i,
-                            send_offset + M_D_DATA * (j - 1), i, length, d);
-                    m.source = GRID_SIZE;
-                    q[index].push(m);
-                }
-            }
-        } else { // sequential == true
-            auto source = source_info[seq_index];
+        for (auto source : source_info) {
             int i = source.first;
             int size = source.second;
 
             int index = i / GRID_X;
             int pkg_index = 0;
             int send_offset = delta_offset[i];
-            int send_size_in_bit = size * sizeof(float);
+            int send_size_in_bit = size * sizeof(float) * 8;
             int pkg_num = (send_size_in_bit % M_D_DATA)
                               ? (send_size_in_bit / M_D_DATA + 1)
                               : (send_size_in_bit / M_D_DATA);
@@ -554,8 +516,6 @@ void config_helper_core::fill_queue_start(queue<Msg> *q) {
                 m.source = GRID_SIZE;
                 q[index].push(m);
             }
-
-            seq_index++;
         }
     }
 }

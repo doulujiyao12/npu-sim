@@ -333,25 +333,17 @@ void MemInterface::recv_done() {
 
         switch (SYSTEM_MODE) {
         case SIM_DATAFLOW:
+            cout << "g_recv_done_cnt " << g_recv_done_cnt << " end "
+                 << config_helper->end_cores << " pipe "
+                 << config_helper->pipeline << endl;
             if (g_recv_done_cnt >=
                 config_helper->end_cores * config_helper->pipeline) {
-                if (!config_helper->sequential ||
-                    config_helper->seq_index ==
-                        config_helper->source_info.size()) {
-                    cout << "Mem Interface: all work done, end_core: "
-                         << config_helper->end_cores
-                         << ", recv_cnt: " << g_recv_done_cnt << endl;
+                cout << "Mem Interface: all work done, end_core: "
+                     << config_helper->end_cores
+                     << ", recv_cnt: " << g_recv_done_cnt << endl;
 
-                    g_recv_done_cnt = 0;
-                    sc_stop();
-                } else {
-                    cout << "Mem Interface: one work done. "
-                         << config_helper->seq_index << " of "
-                         << config_helper->source_info.size() << ".\n";
-
-                    g_recv_done_cnt = 0;
-                    ev_switch_phase.notify(CYCLE, SC_NS);
-                }
+                g_recv_done_cnt = 0;
+                sc_stop();
             }
             break;
         case SIM_GPU:
