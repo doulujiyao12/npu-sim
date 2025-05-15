@@ -110,6 +110,7 @@ void config_helper_gpu::generate_prims(int i) {
 
     for (auto &work : c->worklist) {
         // 不向in_loop推入任何原语，只操作last_loop
+        // WARN: 只允许在第一个worklist推入RECV_START
         work.prims_last_loop.push_back(
             new Recv_prim(RECV_TYPE::RECV_START, work.recv_tag, work.recv_cnt));
 

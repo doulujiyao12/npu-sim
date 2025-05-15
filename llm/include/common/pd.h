@@ -11,6 +11,7 @@ public:
     int id;
     int seq_len;
     int prefill_iters;
+    int arrival_time;
 
     // 需要修改
     PD_PHASE phase;
@@ -18,7 +19,7 @@ public:
     int prefill_counter; // prefill已经执行几次iter
     int decode_counter;  // decode已经执行几次iter
 
-    RequestRecord(int id, int seq_len, int heads) : id(id), seq_len(seq_len) {
+    RequestRecord(int id, int seq_len, int heads, int arrival_time) : id(id), seq_len(seq_len), arrival_time(arrival_time) {
         phase = UNTOUCHED;
         decode_counter = 0;
         prefill_iters = seq_len * heads / MAX_PREFILL_WORKLOAD;

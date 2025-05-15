@@ -264,7 +264,7 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
 
         cout << "core " << config.id << ", loop: " << config.loop << endl;
 
-        for (int i = 0; i < config.loop; i++) {
+        for (int i = 0; i < config.loop - 1; i++) {
             for (int j = 1; j <= single_rep_in_loop.size(); j++) {
                 Msg m = single_rep_in_loop[j - 1];
                 m.seq_id = j + single_rep_in_loop.size() * i + 1;
@@ -274,7 +274,7 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
 
         for (int j = 1; j <= single_rep_last_loop.size(); j++) {
             Msg m = single_rep_last_loop[j - 1];
-            m.seq_id = j + single_rep_in_loop.size() * config.loop + 1;
+            m.seq_id = j + single_rep_in_loop.size() * (config.loop - 1) + 1;
             m.refill = m.is_end = j == single_rep_last_loop.size();
 
             q[index].push(m);
@@ -302,7 +302,7 @@ void config_helper_core::generate_prims(int i) {
 
         // 先生成loop中的原语
         // 首先是recv，对应 RECV_DATA
-        if (is_source)
+        if (is_source && w == 0)
             work.prims_in_loop.push_back(new Recv_prim(
                 RECV_TYPE::RECV_START, work.recv_tag, work.recv_cnt));
         else
@@ -346,7 +346,7 @@ void config_helper_core::generate_prims(int i) {
         }
 
         // 再生成最后一个loop的原语
-        if (is_source)
+        if (is_source && w == 0)
             work.prims_last_loop.push_back(new Recv_prim(
                 RECV_TYPE::RECV_START, work.recv_tag, work.recv_cnt));
         else
