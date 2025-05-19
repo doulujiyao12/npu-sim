@@ -106,6 +106,15 @@ enum PD_PHASE {
     PD_DONE,
 };
 
+// 在PD模式下每一个核需要进行的任务类型
+enum PD_JOB {
+    JOB_PREFILL = 0,
+    JOB_DECODE,
+    JOB_BOTH,
+    JOB_NONE,
+};
+
+// 原语类型
 enum PRIM_TYPE {
     NORM_PRIM = 0,
     COMP_PRIM,

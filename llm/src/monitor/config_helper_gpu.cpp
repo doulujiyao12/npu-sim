@@ -68,6 +68,8 @@ config_helper_gpu::config_helper_gpu(string filename, string font_ttf,
 
     end_cores = GRID_SIZE;
     pipeline = 1;
+    g_recv_ack_cnt = 0;
+    g_recv_done_cnt = 0;
 
     print_self();
 }
@@ -195,6 +197,76 @@ void config_helper_gpu::print_self() {
                      << endl;
             }
             cout << "Work recv_cnt: " << work.recv_cnt << endl;
+        }
+    }
+}
+
+void config_helper_gpu::parse_ack_msg(Event_engine *event_engine, int flow_id,
+                                      sc_event *notify_event) {
+    event_engine->add_event(this->name(), "Waiting Recv Ack", "B",
+                            Trace_event_util());
+
+    for (auto m : g_temp_ack_msg) {
+        int cid = m.source;
+        cout << sc_time_stamp()
+             << ": Config helper GPU: received ack packet from " << cid
+             << ". total " << g_recv_ack_cnt + 1 << "/" << coreconfigs.size()
+             << ".\n";
+
+        g_recv_ack_cnt++;
+    }
+
+    g_temp_ack_msg.clear();
+    event_engine->add_event(this->name(), "Waiting Recv Ack", "E",
+                            Trace_event_util());
+
+    if (g_recv_ack_cnt >= coreconfigs.size()) {
+        notify_event->notify(CYCLE, SC_NS);
+
+        // 使用唯一的flow ID替换名称
+        std::string flow_name = "flow_" + std::to_string(flow_id);
+        event_engine->add_event(this->name(), "Waiting Recv Ack", "f",
+                                Trace_event_util(flow_name), sc_time(0, SC_NS),
+                                100, "e");
+        cout << "Config helper GPU: received all ack packets.\n";
+
+        g_recv_ack_cnt = 0;
+    }
+}
+
+void config_helper_gpu::parse_done_msg(Event_engine *event_engine,
+                                       sc_event *notify_event) {
+    event_engine->add_event(this->name(), "Waiting Core busy", "B",
+                            Trace_event_util());
+
+    for (auto m : g_temp_done_msg) {
+        int cid = m.source;
+        cout << sc_time_stamp()
+             << ": Config helper GPU: received done packet from " << cid
+             << ", total " << g_recv_done_cnt + 1 << ".\n";
+
+        g_recv_done_cnt++;
+        // g_done_msg.push_back(m);
+    }
+    g_temp_done_msg.clear();
+    event_engine->add_event(this->name(), "Waiting Core busy", "E",
+                            Trace_event_util());
+
+    auto prim = streams[0].prims[gpu_index - 1];
+    auto core_inv = ((gpu_base *)prim)->req_sm;
+
+    if (core_inv >= GRID_SIZE)
+        core_inv = GRID_SIZE;
+    if (g_recv_done_cnt >= core_inv) {
+        cout << "Config helper GPU: one work done. " << gpu_index << " of "
+             << streams[0].prims.size() << endl;
+
+        if (gpu_index == streams[0].prims.size()) {
+            cout << "Config helper GPU: all work done.\n";
+            sc_stop();
+        } else {
+            g_recv_done_cnt = 0;
+            notify_event->notify(CYCLE, SC_NS);
         }
     }
 }

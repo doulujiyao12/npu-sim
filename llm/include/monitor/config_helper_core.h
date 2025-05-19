@@ -22,6 +22,10 @@ public:
 
     void random_core(string font_ttf);
 
+    void parse_ack_msg(Event_engine *event_engine, int flow_id,
+                       sc_event *notify_event);
+    void parse_done_msg(Event_engine *event_engine, sc_event *notify_event);
+
     void fill_queue_start(queue<Msg> *q);
     void fill_queue_config(queue<Msg> *q);
     CoreConfig *get_core(int id);
