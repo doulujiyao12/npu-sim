@@ -14,7 +14,7 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
 
     decode_done = 0;
     for (int i = 0; i < GRID_SIZE; i++) {
-        CoreStatus status = CoreStatus(i);
+        CoreStatus status = CoreStatus(i, JOB_BOTH);
         coreStatus.push_back(status);
     }
 
@@ -48,6 +48,8 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
     // 建立原语模板
     json_template = j["chips"][0]["cores"][0];
     busy = false;
+    g_recv_ack_cnt = 0;
+    g_recv_done_cnt = 0;
 
     ev_sig->notify(0, SC_NS);
 }
@@ -417,4 +419,56 @@ void config_helper_pd::generate_prims(int i) {
     Msg m = Msg(true, MSG_TYPE::CONFIG, ++prim_seq, i, send_done->serialize());
     m.refill = false;
     temp_config.push_back(m);
+}
+
+void config_helper_pd::parse_ack_msg(Event_engine *event_engine, int flow_id,
+                                     sc_event *notify_event) {
+    event_engine->add_event(this->name(), "Waiting Recv Ack", "B",
+                            Trace_event_util());
+
+    for (auto m : g_temp_ack_msg) {
+        int cid = m.source;
+        cout << sc_time_stamp()
+             << ": Config helper PD: received ack packet from " << cid
+             << ". total " << g_recv_ack_cnt + 1 << "/" << coreconfigs.size()
+             << ".\n";
+
+        g_recv_ack_cnt++;
+    }
+
+    g_temp_ack_msg.clear();
+    event_engine->add_event(this->name(), "Waiting Recv Ack", "E",
+                            Trace_event_util());
+
+    if (g_recv_ack_cnt >= coreStatus.size()) {
+        g_recv_ack_cnt = 0;
+        notify_event->notify(CYCLE, SC_NS);
+    }
+}
+
+void config_helper_pd::parse_done_msg(Event_engine *event_engine,
+                                      sc_event *notify_event) {
+    event_engine->add_event(this->name(), "Waiting Core busy", "B",
+                            Trace_event_util());
+
+    for (auto m : g_temp_done_msg) {
+        int cid = m.source;
+        cout << sc_time_stamp()
+             << ": Config helper PD: received done packet from " << cid
+             << ", working type " << coreStatus[cid].job_type << ".\n";
+
+        g_recv_done_cnt++;
+        g_done_msg.push_back(m);
+    }
+    g_temp_done_msg.clear();
+    event_engine->add_event(this->name(), "Waiting Core busy", "E",
+                            Trace_event_util());
+
+    if (g_recv_done_cnt >= coreStatus.size()) {
+        iter_done(g_done_msg);
+
+        g_done_msg.clear();
+        g_recv_done_cnt = 0;
+        notify_event->notify(CYCLE, SC_NS);
+    }
 }

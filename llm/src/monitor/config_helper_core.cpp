@@ -189,8 +189,6 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
         pipeline = 1;
     }
 
-    seq_index = 0;
-
     // 检查是否需要复制原语的核，config书写要求：需要重新写明所有work的cast、recv_cnt,数量等同于需要复制的那个核的work数量
     for (int i = 0; i < coreconfigs.size(); i++) {
         if (coreconfigs[i].prim_copy != -1) {
@@ -210,6 +208,8 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
     }
 
     end_cores = 0;
+    g_recv_ack_cnt = 0;
+    g_recv_done_cnt = 0;
 
     for (int i = 0; i < coreconfigs.size(); i++) {
         // //std::cout << "Coreiii " << i << " prims: " <<
@@ -517,5 +517,69 @@ void config_helper_core::fill_queue_start(queue<Msg> *q) {
                 q[index].push(m);
             }
         }
+    }
+}
+
+void config_helper_core::parse_ack_msg(Event_engine *event_engine, int flow_id,
+                                       sc_event *notify_event) {
+    event_engine->add_event(this->name(), "Waiting Recv Ack", "B",
+                            Trace_event_util());
+
+    for (auto m : g_temp_ack_msg) {
+        int cid = m.source;
+        cout << sc_time_stamp()
+             << ": Config helper DATAFLOW: received ack packet from " << cid
+             << ". total " << g_recv_ack_cnt + 1 << "/" << coreconfigs.size()
+             << ".\n";
+
+        g_recv_ack_cnt++;
+    }
+
+    g_temp_ack_msg.clear();
+    event_engine->add_event(this->name(), "Waiting Recv Ack", "E",
+                            Trace_event_util());
+
+
+    if (g_recv_ack_cnt >= coreconfigs.size()) {
+        notify_event->notify(CYCLE, SC_NS);
+        g_recv_ack_cnt = 0;
+
+        // 使用唯一的flow ID替换名称
+        std::string flow_name = "flow_" + std::to_string(flow_id);
+        event_engine->add_event(this->name(), "Waiting Recv Ack", "f",
+                                Trace_event_util(flow_name), sc_time(0, SC_NS),
+                                100, "e");
+        cout << "Config helper DATAFLOW: received all ack packets.\n";
+    }
+}
+
+void config_helper_core::parse_done_msg(Event_engine *event_engine,
+                                        sc_event *notify_event) {
+    notify_event = nullptr; // 无需触发任何信号
+    event_engine->add_event(this->name(), "Waiting Core busy", "B",
+                            Trace_event_util());
+
+    for (auto m : g_temp_done_msg) {
+        int cid = m.source;
+        cout << sc_time_stamp()
+             << ": Config helper DATAFLOW: received done packet from " << cid
+             << ", total " << g_recv_done_cnt + 1 << ".\n";
+
+        g_recv_done_cnt++;
+        // g_done_msg.push_back(m);
+    }
+    g_temp_done_msg.clear();
+    event_engine->add_event(this->name(), "Waiting Core busy", "E",
+                            Trace_event_util());
+
+    cout << "g_recv_done_cnt " << g_recv_done_cnt << " end " << end_cores
+         << " pipe " << pipeline << endl;
+
+    if (g_recv_done_cnt >= end_cores * pipeline) {
+        cout << "Config helper DATAFLOW: all work done, end_core: " << end_cores
+             << ", recv_cnt: " << g_recv_done_cnt << endl;
+
+        g_recv_done_cnt = 0;
+        sc_stop();
     }
 }

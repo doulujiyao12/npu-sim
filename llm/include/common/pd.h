@@ -42,13 +42,14 @@ class CoreStatus {
 public:
     // 不作修改
     int id;
+    PD_JOB job_type;
 
     // 正在执行的任务
     vector<Stage> batchInfo;
     bool available;
     bool data_sent;
 
-    CoreStatus(int id) : id(id) {
+    CoreStatus(int id, PD_JOB type) : id(id), job_type(type) {
         available = true;
         data_sent = false;
     }
