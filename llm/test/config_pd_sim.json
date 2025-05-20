@@ -77,7 +77,7 @@
                   }
                 },
                 {
-                  "type": "Attention_f",
+                  "type": "Attention_f_prefill",
                   "B": "B",
                   "T": "T",
                   "C": "C",
@@ -206,7 +206,7 @@
                   }
                 },
                 {
-                  "type": "Attention_f",
+                  "type": "Attention_f_prefill",
                   "B": "B",
                   "T": "T",
                   "C": "C",
@@ -335,7 +335,7 @@
                   }
                 },
                 {
-                  "type": "Attention_f",
+                  "type": "Attention_f_prefill",
                   "B": "B",
                   "T": "T",
                   "C": "C",

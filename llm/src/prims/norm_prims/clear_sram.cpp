@@ -27,6 +27,7 @@ int Clear_sram::task_core(TaskCoreContext &context) {
          << endl;
 
     vector<pair<string, AddrPosKey>> temp_list;
+    // sram_pos_locator->printAllKeys();
     for (auto record : sram_pos_locator->data_map) {
         cout << "\tReading label <" << record.first << ">\n";
 
@@ -47,6 +48,10 @@ int Clear_sram::task_core(TaskCoreContext &context) {
             temp_list.push_back(record);
         }
     }
+    // for (const auto& item : temp_list) {
+    //     std::cout << "Key: " << item.first << ", ";
+    //     std::cout << "AddrPosKey - pos: " << item.second.pos << ", size: " << item.second.size << std::endl;
+    // }
 
     sram_pos_locator->clearAll();
     int pos = 0;

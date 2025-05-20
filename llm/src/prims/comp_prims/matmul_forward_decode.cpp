@@ -245,10 +245,10 @@ int Matmul_f_decode::task_core(TaskCoreContext &context) {
         string label_decode_k = format_label_k;
 
         flag = sram_pos_locator->findPair(label_decode_k, kcache);
-        cout << "matmul_forward_decode: kvcache label: " << label_decode_k
-              << endl;
+        // cout << "matmul_forward_decode: kvcache label: " << label_decode_k
+        //       << endl;
         if (flag == -1) {
-            sram_pos_locator->printAllKeys();
+            // sram_pos_locator->printAllKeys();
 // #if ASSERT_MODE == 1
 //             assert(0 && "Miss prefill KV Cache label");
 // #endif
