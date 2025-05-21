@@ -40,10 +40,11 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
         sc_gen_unique_name("ram_array"), 0, BANK_DEPTH, SIMU_READ_PORT,
         SIMU_WRITE_PORT, BANK_PORT_NUM + SRAM_BANKS, BANK_PORT_NUM,
         BANK_HIGH_READ_PORT_NUM, event_engine);
-    temp_ram_array = new DynamicBandwidthRamRow<sc_bv<SRAM_BITWIDTH>, SRAM_BANKS>(
-        sc_gen_unique_name("temp_ram_array"), 0, BANK_DEPTH_TMP, SIMU_READ_PORT,
-        SIMU_WRITE_PORT, BANK_PORT_NUM + SRAM_BANKS, BANK_PORT_NUM,
-        BANK_HIGH_READ_PORT_NUM, event_engine);
+    temp_ram_array =
+        new DynamicBandwidthRamRow<sc_bv<SRAM_BITWIDTH>, SRAM_BANKS>(
+            sc_gen_unique_name("temp_ram_array"), 0, BANK_DEPTH_TMP,
+            SIMU_READ_PORT, SIMU_WRITE_PORT, BANK_PORT_NUM + SRAM_BANKS,
+            BANK_PORT_NUM, BANK_HIGH_READ_PORT_NUM, event_engine);
     executor = new WorkerCoreExecutor(sc_gen_unique_name("workercore-exec"),
                                       cid, this->event_engine);
     executor->systolic_config = systolic_config;
@@ -173,8 +174,8 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
                                           event_engine);
     high_bw_mem_access_port = new high_bw_mem_access_unit(
         sc_gen_unique_name("high_bw_mem_access_unit"), event_engine);
-    temp_mem_access_port = new mem_access_unit(sc_gen_unique_name("temp_mem_access_unit"),
-                                            event_engine);
+    temp_mem_access_port = new mem_access_unit(
+        sc_gen_unique_name("temp_mem_access_unit"), event_engine);
     high_bw_temp_mem_access_port = new high_bw_mem_access_unit(
         sc_gen_unique_name("high_bw_temp_mem_access_unit"), event_engine);
 }
@@ -293,7 +294,7 @@ void WorkerCoreExecutor::worker_core_execute() {
             event_engine->add_event("Core " + toHexString(cid), "Comp_prim",
                                     "E", Trace_event_util(p->name));
         }
-
+        
         // 将原语重新填充到队列中
         if (prim_refill) {
             bool flag = false;
@@ -571,7 +572,7 @@ void WorkerCoreExecutor::send_logic() {
 
                 send_buffer = Msg(MSG_TYPE::DONE, GRID_SIZE, cid);
 
-                if (SYSTEM_MODE == SIM_PD) {
+                if (SYSTEM_MODE == SIM_PD || SYSTEM_MODE == SIM_PDS) {
                     for (int i = 0; i < decode_done.size(); i++) {
                         send_buffer.data.range(i, i) = sc_bv<1>(decode_done[i]);
                     }
@@ -907,8 +908,9 @@ void WorkerCoreExecutor::recv_logic() {
 
                     recv_cnt++;
 
-                    if (temp.seq_id == 1 && (SYSTEM_MODE == SIM_DATAFLOW ||
-                                             SYSTEM_MODE == SIM_PD)) {
+                    if (temp.seq_id == 1 &&
+                        (SYSTEM_MODE == SIM_DATAFLOW || SYSTEM_MODE == SIM_PD ||
+                         SYSTEM_MODE == SIM_PDS)) {
                         // 在pos locator中添加一个kv，label是input_label
                         // 对于每一个核的第一算子的input来自与send
                         // 核的输出，并且已经会由router保存在sram上
@@ -945,7 +947,8 @@ void WorkerCoreExecutor::recv_logic() {
                             // 收到了所有的数据，可以结束此原语，进入comp原语
                             // 更新pos_locator中的kv的size
                             if (SYSTEM_MODE == SIM_DATAFLOW ||
-                                SYSTEM_MODE == SIM_PD) {
+                                SYSTEM_MODE == SIM_PD ||
+                                SYSTEM_MODE == SIM_PDS) {
                                 AddrPosKey inp_key;
                                 char format_label[100];
                                 sprintf(format_label, "%s#%d", INPUT_LABEL,

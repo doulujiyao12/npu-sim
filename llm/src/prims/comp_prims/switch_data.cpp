@@ -107,7 +107,7 @@ int switch_data::task_core(TaskCoreContext &context) {
                 datapass_label.indata[0].substr(space_pos + 1);
         }
 
-        printf("[INFO] core %d, Layernorm_f: read from dram, label: %s\n", cid,
+        printf("[INFO] core %d, Switch data: read from dram, label: %s\n", cid,
                datapass_label.indata[0].c_str());
 
         AddrPosKey inp_key =
@@ -119,7 +119,7 @@ int switch_data::task_core(TaskCoreContext &context) {
         int flag = sram_pos_locator->findPair(datapass_label.indata[0],
                                               inp_sram_offset);
         if (flag == -1) {
-            printf("[ERROR] core %d, Layernorm_f: sram_pos_locator cannot find "
+            printf("[ERROR] core %d, Switch data: sram_pos_locator cannot find "
                    "the "
                    "label: %s\n",
                    cid, datapass_label.indata[0].c_str());

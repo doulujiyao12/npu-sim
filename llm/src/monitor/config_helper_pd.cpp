@@ -61,9 +61,7 @@ void config_helper_pd::fill_queue_config(queue<Msg> *q) {
         int index = des / GRID_X;
         q[index].push(msg);
     }
-    for (int i = 0; i < GRID_X; i++) {
-        cout << q[i].size() << "n\n";
-    }
+    
     temp_config.clear();
 }
 

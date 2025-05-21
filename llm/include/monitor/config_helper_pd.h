@@ -46,8 +46,6 @@ public:
                        sc_event *notify_event);
     void parse_done_msg(Event_engine *event_engine, sc_event *notify_event);
 
-    void parse_done_msg();
-
     void iter_start(); // 填充原语，发送在meminterface完成
     void iter_done(vector<Msg> done_msg);
 };
