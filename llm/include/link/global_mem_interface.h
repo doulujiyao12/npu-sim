@@ -1,3 +1,7 @@
+#pragma once
+#include "nlohmann/json.hpp"
+#include <fstream>
+#include <string>
 #include <atomic>
 #include <vector>
 
@@ -10,21 +14,67 @@
 #include "utils/file_utils.h"
 #include "utils/msg_utils.h"
 #include "utils/prim_utils.h"
+#include "trace/Event_engine.h"
+#include "monitor/config_helper_base.h"
 
 #include "link/chip_global_memory.h"
+#include "link/chip_config_helper.h"
 
+class Event_engine;
+class config_helper_base;
 
-class GlobalMemInterface {
+class GlobalMemInterface : public sc_module {
 public:
+
+    ChipGlobalMemory *chipGlobalMemory;
+    NB_GlobalMemIF *nb_global_mem_socket;
+    Event_engine *event_engine;
+    chip_config_helper *config_helper;
+
+    int cid;
+
+    std::vector<chip_instr_base*> global_instrs;
+    sc_signal<bool> prim_block;
+
+    deque<chip_instr_base*> global_instrs_queue;
+
+    SC_HAS_PROCESS(GlobalMemInterface);  // Enable SystemC processes for this module
     GlobalMemInterface(const sc_module_name &n, Event_engine *event_engine,
                         const char *config_name, const char *font_ttf);
 
+    GlobalMemInterface(const sc_module_name &n, Event_engine *event_engine,
+                config_helper_base *input_config);
 
     GlobalMemInterface();
 
     void init();
+    void load_global_prims(const char *config_name, const char *font_ttf);
 
-    ChipGlobalMemory *chipGlobalMemory;
-    NB_GlobalMemIF *nb_global_mem_socket;
+    void task_logic();
 
+
+    // GlobalMemInterfaceExecutor *executor;
+
+    // // Load and execute global_interface primitives from the config JSON
+    // void load_global_prims(const char *config_name);
+    // void execute_prims();
+
+    // ChipGlobalMemory *chipGlobalMemory;
+    // NB_GlobalMemIF *nb_global_mem_socket;
+
+    // // Global interface instructions
+    // std::vector<chip_instr_base*> global_instrs;
+    
 };
+
+
+// 先不实现executor
+// class GlobalMemInterfaceExecutor : public sc_module {
+// public:
+//     int cid;
+    
+//     sc_signal<bool> prim_block;
+
+
+
+// };

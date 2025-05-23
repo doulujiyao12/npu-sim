@@ -91,8 +91,8 @@ int Attention_f_decode::task_core(TaskCoreContext &context) {
 
     int data_size_out = B * T * C;
     int data_size_input = B * T * C;
-    int data_size_preatt = B * NH * T * T; // preatt
-    int data_size_att = B * NH * T * T;    // att
+    int data_size_preatt = B * NH * T; // preatt
+    int data_size_att = B * NH * T;    // att
 
     u_int64_t time_fetched = 0;
     u_int64_t time_prefetched = 0;
@@ -156,7 +156,7 @@ int Attention_f_decode::task_core(TaskCoreContext &context) {
     int cur_tokens = 0;
 
     // 查找kvcache! 需要使用相应的kvcache label
-    for (int batch = 0; batch < B; batch++) {
+    int batch = 0;
         AddrPosKey kcache;
         char format_label_k[100];
         sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
@@ -189,33 +189,41 @@ int Attention_f_decode::task_core(TaskCoreContext &context) {
         sram_read_generic(context, kcache.size, kcache.pos, dram_time);
         sram_read_generic(context, vcache.size, vcache.pos, dram_time);
 
-        cur_tokens = kcache.size / C;
-    }
+        cur_tokens = kcache.size / (B * C * data_byte);
+    
 
     // 读出q
     sram_pos_locator->findPair(datapass_label.indata[0], inp_sram_offset);
     sram_read_generic(context, data_byte * data_size_input, inp_sram_offset,
                       dram_time);
 
-    // 中间步骤，写回读出preatt和att
-    auto label_preatt = ETERNAL_PREFIX + prefix + "_preatt";
-    AddrPosKey preatt_key =
-        AddrPosKey(*sram_addr, data_byte * data_size_preatt);
-    sram_pos_locator->addPair(label_preatt, preatt_key, context, dram_time);
-    sram_write_append_generic(context, data_byte * data_size_preatt, dram_time);
+    // // 中间步骤，写回读出preatt和att
+    // auto label_preatt = ETERNAL_PREFIX + prefix + "_preatt";
+    // AddrPosKey preatt_key =
+    //     AddrPosKey(*sram_addr, data_byte * data_size_preatt);
+    // sram_pos_locator->addPair(label_preatt, preatt_key, context, dram_time);
+    // sram_write_append_generic(context, data_byte * data_size_preatt, dram_time);
 
-    auto label_att = ETERNAL_PREFIX + prefix + "_att";
-    AddrPosKey att_key = AddrPosKey(*sram_addr, data_byte * data_size_att);
-    sram_pos_locator->addPair(label_att, att_key, context, dram_time);
-    sram_write_append_generic(context, data_byte * data_size_att, dram_time);
+    // auto label_att = ETERNAL_PREFIX + prefix + "_att";
+    // AddrPosKey att_key = AddrPosKey(*sram_addr, data_byte * data_size_att);
+    // sram_pos_locator->addPair(label_att, att_key, context, dram_time);
+    // sram_write_append_generic(context, data_byte * data_size_att, dram_time);
 
     // 模拟读出
-    int preatt_sram_offset, att_sram_offset;
-    sram_pos_locator->findPair(label_preatt, preatt_sram_offset);
-    sram_read_generic(context, data_byte * data_size_preatt, preatt_sram_offset,
+
+    int temp_sram_addr = 0;
+    int temp_sram_addr_piror = 0;
+    temp_sram_addr_piror = temp_sram_addr;  
+    sram_write_back_temp(context, data_byte * data_size_preatt,
+        temp_sram_addr, dram_time);
+    // 读出preatt，计算自然指数，写入att
+    sram_read_generic_temp(context, data_byte * data_size_preatt, temp_sram_addr_piror,
                       dram_time);
-    sram_pos_locator->findPair(label_att, att_sram_offset);
-    sram_read_generic(context, data_byte * data_size_att, att_sram_offset,
+    temp_sram_addr_piror = temp_sram_addr;
+    sram_write_back_temp(context, data_byte * data_size_att, temp_sram_addr,
+                            dram_time);
+    // 读出att和V
+    sram_read_generic_temp(context, data_byte * data_size_att, temp_sram_addr_piror,
                       dram_time);
 
     // 在这里及时删除标签

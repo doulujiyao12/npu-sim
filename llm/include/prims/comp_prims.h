@@ -22,7 +22,6 @@ public:
     Attention_f_decode() { name = "Attention_f_decode"; }
 };
 
-
 class Attention_f : public comp_base {
 public:
     int B, T, C, NH;
@@ -40,6 +39,25 @@ public:
 
     Attention_f() { name = "Attention_f"; }
 };
+
+class Attention_f_prefill : public comp_base {
+    public:
+        int B, T, C, NH;
+        int prea_offset, a_offset;
+    
+        int task();
+        int task_core(TaskCoreContext &context);
+    
+        sc_bv<128> serialize();
+        void deserialize(sc_bv<128> buffer);
+    
+        void parse_json(json j);
+        void print_self(string prefix);
+        int sram_utilization(DATATYPE datatype);
+    
+        Attention_f_prefill() { name = "Attention_f_prefill"; }
+    };
+    
 
 
 class Batchnorm_f : public comp_base {
@@ -102,7 +120,6 @@ public:
 
     Dummy_p() { name = "Dummy_p"; }
 };
-
 
 class Gelu_f : public comp_base {
 public:

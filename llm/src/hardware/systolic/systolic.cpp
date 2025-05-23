@@ -230,7 +230,7 @@ void Systolic_interface::systolic_interface_execute() {
                                     }
                                     index[i]++;
                                 }
-
+                                
                                 wait(CYCLE, SC_NS);
                             }
 

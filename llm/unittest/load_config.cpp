@@ -83,10 +83,10 @@ int sc_main(int argc, char *argv[]) {
 
     sc_start();
 
-    // destroy_dram_areas();
-    // destroy_cache_structures();
+    destroy_dram_areas();
+    destroy_cache_structures();
     // sc_close_vcd_trace_file(tf);
-    // system_cleanup();
+    system_cleanup();
 
 
     delete event_engine;

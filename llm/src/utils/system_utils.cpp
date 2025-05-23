@@ -253,6 +253,10 @@ void system_cleanup() {
         delete p;
     }
 
+    for (auto p : global_chip_prim_stash) {
+        delete p;
+    }
+
     delete[] dram_array;
     delete[] dcache_tags;
     delete[] dcache_occupancy;

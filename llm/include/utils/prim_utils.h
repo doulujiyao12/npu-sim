@@ -5,9 +5,6 @@
 #include "prims/prim_base.h"
 #include "systemc.h"
 
-bool is_comp_prim(prim_base *p);
-bool is_gpu_prim(prim_base *p);
-bool is_pd_prim(prim_base *p);
 prim_base *new_prim(string type);
 
 // 打印枚举的变量名

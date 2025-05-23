@@ -22,7 +22,8 @@ MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
     else if (SYSTEM_MODE == SIM_GPU)
         config_helper = new config_helper_gpu(config_name, font_ttf);
     else if (SYSTEM_MODE == SIM_PD)
-        config_helper = new config_helper_pd(config_name, font_ttf);
+        config_helper =
+            new config_helper_pd(config_name, font_ttf, &ev_req_handler);
     
     init();
 }
@@ -30,7 +31,6 @@ MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
 MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
                            config_helper_base *input_config)
     : event_engine(event_engine), config_helper(input_config) {
-    //从更高Level注册MemInterface
     init();
 }
 
@@ -79,10 +79,13 @@ void MemInterface::init() {
     sensitive << ev_dis_start;
     dont_initialize();
 
-    SC_THREAD(recv_helper);
+    SC_THREAD(catch_host_data_sent_i);
     for (int i = 0; i < GRID_X; i++) {
         sensitive << host_data_sent_i[i].pos();
     }
+    dont_initialize();
+
+    SC_THREAD(recv_helper);
     sensitive << ev_recv_helper;
     dont_initialize();
 
@@ -92,6 +95,10 @@ void MemInterface::init() {
 
     SC_THREAD(recv_done);
     sensitive << ev_recv_done;
+    dont_initialize();
+
+    SC_THREAD(req_handler);
+    sensitive << ev_req_handler;
     dont_initialize();
 
     SC_THREAD(switch_phase);
@@ -135,9 +142,8 @@ void MemInterface::end_of_simulation() {
     }
     print_bar(40);
 }
-void MemInterface::end_of_elaboration() {
 
-    // 辅助函数：打印条形条
+void MemInterface::end_of_elaboration() {
     // set signals
     for (int i = 0; i < GRID_X; i++) {
         host_data_sent_o[i].write(false);
@@ -154,19 +160,31 @@ void MemInterface::distribute_config() {
 
         config_helper->fill_queue_config(write_buffer);
 
-        // 发送开始书写信号
-        ev_write.notify(CYCLE, SC_NS);
-        wait(write_done.posedge_event());
-        cout << sc_time_stamp() << ": Mem Interface: config sent done.\n";
-        event_engine->add_event(this->name(), "Sending Config", "E",
-                                Trace_event_util());
+        // 检查write_buffer是否为空，如果为空则直接跳过发送阶段（PD模式）
+        bool writable = false;
+        for (int i = 0; i < GRID_X; i++) {
+            if (write_buffer[i].size()) {
+                writable = true;
+                break;
+            }
+        }
+        cout << "writable " << writable << endl;
 
-        // 使用唯一的flow ID替换名称
-        flow_id++;
-        std::string flow_name = "flow_" + std::to_string(flow_id);
-        event_engine->add_event(this->name(), "Sending Config", "s",
-                                Trace_event_util(flow_name), sc_time(0, SC_NS),
-                                100);
+        // 发送开始书写信号
+        if (writable) {
+            ev_write.notify(CYCLE, SC_NS);
+            wait(write_done.posedge_event());
+            cout << sc_time_stamp() << ": Mem Interface: config sent done.\n";
+            event_engine->add_event(this->name(), "Sending Config", "E",
+                                    Trace_event_util());
+
+            // 使用唯一的flow ID替换名称
+            flow_id++;
+            std::string flow_name = "flow_" + std::to_string(flow_id);
+            event_engine->add_event(this->name(), "Sending Config", "s",
+                                    Trace_event_util(flow_name),
+                                    sc_time(0, SC_NS), 100);
+        }
 
         wait();
     }
@@ -174,6 +192,7 @@ void MemInterface::distribute_config() {
 
 void MemInterface::distribute_data() {
     while (true) {
+        cout << "2\n";
         event_engine->add_event(this->name(), "Send Weight Data", "B",
                                 Trace_event_util());
 
@@ -220,11 +239,17 @@ void MemInterface::recv_helper() {
                 sc_bv<256> d = host_channel_i[i].read();
                 Msg m = deserialize_msg(d);
 
-                if (m.msg_type == ACK)
-                    ev_recv_ack.notify(CYCLE, SC_NS);
-                else if (m.msg_type == DONE)
-                    ev_recv_done.notify(CYCLE, SC_NS);
+                if (m.msg_type == ACK) {
+                    cout << "ACK from " << m.source << endl;
+                    g_temp_ack_msg.push_back(m);
+                    ev_recv_ack.notify(0, SC_NS);
+                }
 
+                else if (m.msg_type == DONE) {
+                    cout << "DONE from " << m.source << endl;
+                    g_temp_done_msg.push_back(m);
+                    ev_recv_done.notify(0, SC_NS);
+                }
 
                 ev_recv_helper.notify(CYCLE, SC_NS);
             }
@@ -239,20 +264,16 @@ void MemInterface::recv_ack() {
         event_engine->add_event(this->name(), "Waiting Recv Ack", "B",
                                 Trace_event_util());
 
-        for (int i = 0; i < GRID_X; i++) {
-            if (host_data_sent_i[i].read()) {
-                sc_bv<256> d = host_channel_i[i].read();
-                Msg m = deserialize_msg(d);
+        for (auto m : g_temp_ack_msg) {
+            int cid = m.source;
+            cout << sc_time_stamp()
+                 << ": Mem Interface: received ack packet from " << cid
+                 << ". total " << g_recv_ack_cnt + 1 << "/"
+                 << config_helper->coreconfigs.size() << ".\n";
 
-                int cid = m.source;
-                cout << sc_time_stamp()
-                     << ": Mem Interface: received ack packet from " << cid
-                     << ". total " << g_recv_ack_cnt + 1 << "/"
-                     << config_helper->coreconfigs.size() << ".\n";
-
-                g_recv_ack_cnt++;
-            }
+            g_recv_ack_cnt++;
         }
+        g_temp_ack_msg.clear();
 
         event_engine->add_event(this->name(), "Waiting Recv Ack", "E",
                                 Trace_event_util());
@@ -291,20 +312,16 @@ void MemInterface::recv_done() {
         event_engine->add_event(this->name(), "Waiting Core busy", "B",
                                 Trace_event_util());
 
-        for (int i = 0; i < GRID_X; i++) {
-            if (host_data_sent_i[i].read()) {
-                sc_bv<256> d = host_channel_i[i].read();
-                Msg m = deserialize_msg(d);
+        for (auto m : g_temp_done_msg) {
+            int cid = m.source;
+            cout << sc_time_stamp()
+                 << ": Mem Interface: received done packet from " << cid
+                 << ", total " << g_recv_done_cnt + 1 << ".\n";
 
-                int cid = m.source;
-                cout << sc_time_stamp()
-                     << ": Mem Interface: received done packet from " << cid
-                     << ", total " << g_recv_done_cnt + 1 << ".\n";
-
-                g_recv_done_cnt++;
-                g_done_msg.push_back(m);
-            }
+            g_recv_done_cnt++;
+            g_done_msg.push_back(m);
         }
+        g_temp_done_msg.clear();
 
         event_engine->add_event(this->name(), "Waiting Core busy", "E",
                                 Trace_event_util());
@@ -316,25 +333,17 @@ void MemInterface::recv_done() {
 
         switch (SYSTEM_MODE) {
         case SIM_DATAFLOW:
+            cout << "g_recv_done_cnt " << g_recv_done_cnt << " end "
+                 << config_helper->end_cores << " pipe "
+                 << config_helper->pipeline << endl;
             if (g_recv_done_cnt >=
                 config_helper->end_cores * config_helper->pipeline) {
-                if (!config_helper->sequential ||
-                    config_helper->seq_index ==
-                        config_helper->source_info.size()) {
-                    cout << "Mem Interface: all work done, end_core: "
-                         << config_helper->end_cores
-                         << ", recv_cnt: " << g_recv_done_cnt << endl;
+                cout << "Mem Interface: all work done, end_core: "
+                     << config_helper->end_cores
+                     << ", recv_cnt: " << g_recv_done_cnt << endl;
 
-                    g_recv_done_cnt = 0;
-                    sc_stop();
-                } else {
-                    cout << "Mem Interface: one work done. "
-                         << config_helper->seq_index << " of "
-                         << config_helper->source_info.size() << ".\n";
-
-                    g_recv_done_cnt = 0;
-                    ev_switch_phase.notify(CYCLE, SC_NS);
-                }
+                g_recv_done_cnt = 0;
+                sc_stop();
             }
             break;
         case SIM_GPU:
@@ -398,7 +407,7 @@ void MemInterface::write_helper() {
                 }
 
                 stop_flag = false;
-                if (host_channel_avail_i[i].read() == false) 
+                if (host_channel_avail_i[i].read() == false)
                     continue;
 
                 // send data
@@ -418,6 +427,38 @@ void MemInterface::write_helper() {
 
         cout << "Mem Interface: write done\n";
         write_done.write(true);
+
+        wait();
+    }
+}
+
+void MemInterface::req_handler() {
+    while (true) {
+        if (SYSTEM_MODE != SIM_PD) {
+            cout << "[ERROR] Request handler can only be used in PD mode.\n";
+            sc_stop();
+        }
+        cout << "sssssssssssssssssss\n";
+        config_helper_pd *pd = (config_helper_pd *)config_helper;
+        for (int i = 0; i < pd->arrival_time.size(); i++) {
+            cout << pd->arrival_time[i] << " ss\n";
+            sc_time next_time(pd->arrival_time[i], SC_NS);
+            if (next_time < sc_time_stamp()) {
+                cout << "[ERROR] Be sure all reqs come in sequentially.\n";
+                sc_stop();
+            }
+
+            wait(next_time - sc_time_stamp());
+            ev_dis_config.notify(0, SC_NS);
+        }
+
+        wait();
+    }
+}
+
+void MemInterface::catch_host_data_sent_i() {
+    while (true) {
+        ev_recv_helper.notify(CYCLE, SC_NS);
 
         wait();
     }

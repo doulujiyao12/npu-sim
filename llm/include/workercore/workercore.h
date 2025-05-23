@@ -46,7 +46,6 @@ public:
     ~WorkerCore();
 };
 
-
 class WorkerCoreExecutor : public sc_module {
 public:
     int cid;

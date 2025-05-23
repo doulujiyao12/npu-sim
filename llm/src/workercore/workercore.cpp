@@ -234,9 +234,9 @@ void WorkerCoreExecutor::worker_core_execute() {
                     "Send_prim" +
                     get_send_type_name(dynamic_cast<Send_prim *>(p)->type)));
 #else
-            while (!send_done) {
+            while (!send_done)
                 wait(CYCLE, SC_NS);
-            }
+
             // send 模块处理的四条指令
             while ((typeid(*p) == typeid(Recv_prim) &&
                     ((Recv_prim *)p)->type == RECV_ACK) ||
@@ -317,7 +317,6 @@ void WorkerCoreExecutor::worker_core_execute() {
         }
 
         prim_queue.pop_front();
-
         wait(CYCLE, SC_NS);
     }
 }
@@ -390,6 +389,9 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
         break;
     case 0x12:
         task = new Attention_f_decode();
+        break;
+    case 0x15:
+        task = new Attention_f_prefill();
         break;
     case 0x13:
         task = new Max_pool();
@@ -549,9 +551,6 @@ void WorkerCoreExecutor::send_logic() {
 
                 send_helper_write = 3;
                 ev_send_helper.notify(0, SC_NS);
-
-                cout << "Core " << cid << " msg " << send_buffer.seq_id
-                     << " sent \n";
 
                 if (prim->data_packet_id == prim->max_packet) {
                     cout << "Core " << cid
@@ -1006,8 +1005,8 @@ void WorkerCoreExecutor::recv_logic() {
                     buffer_i.pop();
                     prim_queue.emplace_back(parse_prim(m.data));
 
-                    cout << "Core " << cid << " recv config " << m.seq_id
-                         << endl;
+                    // cout << "Core " << cid << " recv config " << m.seq_id
+                    //      << endl;
 
                     // 检查是否为end config包，如果是，需要向host发送ack包
                     if (m.is_end) {
@@ -1189,9 +1188,6 @@ void WorkerCoreExecutor::req_logic() {
 */
 bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status) {
     bool res;
-    if (cid == 1)
-        cout << "Core " << cid << " try/pres: " << try_time << " "
-             << present_time << ", status: " << status << endl;
 
     if (try_time < present_time)
         res = false;

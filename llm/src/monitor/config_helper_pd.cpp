@@ -5,7 +5,7 @@
 #include "utils/system_utils.h"
 
 config_helper_pd::config_helper_pd(string filename, string font_ttf,
-                                   int config_chip_id) {
+                                   sc_event *ev_sig, int config_chip_id) {
     cout << "Loading config file " << filename << endl;
 
     json j;
@@ -25,8 +25,18 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
     eof_chance = config_reqs["eof_chance"];
     model_stage = config_reqs["stage"];
 
+    if (config_reqs["arrival"].size() != req_cnt) {
+        cout << "[ERROR] In config helper pd: arrival time length "
+                "incompatible.\n";
+        sc_stop();
+    }
+
+    for (int i = 0; i < req_cnt; i++)
+        arrival_time.push_back(config_reqs["arrival"][i]);
+
     for (int i = 0; i < req_cnt; i++) {
-        RequestRecord record = RequestRecord(i, config_reqs["seq_len"], heads);
+        RequestRecord record =
+            RequestRecord(i, config_reqs["seq_len"], heads, arrival_time[i]);
         requestRecords.push_back(record);
     }
 
@@ -37,6 +47,9 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
 
     // 建立原语模板
     json_template = j["chips"][0]["cores"][0];
+    busy = false;
+
+    ev_sig->notify(0, SC_NS);
 }
 
 void config_helper_pd::fill_queue_config(queue<Msg> *q) {
@@ -46,7 +59,9 @@ void config_helper_pd::fill_queue_config(queue<Msg> *q) {
         int index = des / GRID_X;
         q[index].push(msg);
     }
-
+    for (int i = 0; i < GRID_X; i++) {
+        cout << q[i].size() << "n\n";
+    }
     temp_config.clear();
 }
 
@@ -132,9 +147,14 @@ void config_helper_pd::iter_done(vector<Msg> done_msg) {
             stage_count++;
         }
     }
+
+    busy = false;
 }
 
 void config_helper_pd::iter_start() {
+    if (busy)
+        return;
+
     // 为每一个核进行schedule，如果这个核不是第一个stage，则复制前一个stage上一个iter的任务
     vector<vector<Stage>> temp_stage;
     for (auto status : coreStatus) {
@@ -182,7 +202,10 @@ void config_helper_pd::iter_start() {
                 if (CORE_CREDIT - credit >= PD_RATIO) {
                     new_reqs = false;
                     for (auto &req : requestRecords) {
-                        if (req.phase == UNTOUCHED) {
+                        sc_core::sc_time arv_time(req.arrival_time,
+                                                  sc_core::SC_NS);
+                        if (req.phase == UNTOUCHED &&
+                            arv_time <= sc_time_stamp()) {
                             new_reqs = true;
                             credit += PD_RATIO;
                             new_stage_1.push_back(
@@ -219,12 +242,17 @@ void config_helper_pd::iter_start() {
     }
 
     // 统一更新所有的batchInfo，生成原语
+    bool complete_idle = true;
+
     cout << "<<<<<<SCHEDULE ITER>>>>>>\n";
+    cout << sc_time_stamp() << endl;
     for (auto &status : coreStatus) {
         status.batchInfo = temp_stage[status.id];
 
         cout << "[SCHEDULE] Core " << status.id << endl;
         for (auto stage : status.batchInfo) {
+            complete_idle = false;
+
             cout << "REQ: " << stage.req_id << ", TYPE: " << stage.type
                  << ", finished iter: "
                  << ((requestRecords[stage.req_id].phase == PREFILL)
@@ -236,6 +264,14 @@ void config_helper_pd::iter_start() {
 
         generate_prims(status.id);
     }
+
+    if (complete_idle) {
+        // 如果当前iter没有任何core有工作，则不发放config
+        temp_config.clear();
+        busy = false;
+        cout << "[SCHEDULE] Complete idle.\n";
+    } else
+        busy = true;
 }
 
 void config_helper_pd::print_self() {

@@ -48,6 +48,8 @@ public:
 #endif
 
     Event_engine *event_engine;
+    const char *config_name;
+    const char *font_ttf;
 
     SC_HAS_PROCESS(Monitor);
     Monitor(const sc_module_name &n, Event_engine *event_engine,

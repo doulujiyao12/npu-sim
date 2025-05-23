@@ -11,9 +11,7 @@ public:
     int opcode; // 4位，代表读/写/原子操作等
     int tag_id;
     int packet_length; //后续flit
-
 };
-
 
 class nvMsg{
 public: 

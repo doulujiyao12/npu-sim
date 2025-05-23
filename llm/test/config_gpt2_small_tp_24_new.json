@@ -31,7 +31,7 @@
     "split_matmul2_out": 5000,
     "residual2_out": 6500
   },
-  "pipeline": 10,
+  "pipeline": 1,
   "source": [
     {
       "dest": 0,
@@ -46,7 +46,6 @@
       "cores": [
         {
           "id": 0,
-          "prim_refill": true,
           "worklist": [
             {
               "recv_cnt": 1,
@@ -287,7 +286,6 @@
         },
         {
           "id": 1,
-          "prim_refill": true,
           "worklist": [
             {
               "recv_cnt": 1,
@@ -402,7 +400,6 @@
         },
         {
           "id": 2,
-          "prim_refill": true,
           "prim_copy": 0,
           "worklist": [
             {
@@ -446,7 +443,6 @@
         },
         {
           "id": 3,
-          "prim_refill": true,
           "prim_copy": 1,
           "worklist": [
             {
@@ -473,7 +469,6 @@
         },
         {
           "id": 4,
-          "prim_refill": true,
           "prim_copy": 0,
           "worklist": [
             {
@@ -517,7 +512,6 @@
         },
         {
           "id": 5,
-          "prim_refill": true,
           "prim_copy": 1,
           "worklist": [
             {
@@ -544,7 +538,6 @@
         },
         {
           "id": 6,
-          "prim_refill": true,
           "prim_copy": 0,
           "worklist": [
             {
@@ -588,7 +581,6 @@
         },
         {
           "id": 7,
-          "prim_refill": true,
           "prim_copy": 1,
           "worklist": [
             {
@@ -615,7 +607,6 @@
         },
         {
           "id": 8,
-          "prim_refill": true,
           "prim_copy": 0,
           "worklist": [
             {
@@ -659,7 +650,6 @@
         },
         {
           "id": 9,
-          "prim_refill": true,
           "prim_copy": 1,
           "worklist": [
             {
@@ -686,7 +676,6 @@
         },
         {
           "id": 10,
-          "prim_refill": true,
           "prim_copy": 0,
           "worklist": [
             {
@@ -730,7 +719,6 @@
         },
         {
           "id": 11,
-          "prim_refill": true,
           "prim_copy": 1,
           "worklist": [
             {
@@ -757,7 +745,6 @@
         },
         {
           "id": 12,
-          "prim_refill": true,
           "prim_copy": 0,
           "worklist": [
             {
@@ -801,7 +788,6 @@
         },
         {
           "id": 13,
-          "prim_refill": true,
           "prim_copy": 1,
           "worklist": [
             {
@@ -828,7 +814,6 @@
         },
         {
           "id": 14,
-          "prim_refill": true,
           "prim_copy": 0,
           "worklist": [
             {
@@ -872,7 +857,6 @@
         },
         {
           "id": 15,
-          "prim_refill": true,
           "prim_copy": 1,
           "worklist": [
             {
@@ -899,7 +883,6 @@
         },
         {
           "id": 16,
-          "prim_refill": true,
           "prim_copy": 0,
           "worklist": [
             {
@@ -943,7 +926,6 @@
         },
         {
           "id": 17,
-          "prim_refill": true,
           "prim_copy": 1,
           "worklist": [
             {
@@ -970,7 +952,6 @@
         },
         {
           "id": 18,
-          "prim_refill": true,
           "prim_copy": 0,
           "worklist": [
             {
@@ -1014,7 +995,6 @@
         },
         {
           "id": 19,
-          "prim_refill": true,
           "prim_copy": 1,
           "worklist": [
             {
@@ -1041,7 +1021,6 @@
         },
         {
           "id": 20,
-          "prim_refill": true,
           "prim_copy": 0,
           "worklist": [
             {
@@ -1085,7 +1064,6 @@
         },
         {
           "id": 21,
-          "prim_refill": true,
           "prim_copy": 1,
           "worklist": [
             {
@@ -1112,7 +1090,6 @@
         },
         {
           "id": 22,
-          "prim_refill": true,
           "prim_copy": 0,
           "worklist": [
             {
@@ -1155,7 +1132,6 @@
         },
         {
           "id": 23,
-          "prim_refill": true,
           "prim_copy": 1,
           "worklist": [
             {
