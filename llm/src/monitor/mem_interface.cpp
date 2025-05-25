@@ -4,6 +4,7 @@
 #include "monitor/config_helper_core.h"
 #include "monitor/config_helper_gpu.h"
 #include "monitor/config_helper_pd.h"
+#include "monitor/config_helper_pds.h"
 #include "monitor/mem_interface.h"
 #include "prims/comp_prims.h"
 #include "prims/norm_prims.h"
@@ -14,6 +15,7 @@
 MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
                            const char *config_name, const char *font_ttf)
     : event_engine(event_engine) {
+    init();
 
     cout << "SIMULATION MODE: " << SYSTEM_MODE << endl;
 
@@ -24,6 +26,10 @@ MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
     else if (SYSTEM_MODE == SIM_PD)
         config_helper =
             new config_helper_pd(config_name, font_ttf, &ev_req_handler);
+    else if (SYSTEM_MODE == SIM_PDS) {
+        config_helper =
+            new config_helper_pds(config_name, font_ttf, &ev_req_handler);
+    }
 
     //[yicheng] 先写个简单的，之后改
     for (int i = 0; i < config_helper->coreconfigs.size(); i++) {
@@ -37,8 +43,6 @@ MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
             }
         }
     }
-
-    init();
 }
 
 MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
@@ -106,6 +110,7 @@ void MemInterface::init() {
 };
 
 MemInterface::~MemInterface() {
+    cout << "Mem Interface delete\n";
     delete[] host_data_sent_i;
     delete[] host_data_sent_o;
     delete[] host_channel_avail_i;
@@ -114,7 +119,7 @@ MemInterface::~MemInterface() {
 
     delete[] write_buffer;
 
-    delete config_helper;
+    // delete config_helper;
 }
 
 void MemInterface::end_of_simulation() {
@@ -154,6 +159,13 @@ void MemInterface::distribute_config() {
 
         if (SYSTEM_MODE == SIM_PD)
             ((config_helper_pd *)config_helper)->iter_start();
+        else if (SYSTEM_MODE == SIM_PDS) {
+            config_helper_pds *helper = (config_helper_pds *)config_helper;
+            if (helper->wait_schedule_p)
+                helper->iter_start(JOB_PREFILL);
+            if (helper->wait_schedule_d)
+                helper->iter_start(JOB_DECODE);
+        }
 
         config_helper->fill_queue_config(write_buffer);
 
@@ -165,7 +177,6 @@ void MemInterface::distribute_config() {
                 break;
             }
         }
-        cout << "writable " << writable << endl;
 
         // 发送开始书写信号
         if (writable) {
@@ -189,7 +200,6 @@ void MemInterface::distribute_config() {
 
 void MemInterface::distribute_data() {
     while (true) {
-        cout << "2\n";
         event_engine->add_event(this->name(), "Send Weight Data", "B",
                                 Trace_event_util());
 
@@ -267,6 +277,7 @@ void MemInterface::recv_ack() {
             notify_event = &ev_switch_phase;
             break;
         case SIM_PD:
+        case SIM_PDS:
             notify_event = &ev_dis_start;
             break;
         }
@@ -288,6 +299,7 @@ void MemInterface::recv_done() {
             notify_event = &ev_switch_phase;
             break;
         case SIM_PD:
+        case SIM_PDS:
             notify_event = &ev_dis_config;
             break;
         }
@@ -350,22 +362,37 @@ void MemInterface::write_helper() {
 
 void MemInterface::req_handler() {
     while (true) {
-        if (SYSTEM_MODE != SIM_PD) {
-            cout << "[ERROR] Request handler can only be used in PD mode.\n";
+        if (SYSTEM_MODE != SIM_PD && SYSTEM_MODE != SIM_PDS) {
+            cout << "[ERROR] Request handler can only be used in PD mode or "
+                    "PDS mode.\n";
             sc_stop();
         }
 
-        config_helper_pd *pd = (config_helper_pd *)config_helper;
-        for (int i = 0; i < pd->arrival_time.size(); i++) {
-            cout << pd->arrival_time[i] << " ss\n";
-            sc_time next_time(pd->arrival_time[i], SC_NS);
-            if (next_time < sc_time_stamp()) {
-                cout << "[ERROR] Be sure all reqs come in sequentially.\n";
-                sc_stop();
-            }
+        if (SYSTEM_MODE == SIM_PD) {
+            config_helper_pd *pd = (config_helper_pd *)config_helper;
+            for (int i = 0; i < pd->arrival_time.size(); i++) {
+                cout << pd->arrival_time[i] << " ss\n";
+                sc_time next_time(pd->arrival_time[i], SC_NS);
+                if (next_time < sc_time_stamp()) {
+                    cout << "[ERROR] Be sure all reqs come in sequentially.\n";
+                    sc_stop();
+                }
 
-            wait(next_time - sc_time_stamp());
-            ev_dis_config.notify(0, SC_NS);
+                wait(next_time - sc_time_stamp());
+                ev_dis_config.notify(0, SC_NS);
+            }
+        } else if (SYSTEM_MODE == SIM_PDS) {
+            config_helper_pds *pd = (config_helper_pds *)config_helper;
+            for (int i = 0; i < pd->arrival_time.size(); i++) {
+                sc_time next_time(pd->arrival_time[i], SC_NS);
+                if (next_time < sc_time_stamp()) {
+                    cout << "[ERROR] Be sure all reqs come in sequentially.\n";
+                    sc_stop();
+                }
+
+                wait(next_time - sc_time_stamp());
+                ev_dis_config.notify(0, SC_NS);
+            }
         }
 
         wait();

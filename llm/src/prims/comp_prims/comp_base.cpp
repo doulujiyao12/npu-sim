@@ -46,7 +46,7 @@ void comp_base::parse_sram_label(json j) {
 
     // 保证DRAM_LABEL后面跟着另一个label
     while (iss >> word) {
-        if (word == DRAM_LABEL) {
+        if (word == DRAM_LABEL || word == "_" + string(DRAM_LABEL)) {
             temp = word;
             if (iss >> word) {
                 temp += " " + word;
