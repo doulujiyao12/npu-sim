@@ -75,6 +75,7 @@ public:
         valid = true;
         // 表示被重复使用的次数
         record = 0;
+        alloc_id = 0; 
         // 表示被spill到dram中的数据的大小
         spill_size = 0;
     }
@@ -82,7 +83,7 @@ public:
         : alloc_id(id), size(sz), valid(true), spill_size(0), record(0) {}
 
     AddrPosKey(int sz)
-        : size(sz), valid(true), spill_size(0), record(0) {}
+        : size(sz), valid(true), spill_size(0), record(0), alloc_id(0) {}
 };
 
 class SramPosLocator { // one per core

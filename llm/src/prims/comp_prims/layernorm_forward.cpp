@@ -184,10 +184,14 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
 #endif
         }else{
 #if USE_SRAM_MANAGER == 1
+            cout << "[INFO] core " << cid << ", Layernorm_f: sram_pos_locator "
+                  << "flag " << flag << endl;
             AddrPosKey inp_key;
             int flag =
                 sram_pos_locator->findPair(datapass_label.indata[0], inp_key);
+            cout << " inp_key.alloc_id " << inp_key.alloc_id << endl;
             if (inp_key.alloc_id == 0){
+            cout << "dummy alloc" << endl;
             sram_first_write_generic(context, data_byte * data_size_input, inp_global_addr, dram_time,
                 dram_start, datapass_label.indata[0], true, sram_pos_locator, true);
             }

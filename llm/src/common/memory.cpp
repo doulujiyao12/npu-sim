@@ -146,10 +146,11 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
         int spill_size = upper_spill_limit;
         used -= spill_size;
         data_map[min_label].spill_size += spill_size;
+#if USE_SRAM_MANAGER
         cout << "add pair " << key << endl;
         sram_manager_->deallocate(sram_id);
         cout <<  " Deallocate " << sram_id << " from sram manager." << key << endl;
-        
+#endif      
         // spill 耗时
         // spill in nb_dcache utils
         sram_spill_back_generic(context, spill_size, 1024, dram_time);
@@ -163,7 +164,10 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
 
     // 重排
     // 每次addPair后都需要重排sram_addr地址，保证最前面的一块是连续使用的，sram指向最前面空闲的
+#if USE_SRAM_MANAGER
+#else
     *(context.sram_addr) = rearrangeAll(context);
+#endif
 }
 
 int SramPosLocator::findPair(std::string &key, int &result) {
@@ -234,7 +238,9 @@ void SramPosLocator::deletePair(std::string &key) {
     cout << "delete label " << key << endl;
     auto it = data_map.find(key);
     if (it != data_map.end()) {
+#if USE_SRAM_MANAGER
         sram_manager_->deallocate(it->second.alloc_id); // 释放 SRAM
+#endif
         data_map.erase(it);
     }
 }

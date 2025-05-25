@@ -8,7 +8,7 @@
 #include <stdexcept> // For std::invalid_argument
 #include "macros/macros.h"
 // Optional: Define a type for allocation IDs for clarity
-using AllocationID = unsigned int;
+using AllocationID = float;
 
 class SramManager {
 public:

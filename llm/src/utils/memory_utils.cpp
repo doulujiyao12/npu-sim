@@ -64,7 +64,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
     int cache_lines = 1 << (dcache_words_in_line_log2 + 2 + 3);
     int cache_count = SRAM_BANKS * SRAM_BITWIDTH / cache_lines;
     int sram_time = 0;
-
+#if USE_SRAM_MANAGER == 1
     AllocationID alloc_id =0;
     if (use_manager == true){
 
@@ -109,6 +109,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
         }
     }
     assert(sram_pos_locator->validateTotalSize() && "sram_pos_locator is not equal sram_manager");
+#endif
 if (dummy_alloc == false){
 
 #if USE_NB_DRAMSYS == 1
@@ -128,11 +129,15 @@ if (dummy_alloc == false){
 
     for (int i = 0; i < dma_read_count; i++) {
         if (i != 0){
-            if (use_manager == true){
+#if USE_SRAM_MANAGER == 1
+        if (use_manager == true){
             sram_addr_temp = sram_manager_->get_address_with_offset(alloc_id, sram_addr_temp * SRAM_BITWIDTH / 8, SRAM_BANKS * SRAM_BITWIDTH / 8) / (SRAM_BITWIDTH / 8);}
         else{
             sram_addr_temp = sram_addr_temp + SRAM_BANKS;
         }
+#else
+            sram_addr_temp = sram_addr_temp + SRAM_BANKS;
+#endif
         }
         sc_time elapsed_time;
         hmau->mem_read_port->multiport_write(sram_addr_temp, data_tmp,
@@ -212,11 +217,15 @@ if (dummy_alloc == false){
         sc_time elapsed_time;
         for (int i = 0; i < single_read_count; i++) {
             if (i != 0){
+#if USE_SRAM_MANAGER == 1
                 if (use_manager == true){
                 sram_addr_temp = sram_manager_->get_address_with_offset(alloc_id, sram_addr_temp * SRAM_BITWIDTH / 8, SRAM_BITWIDTH / 8) / (SRAM_BITWIDTH / 8);
             }else{
                 sram_addr_temp = sram_addr_temp + 1;
             }
+#else       
+            sram_addr_temp = sram_addr_temp + 1;
+#endif
             }
             mau->mem_write_port->write(sram_addr_temp, data_tmp2, elapsed_time);
             u_int64_t sram_timer = elapsed_time.to_seconds() * 1e9;
@@ -273,12 +282,16 @@ if (dummy_alloc == false){
         (end_first_write_time - start_first_write_time).to_seconds() * 1e9;
 
 #endif
+#if USE_SRAM_MANAGER == 1
     if (use_manager == true){
 
 
     }else{
         *sram_addr = sram_addr_temp;
     }
+#else
+    *sram_addr = sram_addr_temp;
+#endif
 }
 
 }
@@ -411,6 +424,7 @@ void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
     for (int i = 0; i < SRAM_BANKS; i++) {
         data_tmp[i] = 0;
     }
+#if USE_SRAM_MANAGER == 1
 
     if (use_manager == true){
 
@@ -420,10 +434,12 @@ void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
         // cout << "[INFO] sram_read_generic: alloc_id: " << alloc_id << ", sram_addr_offset: " << sram_addr_offset << endl;
 
     }
+#endif
     // sram_manager_->get_allocation_byte_capacity(alloc_id);
 
     for (int i = 0; i < dma_read_count; i++) {
         if (i != 0){
+#if USE_SRAM_MANAGER == 1
             if (use_manager == true){
             // std::cout << "alloc_id: " << alloc_id << std::endl;
             // sram_manager_->printAllAllocationIDs();
@@ -432,6 +448,9 @@ void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
         else{
             sram_addr_offset = sram_addr_offset + SRAM_BANKS;
         }
+#else
+            sram_addr_offset = sram_addr_offset + SRAM_BANKS;
+#endif
         }
         sc_time elapsed_time;
         hmau->mem_read_port->multiport_read(sram_addr_offset, data_tmp,
@@ -447,11 +466,15 @@ void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
     sc_time elapsed_time;
     for (int i = 0; i < single_read_count; i++) {
         if (i != 0){
+#if USE_SRAM_MANAGER == 1
             if (use_manager == true){
             sram_addr_offset = sram_manager_->get_address_with_offset(alloc_id, sram_addr_offset * SRAM_BITWIDTH / 8, SRAM_BITWIDTH / 8) / (SRAM_BITWIDTH / 8);
         }else{
             sram_addr_offset = sram_addr_offset + 1;
         }
+#else
+        sram_addr_offset = sram_addr_offset + 1;
+#endif
         }
         mau->mem_read_port->read(sram_addr_offset, data_tmp2, elapsed_time);
         
@@ -533,7 +556,7 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
     auto sram_addr = context.sram_addr;
     auto sram_manager_ = context.sram_manager_;
     auto sram_addr_temp = *sram_addr;
-
+#if USE_SRAM_MANAGER == 1
     AllocationID alloc_id =0;
     if (use_manager == true){
 
@@ -570,6 +593,7 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
             // 此后可以将数据写入该地址
         }
     }
+#endif
 
     vector<sc_bv<SRAM_BITWIDTH>> data_tmp(SRAM_BANKS);
     for (int i = 0; i < SRAM_BANKS; i++) {
@@ -579,11 +603,15 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
     for (int i = 0; i < dma_read_count; i++) {
         sc_time elapsed_time;
         if (i != 0){
+#if USE_SRAM_MANAGER == 1
             if (use_manager == true){
             sram_addr_temp = sram_manager_->get_address_with_offset(alloc_id, sram_addr_temp * SRAM_BITWIDTH / 8, SRAM_BANKS * SRAM_BITWIDTH / 8) / (SRAM_BITWIDTH / 8);}
         else{
             sram_addr_temp = sram_addr_temp + SRAM_BANKS;
         }
+#else
+        sram_addr_temp = sram_addr_temp + SRAM_BANKS;
+#endif
         }
         hmau->mem_read_port->multiport_write(sram_addr_temp, data_tmp,
                                              elapsed_time);
@@ -598,24 +626,32 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
     sc_time elapsed_time;
     for (int i = 0; i < single_read_count; i++) {
         if (i !=0){
+#if USE_SRAM_MANAGER == 1
             if (use_manager == true){
             sram_addr_temp = sram_manager_->get_address_with_offset(alloc_id, sram_addr_temp * SRAM_BITWIDTH / 8, SRAM_BITWIDTH / 8) / (SRAM_BITWIDTH / 8);
         }else{
             sram_addr_temp = sram_addr_temp + 1;
         }
+#else
+        sram_addr_temp = sram_addr_temp + 1;
+#endif
         }
         mau->mem_write_port->write(sram_addr_temp, data_tmp2, elapsed_time);
         
         u_int64_t sram_timer = elapsed_time.to_seconds() * 1e9;
         // dram_time += sram_timer;
     }
-
+#if USE_SRAM_MANAGER == 1
     if (use_manager == true){
 
 
     }else{
         *sram_addr = sram_addr_temp;
     }
+#else
+    *sram_addr = sram_addr_temp;
+
+#endif
 }
 // 不会修改 context.sram_addr 的数值
 void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,

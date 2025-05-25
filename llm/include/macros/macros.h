@@ -15,7 +15,7 @@
 #define USE_SRAM 1            // otherwise use Dcache
 #define MAX_SRAM_SIZE 8388608 //33554432  // byte
 #define SRAM_BLOCK_SIZE 128   // byte
-#define USE_SRAM_MANAGER 1
+#define USE_SRAM_MANAGER 0
 #define USE_NB_DRAMSYS 1
 #define USE_L1L2_CACHE 1
 #define FAST_WARMUP 1
