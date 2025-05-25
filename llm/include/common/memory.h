@@ -5,6 +5,7 @@
 
 #include "common/system.h"
 #include "macros/macros.h"
+#include "unit_module/sram_manager/sram_manager.h"
 
 using namespace std;
 
@@ -55,6 +56,7 @@ public:
 class AddrPosKey {
 public:
     int pos;
+    AllocationID alloc_id;
     int size;
     bool valid;     // 是否已经被evict到DRAM上了
     int spill_size; // 已经spill到DRAM上的大小
@@ -64,6 +66,7 @@ public:
         record = 0;
         spill_size = 0;
         pos = 0;
+        alloc_id = 0;
         size = 0;
     }
 
@@ -75,6 +78,11 @@ public:
         // 表示被spill到dram中的数据的大小
         spill_size = 0;
     }
+    AddrPosKey(AllocationID id, int sz)
+        : alloc_id(id), size(sz), valid(true), spill_size(0), record(0) {}
+
+    AddrPosKey(int sz)
+        : size(sz), valid(true), spill_size(0), record(0) {}
 };
 
 class SramPosLocator { // one per core
@@ -83,12 +91,15 @@ public:
     int max_sram_size;
     int visit;
     int cid; // 属于哪一个核
+    SramManager* sram_manager_;
 
     SramPosLocator(int id) {
         cid = id;
         visit = 1;
         max_sram_size = MAX_SRAM_SIZE;
     }
+    SramPosLocator(int id, SramManager* sram_mgr)
+        : cid(id), visit(1), max_sram_size(MAX_SRAM_SIZE), sram_manager_(sram_mgr) {}
 
     void addPair(const std::string &key, AddrPosKey value,
                  TaskCoreContext &context, u_int64_t &dram_time);
@@ -103,6 +114,8 @@ public:
 
     void deletePair(std::string &key);
     void clearAll();
+    void printAllKeysWithAllocId();
+    bool validateTotalSize() const; 
 
     int rearrangeAll(TaskCoreContext &context);
 };
@@ -125,3 +138,6 @@ public:
     void deletePair(std::string &key);
     void clearAll();
 };
+
+
+

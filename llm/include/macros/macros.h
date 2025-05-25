@@ -13,7 +13,9 @@
 #define DUMMY 1
 #define DUMMY_SRAM 1
 #define USE_SRAM 1            // otherwise use Dcache
-#define MAX_SRAM_SIZE 8388608 // byte
+#define MAX_SRAM_SIZE 8388608 //33554432  // byte
+#define SRAM_BLOCK_SIZE 128   // byte
+#define USE_SRAM_MANAGER 1
 #define USE_NB_DRAMSYS 1
 #define USE_L1L2_CACHE 1
 #define FAST_WARMUP 1
@@ -21,6 +23,8 @@
 #define GPU_CACHE_DEBUG 0
 #define GPU_TMP_DEBUG 1
 #define NB_CACHE_DEBUG 0
+#define DEBUG_SRAM_MANAGER 0
+
 
 // 数据包占位
 #define M_D_IS_END 1
@@ -69,6 +73,7 @@
 #define ETERNAL_PREFIX "eternal_"
 #define KVCACHE_PREFIX "kvcache_"
 #define INPUT_LABEL "input_label"
+// 最大输入input数量
 #define MAX_SPLIT_NUM 10
 
 // PD中的分块策略

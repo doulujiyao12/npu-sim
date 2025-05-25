@@ -138,16 +138,14 @@ int Residual_f::task_core(TaskCoreContext &context) {
             continue;
         in_label_cnt++;
     }
-
+    assert(in_label_cnt == 2 && "residual has two input");
     for (int i = 0; i < in_label_cnt;) {
         if (datapass_label.indata[i] == UNSET_LABEL)
             continue;
 
         if (datapass_label.indata[i].find(DRAM_LABEL) == 0) {
             inp_sram_offset[i] = *sram_addr;
-            sram_first_write_generic(context,
-                                     data_byte * data_size_single_input,
-                                     inp1_global_addr, dram_time, dram_start);
+            
 
             size_t space_pos = datapass_label.indata[i].find(' ');
             if (space_pos != std::string::npos) {
@@ -157,11 +155,19 @@ int Residual_f::task_core(TaskCoreContext &context) {
 
             printf("[INFO] Residual_f: read from dram, label: %s\n",
                    datapass_label.indata[i].c_str());
+#if USE_SRAM_MANAGER == 1
+            sram_first_write_generic(context, data_byte * data_size_single_input,
+                inp1_global_addr, dram_time, dram_start, datapass_label.indata[i], true, sram_pos_locator);
+#else
+            sram_first_write_generic(context,
+                                     data_byte * data_size_single_input,
+                                     inp1_global_addr, dram_time, dram_start);
 
             AddrPosKey inp_key = AddrPosKey(inp_sram_offset[i],
                                             data_byte * data_size_single_input);
             sram_pos_locator->addPair(datapass_label.indata[i], inp_key,
                                       context, dram_time);
+#endif 
         } else {
             AddrPosKey inp_key;
             int flag = sram_pos_locator->findPair(datapass_label.indata[i],
@@ -172,13 +178,30 @@ int Residual_f::task_core(TaskCoreContext &context) {
                        datapass_label.indata[i].c_str());
                 sc_stop();
             } else if (flag > 0) {
+#if USE_SRAM_MANAGER == 1
+            sram_first_write_generic(context, flag, inp1_global_addr, dram_time,
+                dram_start, datapass_label.indata[i], true, sram_pos_locator);
+
+#else
                 sram_first_write_generic(context, flag, inp1_global_addr,
                                          dram_time, dram_start);
-                inp_key.size = data_byte * data_size_input;
+                inp_key.size = data_byte * data_size_single_input;
                 inp_key.spill_size = 0;
-                sram_pos_locator->addPair(datapass_label.indata[0], inp_key,
+                sram_pos_locator->addPair(datapass_label.indata[i], inp_key,
                                           context, dram_time);
+#endif
+            }else{
+#if USE_SRAM_MANAGER == 1
+            AddrPosKey inp_key;
+            int flag =
+                sram_pos_locator->findPair(datapass_label.indata[i], inp_key);
+            if (inp_key.alloc_id == 0){
+            sram_first_write_generic(context, data_byte * data_size_single_input, inp1_global_addr, dram_time,
+                dram_start, datapass_label.indata[i], true, sram_pos_locator, true);
             }
+#endif
+
+        }
         }
 
         i++;
@@ -188,10 +211,18 @@ int Residual_f::task_core(TaskCoreContext &context) {
 
     // 读出inp
     for (int i = 0; i < in_label_cnt; i++) {
+#if USE_SRAM_MANAGER == 1
+        AddrPosKey input_key;
+        sram_pos_locator->findPair(datapass_label.indata[i], input_key);
+        sram_pos_locator->printAllKeysWithAllocId();
+        sram_read_generic(context, data_byte * data_size_single_input, inp_sram_offset[i],
+            dram_time, input_key.alloc_id, true, sram_pos_locator);
+#else
         sram_pos_locator->findPair(datapass_label.indata[i],
                                    inp_sram_offset[i]);
         sram_read_generic(context, data_byte * data_size_single_input,
                           inp_sram_offset[i], dram_time);
+#endif
     }
 
     for (int i = 0; i < MAX_SPLIT_NUM; i++) {
@@ -236,12 +267,20 @@ int Residual_f::task_core(TaskCoreContext &context) {
 #endif
 
 #if USE_SRAM == 1
+
+#if USE_SRAM_MANAGER == 1
+    sram_write_append_generic(context, data_byte * data_size_out, overlap_time,
+        datapass_label.outdata, true, sram_pos_locator);
+      
+
+#else
     // 写入out
-    // label kv in sram locator
+
     AddrPosKey out_key = AddrPosKey(*sram_addr, data_byte * data_size_out);
     sram_pos_locator->addPair(datapass_label.outdata, out_key, context,
                               dram_time);
     sram_write_append_generic(context, data_byte * data_size_out, overlap_time);
+#endif
 #else
     // CTODO: do dram only
 #endif

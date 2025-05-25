@@ -15,6 +15,7 @@
 #include "trace/Event_engine.h"
 // #include "link/nb_global_memif.h"
 #include "link/nb_global_memif_v2.h"
+#include "unit_module/sram_manager/sram_manager.h"
 
 class WorkerCoreExecutor;
 
@@ -155,6 +156,8 @@ public:
     high_bw_mem_access_unit *high_bw_mem_access_port;
     mem_access_unit *temp_mem_access_port;
     high_bw_mem_access_unit *high_bw_temp_mem_access_port;
+
+    SramManager* sram_manager_;
 
     // sram相关
     int *sram_addr;                    // 用于记录当前sram可分配的起始地址
