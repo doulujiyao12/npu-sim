@@ -1,3 +1,4 @@
+#include "defs/global.h"
 #include "prims/gpu_prims.h"
 #include "utils/memory_utils.h"
 #include "utils/system_utils.h"
@@ -68,7 +69,8 @@ int Attention_f_gpu::task_core(TaskCoreContext &context) {
     overlap_time = 0;
     AddrPosKey out_key = AddrPosKey(0, data_byte * data_size_out);
     gpu_pos_locator->addPair(datapass_label.outdata, out_key);
-    gpu_write_generic(context, out_key.pos, data_byte*data_size_out, overlap_time);
+    gpu_write_generic(context, out_key.pos, data_byte * data_size_out,
+                      overlap_time);
 #endif
 
     cout << cid << " [Attention_f_gpu] after write: " << overlap_time << endl;

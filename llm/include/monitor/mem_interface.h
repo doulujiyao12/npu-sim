@@ -38,17 +38,7 @@ public:
     sc_event ev_recv_helper;
     sc_event ev_recv_ack;
     sc_event ev_recv_done;
-    int g_recv_ack_cnt;
-    int g_recv_done_cnt;
-    vector<Msg> g_done_msg; // 在PD模式中存储所有的done_msg
-
     sc_event ev_req_handler; // 在PD模式中用于在正确的时刻分发所有请求
-
-    // 当recv_helper读到消息的时候，将读到的消息放入这两个数组中，随后通知对应的处理函数。
-    // 如果让处理函数主动读，则由于delta
-    // cycle的关系，会读不到传入的消息。所以需要这两个数组
-    vector<Msg> g_temp_done_msg;
-    vector<Msg> g_temp_ack_msg;
 
     /* -----------------Write helper---------------------- */
     // 由write_helper进行统一写入，此信号指示是否开始写

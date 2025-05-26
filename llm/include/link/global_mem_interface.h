@@ -32,11 +32,16 @@ public:
     chip_config_helper *config_helper;
 
     int cid;
+    bool chip_prim_refill = true;
+
 
     std::vector<chip_instr_base*> global_instrs;
-    sc_signal<bool> prim_block;
+    sc_signal<bool> chip_prim_block;
 
     deque<chip_instr_base*> global_instrs_queue;
+
+    sc_event ev_block;
+    sc_event ev_task;
 
     SC_HAS_PROCESS(GlobalMemInterface);  // Enable SystemC processes for this module
     GlobalMemInterface(const sc_module_name &n, Event_engine *event_engine,
@@ -49,9 +54,10 @@ public:
 
     void init();
     void load_global_prims(const char *config_name, const char *font_ttf);
-
     void task_logic();
-
+    void switch_chip_prim_block();
+    void instr_executor();
+    void init_prim();
 
     // GlobalMemInterfaceExecutor *executor;
 
@@ -66,15 +72,3 @@ public:
     // std::vector<chip_instr_base*> global_instrs;
     
 };
-
-
-// 先不实现executor
-// class GlobalMemInterfaceExecutor : public sc_module {
-// public:
-//     int cid;
-    
-//     sc_signal<bool> prim_block;
-
-
-
-// };

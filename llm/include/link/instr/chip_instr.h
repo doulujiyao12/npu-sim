@@ -9,6 +9,8 @@
 #include <vector>
 #include <unordered_set>
 
+#include "link/chip_task_context.h"
+
 using json = nlohmann::json;
 
 enum INSTR_TYPE{
@@ -37,6 +39,7 @@ public:
     }
 
     virtual void parse_json(json j) = 0;
+    virtual int task_core(TaskChipContext &context) = 0;
 
     virtual ~chip_instr_base() = default;
 

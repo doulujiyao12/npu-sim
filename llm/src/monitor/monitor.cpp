@@ -23,6 +23,7 @@ Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine,
 }
 
 Monitor::~Monitor() {
+    cout << "Monitor delete\n";
     delete[] core_busy;
     delete[] rc_channel;
     delete[] rc_data_sent;
@@ -68,8 +69,9 @@ void Monitor::init() {
     }
 
     // 根据Config的设置连接到Globalmem
-    assert(memInterface->has_global_mem.size() <= 1 && "only allow one global mem");
-    if(memInterface->has_global_mem.size() == 1){
+    assert(memInterface->has_global_mem.size() <= 1 &&
+           "only allow one global mem");
+    if (memInterface->has_global_mem.size() == 1) {
         for (auto i : memInterface->has_global_mem) {
             std::cout << "[Global Mem]: global link inited " <<  i << std::endl;
             // instantiate the NB_GlobalMemIF for this executor
@@ -97,11 +99,13 @@ void Monitor::init() {
         "l1l2-cache_system", GRID_SIZE, l1caches, processors,
         "../DRAMSys/configs/ddr4-example.json", "../DRAMSys/configs");
 
-    gpu_pos_locator = new GpuPosLocator();
-    ((config_helper_gpu *)memInterface->config_helper)->gpu_pos_locator =
-        gpu_pos_locator;
-    for (int i = 0; i < GRID_SIZE; i++)
-        workerCores[i]->executor->gpu_pos_locator = gpu_pos_locator;
+    if (SYSTEM_MODE == SIM_GPU) {
+        gpu_pos_locator = new GpuPosLocator();
+        ((config_helper_gpu *)memInterface->config_helper)->gpu_pos_locator =
+            gpu_pos_locator;
+        for (int i = 0; i < GRID_SIZE; i++)
+            workerCores[i]->executor->gpu_pos_locator = gpu_pos_locator;
+    }
 #endif
 
     memInterface->start_i(star);

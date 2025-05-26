@@ -12,7 +12,6 @@ public:
         message = "";
     }
 
- 
     Print_msg(int i, std::string msg){
         message = msg;
         id = i;
@@ -31,5 +30,11 @@ public:
     void print_self(std::string prefix) override{
         std::cout << prefix << "<Print_msg>" << std::endl;
         std::cout << prefix << "\tmsg: " << message << std::endl;
+    }
+
+    int task_core(TaskChipContext &context) override {
+        std::cout << "Executing <Print_msg>" << std::endl;
+        std::cout << "\t" << "message: " << message << std::endl;
+        return 10000;
     }
 };

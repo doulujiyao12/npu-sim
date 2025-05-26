@@ -4,6 +4,7 @@
 #include "monitor/config_helper_core.h"
 #include "monitor/config_helper_gpu.h"
 #include "monitor/config_helper_pd.h"
+#include "monitor/config_helper_pds.h"
 #include "monitor/mem_interface.h"
 #include "prims/comp_prims.h"
 #include "prims/norm_prims.h"
@@ -24,6 +25,10 @@ MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
     else if (SYSTEM_MODE == SIM_PD)
         config_helper =
             new config_helper_pd(config_name, font_ttf, &ev_req_handler);
+    else if (SYSTEM_MODE == SIM_PDS) {
+        config_helper =
+            new config_helper_pds(config_name, font_ttf, &ev_req_handler);
+    }
     
     init();
 }
@@ -47,7 +52,6 @@ void MemInterface::init() {
             }
         }
     }
-
     host_data_sent_i = new sc_in<bool>[GRID_X];
     host_data_sent_o = new sc_out<bool>[GRID_X];
 
@@ -59,9 +63,6 @@ void MemInterface::init() {
     write_buffer = new queue<Msg>[GRID_X];
 
     phase = PRO_CONF;
-
-    g_recv_ack_cnt = 0;
-    g_recv_done_cnt = 0;
 
     SC_THREAD(write_helper);
     sensitive << ev_write;
@@ -109,6 +110,7 @@ void MemInterface::init() {
 };
 
 MemInterface::~MemInterface() {
+    cout << "Mem Interface delete\n";
     delete[] host_data_sent_i;
     delete[] host_data_sent_o;
     delete[] host_channel_avail_i;
@@ -117,7 +119,7 @@ MemInterface::~MemInterface() {
 
     delete[] write_buffer;
 
-    delete config_helper;
+    // delete config_helper;
 }
 
 void MemInterface::end_of_simulation() {
@@ -157,6 +159,13 @@ void MemInterface::distribute_config() {
 
         if (SYSTEM_MODE == SIM_PD)
             ((config_helper_pd *)config_helper)->iter_start();
+        else if (SYSTEM_MODE == SIM_PDS) {
+            config_helper_pds *helper = (config_helper_pds *)config_helper;
+            if (helper->wait_schedule_p)
+                helper->iter_start(JOB_PREFILL);
+            if (helper->wait_schedule_d)
+                helper->iter_start(JOB_DECODE);
+        }
 
         config_helper->fill_queue_config(write_buffer);
 
@@ -168,7 +177,6 @@ void MemInterface::distribute_config() {
                 break;
             }
         }
-        cout << "writable " << writable << endl;
 
         // 发送开始书写信号
         if (writable) {
@@ -192,7 +200,6 @@ void MemInterface::distribute_config() {
 
 void MemInterface::distribute_data() {
     while (true) {
-        cout << "2\n";
         event_engine->add_event(this->name(), "Send Weight Data", "B",
                                 Trace_event_util());
 
@@ -241,13 +248,13 @@ void MemInterface::recv_helper() {
 
                 if (m.msg_type == ACK) {
                     cout << "ACK from " << m.source << endl;
-                    g_temp_ack_msg.push_back(m);
+                    config_helper->g_temp_ack_msg.push_back(m);
                     ev_recv_ack.notify(0, SC_NS);
                 }
 
                 else if (m.msg_type == DONE) {
                     cout << "DONE from " << m.source << endl;
-                    g_temp_done_msg.push_back(m);
+                    config_helper->g_temp_done_msg.push_back(m);
                     ev_recv_done.notify(0, SC_NS);
                 }
 
@@ -261,47 +268,21 @@ void MemInterface::recv_helper() {
 
 void MemInterface::recv_ack() {
     while (true) {
-        event_engine->add_event(this->name(), "Waiting Recv Ack", "B",
-                                Trace_event_util());
-
-        for (auto m : g_temp_ack_msg) {
-            int cid = m.source;
-            cout << sc_time_stamp()
-                 << ": Mem Interface: received ack packet from " << cid
-                 << ". total " << g_recv_ack_cnt + 1 << "/"
-                 << config_helper->coreconfigs.size() << ".\n";
-
-            g_recv_ack_cnt++;
-        }
-        g_temp_ack_msg.clear();
-
-        event_engine->add_event(this->name(), "Waiting Recv Ack", "E",
-                                Trace_event_util());
-
+        sc_event *notify_event = nullptr;
         switch (SYSTEM_MODE) {
         case SIM_DATAFLOW:
+            notify_event = &ev_switch_phase;
+            break;
         case SIM_GPU:
-            if (g_recv_ack_cnt >= config_helper->coreconfigs.size()) {
-                ev_switch_phase.notify(CYCLE, SC_NS);
-
-                // 使用唯一的flow ID替换名称
-                std::string flow_name = "flow_" + std::to_string(flow_id);
-                event_engine->add_event(this->name(), "Waiting Recv Ack", "f",
-                                        Trace_event_util(flow_name),
-                                        sc_time(0, SC_NS), 100, "e");
-                cout << "Mem Interface: received all ack packets.\n";
-
-                g_recv_ack_cnt = 0;
-            }
+            notify_event = &ev_switch_phase;
             break;
         case SIM_PD:
-            if (g_recv_ack_cnt >=
-                ((config_helper_pd *)config_helper)->coreStatus.size()) {
-                g_recv_ack_cnt = 0;
-                ev_dis_start.notify(CYCLE, SC_NS);
-            }
+        case SIM_PDS:
+            notify_event = &ev_dis_start;
             break;
         }
+
+        config_helper->parse_ack_msg(event_engine, flow_id, notify_event);
 
         wait();
     }
@@ -309,74 +290,21 @@ void MemInterface::recv_ack() {
 
 void MemInterface::recv_done() {
     while (true) {
-        event_engine->add_event(this->name(), "Waiting Core busy", "B",
-                                Trace_event_util());
-
-        for (auto m : g_temp_done_msg) {
-            int cid = m.source;
-            cout << sc_time_stamp()
-                 << ": Mem Interface: received done packet from " << cid
-                 << ", total " << g_recv_done_cnt + 1 << ".\n";
-
-            g_recv_done_cnt++;
-            g_done_msg.push_back(m);
-        }
-        g_temp_done_msg.clear();
-
-        event_engine->add_event(this->name(), "Waiting Core busy", "E",
-                                Trace_event_util());
-
-        // Declare variables outside the switch
-        config_helper_gpu *helper = nullptr;
-        prim_base *prim = nullptr;
-        int core_inv = 0;
-
+        sc_event *notify_event = nullptr;
         switch (SYSTEM_MODE) {
         case SIM_DATAFLOW:
-            cout << "g_recv_done_cnt " << g_recv_done_cnt << " end "
-                 << config_helper->end_cores << " pipe "
-                 << config_helper->pipeline << endl;
-            if (g_recv_done_cnt >=
-                config_helper->end_cores * config_helper->pipeline) {
-                cout << "Mem Interface: all work done, end_core: "
-                     << config_helper->end_cores
-                     << ", recv_cnt: " << g_recv_done_cnt << endl;
-
-                g_recv_done_cnt = 0;
-                sc_stop();
-            }
+            notify_event = nullptr;
             break;
         case SIM_GPU:
-            helper = (config_helper_gpu *)config_helper;
-            prim = helper->streams[0].prims[helper->gpu_index - 1];
-            core_inv = ((gpu_base *)prim)->req_sm;
-
-            if (core_inv >= GRID_SIZE)
-                core_inv = GRID_SIZE;
-            if (g_recv_done_cnt >= core_inv) {
-                cout << "Mem Interface: one work done. " << helper->gpu_index
-                     << " of " << helper->streams[0].prims.size() << endl;
-
-                if (helper->gpu_index == helper->streams[0].prims.size()) {
-                    cout << "Mem Interface: all work done.\n";
-                    sc_stop();
-                } else {
-                    g_recv_done_cnt = 0;
-                    ev_switch_phase.notify(CYCLE, SC_NS);
-                }
-            }
+            notify_event = &ev_switch_phase;
             break;
         case SIM_PD:
-            if (g_recv_done_cnt >=
-                ((config_helper_pd *)config_helper)->coreStatus.size()) {
-                ((config_helper_pd *)config_helper)->iter_done(g_done_msg);
-
-                g_done_msg.clear();
-                g_recv_done_cnt = 0;
-                ev_dis_config.notify(CYCLE, SC_NS);
-            }
+        case SIM_PDS:
+            notify_event = &ev_dis_config;
             break;
         }
+
+        config_helper->parse_done_msg(event_engine, notify_event);
 
         wait();
     }
@@ -434,22 +362,37 @@ void MemInterface::write_helper() {
 
 void MemInterface::req_handler() {
     while (true) {
-        if (SYSTEM_MODE != SIM_PD) {
-            cout << "[ERROR] Request handler can only be used in PD mode.\n";
+        if (SYSTEM_MODE != SIM_PD && SYSTEM_MODE != SIM_PDS) {
+            cout << "[ERROR] Request handler can only be used in PD mode or "
+                    "PDS mode.\n";
             sc_stop();
         }
-        cout << "sssssssssssssssssss\n";
-        config_helper_pd *pd = (config_helper_pd *)config_helper;
-        for (int i = 0; i < pd->arrival_time.size(); i++) {
-            cout << pd->arrival_time[i] << " ss\n";
-            sc_time next_time(pd->arrival_time[i], SC_NS);
-            if (next_time < sc_time_stamp()) {
-                cout << "[ERROR] Be sure all reqs come in sequentially.\n";
-                sc_stop();
-            }
 
-            wait(next_time - sc_time_stamp());
-            ev_dis_config.notify(0, SC_NS);
+        if (SYSTEM_MODE == SIM_PD) {
+            config_helper_pd *pd = (config_helper_pd *)config_helper;
+            for (int i = 0; i < pd->arrival_time.size(); i++) {
+                cout << pd->arrival_time[i] << " ss\n";
+                sc_time next_time(pd->arrival_time[i], SC_NS);
+                if (next_time < sc_time_stamp()) {
+                    cout << "[ERROR] Be sure all reqs come in sequentially.\n";
+                    sc_stop();
+                }
+
+                wait(next_time - sc_time_stamp());
+                ev_dis_config.notify(0, SC_NS);
+            }
+        } else if (SYSTEM_MODE == SIM_PDS) {
+            config_helper_pds *pd = (config_helper_pds *)config_helper;
+            for (int i = 0; i < pd->arrival_time.size(); i++) {
+                sc_time next_time(pd->arrival_time[i], SC_NS);
+                if (next_time < sc_time_stamp()) {
+                    cout << "[ERROR] Be sure all reqs come in sequentially.\n";
+                    sc_stop();
+                }
+
+                wait(next_time - sc_time_stamp());
+                ev_dis_config.notify(0, SC_NS);
+            }
         }
 
         wait();

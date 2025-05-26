@@ -1,6 +1,6 @@
-#include <fstream>
-#include <cstdlib>
 #include "systemc.h"
+#include <cstdlib>
+#include <fstream>
 
 #include "defs/const.h"
 #include "defs/enums.h"
@@ -33,12 +33,12 @@ void set_var_gpt2(int B, int T, int C, int NH) {
     vtable.push_back(make_pair("T", T));
     vtable.push_back(make_pair("C", C));
     vtable.push_back(make_pair("NH", NH));
-    vtable.push_back(make_pair("3C", 3*C));
-    vtable.push_back(make_pair("4C", 4*C));
-    vtable.push_back(make_pair("BTC", B*T*C));
-    vtable.push_back(make_pair("2BTC", 2*B*T*C));
-    vtable.push_back(make_pair("3BTC", 3*B*T*C));
-    vtable.push_back(make_pair("4BTC", 4*B*T*C));
+    vtable.push_back(make_pair("3C", 3 * C));
+    vtable.push_back(make_pair("4C", 4 * C));
+    vtable.push_back(make_pair("BTC", B * T * C));
+    vtable.push_back(make_pair("2BTC", 2 * B * T * C));
+    vtable.push_back(make_pair("3BTC", 3 * B * T * C));
+    vtable.push_back(make_pair("4BTC", 4 * B * T * C));
 }
 
 int ceiling_division(int a, int b) {
@@ -105,9 +105,10 @@ void init_grid(string config_path) {
                 cout << "Please activate \'USE_L1L2_CACHE\' macro.";
                 sc_stop();
             }
-        } else if (mode == "sched_pd") {
+        } else if (mode == "sched_pd")
             SYSTEM_MODE = SIM_PD;
-        }
+        else if (mode == "sched_pds")
+            SYSTEM_MODE = SIM_PDS;
     } else {
         SYSTEM_MODE = SIM_DATAFLOW;
     }
@@ -140,11 +141,13 @@ void initialize_cache_structures() {
     // data_footprint_in_words = GRID_SIZE * dataset_words_per_tile; //global
     // variable 全局的darray的大小 所有的tile
 
-    data_footprint_in_words = GRID_SIZE * dataset_words_per_tile; // global variable
+    data_footprint_in_words =
+        GRID_SIZE * dataset_words_per_tile; // global variable
     printf("GRID_SIZE%d, ss%ld\n", GRID_SIZE, dataset_words_per_tile);
     assert(data_footprint_in_words > 0);
 
-    u_int64_t total_lines = data_footprint_in_words >> dcache_words_in_line_log2;
+    u_int64_t total_lines =
+        data_footprint_in_words >> dcache_words_in_line_log2;
     printf("dataset_words_per_tile %ld \n", dataset_words_per_tile);
     printf("data_footprint_in_words %ld \n", data_footprint_in_words);
     printf("total_lines %ld \n", total_lines);
@@ -158,7 +161,8 @@ void initialize_cache_structures() {
     // dcache 是在片上的给到硬件dcache的大小
     u_int64_t lines_per_tile = dcache_size >> dcache_words_in_line_log2;
     for (int i = 0; i < GRID_SIZE; i++) {
-        u_int64_t *array_uint = (u_int64_t *)calloc(lines_per_tile, sizeof(u_int64_t));
+        u_int64_t *array_uint =
+            (u_int64_t *)calloc(lines_per_tile, sizeof(u_int64_t));
         for (int j = 0; j < lines_per_tile; j++) {
             array_uint[j] = UINT64_MAX;
         }
@@ -173,7 +177,8 @@ void initialize_cache_structures() {
 void init_perf_counters() {
     // 每个die有一组hbm_channel,这里是所有的die加起来的hbm_channel的数量
     // u_int32_t total_hbm_channels = hbm_channels * DIES;
-    mc_transactions = (u_int64_t *)calloc(total_hbm_channels, sizeof(u_int64_t));
+    mc_transactions =
+        (u_int64_t *)calloc(total_hbm_channels, sizeof(u_int64_t));
     mc_latency = (u_int64_t *)calloc(total_hbm_channels, sizeof(u_int64_t));
 
     // total_counters = new u_int64_t**[GRID_X];
@@ -219,7 +224,8 @@ void init_dram_areas() {
     for (int i = 0; i < GRID_SIZE; i++) {
 #if DUMMY == 1
 #else
-        dram_array[i] = (uint32_t *)calloc(dataset_words_per_tile, sizeof(uint32_t));
+        dram_array[i] =
+            (uint32_t *)calloc(dataset_words_per_tile, sizeof(uint32_t));
         if (dram_array[i] == NULL)
             std::cout << "Failed to calloc dram.\n";
 #endif
@@ -265,7 +271,10 @@ void system_cleanup() {
 
 // mesh的结构，编号是z字型编号的
 // 先x 宽度方向编号
-int global(int x, int y) { return (((y % 2) == 1) ? (y * GRID_X) + (GRID_X - 1) - x : (y * GRID_X) + x); }
+int global(int x, int y) {
+    return (((y % 2) == 1) ? (y * GRID_X) + (GRID_X - 1) - x
+                           : (y * GRID_X) + x);
+}
 
 // 在内存层级中使用
 uint64_t get_bank_index(uint64_t address) {

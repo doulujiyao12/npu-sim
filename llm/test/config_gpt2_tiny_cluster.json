@@ -356,7 +356,7 @@
                 "indata": "gelu1_out",
                 "outdata": "matmul4_out"
               },
-              "dram_address": {
+              "dram_address": { 
                 "data": "matmul4_data"
               }
             },
