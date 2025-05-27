@@ -7,9 +7,11 @@
 *.log
 *.vscode
 batch.sh
-
+/test/
+aaa.cpp
 /build/*
 /doc/build
+/data/fengdahu/npusim/npu-sim/llm/include/unit_module/sram_manager/build/*
 # /doc/make.bat
 # /doc/Makefile
 

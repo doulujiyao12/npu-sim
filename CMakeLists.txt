@@ -38,8 +38,11 @@ file(GLOB_RECURSE SRC_FILES ./llm/*.cpp)
 list(FILTER SRC_FILES EXCLUDE REGEX ".*/unittest/.*")
 # Remove 'test_dramsys.cpp' from the list of sources
 list(FILTER SRC_FILES EXCLUDE REGEX ".*/test_dramsys\\.cpp$")
+list(FILTER SRC_FILES EXCLUDE REGEX ".*/main\\.cpp")
+list(FILTER SRC_FILES EXCLUDE REGEX ".*/build/.*")
+
 # # 定义生成的目标
-# message(STATUS "Source files: ${SRC_FILES}")
+message(STATUS "Source files: ${SRC_FILES}")
 
 # find_package(Cairo REQUIRED)
 # include_directories(${CAIRO_INCLUDE_DIRS})

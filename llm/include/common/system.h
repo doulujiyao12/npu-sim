@@ -8,6 +8,7 @@
 #include "memory/sram/High_mem_access_unit.h"
 #include "memory/sram/Mem_access_unit.h"
 #include "trace/Event_engine.h"
+#include "unit_module/sram_manager/sram_manager.h"
 
 #include <vector>
 
@@ -39,6 +40,8 @@ public:
     high_bw_mem_access_unit *temp_hmau;
     sc_bv<SRAM_BITWIDTH> msg_data;
     int *sram_addr;
+    SramManager* sram_manager_;
+    AllocationID alloc_id_;
     sc_event *s_nbdram;
     sc_event *e_nbdram;
     int loop_cnt;
@@ -61,21 +64,7 @@ public:
                     mem_access_unit *temp_mau, high_bw_mem_access_unit *temp_hmau,
                     const sc_bv<SRAM_BITWIDTH> &msg_data, int *sram_addr,
                     sc_event *s_nbdram, sc_event *e_nbdram,
-                    NB_DcacheIF *nb_dcache)
-        : mau(mau),
-          hmau(hmau),
-          temp_mau(temp_mau),
-          temp_hmau(temp_hmau),
-          msg_data(msg_data),
-          sram_addr(sram_addr),
-          s_nbdram(s_nbdram),
-          e_nbdram(e_nbdram),
-          nb_dcache(nb_dcache) {}
-    TaskCoreContext(mem_access_unit *mau, high_bw_mem_access_unit *hmau,
-                    mem_access_unit *temp_mau, high_bw_mem_access_unit *temp_hmau,
-                    const sc_bv<SRAM_BITWIDTH> &msg_data, int *sram_addr,
-                    sc_event *s_nbdram, sc_event *e_nbdram,
-                    NB_DcacheIF *nb_dcache, int loop_cnt)
+                    NB_DcacheIF *nb_dcache, SramManager* sram_manager)
         : mau(mau),
           hmau(hmau),
           temp_mau(temp_mau),
@@ -85,14 +74,30 @@ public:
           s_nbdram(s_nbdram),
           e_nbdram(e_nbdram),
           nb_dcache(nb_dcache),
-          loop_cnt(loop_cnt) {}
+          sram_manager_(sram_manager) {}
+    TaskCoreContext(mem_access_unit *mau, high_bw_mem_access_unit *hmau,
+                    mem_access_unit *temp_mau, high_bw_mem_access_unit *temp_hmau,
+                    const sc_bv<SRAM_BITWIDTH> &msg_data, int *sram_addr,
+                    sc_event *s_nbdram, sc_event *e_nbdram,
+                    NB_DcacheIF *nb_dcache, SramManager* sram_manager, int loop_cnt)
+        : mau(mau),
+          hmau(hmau),
+          temp_mau(temp_mau),
+          temp_hmau(temp_hmau),
+          msg_data(msg_data),
+          sram_addr(sram_addr),
+          s_nbdram(s_nbdram),
+          e_nbdram(e_nbdram),
+          nb_dcache(nb_dcache),
+          loop_cnt(loop_cnt),
+          sram_manager_(sram_manager) {}
 #else
     // 构造函数
     TaskCoreContext(DcacheCore *wc, mem_access_unit *mau,
                     high_bw_mem_access_unit *hmau,
                     mem_access_unit *temp_mau, high_bw_mem_access_unit *temp_hmau,
                     const sc_bv<SRAM_BITWIDTH> &msg_data, int *sram_addr,
-                    sc_event *s_nbdram, sc_event *e_nbdram)
+                    sc_event *s_nbdram, sc_event *e_nbdram, SramManager* sram_manager)
         : wc(wc),
           mau(mau),
           hmau(hmau),
@@ -101,7 +106,8 @@ public:
           msg_data(msg_data),
           sram_addr(sram_addr),
           s_nbdram(s_nbdram),
-          e_nbdram(e_nbdram) {}
+          e_nbdram(e_nbdram),
+          sram_manager_(sram_manager) {}
 #endif
 
 #if USE_L1L2_CACHE == 1
@@ -109,7 +115,7 @@ public:
                     mem_access_unit *temp_mau, high_bw_mem_access_unit *temp_hmau,
                     const sc_bv<SRAM_BITWIDTH> &msg_data, int *sram_addr,
                     sc_event *s_nbdram, sc_event *e_nbdram,
-                    NB_DcacheIF *nb_dcache, int loop_cnt,
+                    NB_DcacheIF *nb_dcache, int loop_cnt, SramManager* sram_manager,
                     sc_event *start_nb_gpu_dram_event,
                     sc_event *end_nb_gpu_dram_event)
         : mau(mau),
@@ -122,6 +128,7 @@ public:
           e_nbdram(e_nbdram),
           nb_dcache(nb_dcache),
           loop_cnt(loop_cnt),
+          sram_manager_(sram_manager),
           start_nb_gpu_dram_event(start_nb_gpu_dram_event),
           end_nb_gpu_dram_event(end_nb_gpu_dram_event) {}
 #endif

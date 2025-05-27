@@ -198,7 +198,7 @@ int Split_matmul::task_core(TaskCoreContext &context) {
 #if USE_SRAM == 1
     // 写入out
     // label kv in sram locator
-    auto temp_out_sram_offset = *sram_addr;
+    int temp_out_sram_offset = *sram_addr;
 
     std::vector<std::string> out_labels;
 
@@ -215,7 +215,7 @@ int Split_matmul::task_core(TaskCoreContext &context) {
 
     for (int i = 0; i < out_labels.size(); i++) {
         AddrPosKey out_key =
-            AddrPosKey(temp_out_sram_offset + i * interval,
+            AddrPosKey(static_cast<int>(temp_out_sram_offset + i * interval),
                        data_byte * data_size_output / out_labels.size());
         sram_pos_locator->addPair(out_labels[i], out_key, context, dram_time);
     }
