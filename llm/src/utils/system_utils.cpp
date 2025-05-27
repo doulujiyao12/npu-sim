@@ -291,3 +291,14 @@ void print_configuration(ostream &fout) {
     fout << "PACK_W: " << PACK_W << endl;
     fout << "DIE_W: " << DIE_W << endl;
 }
+
+std::vector<std::string> split(const std::string &s, char delimiter) {
+    std::vector<std::string> tokens;
+    std::string token;
+    std::istringstream tokenStream(s);
+    while (std::getline(tokenStream, token, delimiter)) {
+        tokens.push_back(token);
+    }
+    
+    return tokens;
+}

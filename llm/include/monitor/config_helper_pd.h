@@ -15,6 +15,7 @@ public:
     int decode_done;                // 收到decode的eof完成次数
     vector<Msg> temp_config;        // 存放所有还没有发出去的config
     vector<queue<int>> idle_decode; // 由于超过credit而需要被stall的decode
+    vector<queue<int>> unfinished_prefill; // 存储还没有完成的prefill任务
 
     bool busy;                // 此次iteration是否已经开始
     vector<int> arrival_time; // 记录所有req到达的时间
@@ -24,6 +25,7 @@ public:
     int heads;
     double eof_chance;
     int model_stage;
+    int batch_size;
 
     config_helper_pd(string filename, string font_ttf, sc_event *ev_sig,
                      int config_chip_id = 0);
