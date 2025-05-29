@@ -20,6 +20,7 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
     eof_chance = config_reqs["eof_chance"];
     prefill_stage = config_reqs["prefill_stage"];
     decode_stage = config_reqs["decode_stage"];
+    batch_size = config_reqs["batch"];
 
     for (int i = 0; i < GRID_SIZE; i++) {
         int cal_stage = i % (prefill_stage + decode_stage) + 1;
@@ -32,6 +33,18 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
         cout << "[ERROR] In config helper pd: arrival time length "
                 "incompatible.\n";
         sc_stop();
+    }
+
+    // 检查batch_size参数的合理性，同时依此修改arrive时间
+    if (batch_size * PD_RATIO > CORE_CREDIT) {
+        cout << "[ERROR] In config helper pd: batch size too large.\n";
+        sc_stop();
+    } else {
+        for (int i = 0; i < req_cnt; i++) {
+            int target =
+                min((i + batch_size - 1) / batch_size * batch_size, req_cnt);
+            arrival_time[i] = arrival_time[target - 1];
+        }
     }
 
     for (int i = 0; i < req_cnt; i++) {
@@ -228,6 +241,7 @@ void config_helper_pds::iter_start(PD_JOB type) {
                             break;
                         }
                     }
+                    
                 }
 
                 temp_stage.push_back(make_pair(id, new_stage_1));

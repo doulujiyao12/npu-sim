@@ -26,6 +26,7 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
     model_stage = config_reqs["stage"];
     batch_size = config_reqs["batch"];
 
+    // 收集req的arrive时间
     if (config_reqs["arrival"].size() != req_cnt) {
         cout << "[ERROR] In config helper pd: arrival time length "
                 "incompatible.\n";
@@ -34,6 +35,18 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
 
     for (int i = 0; i < req_cnt; i++)
         arrival_time.push_back(config_reqs["arrival"][i]);
+
+    // 检查batch_size参数的合理性，同时依此修改arrive时间
+    if (batch_size * PD_RATIO > CORE_CREDIT) {
+        cout << "[ERROR] In config helper pd: batch size too large.\n";
+        sc_stop();
+    } else {
+        for (int i = 0; i < req_cnt; i++) {
+            int target = min((i + batch_size - 1) / batch_size * batch_size,
+                             req_cnt);
+            arrival_time[i] = arrival_time[target - 1];
+        }
+    }
 
     for (int i = 0; i < req_cnt; i++) {
         RequestRecord record =
@@ -192,7 +205,7 @@ void config_helper_pd::iter_start() {
             cout << "[PD SCHEDULE] Core " << id << " credit: " << credit
                  << endl;
 
-            while (credit < CORE_CREDIT && new_reqs) {
+            while (credit < CORE_CREDIT) {
                 // PREFILL new iter > UNTOUCHED
 
                 if (decode_waiting_list.size()) {
@@ -221,14 +234,12 @@ void config_helper_pd::iter_start() {
                         prefill_waiting_list.push(req_id);
                 }
 
-                else if (CORE_CREDIT - credit >= PD_RATIO) {
-                    new_reqs = false;
+                else if (CORE_CREDIT - credit >= PD_RATIO && new_reqs) {
                     for (auto &req : requestRecords) {
                         sc_core::sc_time arv_time(req.arrival_time,
                                                   sc_core::SC_NS);
                         if (req.phase == UNTOUCHED &&
                             arv_time <= sc_time_stamp()) {
-                            new_reqs = true;
                             credit += PD_RATIO;
                             new_stage_1.push_back(
                                 Stage(req.id, PREFILL,
@@ -242,6 +253,8 @@ void config_helper_pd::iter_start() {
                             break;
                         }
                     }
+
+                    new_reqs = false;
                 } else
                     break;
             }
