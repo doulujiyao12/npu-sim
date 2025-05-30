@@ -38,7 +38,28 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value) {
     // cout << "[SRAM pos locator] id " << cid << " add pair.\n";
     // cout << "[Add pair]: label -> " << key << endl;
 }
+bool SramPosLocator::validateTotalSize() const {
+    int dataSizeSum = 0;
+    for (const auto& pair : data_map) {
+        dataSizeSum += pair.second.size;
+    }
 
+    int allocationSizeSum = 0;
+    for (const auto& alloc : sram_manager_->allocations_) {
+        AllocationID id = alloc.first;
+        allocationSizeSum += sram_manager_->get_allocation_byte_capacity(id);
+    }
+
+    if (dataSizeSum != allocationSizeSum) {
+        std::cerr << "[ERROR] Data map size total (" << dataSizeSum
+                  << ") does not match SRAM manager allocation total ("
+                  << allocationSizeSum << ")." << std::endl;
+        return false;
+    }
+
+    std::cout << "[INFO] Total size validation passed: " << dataSizeSum << " bytes." << std::endl;
+    return true;
+}
 void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
                              TaskCoreContext &context, u_int64_t &dram_time) {
     // 先放入sram
@@ -71,9 +92,12 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
 
     // 放不下，需要spill，查找里面record最小的成员（除了key）
     while (used > max_sram_size) {
+        std::cout << "\033[1;31m" << ": Sram check: used: " << used
+                  << ", max sram size: " << max_sram_size << "\033[0m" << endl;
         int min_record = 1e9 + 3;
         string min_label = "";
         int min_pos = 0;
+        AllocationID sram_id  = 0;
         for (auto pair : data_map) {
             if (pair.first == key)
                 continue; // 不能spill自己
@@ -90,6 +114,7 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
                 min_record = pair.second.record;
                 min_label = pair.first;
                 min_pos = pair.second.pos;
+                sram_id = pair.second.alloc_id;
             }
         }
 
@@ -121,7 +146,11 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
         int spill_size = upper_spill_limit;
         used -= spill_size;
         data_map[min_label].spill_size += spill_size;
-
+#if USE_SRAM_MANAGER
+        cout << "add pair " << key << endl;
+        sram_manager_->deallocate(sram_id);
+        cout <<  " Deallocate " << sram_id << " from sram manager." << key << endl;
+#endif      
         // spill 耗时
         // spill in nb_dcache utils
         sram_spill_back_generic(context, spill_size, 1024, dram_time);
@@ -135,7 +164,10 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
 
     // 重排
     // 每次addPair后都需要重排sram_addr地址，保证最前面的一块是连续使用的，sram指向最前面空闲的
+#if USE_SRAM_MANAGER
+#else
     *(context.sram_addr) = rearrangeAll(context);
+#endif
 }
 
 int SramPosLocator::findPair(std::string &key, int &result) {
@@ -154,9 +186,16 @@ void SramPosLocator::printAllKeys() {
         std::cout << "Key: " << pair.first << std::endl;
     }
 }
-
+void SramPosLocator::printAllKeysWithAllocId() {
+    std::cout << "[SRAM Pos Locator] All keys and their Allocation IDs:\n";
+    for (const auto& pair : data_map) {
+        std::cout << "Key: " << pair.first 
+                  << ", Alloc ID: " << pair.second.alloc_id << std::endl;
+    }
+}
 int SramPosLocator::findPair(std::string &key, AddrPosKey &result) {
     visit += 1;
+    
     auto it = data_map.find(key);
     if (it != data_map.end()) {
         it->second.record = visit;
@@ -194,7 +233,17 @@ void SramPosLocator::updatePair(std::string &key, int size,
     //      << ", new size: " << data_map[key].size << endl;
 }
 
-void SramPosLocator::deletePair(std::string &key) { data_map.erase(key); }
+void SramPosLocator::deletePair(std::string &key) { 
+    // data_map.erase(key); 
+    cout << "delete label " << key << endl;
+    auto it = data_map.find(key);
+    if (it != data_map.end()) {
+#if USE_SRAM_MANAGER
+        sram_manager_->deallocate(it->second.alloc_id); // 释放 SRAM
+#endif
+        data_map.erase(it);
+    }
+}
 
 void SramPosLocator::clearAll() { data_map.clear(); }
 

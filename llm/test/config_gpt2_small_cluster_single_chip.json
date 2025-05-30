@@ -29,7 +29,7 @@
     "residual2_out_": 7382784,
     "residual2_out": 7220
   },
-  "pipeline": 1,
+  "pipeline": 5,
   "source": [
     {
       "dest": 0,
@@ -431,41 +431,6 @@
               "type" : "Print_msg",
               "seq" : 1,
               "message" : "global_msg2"
-            },
-            {
-              "type" : "Print_msg",
-              "seq" : 1,
-              "message" : "global_msg3"
-            },
-            {
-              "type" : "Print_msg",
-              "seq" : 1,
-              "message" : "global_msg4"
-            },
-            {
-              "type" : "Print_msg",
-              "seq" : 1,
-              "message" : "global_msg5"
-            },
-            {
-              "type" : "Print_msg",
-              "seq" : 1,
-              "message" : "global_msg6"
-            },
-            {
-              "type" : "Print_msg",
-              "seq" : 1,
-              "message" : "global_msg7"
-            },
-            {
-              "type" : "Print_msg",
-              "seq" : 1,
-              "message" : "global_msg8"
-            },
-            {
-              "type" : "Wait_event",
-              "seq" : 1,
-              "event" : "global_event"
             }
         ]
       }

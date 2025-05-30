@@ -18,7 +18,6 @@ GlobalMemInterface::GlobalMemInterface(const sc_module_name &n, Event_engine *ev
     
     // Load any global_interface primitives from the config
     load_global_prims(config_name, font_ttf);
-
 }
 
 GlobalMemInterface::GlobalMemInterface(const sc_module_name &n, Event_engine *event_engine, config_helper_base *input_config){
@@ -32,7 +31,6 @@ GlobalMemInterface::GlobalMemInterface() {
 void GlobalMemInterface::init() {
 
     chipGlobalMemory = new ChipGlobalMemory(sc_gen_unique_name("chip-global-memory"), "../DRAMSys/configs/ddr4-example.json", "../DRAMSys/configs");
-
     // // assert(0 && "task_logic's is not impl and sc_env is not implemented");
     SC_THREAD(switch_chip_prim_block);
     sensitive << ev_block;
@@ -42,7 +40,6 @@ void GlobalMemInterface::init() {
     SC_THREAD(task_logic);
     sensitive << ev_task;
     dont_initialize();
-
 }
 
 void GlobalMemInterface::load_global_prims(const char *config_name, const char *font_ttf) {
@@ -71,6 +68,10 @@ void GlobalMemInterface::task_logic() {
         int delay = 0;
 
         TaskChipContext context = generate_chip_context(this);
+
+        if (typeid(*p) == typeid(Recv_global_mem) && chipGlobalMemory) {
+            wait(chipGlobalMemory->write_received_event);
+        } 
 
         // p->datapass_label = *next_datapass_label;
         delay = p->task_core(context);
@@ -166,7 +167,6 @@ void GlobalMemInterface::instr_executor() {
         }
     }
 }
-
 
 void GlobalMemInterface::init_prim(){
     //开始时，将config_core里面的所有原语压入栈

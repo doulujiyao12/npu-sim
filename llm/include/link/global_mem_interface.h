@@ -34,7 +34,6 @@ public:
     int cid;
     bool chip_prim_refill = true;
 
-
     std::vector<chip_instr_base*> global_instrs;
     sc_signal<bool> chip_prim_block;
 
@@ -70,5 +69,4 @@ public:
 
     // // Global interface instructions
     // std::vector<chip_instr_base*> global_instrs;
-    
 };

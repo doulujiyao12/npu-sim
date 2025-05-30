@@ -213,7 +213,6 @@ int Matmul_f::task_core(TaskCoreContext &context) {
     u_int64_t time_prefetched = 0;
     u_int64_t prefetch_tag = 0;
 
-
 #if USE_SRAM == 1
     // 检查是否可以在此原语结束之后立刻释放中间结果
     bool input_reuse = false;
@@ -224,8 +223,7 @@ int Matmul_f::task_core(TaskCoreContext &context) {
 
     auto inp_sram_offset = 0;
     if (datapass_label.indata[0].find(DRAM_LABEL) == 0) {
-        sram_first_write_generic(context, data_byte * data_size_input,
-                                 inp_global_addr, dram_time, dram_start);
+        
 
         size_t space_pos = datapass_label.indata[0].find(' ');
         if (space_pos != std::string::npos) {
@@ -236,10 +234,18 @@ int Matmul_f::task_core(TaskCoreContext &context) {
         printf("[INFO] Matmul_f: read from dram, label: %s\n",
                datapass_label.indata[0].c_str());
 
-        AddrPosKey inp_key =
-            AddrPosKey(*sram_addr, data_byte * data_size_input);
+               
+#if USE_SRAM_MANAGER == 1
+        sram_first_write_generic(context, data_byte * data_size_input,
+            inp_global_addr, dram_time, dram_start, datapass_label.indata[0], true, sram_pos_locator);
+#else
+        sram_first_write_generic(context, data_byte * data_size_input,
+            inp_global_addr, dram_time, dram_start);
+        AddrPosKey inp_key = AddrPosKey(*sram_addr, data_byte * data_size_input);
+
         sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context,
                                   dram_time);
+#endif
     } else {
         AddrPosKey inp_key;
         int flag = sram_pos_locator->findPair(datapass_label.indata[0],
@@ -252,12 +258,29 @@ int Matmul_f::task_core(TaskCoreContext &context) {
                    datapass_label.indata[0].c_str());
             sc_stop();
         } else if (flag > 0) {
+#if USE_SRAM_MANAGER == 1
+            sram_first_write_generic(context, flag, inp_global_addr, dram_time,
+                dram_start, datapass_label.indata[0], true, sram_pos_locator);
+
+#else
             sram_first_write_generic(context, flag, inp_global_addr, dram_time,
                                      dram_start);
             inp_key.size = data_byte * data_size_input;
             inp_key.spill_size = 0;
             sram_pos_locator->addPair(datapass_label.indata[0], inp_key,
                                       context, dram_time);
+#endif
+        }else{
+#if USE_SRAM_MANAGER == 1
+            AddrPosKey inp_key;
+            int flag =
+                sram_pos_locator->findPair(datapass_label.indata[0], inp_key);
+            if (inp_key.alloc_id == 0){
+            sram_first_write_generic(context, data_byte * data_size_input, inp_global_addr, dram_time,
+                dram_start, datapass_label.indata[0], true, sram_pos_locator, true);
+            }
+#endif
+
         }
     }
 
@@ -274,41 +297,81 @@ int Matmul_f::task_core(TaskCoreContext &context) {
     AddrPosKey w_key;
     int flag = sram_pos_locator->findPair(label_weight, w_key);
     if (flag == -1) {
+#if USE_SRAM_MANAGER == 1
+        sram_first_write_generic(context, data_byte * data_size_weight, weight_global_addr, dram_time,
+            dram_start, label_weight, true, sram_pos_locator);
+#else
         sram_first_write_generic(context, data_byte * data_size_weight,
                                  weight_global_addr, dram_time, dram_start);
-
         w_key = AddrPosKey(*sram_addr, data_byte * data_size_weight);
         sram_pos_locator->addPair(label_weight, w_key, context, dram_time);
+#endif
     } else if (flag > 0) {
+#if USE_SRAM_MANAGER == 1
+        sram_first_write_generic(context, flag, weight_global_addr, dram_time,
+            dram_start, label_weight, true, sram_pos_locator);
+
+#else
         // 可能有部分已经spill在dram中了
-        sram_first_write_generic(context, flag, inp_global_addr, dram_time,
+        sram_first_write_generic(context, flag, weight_global_addr, dram_time,
                                  dram_start);
         w_key.size = data_byte * data_size_weight;
         w_key.spill_size = 0;
         sram_pos_locator->addPair(label_weight, w_key, context, dram_time);
+#endif
     }
 
     auto label_bias = ETERNAL_PREFIX + prefix + "_b";
     AddrPosKey b_key;
     flag = sram_pos_locator->findPair(label_bias, b_key);
     if (flag == -1) {
+#if USE_SRAM_MANAGER == 1
+        sram_first_write_generic(context, data_byte * data_size_bias, bias_global_addr, dram_time,
+            dram_start, label_bias, true, sram_pos_locator);
+#else
         sram_first_write_generic(context, data_byte * data_size_bias,
                                  bias_global_addr, dram_time, dram_start);
 
         AddrPosKey b_key = AddrPosKey(*sram_addr, data_byte * data_size_bias);
         sram_pos_locator->addPair(label_bias, b_key, context, dram_time);
+#endif
     } else if (flag > 0) {
+#if USE_SRAM_MANAGER == 1
+        sram_first_write_generic(context, flag, bias_global_addr, dram_time,
+            dram_start, label_bias, true, sram_pos_locator);
+
+#else
         sram_first_write_generic(context, flag, bias_global_addr, dram_time,
                                  dram_start);
         b_key.size = data_byte * data_size_bias;
         b_key.spill_size = 0;
         sram_pos_locator->addPair(label_bias, b_key, context, dram_time);
+#endif
     }
 
     printf("matmul_forward: dram time 1: %ld\n", dram_time);
 
     // 简化读出所有数据即可
     int w_sram_offset, b_sram_offset;
+#if USE_SRAM_MANAGER == 1
+    AddrPosKey input_key;
+    sram_pos_locator->findPair(datapass_label.indata[0], input_key);
+    sram_pos_locator->findPair(label_weight, w_key);
+    sram_pos_locator->findPair(label_bias, b_key);
+    sram_pos_locator->printAllKeysWithAllocId();
+    // Print allocation IDs for debugging
+    std::cout << "Input Key Allocation ID: " << input_key.alloc_id << std::endl;
+    std::cout << "Weight Key Allocation ID: " << w_key.alloc_id << std::endl;
+    std::cout << "Bias Key Allocation ID: " << b_key.alloc_id << std::endl;
+    sram_read_generic(context, data_byte * data_size_input, inp_sram_offset,
+        dram_time, input_key.alloc_id, true, sram_pos_locator);
+    sram_read_generic(context, data_byte * data_size_weight, w_sram_offset,
+            dram_time, w_key.alloc_id, true, sram_pos_locator);
+    sram_read_generic(context, data_byte * data_size_bias, b_sram_offset,
+            dram_time, b_key.alloc_id, true, sram_pos_locator);
+
+
+#else
     sram_pos_locator->findPair(datapass_label.indata[0], inp_sram_offset);
     sram_pos_locator->findPair(label_weight, w_sram_offset);
     sram_pos_locator->findPair(label_bias, b_sram_offset);
@@ -318,6 +381,7 @@ int Matmul_f::task_core(TaskCoreContext &context) {
                       dram_time);
     sram_read_generic(context, data_byte * data_size_bias, b_sram_offset,
                       dram_time);
+#endif
 
     // 删除标签
     if (!input_reuse) {
@@ -359,12 +423,19 @@ int Matmul_f::task_core(TaskCoreContext &context) {
 #endif
 
 #if USE_SRAM == 1
+#if USE_SRAM_MANAGER == 1
+    sram_write_append_generic(context, data_byte * data_size_out, overlap_time,
+        datapass_label.outdata, true, sram_pos_locator);
+      
+
+#else
     // 写入out
     // label kv in sram locator
     AddrPosKey out_key = AddrPosKey(*sram_addr, data_byte * data_size_out);
     sram_pos_locator->addPair(datapass_label.outdata, out_key, context,
                               dram_time);
     sram_write_append_generic(context, data_byte * data_size_out, overlap_time);
+#endif
 #else
 
     u_int64_t out_dcacheline = 0;

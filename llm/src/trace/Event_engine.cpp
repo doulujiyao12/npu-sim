@@ -9,11 +9,11 @@ Event_engine::Event_engine(const sc_module_name &name, int trace_window)
     sensitive << dump_event; // 定期执行dump
     dont_initialize();
 }
+
 void Event_engine::dump_periodically() {
-
-
     dump_traced_file("events.json", false); // 写入文件
 }
+
 void Event_engine::engine_run() {
     while (1) {
         wait();

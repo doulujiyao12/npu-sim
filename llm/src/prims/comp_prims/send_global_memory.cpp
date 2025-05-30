@@ -6,6 +6,7 @@
 #include "prims/comp_prims.h"
 #include "utils/memory_utils.h"
 #include "utils/system_utils.h"
+#include "link/instr/recv_global_mem.h"
 
 sc_bv<128> Send_global_memory::serialize() {
     sc_bv<128> d;
@@ -55,7 +56,7 @@ int Send_global_memory::task_core(TaskCoreContext &context) {
     trans.set_data_length(byte_count);
     trans.set_streaming_width(byte_count);
     trans.set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
-
+        
     // Dispatch the transaction via the DRAM interface
     sc_core::sc_time delay = sc_core::SC_ZERO_TIME;
     context.nb_global_memif->socket->b_transport(trans, delay);

@@ -11,6 +11,8 @@
 
 #include "link/chip_task_context.h"
 
+class TaskChipContext;
+
 using json = nlohmann::json;
 
 enum INSTR_TYPE{

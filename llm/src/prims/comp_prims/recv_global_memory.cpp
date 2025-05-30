@@ -1,4 +1,5 @@
 #include "systemc.h"
+#include <tlm>
 
 #include "memory/dram/Dcachecore.h"
 #include "prims/comp_base.h"

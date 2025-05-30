@@ -25,6 +25,9 @@ class ChipGlobalMemory : public sc_module {
 public:
     int cid;
 
+    // Event signaled on receiving a write transaction
+    sc_core::sc_event write_received_event;
+
     gem5::memory::DRAMSysWrapper *dramSysWrapper;
 
     tlm_utils::simple_target_socket<ChipGlobalMemory> socket; // Receive
@@ -55,7 +58,9 @@ public:
 
     ~ChipGlobalMemory() { delete dramSysWrapper; }
 
-    void b_transport(tlm_generic_payload &trans, sc_time &delay) {
+    void b_transport(tlm_generic_payload &trans, sc_core::sc_time &delay) {
+        // Notify that a write transaction has been received
+        write_received_event.notify(sc_core::SC_ZERO_TIME);
         initiatorSocket->b_transport(trans, delay);
     }
 

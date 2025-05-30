@@ -148,8 +148,7 @@ int Attention_f::task_core(TaskCoreContext &context) {
 
     auto inp_sram_offset = 0;
     if (datapass_label.indata[0].find(DRAM_LABEL) == 0) {
-        sram_first_write_generic(context, data_byte * data_size_input,
-                                 inp_global_addr, dram_time, dram_start);
+        
 
         size_t space_pos = datapass_label.indata[0].find(' ');
         if (space_pos != std::string::npos) {
@@ -159,13 +158,21 @@ int Attention_f::task_core(TaskCoreContext &context) {
 
         printf("[INFO] Attention_f: read from dram, label: %s\n",
                datapass_label.indata[0].c_str());
-
+#if USE_SRAM_MANAGER == 1
+        sram_first_write_generic(context, data_byte * data_size_input,
+            inp_global_addr, dram_time, dram_start, datapass_label.indata[0], true, sram_pos_locator);
+#else
+        sram_first_write_generic(context, data_byte * data_size_input,
+                                        inp_global_addr, dram_time, dram_start);
         AddrPosKey inp_key =
             AddrPosKey(*sram_addr, data_byte * data_size_input);
         sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context,
                                   dram_time);
+#endif
     } else {
         AddrPosKey inp_key;
+        printf("[INFO] Attention_f: read from sram, label: %s\n",
+               datapass_label.indata[0].c_str());
         int flag =
             sram_pos_locator->findPair(datapass_label.indata[0], inp_key);
         if (flag == -1) {
@@ -174,12 +181,37 @@ int Attention_f::task_core(TaskCoreContext &context) {
                    datapass_label.indata[0].c_str());
             sc_stop();
         } else if (flag > 0) {
+#if USE_SRAM_MANAGER == 1
+            std::cout << "[INFO] Attention_f: sram_pos_locator find the "
+                          "label: "
+                      << datapass_label.indata[0] << " with flag: " << flag
+                      << std::endl;
+            sram_first_write_generic(context, flag, inp_global_addr, dram_time,
+                dram_start, datapass_label.indata[0], true, sram_pos_locator);
+
+#else
             sram_first_write_generic(context, flag, inp_global_addr, dram_time,
                                      dram_start);
             inp_key.size = data_size_input;
             inp_key.spill_size = 0;
             sram_pos_locator->addPair(datapass_label.indata[0], inp_key,
                                       context, dram_time);
+#endif
+        }else{
+#if USE_SRAM_MANAGER == 1
+            std::cout << "[INFO] Attention_f: sram_pos_locator find the "
+                          "label: "
+                      << datapass_label.indata[0] << " with flag: " << flag
+                      << std::endl;
+            AddrPosKey inp_key;
+            int flag =
+                sram_pos_locator->findPair(datapass_label.indata[0], inp_key);
+            if (inp_key.alloc_id == 0){
+            sram_first_write_generic(context, data_byte * data_size_input, inp_global_addr, dram_time,
+                dram_start, datapass_label.indata[0], true, sram_pos_locator, true);
+            }
+#endif
+
         }
     }
 
@@ -205,29 +237,56 @@ int Attention_f::task_core(TaskCoreContext &context) {
 
     printf("attention_forward: dram time 1: %ld\n", dram_time);
 
+#if USE_SRAM_MANAGER == 1
+    AddrPosKey input_key;
+    sram_pos_locator->findPair(datapass_label.indata[0], input_key);
+    sram_pos_locator->printAllKeysWithAllocId();
+    std::cout << "attention_forward: input_key.alloc_id: " << input_key.alloc_id << std::endl;
+    sram_read_generic(context, data_byte * data_size_input / 3 *2, inp_sram_offset,
+        dram_time, input_key.alloc_id, true, sram_pos_locator);
+#else
+
     // 读出Q,K
     sram_pos_locator->findPair(datapass_label.indata[0], inp_sram_offset);
     sram_read_generic(context, data_byte * data_size_input / 3 * 2,
                       inp_sram_offset, dram_time);
+#endif
     // 写入preatt中间结果
     int temp_sram_addr = 0;
     int temp_sram_addr_piror = 0;
     temp_sram_addr_piror = temp_sram_addr; 
+    std::cout << "attention_forward sram_write_back_temp: temp_sram_addr: " << temp_sram_addr << std::endl;
     sram_write_back_temp(context, data_byte * data_size_preatt,
         temp_sram_addr, dram_time);
+    std::cout << "attention_forward sram_read_generic_temp: temp_sram_addr: " << temp_sram_addr << std::endl;
     // 读出preatt，计算自然指数，写入att
     sram_read_generic_temp(context, data_byte * data_size_preatt, temp_sram_addr_piror,
                       dram_time);
     temp_sram_addr_piror = temp_sram_addr;
+    std::cout << "attention_forward sram_write_back_temp: temp_sram_addr: " << temp_sram_addr << std::endl;
+
     sram_write_back_temp(context, data_byte * data_size_att, temp_sram_addr,
                             dram_time);
     // 读出att和V
+    std::cout << "attention_forward sram_read_generic_temp: temp_sram_addr: " << temp_sram_addr << std::endl;
+
     sram_read_generic_temp(context, data_byte * data_size_att, temp_sram_addr_piror,
                       dram_time);
+#if USE_SRAM_MANAGER == 1
+
+    std::cout << "attention_forward read V " << std::endl;
+
+
+    sram_read_generic(context, data_byte * data_size_input / 3 *2, inp_sram_offset,
+        dram_time, input_key.alloc_id, true, sram_pos_locator, data_byte * data_size_input * 1 / 3);
+
+
+#else
     sram_read_generic(context, data_byte * data_size_input / 3,
                       inp_sram_offset +
                       data_byte * data_size_input * 2 / 3,
                       dram_time);
+#endif
 
     // 删除标签
     if (!input_reuse) {
@@ -269,12 +328,19 @@ int Attention_f::task_core(TaskCoreContext &context) {
 #endif
 
 #if USE_SRAM == 1
+#if USE_SRAM_MANAGER == 1
+    sram_write_append_generic(context, data_byte * data_size_out, overlap_time,
+        datapass_label.outdata, true, sram_pos_locator);
+      
+
+#else
     // 写入out
     // label kv in sram locator
     AddrPosKey out_key = AddrPosKey(*sram_addr, data_byte * data_size_out);
     sram_pos_locator->addPair(datapass_label.outdata, out_key, context,
                               dram_time);
     sram_write_append_generic(context, data_byte * data_size_out, overlap_time);
+#endif 
 #else
     // CTODO: do dram only
 #endif

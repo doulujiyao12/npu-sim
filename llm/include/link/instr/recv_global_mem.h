@@ -1,5 +1,8 @@
 #pragma once
 #include "chip_instr.h"
+#include "link/chip_task_context.h"
+#include <tlm>
+#include <systemc>
 
 class Recv_global_mem : public chip_instr_base{
 public:
@@ -28,5 +31,4 @@ public:
         std::cout << "Executing <Recv_global_mem>" << std::endl;
         return 0;
     }
-
 };
