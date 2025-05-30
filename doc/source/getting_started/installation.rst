@@ -61,7 +61,7 @@ NPU-SIM 是一个用SystemC库写的轻量级众核仿真器，可灵活适配�
 .. code-block:: console
 
     # 安装 SFML
-    sudo apt-get install libsfml-dev
+    sudo apt-get install libsfml-dev # 可能依赖 libsfml-audio2.3v5=2.3.2+dfsg-1  libopenal1 libopenal-data=1:1.16.0-3
 
     # 安装 CAIRO
     sudo apt install libcairo2-dev
@@ -78,6 +78,8 @@ NPU-SIM 是一个用SystemC库写的轻量级众核仿真器，可灵活适配�
 
     export SYSTEMC_HOME=/path/to/install/systemc-2.3.3/
     export LD_LIBRARY_PATH=/path/to/install/systemc-2.3.3/lib-linux64/:$LD_LIBRARY_PATHs
+    export CMAKE_HOME=/path/to/install/cmake-3.31.3-linux-x86_64/bin/
+    export PATH=$CMAKE_HOME:$PATH
 
 下载编译
 ~~~~~~~~~~~~~

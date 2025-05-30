@@ -24,6 +24,7 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
     heads = config_reqs["heads"];
     eof_chance = config_reqs["eof_chance"];
     model_stage = config_reqs["stage"];
+    batch_size = config_reqs["batch"];
 
     if (config_reqs["arrival"].size() != req_cnt) {
         cout << "[ERROR] In config helper pd: arrival time length "
@@ -41,8 +42,9 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
     }
 
     for (int i = 0; i < GRID_SIZE / model_stage; i++) {
-        queue<int> q;
-        idle_decode.push_back(q);
+        queue<int> p, q;
+        idle_decode.push_back(p);
+        unfinished_prefill.push_back(q);
     }
 
     // 建立原语模板
@@ -61,7 +63,7 @@ void config_helper_pd::fill_queue_config(queue<Msg> *q) {
         int index = des / GRID_X;
         q[index].push(msg);
     }
-    
+
     temp_config.clear();
 }
 
@@ -166,17 +168,6 @@ void config_helper_pd::iter_start() {
             int credit = 0;
             vector<Stage> new_stage_1;
 
-            for (auto stage : coreStatus[id].batchInfo) {
-                if (stage.type == PREFILL) {
-                    auto &record = requestRecords[stage.req_id];
-                    if (record.prefill_distribute + 1 <= record.prefill_iters) {
-                        record.prefill_distribute++;
-                        new_stage_1.push_back(stage);
-                        credit += PD_RATIO;
-                    }
-                }
-            }
-
             for (auto stage : coreStatus[id + model_stage - 1].batchInfo) {
                 switch (stage.type) {
                 case PREFILL:
@@ -195,11 +186,42 @@ void config_helper_pd::iter_start() {
             }
 
             bool new_reqs = true;
+            queue<int> &decode_waiting_list = idle_decode[id / model_stage];
+            queue<int> &prefill_waiting_list =
+                unfinished_prefill[id / model_stage];
             cout << "[PD SCHEDULE] Core " << id << " credit: " << credit
                  << endl;
+
             while (credit < CORE_CREDIT && new_reqs) {
                 // PREFILL new iter > UNTOUCHED
-                if (CORE_CREDIT - credit >= PD_RATIO) {
+
+                if (decode_waiting_list.size()) {
+                    // 这里从idle_decode中取
+                    int req_id = decode_waiting_list.front();
+                    decode_waiting_list.pop();
+                    credit += 1;
+                    new_stage_1.push_back(Stage(req_id, DECODE, 1));
+                    cout << "[PD SCHEDULE] Core " << id
+                         << " push in new request DECODE " << req_id << endl;
+                }
+
+                else if (CORE_CREDIT - credit >= PD_RATIO &&
+                         prefill_waiting_list.size()) {
+                    // 这里选取还没有做完的prefill任务
+                    int req_id = prefill_waiting_list.front();
+                    prefill_waiting_list.pop();
+                    credit += PD_RATIO;
+
+                    auto &record = requestRecords[req_id];
+                    new_stage_1.push_back(
+                        Stage(record.id, PREFILL,
+                              record.seq_len / record.prefill_iters));
+
+                    if (++record.prefill_distribute < record.prefill_iters)
+                        prefill_waiting_list.push(req_id);
+                }
+
+                else if (CORE_CREDIT - credit >= PD_RATIO) {
                     new_reqs = false;
                     for (auto &req : requestRecords) {
                         sc_core::sc_time arv_time(req.arrival_time,
@@ -213,28 +235,15 @@ void config_helper_pd::iter_start() {
                                       req.seq_len / req.prefill_iters));
                             req.phase = PREFILL;
                             req.prefill_distribute++;
+                            prefill_waiting_list.push(req.id);
                             cout << "[PD SCHEDULE] Core " << id
                                  << " push in new request PREFILL " << req.id
                                  << endl;
                             break;
                         }
                     }
-                }
-                if (!new_reqs || CORE_CREDIT - credit < PD_RATIO) {
-                    // 这里从idle_decode中取
-                    auto &waiting_list = idle_decode[id / model_stage];
-                    if (waiting_list.size()) {
-                        int req_id = waiting_list.front();
-                        waiting_list.pop();
-                        credit += 1;
-                        new_stage_1.push_back(Stage(req_id, DECODE, 1));
-                        cout << "[PD SCHEDULE] Core " << id
-                             << " push in new request DECODE " << req_id
-                             << endl;
-                    } else {
-                        new_reqs = false;
-                    }
-                }
+                } else
+                    break;
             }
 
             temp_stage.push_back(new_stage_1);
@@ -282,9 +291,11 @@ void config_helper_pd::print_self() {
 
     // for (int i = 0; i < coreStatus.size(); i++) {
     //     cout << "Core " << i << " Status:" << endl;
-    //     cout << "  Available: " << (coreStatus[i].available ? "Yes" : "No")
+    //     cout << "  Available: " << (coreStatus[i].available ? "Yes" :
+    //     "No")
     //          << endl;
-    //     cout << "  Data Sent: " << (coreStatus[i].data_sent ? "Yes" : "No")
+    //     cout << "  Data Sent: " << (coreStatus[i].data_sent ? "Yes" :
+    //     "No")
     //          << endl;
     //     cout << "  Requests: ";
     //     for (auto req : coreStatus[i].reqs) {
@@ -293,7 +304,8 @@ void config_helper_pd::print_self() {
     //     cout << endl;
     // }
 
-    // cout << "Decode Done: " << decode_done << "/" << requestRecords.size()
+    // cout << "Decode Done: " << decode_done << "/" <<
+    // requestRecords.size()
     //      << endl;
 }
 

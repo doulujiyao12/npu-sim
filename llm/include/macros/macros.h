@@ -79,7 +79,7 @@
 // PD中的分块策略
 #define MAX_PREFILL_WORKLOAD 384
 #define PD_RATIO 2
-#define CORE_CREDIT 5
+#define CORE_CREDIT 3
 
 // 函数宏
 #define ceil_macro(x) ((x) - (int)(x) > 0.1 ? (int)(x) + 1 : (int)(x))

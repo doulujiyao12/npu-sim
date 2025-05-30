@@ -32,3 +32,6 @@ uint64_t get_bank_index(uint64_t address);
 
 // 打印系统配置
 void print_configuration(ostream &fout);
+
+// split字符串
+std::vector<std::string> split(const std::string& s, char delimiter);
