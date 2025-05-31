@@ -34,6 +34,8 @@ public:
     int heads;
     double eof_chance;
     int prefill_stage, decode_stage;
+    int prefill_core, decode_core;
+    vector<int> stage_index;
     int batch_size;
 
     config_helper_pds(string filename, string font_ttf, sc_event *ev_sig,

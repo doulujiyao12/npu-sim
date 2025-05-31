@@ -5,7 +5,7 @@
     "T": 128,
     "C": 768,
     "NH": 12,
-    "L": 12,
+    "L": 3,
     "3C": 2304,
     "4C": 3072,
     "BTC": 98304,
@@ -24,11 +24,29 @@
           "id": 0,
           "source": [
             {
-              "label": "matmul_1_in",
+              "label": "layernorm_1_in",
               "size": "BTC"
             }
           ],
+          "loop": "L",
           "prims": [
+            {
+              "type": "Layernorm_f_gpu",
+              "compose": {
+                "grid_x": 4,
+                "grid_y": 4,
+                "block_x": 4,
+                "block_y": 4,
+                "require_sm": 4
+              },
+              "B": "B",
+              "T": "T",
+              "C": "C",
+              "address": {
+                "indata": "layernorm_1_in",
+                "outdata": "layernorm_1_out"
+              }
+            },
             {
               "type": "Matmul_f_gpu",
               "compose": {
@@ -43,7 +61,7 @@
               "C": "C",
               "OC": "3C",
               "address": {
-                "indata": "matmul_1_in",
+                "indata": "layernorm_1_out",
                 "outdata": "matmul_1_out"
               }
             },
@@ -62,7 +80,7 @@
               "NH": "NH",
               "address": {
                 "indata": "matmul_1_out",
-                "outdata": "attention_1_out"
+                "outdata": "layernorm_1_in"
               }
             }
           ]

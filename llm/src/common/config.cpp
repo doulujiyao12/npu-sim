@@ -191,4 +191,10 @@ void from_json(const json &j, StreamConfig &c) {
                 make_pair(source["label"], find_var(source["size"])));
         }
     }
+
+    if (j.contains("loop")) {
+        c.loop = find_var(j["loop"]);
+    } else {
+        c.loop = 1;
+    }
 }

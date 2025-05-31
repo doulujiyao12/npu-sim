@@ -83,6 +83,7 @@ void from_json(const json &j, LayerConfig &c);
 class StreamConfig {
 public:
     int id;
+    int loop;
 
     vector<prim_base *> prims;
     vector<pair<string, int>> sources;
