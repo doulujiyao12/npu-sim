@@ -16,7 +16,26 @@ void Layernorm_f::print_self(string prefix) {
          << ", input_offset: " << inp_offset << endl;
 }
 
+
+void Layernorm_f::initialize() {
+
+    dram_inp_size = (B * T * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
+    dram_out_size = (B * T * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
+    dram_data_size = (C + C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
+    
+}
+
 void Layernorm_f::parse_json(json j) {
+    /*
+
+    inp_offset（选填） 可以根据 data_offset 计算，也可以手动设置 inp_offset
+
+    data_offset（必要） matmul 需要指定权重位置
+
+    out_offset（选填）: 可以根据 data_offset 计算，也可以手动设置 out_offset 
+
+
+    */
     B = find_var(j["B"]);
     T = find_var(j["T"]);
     C = find_var(j["C"]);
@@ -28,6 +47,26 @@ void Layernorm_f::parse_json(json j) {
     if (j.contains("dram_address")) {
         parse_address(j["dram_address"]);
     }
+
+    if (inp_offset == -1 && out_offset == -1 && data_offset == -1){
+
+        assert(0 && "no dram address found");    
+    }
+    // assert(0 && "no dram address found");
+
+
+    if (inp_offset == -1 && data_offset != -1){
+        inp_offset = (data_offset * 1024 - B * T * C) / 1024;
+    }
+    if (out_offset == -1 && data_offset != -1){
+        out_offset = (data_offset * 1024 + C + C) / 1024;
+    }
+    // 添加以下三行以打印相关信息
+    cout << "\033[1;33m" << "Layernorm_f" << "\033[0m" << endl;
+    cout << "inp_offset: " << inp_offset << endl;
+    cout << "out_offset: " << out_offset << endl;
+    cout << "data_offset: " << data_offset << endl;
+
 
     if (j.contains("sram_address")) {
         parse_sram_label(j["sram_address"]);
@@ -341,7 +380,7 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
 #if USE_SRAM == 1
 #if USE_SRAM_MANAGER == 1
     sram_write_append_generic(context, data_byte * data_size_out, overlap_time,
-        datapass_label.outdata, true, sram_pos_locator);
+        datapass_label.outdata, true, sram_pos_locator, out_global_addr);
       
 
 #else

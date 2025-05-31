@@ -19,6 +19,7 @@ public:
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype);
 
+
     Attention_f_decode() { name = "Attention_f_decode"; }
 };
 
@@ -37,6 +38,7 @@ public:
     void parse_json(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype);
+    void initialize();
 
     Attention_f() { name = "Attention_f"; }
 };
@@ -55,6 +57,7 @@ class Attention_f_prefill : public comp_base {
         void parse_json(json j);
         void print_self(string prefix);
         int sram_utilization(DATATYPE datatype);
+
     
         Attention_f_prefill() { name = "Attention_f_prefill"; }
     };
@@ -75,6 +78,7 @@ public:
     void parse_json(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype);
+
 
     Batchnorm_f() { name = "Batchnorm_f"; }
 };
@@ -119,6 +123,7 @@ public:
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype);
 
+
     Dummy_p() { name = "Dummy_p"; }
 };
 
@@ -136,6 +141,7 @@ public:
     void parse_json(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype);
+    void initialize();
 
     Gelu_f() { name = "Gelu_f"; }
 };
@@ -155,6 +161,7 @@ public:
     void parse_json(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype);
+    void initialize();
 
     Layernorm_f() { name = "Layernorm_f"; }
 };
@@ -301,6 +308,7 @@ public:
     int sram_utilization(DATATYPE datatype);
 
     void parse_matmul(Matmul_f *p);
+
     Merge_conv() { name = "Merge_conv"; }
 };
 
@@ -323,6 +331,7 @@ public:
     int sram_utilization(DATATYPE datatype);
 
     void parse_matmul(Matmul_f *p);
+
     Merge_matmul() { name = "Merge_matmul"; }
 };
 
@@ -385,6 +394,7 @@ public:
     int sram_utilization(DATATYPE datatype);
 
     void parse_conv(Conv_f *p);
+
     Split_conv() { name = "Split_conv"; }
 };
 
@@ -406,6 +416,7 @@ public:
     int sram_utilization(DATATYPE datatype);
 
     void parse_matmul(Matmul_f *matmul);
+ 
     Split_matmul() { name = "Split_matmul"; }
 };
 
@@ -429,6 +440,7 @@ public:
     void deserialize(sc_bv<128> buffer);
 
     void parse_json(json j);
+
     // void print_self(string prefix);
     // int sram_utilization(DATATYPE datatype);
 
@@ -444,6 +456,7 @@ public:
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
+
 
     Recv_global_memory() { name = "Recv_global_memory"; }
 };

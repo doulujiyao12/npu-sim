@@ -15,7 +15,28 @@ void Attention_f::print_self(string prefix) {
          << ", input_offset: " << inp_offset << endl;
 }
 
+void Attention_f::initialize() {
+
+    dram_inp_size = (B * T * 3 * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
+    dram_out_size = (B * T * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
+    dram_data_size = 0;
+    
+}
+
 void Attention_f::parse_json(json j) {
+
+
+    /*
+
+    inp_offset（必要） 等于上一个 matmul 的 out_offset 必要
+
+    data_offset（无效） attention 操作不需要额外的权重
+
+    out_offset（选填）: 可以根据inp_offset 计算，也可以手动设置 out_offset 
+
+
+    */
+
     B = find_var(j["B"]);
     T = find_var(j["T"]);
     C = find_var(j["C"]);
@@ -29,15 +50,20 @@ void Attention_f::parse_json(json j) {
         parse_address(j["dram_address"]);
     }
 
-    // if (inp_offset == -1){
-    //     assert(0 && "attention_forward: inp_offset not set");
-    // }
-    
+    if (inp_offset == -1){
+        inp_offset = (out_offset * 1024 - B * T * 3 * C) / 1024;
+        // assert(0 && "attention_forward: inp_offset not set");
+    }
+    if (out_offset == - 1){
+        
+        assert(0 && "attention_forward: out_offset not set");
+    }
+
     // 添加以下三行以打印相关信息
-    cout << "\033[1;33m" << "attention_forward" << "\033[0m" << endl;
+    cout << "\033[1;33m" << "Attention_f" << "\033[0m" << endl;
     cout << "inp_offset: " << inp_offset << endl;
     cout << "out_offset: " << out_offset << endl;
-    cout << "data_offset: " << data_offset << endl;
+
     
 
     if (j.contains("sram_address")) {
@@ -330,7 +356,7 @@ int Attention_f::task_core(TaskCoreContext &context) {
 #if USE_SRAM == 1
 #if USE_SRAM_MANAGER == 1
     sram_write_append_generic(context, data_byte * data_size_out, overlap_time,
-        datapass_label.outdata, true, sram_pos_locator);
+        datapass_label.outdata, true, sram_pos_locator, out_global_addr);
       
 
 #else

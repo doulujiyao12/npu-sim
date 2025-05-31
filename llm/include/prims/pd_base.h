@@ -29,6 +29,7 @@ public:
 
     void parse_address(json j);
     void parse_sram_label(json j);
+    void initialize() {};
 
     pd_base() { prim_type = PD_PRIM; }
 };

@@ -16,6 +16,7 @@ public:
 
     void print_self(string prefix);
     void parse_json(json j);
+
     gpu_base *clone();
 };
 
@@ -32,6 +33,7 @@ public:
 
     void print_self(string prefix);
     void parse_json(json j);
+
     gpu_base *clone();
 };
 
@@ -48,6 +50,7 @@ public:
 
     void print_self(string prefix);
     void parse_json(json j);
+
     gpu_base *clone();
 };
 
@@ -64,6 +67,7 @@ public:
 
     void print_self(string prefix);
     void parse_json(json j);
+
     gpu_base *clone();
 };
 
@@ -80,5 +84,6 @@ class Residual_f_gpu : public gpu_base {
 
     void print_self(string prefix);
     void parse_json(json j);
+
     gpu_base *clone();
 };

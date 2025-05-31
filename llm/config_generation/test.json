@@ -1,5 +1,5 @@
 {
-  "vars": {
+"vars": {
     "B": 1,
     "T": 128,
     "C": 768,
@@ -11,47 +11,16 @@
     "2BTC": 196608,
     "3BTC": 294912,
     "4BTC": 393216,
-    "layernorm1_data_": 98304,
-    "layernorm1_data": 96,
-    "matmul1_data_": 99840,
-    "matmul1_data": 97,
-    "attention1_data_": 1871616,
-    "attention1_data": 1829,
-    "matmul2_data_": 2068224,
-    "matmul2_data": 2020,
-    "layernorm2_data_": 2658816,
-    "layernorm2_data": 2600,
-    "matmul3_data_": 2660352,
-    "matmul3_data": 2605,
-    "matmul4_data_": 5022720,
-    "matmul4_data": 4915,
-    "residual2_out_": 7382784,
-    "residual2_out": 7220,
     "TODO": 110
-  },
-  "pipeline": 1,
-  "source": [
-    {
-      "dest": 0,
-      "size": "BTC"
-    }
-  ],
-  "chips": [
-    {
-      "chip_id": 0,
-      "GridX": 4,
-      "GridY": 4,
-      "cores": [
-        {
-          "id": 0,
-          "cast": [
-            {
-              "dest": 1,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prims": [
+},    
+"cast": [
+{
+    "dest": 1,
+    "critical": true
+}
+],
+"recv_cnt": 1,
+"prims": [
             {
               "type": "Layernorm_f",
               "B": "B",
@@ -187,128 +156,4 @@
               }
             }
           ]
-        },
-        {
-          "id": 1,
-          "cast": [
-            {
-              "dest": 2,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 2,
-          "cast": [
-            {
-              "dest": 3,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 3,
-          "cast": [
-            {
-              "dest": 4,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 4,
-          "cast": [
-            {
-              "dest": 5,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 5,
-          "cast": [
-            {
-              "dest": 6,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 6,
-          "cast": [
-            {
-              "dest": 7,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 7,
-          "cast": [
-            {
-              "dest": 8,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 8,
-          "cast": [
-            {
-              "dest": 9,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 9,
-          "cast": [
-            {
-              "dest": 10,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 10,
-          "cast": [
-            {
-              "dest": 11,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 11,
-          "cast": [
-            {
-              "dest": -1
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        }
-      ]
-    }
-  ]
 }

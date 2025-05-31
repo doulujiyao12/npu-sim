@@ -11,7 +11,9 @@ batch.sh
 aaa.cpp
 /build/*
 /doc/build
-/data/fengdahu/npusim/npu-sim/llm/include/unit_module/sram_manager/build/*
+/llm/include/unit_module/sram_manager/build/*
+/llm/config_generation/build/*
+
 # /doc/make.bat
 # /doc/Makefile
 

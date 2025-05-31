@@ -25,6 +25,10 @@ void Matmul_f::initialize() {
     out_size = B * T * OC;
     p_inp_size = B * T * C;
     inp_size = B * T * C + OC * C + OC;
+    dram_inp_size = (B * T * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
+    dram_out_size = (B * T * OC + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
+    dram_data_size = (OC * C + OC + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
+    
 }
 
 HardwareTaskConfig *Matmul_f::generate_hw_config() {
@@ -54,6 +58,20 @@ HardwareTaskConfig *Matmul_f::generate_hw_config() {
 }
 
 void Matmul_f::parse_json(json j) {
+
+
+    /*
+
+    inp_offset（选填） 可以根据 data_offset 计算，也可以手动设置 inp_offset
+
+    data_offset（必要） matmul 需要指定权重位置
+
+    out_offset（选填）: 可以根据 data_offset 计算，也可以手动设置 out_offset 
+
+
+    */
+
+
     B = find_var(j["B"]);
     T = find_var(j["T"]);
     C = find_var(j["C"]);
@@ -426,7 +444,7 @@ int Matmul_f::task_core(TaskCoreContext &context) {
 #if USE_SRAM == 1
 #if USE_SRAM_MANAGER == 1
     sram_write_append_generic(context, data_byte * data_size_out, overlap_time,
-        datapass_label.outdata, true, sram_pos_locator);
+        datapass_label.outdata, true, sram_pos_locator, out_global_addr);
       
 
 #else

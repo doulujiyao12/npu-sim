@@ -18,6 +18,7 @@ public:
     void deserialize(sc_bv<128> buffer);
 
     void print_self(string prefix);
+    void initialize() {};
 
     Clear_sram() {}
     Clear_sram(SramPosLocator *sram_pos_locator, int *loop_cnt)
@@ -40,6 +41,7 @@ public:
     void parse_json(json j, vector<pair<string, int>> vtable);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype);
+    void initialize() {};
 
     Load_prim() { name = "Load_prim"; }
     Load_prim(int da, int sa, int s) : dram_addr(da), sram_addr(sa), size(s) {}
@@ -64,6 +66,7 @@ public:
 
     Recv_prim() { name = "Recv_prim"; }
     Recv_prim(RECV_TYPE type);
+    void initialize() {};
     Recv_prim(RECV_TYPE type, int tag, int cnt)
         : type(type), tag_id(tag), recv_cnt(cnt) {
         name = "Recv_prim";
@@ -92,6 +95,7 @@ public:
     void parse_json(json j, vector<pair<string, int>> vtable);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype);
+    void initialize() {};
 
     Send_prim() { name = "Send_prim"; }
     Send_prim(SEND_TYPE type) : type(type) { name = "Send_prim"; }
@@ -126,6 +130,7 @@ public:
     void parse_json(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype);
+    void initialize() {};
 
     Set_addr() {
         datapass_label = new AddrDatapassLabel();
@@ -153,6 +158,7 @@ public:
     void parse_json(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype);
+    void initialize() {};
 
     Set_batch() {}
 
@@ -176,7 +182,7 @@ public:
     void parse_json(json j, vector<pair<string, int>> vtable);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype);
-
+    void initialize() {};
     Store_prim() { name = "Store_prim"; }
     Store_prim(int da, int sa, int s) : dram_addr(da), sram_addr(sa), size(s) {
         name = "Store_prim";

@@ -393,6 +393,8 @@ void config_helper_pd::generate_prims(int i) {
     send_data->end_length = end_length;
 
     if ((i + 1) % model_stage != 1) {
+
+        // 不是shage 1 就是接收上一个 stage 传过来的中间结果
         temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i,
                                   recv_data_2->serialize()));
         temp_config.push_back(
@@ -408,6 +410,7 @@ void config_helper_pd::generate_prims(int i) {
             Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, recv_ack->serialize()));
         temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i,
                                   send_data->serialize()));
+        // stage 1 的话又要接受新的prefilling recv_data1 这里的recv_data2 是来自decoding 的数据
         temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i,
                                   recv_data_2->serialize()));
     }

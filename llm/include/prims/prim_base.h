@@ -18,6 +18,9 @@ public:
 
     bool use_hw;
     int sram_addr;
+    int dram_inp_size;
+    int dram_out_size;
+    int dram_data_size;
     DATATYPE datatype = INT8;
 
     virtual int task() = 0;
@@ -25,6 +28,7 @@ public:
     virtual int task_core(TaskCoreContext &context) = 0;
     virtual sc_bv<128> serialize() = 0;
     virtual void deserialize(sc_bv<128> buffer) = 0;
+    virtual void initialize() = 0;
     virtual void print_self(string prefix) = 0;
     virtual int sram_utilization(DATATYPE datatype) = 0;
 
