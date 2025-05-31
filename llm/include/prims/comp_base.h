@@ -10,6 +10,8 @@ public:
     int data_offset;
     int out_offset;
 
+    
+
     // 以下三者，在相关参数确定之后，是可以被计算出来的
     int inp_size;
     int p_inp_size;
@@ -23,6 +25,7 @@ public:
 
     void parse_address(json j);
     void parse_sram_label(json j);
+    void initialize() {}
 
     comp_base() { prim_type = COMP_PRIM; }
 };

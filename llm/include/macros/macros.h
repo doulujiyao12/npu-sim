@@ -24,6 +24,7 @@
 #define GPU_TMP_DEBUG 1
 #define NB_CACHE_DEBUG 0
 #define DEBUG_SRAM_MANAGER 0
+#define DRAM_ALIGN 1024
 
 
 // 数据包占位

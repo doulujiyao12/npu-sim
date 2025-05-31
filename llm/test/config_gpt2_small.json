@@ -91,7 +91,7 @@
                 "outdata": "attention1_out"
               },
               "dram_address": {
-                "input": "TODO"
+                "out": "TODO"
               }
             },
             {
@@ -117,6 +117,7 @@
                 "outdata": "residual1_out"
               },
               "dram_address": {
+                "out": "TODO",
                 "data": -1
               }
             },
@@ -155,6 +156,7 @@
                 "outdata": "gelu1_out"
               },
               "dram_address": {
+                "out": "TODO",
                 "data": -1
               }
             },

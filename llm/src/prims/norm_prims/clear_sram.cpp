@@ -25,7 +25,7 @@ int Clear_sram::task_core(TaskCoreContext &context) {
     // CTODO: rearrange sram (need sram_pos_locator pointer)
     cout << "[INFO] before clear_sram: sram_addr=" << *(context.sram_addr)
          << endl;
-
+#if USE_SRAM_MANAGER == 0
     vector<pair<string, AddrPosKey>> temp_list;
     // sram_pos_locator->printAllKeys();
     for (auto record : sram_pos_locator->data_map) {
@@ -72,6 +72,7 @@ int Clear_sram::task_core(TaskCoreContext &context) {
     }
 
     *(context.sram_addr) = pos;
+#endif
     *(loop_cnt) += 1;
 
     cout << "[INFO] after clear_sram: sram_addr=" << pos << endl;

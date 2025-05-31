@@ -18,13 +18,18 @@ void CoreJob::print_self() {
 }
 
 void CoreConfig::print_self() {
+    cout << "<CoreConfig>\n";
     cout << "Core id: " << id << endl;
     cout << "\tprim_copy: " << prim_copy << endl;
     cout << "\tsend_global_mem: " << send_global_mem << endl;
     cout << "\tloop: " <<  " " << loop << endl;
+    
     for (auto work : worklist) {
+        cout << "\t<Worklist>\n";
         work.print_self();
+        cout << "\t</Worklist>\n";
     }
+    cout << "</CoreConfig>\n";
 }
 
 void from_json(const json &j, Cast &c) {

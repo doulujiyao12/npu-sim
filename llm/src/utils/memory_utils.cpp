@@ -18,8 +18,8 @@
 
 
 void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
-                              int global_addr, u_int64_t &dram_time,
-                              float *dram_start, std::string label_name, bool use_manager, SramPosLocator *sram_pos_locator, bool dummy_alloc) {
+                              u_int64_t global_addr, u_int64_t &dram_time,
+                              float *dram_start, std::string label_name, bool use_manager, SramPosLocator *sram_pos_locator, bool dummy_alloc, bool add_dram_addr) {
     int dma_read_count =
         data_size_in_byte * 8 / (int)(SRAM_BITWIDTH * SRAM_BANKS);
     int byte_residue =
@@ -34,7 +34,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
     int aligned_data_bits = static_cast<int>(std::ceil(static_cast<double>(data_bits) / alignment)) * alignment;    
     int aligned_data_byte = aligned_data_bits / 8;
 
-    int inp_global_addr = global_addr;
+    u_int64_t inp_global_addr = global_addr;
 
 
 #if USE_NB_DRAMSYS == 0
@@ -67,12 +67,13 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
 #if USE_SRAM_MANAGER == 1
     AllocationID alloc_id =0;
     if (use_manager == true){
+        SizeWAddr swa(aligned_data_byte, inp_global_addr);
 
         AddrPosKey inp_key =
-            AddrPosKey(aligned_data_byte);
+            AddrPosKey(swa);
         u_int64_t dram_time_tmp = 0;
         sram_pos_locator->addPair(label_name, inp_key, context,
-            dram_time_tmp);
+            dram_time_tmp, add_dram_addr);
         // 使用 SramManager 分配内存
         // sram_manager_->display_status();
         alloc_id = sram_manager_->allocate(aligned_data_byte);
@@ -80,7 +81,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
         context.alloc_id_ = alloc_id;
         inp_key =
             AddrPosKey(context.alloc_id_, aligned_data_byte);
-        sram_pos_locator->addPair(label_name, inp_key);
+        sram_pos_locator->addPair(label_name, inp_key, false);
         std::cout << "\033[1;32m"  // Set color to green
           << "[INFO] Successfully allocated " << aligned_data_byte 
           << " bytes with AllocationID: " << alloc_id 
@@ -297,13 +298,13 @@ if (dummy_alloc == false){
 }
 
 void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
-                             int global_addr, u_int64_t &dram_time) {
+                             u_int64_t global_addr, u_int64_t &dram_time) {
     int dma_read_count =
         data_size_in_byte * 8 / (int)(SRAM_BITWIDTH * SRAM_BANKS);
     int byte_residue =
         data_size_in_byte * 8 - dma_read_count * (SRAM_BITWIDTH * SRAM_BANKS);
     int single_read_count = ceiling_division(byte_residue, SRAM_BITWIDTH);
-    int inp_global_addr = global_addr;
+    u_int64_t inp_global_addr = global_addr;
 
 #if USE_NB_DRAMSYS == 0
     auto wc = context.wc;
@@ -531,7 +532,7 @@ void sram_read_generic_temp(TaskCoreContext &context, int data_size_in_byte,
 
 // 会修改 context.sram_addr 的数值
 void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
-                               u_int64_t &dram_time,std::string label_name, bool use_manager, SramPosLocator *sram_pos_locator) {
+                               u_int64_t &dram_time,std::string label_name, bool use_manager, SramPosLocator *sram_pos_locator, u_int64_t global_addr) {
     int dma_read_count =
         data_size_in_byte * 8 / (int)(SRAM_BITWIDTH * SRAM_BANKS);
     int byte_residue =
@@ -560,18 +561,21 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
     AllocationID alloc_id =0;
     if (use_manager == true){
 
+        SizeWAddr swa(aligned_data_byte, global_addr);
+
         AddrPosKey inp_key =
-            AddrPosKey(aligned_data_byte);
+            AddrPosKey(swa);
         u_int64_t dram_time_tmp = 0;
         sram_pos_locator->addPair(label_name, inp_key, context,
-            dram_time_tmp);
+            dram_time_tmp, true);
+
         // 使用 SramManager 分配内存
         alloc_id = sram_manager_->allocate(aligned_data_byte);
         assert(alloc_id > 0 && "alloc_id must larger than 0 ");
         context.alloc_id_ = alloc_id;
         inp_key =
             AddrPosKey(context.alloc_id_, aligned_data_byte);
-        sram_pos_locator->addPair(label_name, inp_key);
+        sram_pos_locator->addPair(label_name, inp_key, false);
         
         if (alloc_id == 0) {
 
@@ -747,7 +751,6 @@ int dcache_replacement_policy(u_int32_t tileid, u_int64_t *tags,
     return evict_dcache_idx;
 }
 #endif
-
 
 u_int64_t cache_tag(u_int64_t addr) {
     u_int64_t word_index = (u_int64_t)addr >> 2; // 4bytes in a word
@@ -1032,7 +1035,9 @@ void gpu_write_generic(TaskCoreContext &context, uint64_t global_addr,
 
 TaskCoreContext generate_context(WorkerCoreExecutor *workercore) {
     sc_bv<SRAM_BITWIDTH> msg_data;
-
+    NB_GlobalMemIF *nb_global_memif = workercore->nb_global_mem_socket;
+    sc_event *start_global_event = workercore->start_global_mem_event;
+    sc_event *end_global_event = workercore->end_global_mem_event;
 // #if USE_NB_DRAMSYS == 1
 //     NB_DcacheIF *nb_dcache =
 //         workercore->nb_dcache_socket; // 实例化或获取 NB_DcacheIF 对象
@@ -1075,6 +1080,6 @@ TaskCoreContext generate_context(WorkerCoreExecutor *workercore) {
         TaskCoreContext context(this->dcache_socket, workercore->mem_access_port, workercore->high_bw_mem_access_port, workercore->temp_mem_access_port, workercore->high_bw_temp_mem_access_port, msg_data, workercore->sram_addr,
             workercore->start_nb_dram_event, workercore->end_nb_dram_event, workercore->sram_manager_);
 #endif
-
+    context.SetGlobalMemIF(nb_global_memif, start_global_event, end_global_event);
     return context;
 }

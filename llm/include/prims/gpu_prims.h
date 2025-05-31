@@ -16,6 +16,7 @@ public:
 
     void print_self(string prefix);
     void parse_json(json j);
+
     gpu_base *clone();
 
     Matmul_f_gpu() { name = "Matmul_f_gpu"; }
@@ -34,6 +35,7 @@ public:
 
     void print_self(string prefix);
     void parse_json(json j);
+
     gpu_base *clone();
 
     Attention_f_gpu() { name = "Attention_f_gpu"; }
@@ -52,6 +54,7 @@ public:
 
     void print_self(string prefix);
     void parse_json(json j);
+
     gpu_base *clone();
 
     Gelu_f_gpu() { name = "Gelu_f_gpu"; }
@@ -70,6 +73,7 @@ public:
 
     void print_self(string prefix);
     void parse_json(json j);
+
     gpu_base *clone();
 
     Layernorm_f_gpu() { name = "Layernorm_f_gpu"; }
@@ -89,6 +93,7 @@ public:
 
     void print_self(string prefix);
     void parse_json(json j);
+
     gpu_base *clone();
 
     Residual_f_gpu() { name = "Residual_f_gpu"; }

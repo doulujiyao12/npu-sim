@@ -53,11 +53,21 @@ public:
     void clearAll();
 };
 
+struct SizeWAddr{
+public:
+    int size;
+    u_int64_t dram_addr_;
+
+    SizeWAddr(int size, u_int64_t dram_addr_) : size(size), dram_addr_(dram_addr_) {}
+};
+
+
 class AddrPosKey {
 public:
     int pos;
     AllocationID alloc_id;
     int size;
+    u_int64_t dram_addr;
     bool valid;     // 是否已经被evict到DRAM上了
     int spill_size; // 已经spill到DRAM上的大小
     int record;     // 根据LRU策略记录的访问时间，越大表示访问时间越靠近现在
@@ -68,9 +78,10 @@ public:
         pos = 0;
         alloc_id = 0;
         size = 0;
+        dram_addr = 0;  
     }
 
-    AddrPosKey(int pos, int size) : pos(pos), size(size) {
+    AddrPosKey(int pos, int size, u_int64_t dram_addr_ = 0) : pos(pos), size(size) {
         // valid = true; 表示没有被spill的过
         valid = true;
         // 表示被重复使用的次数
@@ -78,12 +89,13 @@ public:
         alloc_id = 0; 
         // 表示被spill到dram中的数据的大小
         spill_size = 0;
+        dram_addr = dram_addr_; 
     }
-    AddrPosKey(AllocationID id, int sz)
-        : alloc_id(id), size(sz), valid(true), spill_size(0), record(0) {}
+    AddrPosKey(AllocationID id, int sz, u_int64_t dram_addr_ = 0)
+        : alloc_id(id), size(sz), valid(true), spill_size(0), record(0), dram_addr(dram_addr_) {}
 
-    AddrPosKey(int sz)
-        : size(sz), valid(true), spill_size(0), record(0), alloc_id(0) {}
+    AddrPosKey(SizeWAddr swd)
+        : size(swd.size), valid(true), spill_size(0), record(0), alloc_id(0), dram_addr(swd.dram_addr_) {}
 };
 
 class SramPosLocator { // one per core
@@ -102,9 +114,9 @@ public:
     SramPosLocator(int id, SramManager* sram_mgr)
         : cid(id), visit(1), max_sram_size(MAX_SRAM_SIZE), sram_manager_(sram_mgr) {}
 
-    void addPair(const std::string &key, AddrPosKey value,
-                 TaskCoreContext &context, u_int64_t &dram_time);
-    void addPair(const std::string &key, AddrPosKey value);
+    void addPair(std::string &key, AddrPosKey value,
+                 TaskCoreContext &context, u_int64_t &dram_time, bool update_key = false);
+    void addPair(std::string &key, AddrPosKey value, bool update_key = false);
     // void addPair(const std::string &key, AddrPosKey value);
 
     int findPair(std::string &key, int &result);
@@ -112,6 +124,7 @@ public:
     void printAllKeys();
     void updatePair(std::string &key, int size, TaskCoreContext &context,
                     u_int64_t &dram_time);
+    
 
     void deletePair(std::string &key);
     void clearAll();

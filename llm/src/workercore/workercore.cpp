@@ -188,6 +188,13 @@ void WorkerCoreExecutor::init_global_mem() {
         end_global_mem_event, event_engine);
 }
 
+// void WorkerCoreExecutor::init_global_mem_interface() {
+//     assert(0);
+//     nb_global_mem_socket = new NB_GlobalMemIF(
+//         sc_gen_unique_name("nb_global_mem"), start_global_mem_event,
+//         end_global_mem_event, event_engine);
+// }
+
 void WorkerCoreExecutor::end_of_elaboration() {
     // 在构造函数之后设置信号的初始值
     data_sent_o.write(false);
@@ -326,6 +333,7 @@ void WorkerCoreExecutor::switch_prim_block() {
         wait(CYCLE, SC_NS);
     }
 }
+
 // 指令被 RECV_CONF发送过来后，会在本地核实例化对应的指令类
 prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     prim_base *task = nullptr;
@@ -428,7 +436,14 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     case 0xc0:
         task = new matmul_forward_pd();
         break;
+    case 0x20:
+        task = new Send_global_memory();
+        break;
+    case 0x21:
+        task = new Recv_global_memory();
+        break;
     default:
+        assert(0 && "Unknown prim");
         cout << "Unknown prim: " << type << ".\n";
         break;
     }
@@ -526,6 +541,7 @@ void WorkerCoreExecutor::send_logic() {
 
                 int delay = 0;
                 TaskCoreContext context = generate_context(this);
+
                 delay = prim->task_core(context);
 
                 if (!channel_avail_i.read())
@@ -979,7 +995,6 @@ void WorkerCoreExecutor::recv_logic() {
                            !channel_avail_i.read())
                         wait(CYCLE, SC_NS);
 
-
                     // 正在等待向host发送ack包
                     send_buffer =
                         Msg(MSG_TYPE::ACK, GRID_SIZE, prim->tag_id, cid);
@@ -1029,10 +1044,14 @@ void WorkerCoreExecutor::recv_logic() {
 
 void WorkerCoreExecutor::task_logic() {
     while (true) {
-        prim_base *p = prim_queue.front();
+        prim_base * p = prim_queue.front();
 
         int delay = 0;
+        sc_bv<SRAM_BITWIDTH> msg_data_tmp;
+
         TaskCoreContext context = generate_context(this);
+        
+            // context.SetGlobalMemIF(nb_global_memif, start_global_event, end_global_event);
 
         if (p->prim_type == COMP_PRIM) {
             comp_base *comp = (comp_base *)p;

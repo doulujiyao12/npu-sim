@@ -31,10 +31,21 @@ string AddrLabelTable::findRecord(int index) const {
 
 void AddrLabelTable::clearAll() { table.clear(); }
 
-void SramPosLocator::addPair(const std::string &key, AddrPosKey value) {
+void SramPosLocator::addPair(std::string &key, AddrPosKey value, bool update_key) {
     visit += 1;
     value.record = visit;
-    data_map[key] = value;
+    if (update_key) {
+        data_map[key] = value;
+    } else {
+        AddrPosKey old_key;
+
+        findPair(key, old_key);
+
+        value.dram_addr = old_key.dram_addr;
+
+        data_map[key] = value;
+    }
+    
     // cout << "[SRAM pos locator] id " << cid << " add pair.\n";
     // cout << "[Add pair]: label -> " << key << endl;
 }
@@ -60,12 +71,24 @@ bool SramPosLocator::validateTotalSize() const {
     std::cout << "[INFO] Total size validation passed: " << dataSizeSum << " bytes." << std::endl;
     return true;
 }
-void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
-                             TaskCoreContext &context, u_int64_t &dram_time) {
+void SramPosLocator::addPair(std::string &key, AddrPosKey value,
+                             TaskCoreContext &context, u_int64_t &dram_time, bool update_key) {
     // 先放入sram
     visit += 1;
     value.record = visit;
-    data_map[key] = value;
+    if (update_key) {
+        data_map[key] = value;
+    } else {
+        AddrPosKey old_key;
+
+        findPair(key, old_key);
+
+        value.dram_addr = old_key.dram_addr;
+
+        data_map[key] = value;
+    }
+
+
     // cout << "[SRAM pos locator] id " << cid << " add pair.\n";
     // cout << "[Add pair]: label -> " << key << ", size: " << value.size << endl;
 
@@ -153,7 +176,7 @@ void SramPosLocator::addPair(const std::string &key, AddrPosKey value,
 #endif      
         // spill 耗时
         // spill in nb_dcache utils
-        sram_spill_back_generic(context, spill_size, 1024, dram_time);
+        sram_spill_back_generic(context, spill_size, data_map[min_label].dram_addr, dram_time);
 
         // cout << "[SRAM SPILL] Core " << cid << ": After spill: used: " << used
         //      << ", max sram size: " << max_sram_size << endl;

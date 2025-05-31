@@ -15,7 +15,6 @@
 MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
                            const char *config_name, const char *font_ttf)
     : event_engine(event_engine) {
-    init();
 
     cout << "SIMULATION MODE: " << SYSTEM_MODE << endl;
 
@@ -30,8 +29,18 @@ MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
         config_helper =
             new config_helper_pds(config_name, font_ttf, &ev_req_handler);
     }
+    
+    init();
+}
 
-    //[yicheng] 先写个简单的，之后改
+MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
+                           config_helper_base *input_config)
+    : event_engine(event_engine), config_helper(input_config) {
+    init();
+}
+
+void MemInterface::init() {
+
     for (int i = 0; i < config_helper->coreconfigs.size(); i++) {
         if (config_helper->coreconfigs[i].send_global_mem != -1) {
             if (has_global_mem.size() >= 1) {
@@ -43,15 +52,6 @@ MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
             }
         }
     }
-}
-
-MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
-                           config_helper_base *input_config)
-    : event_engine(event_engine), config_helper(input_config) {
-    init();
-}
-
-void MemInterface::init() {
     host_data_sent_i = new sc_in<bool>[GRID_X];
     host_data_sent_o = new sc_out<bool>[GRID_X];
 

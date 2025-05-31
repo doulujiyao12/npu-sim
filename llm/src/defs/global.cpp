@@ -11,6 +11,7 @@ SfuConfig tile_sfu = {Linear, 16};
 
 class prim_base;
 vector<prim_base *> global_prim_stash;
+vector<chip_instr_base*> global_chip_prim_stash;
 
 KVCache KVCache_g;
 AddrLabelTable g_addr_label_table;

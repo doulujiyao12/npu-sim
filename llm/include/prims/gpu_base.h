@@ -25,6 +25,7 @@ public:
 
     virtual void parse_json(json j) = 0;
     virtual gpu_base *clone() = 0;
+    void initialize() {}
 
     gpu_base() { prim_type = GPU_PRIM; }
 };
