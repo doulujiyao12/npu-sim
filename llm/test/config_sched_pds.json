@@ -39,7 +39,7 @@
                   }
                 },
                 {
-                  "type": "Matmul_f_pd",
+                  "type": "Matmul_f_prefill",
                   "use_hw": false,
                   "B": "B",
                   "T": "T",
@@ -116,7 +116,7 @@
                   }
                 },
                 {
-                  "type": "Matmul_f_pd",
+                  "type": "Matmul_f_decode",
                   "use_hw": false,
                   "B": "B",
                   "T": "T",
