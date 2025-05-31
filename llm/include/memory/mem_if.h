@@ -1,9 +1,11 @@
 #ifndef _MEM_IF_H
 #define _MEM_IF_H
 #include "systemc.h"
+#include <vector>
 
 enum transfer_status { TRANSFER_OK = 0, TRANSFER_ERROR };
 
+using namespace std;
 
 template <class T> class mem_clear_if : virtual public sc_interface {
 public:
@@ -89,6 +91,5 @@ public:
                                         vector<T> &data,
                                         uint64_t force_write = 1) = 0;
 };
-
 
 #endif

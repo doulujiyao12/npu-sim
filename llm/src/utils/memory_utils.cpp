@@ -752,7 +752,6 @@ int dcache_replacement_policy(u_int32_t tileid, u_int64_t *tags,
 }
 #endif
 
-
 u_int64_t cache_tag(u_int64_t addr) {
     u_int64_t word_index = (u_int64_t)addr >> 2; // 4bytes in a word
     // 全局的darray加起来，所有的tile
@@ -1036,7 +1035,9 @@ void gpu_write_generic(TaskCoreContext &context, uint64_t global_addr,
 
 TaskCoreContext generate_context(WorkerCoreExecutor *workercore) {
     sc_bv<SRAM_BITWIDTH> msg_data;
-
+    NB_GlobalMemIF *nb_global_memif = workercore->nb_global_mem_socket;
+    sc_event *start_global_event = workercore->start_global_mem_event;
+    sc_event *end_global_event = workercore->end_global_mem_event;
 // #if USE_NB_DRAMSYS == 1
 //     NB_DcacheIF *nb_dcache =
 //         workercore->nb_dcache_socket; // 实例化或获取 NB_DcacheIF 对象
@@ -1079,6 +1080,6 @@ TaskCoreContext generate_context(WorkerCoreExecutor *workercore) {
         TaskCoreContext context(this->dcache_socket, workercore->mem_access_port, workercore->high_bw_mem_access_port, workercore->temp_mem_access_port, workercore->high_bw_temp_mem_access_port, msg_data, workercore->sram_addr,
             workercore->start_nb_dram_event, workercore->end_nb_dram_event, workercore->sram_manager_);
 #endif
-
+    context.SetGlobalMemIF(nb_global_memif, start_global_event, end_global_event);
     return context;
 }

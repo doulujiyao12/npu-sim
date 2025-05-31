@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 
-欢迎了解 NPU-SMI!
+欢迎了解 NPU-SIM!
 ==================
 
 .. figure:: ./assets/logo/npusim.png

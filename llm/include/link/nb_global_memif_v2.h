@@ -67,7 +67,7 @@ public:
         data_length = line_size / 8;     // 假设每行按8字节分块
         current_request = 0;             // Reset request counter
         config_updated = true;           // Notify the main process
-        this->read_or_write = read_or_write;
+        this->read_or_write = read_or_write; 
         (*start_nb_dram_event).notify(); // Trigger reconfiguration
     }
 
@@ -239,13 +239,14 @@ private:
                     // 打印事件通知信息
                     // std::cout << "Event: next_dram_event notified at time "
                     // << sc_core::sc_time_stamp() << std::endl;
+                    finished = true;
                     wait(*next_dram_event);
 
                     // Wait for some delay (if needed)
                     // wait(sc_core::sc_time(10, sc_core::SC_NS)); // Example
                     // delay
                 }
-                finished = true;
+                // finished = true;
             } else {
                 end_nb_dram_event->notify();
             }

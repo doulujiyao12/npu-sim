@@ -33,7 +33,7 @@ void ChipConfig::load_json(const json &j) {
     j.at("GridY").get_to(GridY);
 
     // 如果设置了Config的Type，则按照Config的Type来初始化
-    //[MYONIE] TODO ：这里的初始化方式不太好，回头再看看
+    //[yicheng] TODO ：这里的初始化方式不太好，回头再看看
     if (j.contains("core_type")) {
         if (j.at("core_type") == "dataflow") {
             chip = new config_helper_core(top_config->filename,

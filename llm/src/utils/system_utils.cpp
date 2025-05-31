@@ -259,6 +259,10 @@ void system_cleanup() {
         delete p;
     }
 
+    for (auto p : global_chip_prim_stash) {
+        delete p;
+    }
+
     delete[] dram_array;
     delete[] dcache_tags;
     delete[] dcache_occupancy;
@@ -290,4 +294,15 @@ void print_configuration(ostream &fout) {
     fout << "BOARD_W: " << BOARD_W << endl;
     fout << "PACK_W: " << PACK_W << endl;
     fout << "DIE_W: " << DIE_W << endl;
+}
+
+std::vector<std::string> split(const std::string &s, char delimiter) {
+    std::vector<std::string> tokens;
+    std::string token;
+    std::istringstream tokenStream(s);
+    while (std::getline(tokenStream, token, delimiter)) {
+        tokens.push_back(token);
+    }
+    
+    return tokens;
 }

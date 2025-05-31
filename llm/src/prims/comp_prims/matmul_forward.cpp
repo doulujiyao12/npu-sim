@@ -231,7 +231,6 @@ int Matmul_f::task_core(TaskCoreContext &context) {
     u_int64_t time_prefetched = 0;
     u_int64_t prefetch_tag = 0;
 
-
 #if USE_SRAM == 1
     // 检查是否可以在此原语结束之后立刻释放中间结果
     bool input_reuse = false;

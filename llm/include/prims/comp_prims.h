@@ -23,7 +23,6 @@ public:
     Attention_f_decode() { name = "Attention_f_decode"; }
 };
 
-
 class Attention_f : public comp_base {
 public:
     int B, T, C, NH;
@@ -126,7 +125,6 @@ public:
 
     Dummy_p() { name = "Dummy_p"; }
 };
-
 
 class Gelu_f : public comp_base {
 public:
@@ -424,6 +422,7 @@ class Send_global_memory : public comp_base {
 public:
 
     GLOBAL_SEND_TYPE type;
+    int enable;
     int des_id; // global memory's id (reserved for c2c)
     int des_offset; // global memory's offset
     int local_offset; // local memory's offset
@@ -440,9 +439,8 @@ public:
     void deserialize(sc_bv<128> buffer);
 
     void parse_json(json j);
-
-    // void print_self(string prefix);
-    // int sram_utilization(DATATYPE datatype);
+    void print_self(string prefix);
+    int sram_utilization(DATATYPE datatype);
 
     Send_global_memory() { name = "Send_global_memory"; }
 };
@@ -450,6 +448,9 @@ public:
 class Recv_global_memory : public comp_base {
 public:
 
+    GLOBAL_RECV_TYPE type;
+    int tag_id;
+    int recv_cnt;
 
     int task();
     int task_core(TaskCoreContext &context);
@@ -457,6 +458,9 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
+    void parse_json(json j);
+    void print_self(string prefix);
+    int sram_utilization(DATATYPE datatype);
 
     Recv_global_memory() { name = "Recv_global_memory"; }
 };

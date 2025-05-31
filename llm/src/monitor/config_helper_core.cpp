@@ -319,6 +319,11 @@ void config_helper_core::generate_prims(int i) {
             work.prims_in_loop.push_back(prim);
         }
 
+        // // [传输global memory的原语]
+        // if (c->send_global_mem != -1){
+        //     work.prims_in_loop.push_back(new Send_global_memory());
+        // }
+
         // 最后是send，如果是多播的话需要加入多个send原语
         // 这里的发送地址和接收地址先不填，等到后续统一填
         // 按照cast 广播的方式添加对应数量的 send 原语数量
@@ -338,6 +343,7 @@ void config_helper_core::generate_prims(int i) {
             work.prims_in_loop.push_back(
                 new Send_prim(SEND_TYPE::SEND_DATA, dest, tag));
         }
+
 
         // 再生成最后一个loop的原语
         if (is_source && w == 0)
@@ -361,6 +367,10 @@ void config_helper_core::generate_prims(int i) {
             work.prims_last_loop.push_back(p);
             work.prims_last_loop.push_back(prim);
         }
+
+        // if (c->send_global_mem != -1){
+        //     work.prims_last_loop.push_back(new Send_global_memory());
+        // }
 
         if (is_end) {
             work.prims_last_loop.push_back(new Send_prim(SEND_TYPE::SEND_DONE));
@@ -481,6 +491,26 @@ void config_helper_core::calculate_address(bool do_loop) {
                     temp->end_length = end_length;
 
                     index++;
+                }
+                else if(typeid(*prim) == typeid(Send_global_memory)){
+                    int weight = 1; //先假设是-1
+                    Send_global_memory *g = (Send_global_memory *)prim;
+                    g->type = GLOBAL_SEND_DATA;
+                    g->des_id = coreconfigs[i].send_global_mem;
+                    int slice_size = (output_size % weight)
+                        ? (output_size / weight + 1)
+                        : (output_size / weight);
+                    int slice_size_in_bit = slice_size * sizeof(float);
+                    int pkg_nums = (slice_size_in_bit % M_D_DATA)
+                                       ? (slice_size_in_bit / M_D_DATA + 1)
+                                       : (slice_size_in_bit / M_D_DATA);
+                    int end_length = slice_size_in_bit - (pkg_nums - 1) * M_D_DATA;
+                    g->local_offset = output_offset;
+                    g->max_packet = pkg_nums;
+                    g->end_length = end_length;
+                    g->des_offset = delta_offset[g->des_id];
+                    delta_offset[g->des_id] += slice_size;
+                    g->tag_id = 15;
                 }
             }
         }

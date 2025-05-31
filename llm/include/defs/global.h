@@ -1,6 +1,7 @@
 #pragma once
 #include "defs/enums.h"
 #include "macros/macros.h"
+#include "link/instr/chip_instr.h"
 
 #include <cstdint>
 #include <iostream>
@@ -13,6 +14,7 @@ using namespace std;
 // 全局的原语数组
 class prim_base;
 extern vector<prim_base *> global_prim_stash;
+extern vector<chip_instr_base*> global_chip_prim_stash;
 
 // 模拟KVcache（已过时）
 class KVCache;
