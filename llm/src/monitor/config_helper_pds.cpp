@@ -20,12 +20,18 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
     eof_chance = config_reqs["eof_chance"];
     prefill_stage = config_reqs["prefill_stage"];
     decode_stage = config_reqs["decode_stage"];
+    prefill_core = config_reqs["prefill_cores"];
+    decode_core = config_reqs["decode_cores"];
+    batch_size = config_reqs["batch_size"];
 
-    for (int i = 0; i < GRID_SIZE; i++) {
-        int cal_stage = i % (prefill_stage + decode_stage) + 1;
-        CoreStatus status = CoreStatus(
-            i, (cal_stage <= prefill_stage) ? JOB_PREFILL : JOB_DECODE);
-        coreStatus.push_back(status);
+    for (int i = 0; i < prefill_core + decode_core; i++) {
+        if (i < prefill_core) {
+            stage_index.push_back(i % prefill_stage + 1);
+            coreStatus.push_back(CoreStatus(i, JOB_PREFILL));
+        } else {
+            stage_index.push_back((i - prefill_core) % decode_stage + 1);
+            coreStatus.push_back(CoreStatus(i, JOB_DECODE));
+        }
     }
 
     if (config_reqs["arrival"].size() != req_cnt) {
@@ -34,21 +40,36 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
         sc_stop();
     }
 
+    // 检查batch_size参数的合理性，同时依此修改arrive时间
     for (int i = 0; i < req_cnt; i++) {
         int interv = config_reqs["arrival"][i];
         arrival_time.push_back(interv);
     }
 
-    for (int i = 0; i < GRID_SIZE / (prefill_stage + decode_stage); i++) {
+    if (batch_size * PD_RATIO > CORE_CREDIT) {
+        cout << "[ERROR] In config helper pd: batch size too large.\n";
+        sc_stop();
+    } else {
+        for (int i = 0; i < req_cnt; i++) {
+            int target = min((i / batch_size + 1) * batch_size - 1, req_cnt);
+            arrival_time[i] = arrival_time[target];
+        }
+    }
+
+    for (int i = 0; i < decode_core / decode_stage; i++) {
         queue<int> q;
         idle_decode.push_back(q);
     }
+
+    cout << "here\n";
 
     for (int i = 0; i < req_cnt; i++) {
         RequestRecord record =
             RequestRecord(i, config_reqs["seq_len"], heads, arrival_time[i]);
         requestRecords.push_back(record);
     }
+
+    cout << "here\n";
 
     json_template_p = j["chips"][0]["cores"][0];
     json_template_d = j["chips"][0]["cores"][1];
@@ -82,7 +103,7 @@ void config_helper_pds::fill_queue_start(queue<Msg> *q) {
 
     for (auto status : coreStatus) {
         cout << "status " << status.id << endl;
-        if (status.id % (prefill_stage + decode_stage) + 1 != 1)
+        if (status.id >= prefill_core || stage_index[status.id] != 1)
             continue;
 
         int index = status.id / GRID_X;
@@ -130,9 +151,8 @@ void config_helper_pds::iter_done(PD_JOB type) {
 
     for (auto msg : done_msg) {
         int id = msg.source;
-        int cal_stage = id % (prefill_stage + decode_stage) + 1;
-        if (cal_stage != prefill_stage &&
-            cal_stage != prefill_stage + decode_stage)
+        if (id < prefill_core && stage_index[id] != prefill_stage ||
+            id >= prefill_core && stage_index[id] != decode_stage)
             continue;
 
         auto &status = coreStatus[id];
@@ -185,38 +205,45 @@ void config_helper_pds::iter_start(PD_JOB type) {
     if (type == JOB_PREFILL) {
         for (auto status : coreStatus) {
             int id = status.id;
-            int cal_stage = id % (prefill_stage + decode_stage) + 1;
-            if (cal_stage > prefill_stage)
+            if (id >= prefill_core)
                 continue;
 
-            if (cal_stage != 1)
+            if (stage_index[id] != 1)
                 temp_stage.push_back(
                     make_pair(id, coreStatus[id - 1].batchInfo));
             else {
                 // 为stage1核分配任务，如果是prefill核，则只能做prefill任务
-                bool done = false;
+                int done = 0;
                 vector<Stage> new_stage_1;
 
-                // 优先做没有做完的prefill任务
+                // 优先做上个iter没有做完的prefill任务
                 for (auto stage : coreStatus[id].batchInfo) {
                     auto &record = requestRecords[stage.req_id];
-                    if (record.prefill_distribute + 1 <= record.prefill_iters) {
+                    if (record.prefill_distribute < record.prefill_iters) {
                         record.prefill_distribute++;
                         new_stage_1.push_back(stage);
-                        done = true;
+                        done++;
                     }
                 }
 
                 // 最后一个阶段的prefill是否完成，于第一阶段的prefill核没有关系，直接跳过
 
-                // 如果此时还没有被分配任务，则需要分配一个prefill。寻找UNTOUCHED
-                if (!done) {
+                // 如果此时还没有被分配任务，则需要分配一个prefill。优先寻找已经在做prefill但是没有完全分发完毕的请求
+                if (done < batch_size) {
                     for (auto &req : requestRecords) {
                         sc_core::sc_time arv_time(req.arrival_time,
                                                   sc_core::SC_NS);
-                        if (req.phase == UNTOUCHED &&
-                            arv_time <= sc_time_stamp()) {
-                            done = true;
+                        if (req.phase == PREFILL &&
+                            req.prefill_distribute < req.prefill_iters) {
+                            req.prefill_distribute++;
+                            new_stage_1.push_back(
+                                Stage(req.id, PREFILL,
+                                      req.seq_len / req.prefill_iters));
+
+                            if (++done == batch_size)
+                                break;
+                        } else if (req.phase == UNTOUCHED &&
+                                   arv_time <= sc_time_stamp()) {
                             new_stage_1.push_back(
                                 Stage(req.id, PREFILL,
                                       req.seq_len / req.prefill_iters));
@@ -225,7 +252,9 @@ void config_helper_pds::iter_start(PD_JOB type) {
                             cout << "[PD SCHEDULE] Core " << id
                                  << " push in new request PREFILL " << req.id
                                  << endl;
-                            break;
+
+                            if (++done == batch_size)
+                                break;
                         }
                     }
                 }
@@ -240,11 +269,10 @@ void config_helper_pds::iter_start(PD_JOB type) {
     else if (type == JOB_DECODE) {
         for (auto status : coreStatus) {
             int id = status.id;
-            int cal_stage = id % (prefill_stage + decode_stage) + 1;
-            if (cal_stage <= prefill_stage)
+            if (id < prefill_core)
                 continue;
 
-            if (cal_stage != prefill_stage + 1)
+            if (stage_index[id] != 1)
                 temp_stage.push_back(
                     make_pair(id, coreStatus[id - 1].batchInfo));
             else {
@@ -261,14 +289,14 @@ void config_helper_pds::iter_start(PD_JOB type) {
                         credit += 1;
                         new_stage_1.push_back(stage);
                     } else {
-                        idle_decode[id / (prefill_stage + decode_stage)].push(
+                        idle_decode[(id - prefill_core) / decode_stage].push(
                             stage.req_id);
                     }
                 }
 
                 // 如果此时还有空余，则查看是否有等待队列中的decode
                 auto &waiting_list =
-                    idle_decode[id / (prefill_stage + decode_stage)];
+                    idle_decode[(id - prefill_core) / decode_stage];
                 while (waiting_list.size() && credit < CORE_CREDIT) {
                     int req_id = waiting_list.front();
                     waiting_list.pop();
@@ -374,9 +402,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
 
     // 手动填写recv_cnt
     work.recv_tag = i;
-    if (i % (prefill_stage + decode_stage) + 1 != 1)
-        work.recv_cnt = 0;
-    else if (exist_prefill)
+    if (i < prefill_core && stage_index[i] == 1 && exist_prefill)
         work.recv_cnt = 1;
     else
         work.recv_cnt = 0;
@@ -419,9 +445,9 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
         }
     }
 
-    // 处理数据流向下一个core
+    // 处理数据流向下一个cores
     int send_dest = i + 1;
-    if (send_dest % (prefill_stage + decode_stage) == 0)
+    if (send_dest >= prefill_core && stage_index[i] == decode_stage)
         // decode最后一个阶段，发送地址为decode的第一个阶段
         send_dest -= decode_stage;
     int send_tag = send_dest;
@@ -442,7 +468,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
     send_data->max_packet = pkg_nums;
     send_data->end_length = end_length;
 
-    if (i % (prefill_stage + decode_stage) + 1 == 1) {
+    if (i < prefill_core && stage_index[i] == 1) {
         // 如果是第一个核，则只发不收
         temp_buffer.push_back(
             Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, send_req->serialize()));
@@ -450,11 +476,11 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
             Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, recv_ack->serialize()));
         temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i,
                                   send_data->serialize()));
-    } else if (i % (prefill_stage + decode_stage) + 1 == prefill_stage) {
+    } else if (i < prefill_core && stage_index[i] == prefill_stage) {
         // 如果是prefill最后一个核，则只收不发
         temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i,
                                   recv_data_2->serialize()));
-    } else if (i % (prefill_stage + decode_stage) + 1 == (prefill_stage + 1)) {
+    } else if (i >= prefill_core && stage_index[i] == 1) {
         // 如果是decode的第一个核，则先发后收
         temp_buffer.push_back(
             Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, send_req->serialize()));

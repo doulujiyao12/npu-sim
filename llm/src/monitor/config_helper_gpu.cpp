@@ -79,6 +79,11 @@ void config_helper_gpu::fill_queue_config(queue<Msg> *q) {
         int index = config.id / GRID_X;
         vector<Msg> single_rep;
 
+        auto recv_weight = new Recv_prim(RECV_TYPE::RECV_WEIGHT,
+                                         config.worklist[0].recv_tag, 0);
+        q[index].push(Msg(false, MSG_TYPE::CONFIG, 1, config.id,
+                          recv_weight->serialize()));
+
         for (auto work : config.worklist) {
             for (auto prim : work.prims_last_loop)
                 single_rep.push_back(Msg(false, MSG_TYPE::CONFIG,
@@ -86,14 +91,14 @@ void config_helper_gpu::fill_queue_config(queue<Msg> *q) {
                                          prim->serialize()));
         }
 
-        for (int i = 0; i < config.loop; i++) {
+        for (int i = 0; i < streams[0].loop; i++) {
             for (int j = 1; j <= single_rep.size(); j++) {
                 Msg m = single_rep[j - 1];
-                m.seq_id = j + single_rep.size() * i;
+                m.seq_id = j + single_rep.size() * i + 1;
 
-                if (i == config.loop - 1 && j == single_rep.size()) {
+                if (i == streams[0].loop - 1 && j == single_rep.size()) {
                     m.is_end = true;
-                    m.refill = true;
+                    m.refill = false;
                 }
 
                 q[index].push(m);
@@ -106,12 +111,8 @@ void config_helper_gpu::generate_prims(int i) {
     CoreConfig *c = &coreconfigs[i];
     cout << i << endl;
 
-    c->worklist[0].prims_last_loop.push_back(
-        new Recv_prim(RECV_TYPE::RECV_WEIGHT, c->worklist[0].recv_tag, 0));
-
     for (auto &work : c->worklist) {
         // 不向in_loop推入任何原语，只操作last_loop
-        // WARN: 只允许在第一个worklist推入RECV_START
         work.prims_last_loop.push_back(
             new Recv_prim(RECV_TYPE::RECV_START, work.recv_tag, work.recv_cnt));
 
@@ -148,10 +149,12 @@ void config_helper_gpu::fill_queue_start(queue<Msg> *q) {
     }
 
     for (int i = 0; i < min(sms, GRID_SIZE); i++) {
+        cout << "lllw " << i << endl;
         auto config = coreconfigs[i];
         int index = config.id / GRID_X;
         int pkg_index = 0;
 
+        // 这里相当于quick start，实际上也只有第一个原语需要初始数据
         sc_bv<128> d(0x1);
         Msg m = Msg(true, MSG_TYPE::S_DATA, pkg_index + 1, config.id, 0,
                     config.id, 0, d);

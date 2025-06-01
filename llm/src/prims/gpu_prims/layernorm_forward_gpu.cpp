@@ -46,11 +46,17 @@ int Layernorm_f_gpu::task_core(TaskCoreContext &context) {
 
     int overlap_time = 0;
 #if USE_L1L2_CACHE == 1
+    cout << "Core " << cid << " R1\n";
     gpu_read_generic(context, input_mem_offset, data_byte * data_size_input,
                      mem_time);
+    cout << "Core " << cid << " R2\n";
     gpu_read_generic(context, w_key.pos, data_byte * data_size_weight,
                      mem_time);
-    gpu_read_generic(context, b_key.pos, data_byte * data_size_bias, mem_time);
+    cout << "Core " << cid << " R3 " << b_key.pos << " " << data_size_bias
+         << endl;
+    gpu_read_generic(context, b_key.pos + data_size_bias * cid, data_byte * data_size_bias, mem_time);
+
+    cout << "Core " << cid << " R4\n";
 
     // TODO: 模拟计算cycle数
     overlap_time = mem_time;
@@ -78,7 +84,7 @@ void Layernorm_f_gpu::deserialize(sc_bv<128> buffer) {
 
 sc_bv<128> Layernorm_f_gpu::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(0xe3);
+    d.range(7, 0) = sc_bv<8>(0xe4);
     d.range(55, 40) = sc_bv<16>(B);
     d.range(71, 56) = sc_bv<16>(T);
     d.range(87, 72) = sc_bv<16>(C);
