@@ -1070,15 +1070,15 @@ TaskCoreContext generate_context(WorkerCoreExecutor *workercore) {
     // 创建类实例
     TaskCoreContext context(workercore->mem_access_port, workercore->high_bw_mem_access_port, workercore->temp_mem_access_port, workercore->high_bw_temp_mem_access_port, msg_data, workercore->sram_addr,
         workercore->start_nb_dram_event, workercore->end_nb_dram_event, workercore->nb_dcache_socket, workercore->loop_cnt, workercore->sram_manager_,
-                            workercore->start_nb_gpu_dram_event, workercore->end_nb_gpu_dram_event);
+                            workercore->start_nb_gpu_dram_event, workercore->end_nb_gpu_dram_event, workercore->MaxDramAddr);
 #elif USE_NB_DRAMSYS == 1
     TaskCoreContext context(workercore->mem_access_port, workercore->high_bw_mem_access_port, workercore->temp_mem_access_port, workercore->high_bw_temp_mem_access_port, msg_data, workercore->sram_addr,
         workercore->start_nb_dram_event, workercore->end_nb_dram_event, workercore->nb_dcache_socket, workercore->sram_manager_,
-                            workercore->loop_cnt);
+                            workercore->loop_cnt, workercore->MaxDramAddr);
 #else
 
         TaskCoreContext context(this->dcache_socket, workercore->mem_access_port, workercore->high_bw_mem_access_port, workercore->temp_mem_access_port, workercore->high_bw_temp_mem_access_port, msg_data, workercore->sram_addr,
-            workercore->start_nb_dram_event, workercore->end_nb_dram_event, workercore->sram_manager_);
+            workercore->start_nb_dram_event, workercore->end_nb_dram_event, workercore->sram_manager_, workercore->MaxDramAddr);
 #endif
     context.SetGlobalMemIF(nb_global_memif, start_global_event, end_global_event);
     return context;

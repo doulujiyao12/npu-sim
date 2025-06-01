@@ -56,8 +56,7 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
 
     auto inp_sram_offset = 0;
     if (datapass_label.indata[0].find(DRAM_LABEL) == 0) {
-        sram_first_write_generic(context, data_byte * data_size_input,
-                                 inp_global_addr, dram_time, dram_start);
+        
 
         size_t space_pos = datapass_label.indata[0].find(' ');
         if (space_pos != std::string::npos) {
@@ -68,10 +67,17 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
         printf("[INFO] Matmul_f_pd: read from dram, label: %s\n",
                datapass_label.indata[0].c_str());
 
+#if USE_SRAM_MANAGER == 1
+        sram_first_write_generic(context, data_byte * data_size_input,
+            inp_global_addr, dram_time, dram_start, datapass_label.indata[0], true, sram_pos_locator);
+#else
+        sram_first_write_generic(context, data_byte * data_size_input,
+                                 inp_global_addr, dram_time, dram_start);
         AddrPosKey inp_key =
             AddrPosKey(*sram_addr, data_byte * data_size_input);
         sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context,
                                   dram_time);
+#endif
     } else {
         AddrPosKey inp_key;
         int flag = sram_pos_locator->findPair(datapass_label.indata[0],
