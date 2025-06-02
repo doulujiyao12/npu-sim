@@ -132,7 +132,9 @@ void AddressDecoder::plausibilityCheck(const MemSpec& memSpec)
 {
     unsigned channels = std::lround(std::pow(2.0, vChannelBits.size()));
     unsigned ranks = std::lround(std::pow(2.0, vRankBits.size()));
+    // bankgroup 的数量
     unsigned bankGroups = std::lround(std::pow(2.0, vBankGroupBits.size()));
+    // 一个 bankgroup 中的 bank 的数量
     unsigned banks = std::lround(std::pow(2.0, vBankBits.size()));
     unsigned rows = std::lround(std::pow(2.0, vRowBits.size()));
     unsigned columns = std::lround(std::pow(2.0, vColumnBits.size()));

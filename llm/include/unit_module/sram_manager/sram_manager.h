@@ -18,6 +18,8 @@ public:
     // Allocate memory
     // Returns an AllocationID on success, or 0 on failure.
     AllocationID allocate(int requested_size);
+    AllocationID allocate_append(int requested_size, AllocationID id);
+    // Allocate memory with a specific AllocationID
 
     int get_address_with_offset(AllocationID id, int current_address, int offset_bytes) const;
 

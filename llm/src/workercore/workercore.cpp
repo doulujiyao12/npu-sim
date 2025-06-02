@@ -36,6 +36,7 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
                         (int)cid % GRID_X, this->event_engine,
                         "../DRAMSys/configs/ddr4-example.json",
                         "../DRAMSys/configs");
+    cout << " MaxAddr " << dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
     ram_array = new DynamicBandwidthRamRow<sc_bv<SRAM_BITWIDTH>, SRAM_BANKS>(
         sc_gen_unique_name("ram_array"), 0, BANK_DEPTH, SIMU_READ_PORT,
         SIMU_WRITE_PORT, BANK_PORT_NUM + SRAM_BANKS, BANK_PORT_NUM,
@@ -47,6 +48,8 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
             BANK_PORT_NUM, BANK_HIGH_READ_PORT_NUM, event_engine);
     executor = new WorkerCoreExecutor(sc_gen_unique_name("workercore-exec"),
                                       cid, this->event_engine);
+    executor->MaxDramAddr =  dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
+    g_dram_kvtable = new DramKVTable(executor->MaxDramAddr, (uint64_t)50 * 1024 * 1024, 20);
     executor->systolic_config = systolic_config;
     executor->other_config = other_config;
     // dummy_dcache =  new DummyDCache("dcache");
@@ -978,7 +981,7 @@ void WorkerCoreExecutor::recv_logic() {
 
                                 sram_pos_locator->findPair(input_label,
                                                            inp_key);
-                                inp_key.size += max_recv * M_D_DATA;
+                                inp_key.size = 0;//+= max_recv * M_D_DATA;
 
                                 u_int64_t temp;
                                 sram_pos_locator->addPair(input_label, inp_key);
@@ -1324,4 +1327,5 @@ WorkerCoreExecutor::~WorkerCoreExecutor() {
     delete start_global_mem_event;
     delete end_global_mem_event;
     delete sram_manager_;
+    delete g_dram_kvtable;
 }

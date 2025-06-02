@@ -46,6 +46,7 @@ public:
     sc_event *s_nbdram;
     sc_event *e_nbdram;
     int loop_cnt;
+    uint64_t MaxDramAddr; // 当前核最大的 dram 地址
     
     NB_GlobalMemIF *nb_global_memif;
     sc_event *start_global_event;
@@ -79,7 +80,7 @@ public:
                     mem_access_unit *temp_mau, high_bw_mem_access_unit *temp_hmau,
                     const sc_bv<SRAM_BITWIDTH> &msg_data, int *sram_addr,
                     sc_event *s_nbdram, sc_event *e_nbdram,
-                    NB_DcacheIF *nb_dcache, SramManager* sram_manager)
+                    NB_DcacheIF *nb_dcache, SramManager* sram_manager, uint64_t MaxDramAddr)
         : mau(mau),
           hmau(hmau),
           temp_mau(temp_mau),
@@ -89,12 +90,13 @@ public:
           s_nbdram(s_nbdram),
           e_nbdram(e_nbdram),
           nb_dcache(nb_dcache),
-          sram_manager_(sram_manager) {}
+          sram_manager_(sram_manager),
+          MaxDramAddr(MaxDramAddr) {}
     TaskCoreContext(mem_access_unit *mau, high_bw_mem_access_unit *hmau,
                     mem_access_unit *temp_mau, high_bw_mem_access_unit *temp_hmau,
                     const sc_bv<SRAM_BITWIDTH> &msg_data, int *sram_addr,
                     sc_event *s_nbdram, sc_event *e_nbdram,
-                    NB_DcacheIF *nb_dcache, SramManager* sram_manager, int loop_cnt)
+                    NB_DcacheIF *nb_dcache, SramManager* sram_manager, int loop_cnt, uint64_t MaxDramAddr)
         : mau(mau),
           hmau(hmau),
           temp_mau(temp_mau),
@@ -105,14 +107,15 @@ public:
           e_nbdram(e_nbdram),
           nb_dcache(nb_dcache),
           loop_cnt(loop_cnt),
-          sram_manager_(sram_manager) {}
+          sram_manager_(sram_manager),
+          MaxDramAddr(MaxDramAddr) {}
 #else
     // 构造函数
     TaskCoreContext(DcacheCore *wc, mem_access_unit *mau,
                     high_bw_mem_access_unit *hmau,
                     mem_access_unit *temp_mau, high_bw_mem_access_unit *temp_hmau,
                     const sc_bv<SRAM_BITWIDTH> &msg_data, int *sram_addr,
-                    sc_event *s_nbdram, sc_event *e_nbdram, SramManager* sram_manager)
+                    sc_event *s_nbdram, sc_event *e_nbdram, SramManager* sram_manager, uint64_t MaxDramAddr)
         : wc(wc),
           mau(mau),
           hmau(hmau),
@@ -122,7 +125,8 @@ public:
           sram_addr(sram_addr),
           s_nbdram(s_nbdram),
           e_nbdram(e_nbdram),
-          sram_manager_(sram_manager) {}
+          sram_manager_(sram_manager),
+          MaxDramAddr(MaxDramAddr) {}
 #endif
 
 #if USE_L1L2_CACHE == 1
@@ -132,7 +136,8 @@ public:
                     sc_event *s_nbdram, sc_event *e_nbdram,
                     NB_DcacheIF *nb_dcache, int loop_cnt, SramManager* sram_manager,
                     sc_event *start_nb_gpu_dram_event,
-                    sc_event *end_nb_gpu_dram_event)
+                    sc_event *end_nb_gpu_dram_event,
+                    uint64_t MaxDramAddr)
         : mau(mau),
           hmau(hmau),
           temp_mau(temp_mau),
@@ -145,6 +150,7 @@ public:
           loop_cnt(loop_cnt),
           sram_manager_(sram_manager),
           start_nb_gpu_dram_event(start_nb_gpu_dram_event),
-          end_nb_gpu_dram_event(end_nb_gpu_dram_event) {}
+          end_nb_gpu_dram_event(end_nb_gpu_dram_event),
+          MaxDramAddr(MaxDramAddr) {}
 #endif
 };

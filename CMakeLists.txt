@@ -40,6 +40,7 @@ list(FILTER SRC_FILES EXCLUDE REGEX ".*/unittest/.*")
 list(FILTER SRC_FILES EXCLUDE REGEX ".*/test_dramsys\\.cpp$")
 list(FILTER SRC_FILES EXCLUDE REGEX ".*/main\\.cpp")
 list(FILTER SRC_FILES EXCLUDE REGEX ".*/build/.*")
+list(FILTER SRC_FILES EXCLUDE REGEX ".*/config_generation/.*")
 
 # # 定义生成的目标
 message(STATUS "Source files: ${SRC_FILES}")

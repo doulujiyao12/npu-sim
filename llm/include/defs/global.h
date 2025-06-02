@@ -8,6 +8,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include "../unit_module/dram_kvtable/dram_kvtable.h"
 
 using namespace std;
 
@@ -19,6 +20,12 @@ extern vector<chip_instr_base*> global_chip_prim_stash;
 // 模拟KVcache（已过时）
 class KVCache;
 extern KVCache KVCache_g;
+
+extern int MAX_SRAM_SIZE;
+
+class DramKVTable;
+
+extern DramKVTable* g_dram_kvtable;
 
 // one per system，用于config转msg的消息传递
 class AddrLabelTable;

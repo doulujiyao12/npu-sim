@@ -138,6 +138,18 @@ void config_helper_pd::iter_done(vector<Msg> done_msg) {
                 if (msg.data.range(stage_count, stage_count).to_uint64() ||
                     record.decode_counter >= (1.5) / (eof_chance)) {
                     stage.type = record.phase = PD_DONE;
+                    char format_label_k[100];
+                    sprintf(format_label_k, "%s%skREQ%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+                            stage.req_id);
+                    string label_k = format_label_k;
+                    g_dram_kvtable->remove(label_k);
+                    
+
+                    char format_label_v[100];
+                    sprintf(format_label_v, "%s%svREQ%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+                            stage.req_id);
+                    string label_v = format_label_v;
+                    g_dram_kvtable->remove(label_v);
 
                     if (++decode_done == requestRecords.size()) {
                         cout << "All reqs done.\n";

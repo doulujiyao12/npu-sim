@@ -35,6 +35,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
     int aligned_data_byte = aligned_data_bits / 8;
 
     u_int64_t inp_global_addr = global_addr;
+    int left_byte = aligned_data_byte - data_size_in_byte;
 
 
 #if USE_NB_DRAMSYS == 0
@@ -64,11 +65,16 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
     int cache_lines = 1 << (dcache_words_in_line_log2 + 2 + 3);
     int cache_count = SRAM_BANKS * SRAM_BITWIDTH / cache_lines;
     int sram_time = 0;
+
+#if USE_NB_DRAMSYS == 1
+    sc_time start_first_write_time = sc_time_stamp();
+#endif
+
 #if USE_SRAM_MANAGER == 1
     AllocationID alloc_id =0;
     if (use_manager == true){
         SizeWAddr swa(aligned_data_byte, inp_global_addr);
-
+        // assert(sram_pos_locator->validateTotalSize() && "sram_pos_locator is not equal sram_manager");
         AddrPosKey inp_key =
             AddrPosKey(swa);
         u_int64_t dram_time_tmp = 0;
@@ -81,6 +87,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
         context.alloc_id_ = alloc_id;
         inp_key =
             AddrPosKey(context.alloc_id_, aligned_data_byte);
+        inp_key.left_byte = left_byte;
         sram_pos_locator->addPair(label_name, inp_key, false);
         std::cout << "\033[1;32m"  // Set color to green
           << "[INFO] Successfully allocated " << aligned_data_byte 
@@ -113,9 +120,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
 #endif
 if (dummy_alloc == false){
 
-#if USE_NB_DRAMSYS == 1
-    sc_time start_first_write_time = sc_time_stamp();
-#endif
+
 
 #if USE_NB_DRAMSYS == 1
 
@@ -299,6 +304,7 @@ if (dummy_alloc == false){
 
 void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
                              u_int64_t global_addr, u_int64_t &dram_time) {
+    // assert(false);
     int dma_read_count =
         data_size_in_byte * 8 / (int)(SRAM_BITWIDTH * SRAM_BANKS);
     int byte_residue =
@@ -530,6 +536,37 @@ void sram_read_generic_temp(TaskCoreContext &context, int data_size_in_byte,
     }
 }
 
+void sram_update_cahce(TaskCoreContext &context, string label_k, SramPosLocator *sram_pos_locator, int data_size_in_byte, u_int64_t &dram_time){
+
+    auto k_daddr_tmp = g_dram_kvtable->get(label_k);
+    if (k_daddr_tmp.has_value()) {
+
+    } else {
+        g_dram_kvtable->add(label_k);
+    }
+    uint64_t k_daddr = g_dram_kvtable->get(label_k).value();
+
+
+
+#if USE_NB_DRAMSYS == 1
+    sc_time start_first_write_time = sc_time_stamp();
+#endif 
+
+    sram_pos_locator->updateKVPair(context, label_k, k_daddr, data_size_in_byte);
+
+    
+#if USE_NB_DRAMSYS
+    sc_time end_first_write_time = sc_time_stamp();
+    dram_time +=
+        (end_first_write_time - start_first_write_time).to_seconds() * 1e9;
+
+#endif
+
+
+
+
+}
+
 // 会修改 context.sram_addr 的数值
 void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
                                u_int64_t &dram_time,std::string label_name, bool use_manager, SramPosLocator *sram_pos_locator, u_int64_t global_addr) {
@@ -546,8 +583,11 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
 
     int aligned_data_bits = static_cast<int>(std::ceil(static_cast<double>(data_bits) / alignment)) * alignment;    
     int aligned_data_byte = aligned_data_bits / 8;
+    int left_byte = aligned_data_byte - data_size_in_byte;  
 
-    
+#if USE_NB_DRAMSYS == 1
+    sc_time start_first_write_time = sc_time_stamp();
+#endif                                
 
 #if USE_NB_DRAMSYS == 0
     auto wc = context.wc;
@@ -575,6 +615,7 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
         context.alloc_id_ = alloc_id;
         inp_key =
             AddrPosKey(context.alloc_id_, aligned_data_byte);
+        inp_key.left_byte = left_byte;
         sram_pos_locator->addPair(label_name, inp_key, false);
         
         if (alloc_id == 0) {
@@ -645,6 +686,13 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
         u_int64_t sram_timer = elapsed_time.to_seconds() * 1e9;
         // dram_time += sram_timer;
     }
+#if USE_NB_DRAMSYS
+    sc_time end_first_write_time = sc_time_stamp();
+    dram_time +=
+        (end_first_write_time - start_first_write_time).to_seconds() * 1e9;
+
+#endif
+
 #if USE_SRAM_MANAGER == 1
     if (use_manager == true){
 
@@ -1070,15 +1118,15 @@ TaskCoreContext generate_context(WorkerCoreExecutor *workercore) {
     // 创建类实例
     TaskCoreContext context(workercore->mem_access_port, workercore->high_bw_mem_access_port, workercore->temp_mem_access_port, workercore->high_bw_temp_mem_access_port, msg_data, workercore->sram_addr,
         workercore->start_nb_dram_event, workercore->end_nb_dram_event, workercore->nb_dcache_socket, workercore->loop_cnt, workercore->sram_manager_,
-                            workercore->start_nb_gpu_dram_event, workercore->end_nb_gpu_dram_event);
+                            workercore->start_nb_gpu_dram_event, workercore->end_nb_gpu_dram_event, workercore->MaxDramAddr);
 #elif USE_NB_DRAMSYS == 1
     TaskCoreContext context(workercore->mem_access_port, workercore->high_bw_mem_access_port, workercore->temp_mem_access_port, workercore->high_bw_temp_mem_access_port, msg_data, workercore->sram_addr,
         workercore->start_nb_dram_event, workercore->end_nb_dram_event, workercore->nb_dcache_socket, workercore->sram_manager_,
-                            workercore->loop_cnt);
+                            workercore->loop_cnt, workercore->MaxDramAddr);
 #else
 
         TaskCoreContext context(this->dcache_socket, workercore->mem_access_port, workercore->high_bw_mem_access_port, workercore->temp_mem_access_port, workercore->high_bw_temp_mem_access_port, msg_data, workercore->sram_addr,
-            workercore->start_nb_dram_event, workercore->end_nb_dram_event, workercore->sram_manager_);
+            workercore->start_nb_dram_event, workercore->end_nb_dram_event, workercore->sram_manager_, workercore->MaxDramAddr);
 #endif
     context.SetGlobalMemIF(nb_global_memif, start_global_event, end_global_event);
     return context;
