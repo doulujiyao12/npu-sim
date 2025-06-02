@@ -71,6 +71,8 @@ prim_base *new_prim(string type) {
         prim = new Residual_f_gpu();
     else if (type == "Matmul_f_pd")
         prim = new matmul_forward_pd();
+    else if (type == "Attention_f_pd")
+        prim = new attention_forward_pd();
     else if (type == "Send_global_memory")
         prim = new Send_global_memory();
     else if (type == "Recv_global_memory")

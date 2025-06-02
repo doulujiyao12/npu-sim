@@ -295,7 +295,7 @@ int Matmul_f_prefill::task_core(TaskCoreContext &context) {
                       dram_time);
 
     // 写入kvcache
-    int batch = 0;
+    for (int batch = 0; batch < B; batch++) {
         AddrPosKey kcache;
         char format_label_k[100];
         sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
@@ -321,7 +321,7 @@ int Matmul_f_prefill::task_core(TaskCoreContext &context) {
         *sram_addr = vcache.pos;
         vcache.size = data_byte * data_size_out / 3;
         sram_pos_locator->addPair(label_decode_v, vcache, context, dram_time);
-    
+    }
 
     // 删除标签
     if (!input_reuse) {

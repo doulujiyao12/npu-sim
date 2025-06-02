@@ -373,6 +373,7 @@ int Attention_f::task_core(TaskCoreContext &context) {
     printf("attention_forward: overlap_time: %ld\n", overlap_time);
     return overlap_time;
 }
+
 int Attention_f::task() {
     int C3 = C * 3;
     int hs = C / NH; // head size
