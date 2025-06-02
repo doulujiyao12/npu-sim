@@ -49,10 +49,12 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value, bool update_key
     // cout << "[SRAM pos locator] id " << cid << " add pair.\n";
     // cout << "[Add pair]: label -> " << key << endl;
 }
+
+
 bool SramPosLocator::validateTotalSize() const {
     int dataSizeSum = 0;
     for (const auto& pair : data_map) {
-        dataSizeSum += pair.second.size;
+        dataSizeSum += pair.second.size - pair.second.spill_size;
     }
 
     int allocationSizeSum = 0;
@@ -228,6 +230,64 @@ int SramPosLocator::findPair(std::string &key, AddrPosKey &result) {
     return -1;
 }
 
+
+void SramPosLocator::updateKVPair(TaskCoreContext &context, std::string &key, uint64_t kv_daddr, int data_size_in_byte) {
+#if USE_SRAM_MANAGER == 1
+    visit += 1;
+
+    AddrPosKey result;
+    int spill_size = findPair(key, result);
+    u_int64_t dram_time_tmp;
+
+    if (spill_size == -1) {
+        // 还未建立 KV sram block
+        sram_write_append_generic(context, data_size_in_byte, dram_time_tmp,
+        key, true, this, kv_daddr);
+
+        return;
+
+        
+    } else if (spill_size > 0) {
+        sram_first_write_generic(context, spill_size, kv_daddr, dram_time_tmp,
+            nullptr, key, true, this);
+        // KV sram block 之前被建立，但是被放回dram
+
+
+    } else {
+
+    }
+
+    spill_size = findPair(key, result);
+
+    assert(spill_size >= 0);
+
+    if (result.left_byte > data_size_in_byte){
+        result.spill_size = 0;
+        result.left_byte -= data_size_in_byte;
+        return;
+    }else{
+        int alignment = std::max(SRAM_BITWIDTH, SRAM_BLOCK_SIZE * 8);
+        int alignment_byte = alignment / 8;
+
+        result.size += alignment_byte;
+        result.left_byte = result.left_byte - data_size_in_byte + alignment_byte;
+         
+        addPair(key, result, context, dram_time_tmp, false);
+
+        auto sram_manager_ = context.sram_manager_;
+        sram_manager_->allocate_append(alignment_byte, result.alloc_id);
+        return;
+    }
+
+
+
+
+#else
+    assert(0);
+#endif
+
+
+}
 // 为sram中标签为key的数据块增加size的大小。如果该数据块还不存在，则创建一个。
 void SramPosLocator::updatePair(std::string &key, int size,
                                 TaskCoreContext &context,

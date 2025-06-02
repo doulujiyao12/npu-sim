@@ -6,6 +6,7 @@
 #include "common/system.h"
 #include "macros/macros.h"
 #include "unit_module/sram_manager/sram_manager.h"
+#include "defs/global.h"
 
 using namespace std;
 
@@ -65,6 +66,7 @@ public:
 class AddrPosKey {
 public:
     int pos;
+    int left_byte;
     AllocationID alloc_id;
     int size;
     u_int64_t dram_addr;
@@ -79,6 +81,7 @@ public:
         alloc_id = 0;
         size = 0;
         dram_addr = 0;  
+        left_byte = 0;
     }
 
     AddrPosKey(int pos, int size, u_int64_t dram_addr_ = 0) : pos(pos), size(size) {
@@ -90,12 +93,13 @@ public:
         // 表示被spill到dram中的数据的大小
         spill_size = 0;
         dram_addr = dram_addr_; 
+        left_byte = 0;
     }
     AddrPosKey(AllocationID id, int sz, u_int64_t dram_addr_ = 0)
-        : alloc_id(id), size(sz), valid(true), spill_size(0), record(0), dram_addr(dram_addr_) {}
+        : alloc_id(id), size(sz), valid(true), spill_size(0), record(0), dram_addr(dram_addr_), left_byte(0) {}
 
     AddrPosKey(SizeWAddr swd)
-        : size(swd.size), valid(true), spill_size(0), record(0), alloc_id(0), dram_addr(swd.dram_addr_) {}
+        : size(swd.size), valid(true), spill_size(0), record(0), alloc_id(0), dram_addr(swd.dram_addr_), left_byte(0) {}
 };
 
 class SramPosLocator { // one per core
@@ -124,6 +128,8 @@ public:
     void printAllKeys();
     void updatePair(std::string &key, int size, TaskCoreContext &context,
                     u_int64_t &dram_time);
+    void updateKVPair(TaskCoreContext &context, std::string &key, uint64_t kv_daddr, int data_size_in_byte);
+
     
 
     void deletePair(std::string &key);

@@ -160,6 +160,126 @@ AllocationID SramManager::allocate(int requested_size) {
     return 0; // No suitable contiguous block sequence found
 }
 
+
+
+AllocationID SramManager::allocate_append(int requested_size, AllocationID id) {
+
+
+    if (requested_size == 0 || num_blocks_ == 0) {
+
+    if (requested_size == 0) {
+        std::cerr << "Allocation failed: requested_size is zero." << std::endl;
+        assert(false);
+        return 0;
+    }
+
+    if (num_blocks_ == 0) {
+        std::cerr << "Allocation failed: num_blocks_ is zero (no available blocks)." << std::endl;
+        assert(false);
+        return 0;
+    }    
+}
+
+    int blocks_needed = (requested_size + block_size_ - 1) / block_size_; // Ceiling division
+#if DEBUG_SRAM_MANAGER == 1
+    std::cout << "blocks_needed: " << blocks_needed << std::endl;
+#endif    
+    if (blocks_needed == 0 || blocks_needed > num_blocks_ || free_block_indices_.size() < blocks_needed) {
+        if (blocks_needed == 0) {
+        std::cerr << "Allocation failed: blocks_needed is zero (requested_size may be too small)." << std::endl;
+        assert(false);
+        return 0;
+    }
+
+    if (blocks_needed > num_blocks_) {
+        std::cerr << "Allocation failed: blocks_needed exceeds total available blocks (" 
+                << blocks_needed << " > " << num_blocks_ << ")." << std::endl;
+        assert(false);
+        return 0;
+    }
+
+    if (free_block_indices_.size() < blocks_needed) {
+        std::cerr << "Allocation failed: not enough free blocks available (" 
+                << free_block_indices_.size() << " < " << blocks_needed << ")." << std::endl;
+        assert(false);
+        return 0;
+    }
+        return 0; // Cannot allocate if no blocks needed, more than total, or not enough free blocks overall
+    }
+
+    // First-Fit approach using the sorted free_block_indices_ list
+    auto it = free_block_indices_.begin();
+    std::vector<int> potential_blocks;
+    int blocks_needed_tmp = blocks_needed;
+    while (it != free_block_indices_.end()) {
+        
+        int first_block_idx = *it;
+#if DEBUG_SRAM_MANAGER == 1
+        std::cout << "first_block_idx: " << first_block_idx << std::endl;
+#endif
+        potential_blocks.push_back(first_block_idx);
+
+        // Try to find contiguous blocks
+        it++;
+        for (int k = 1; k < blocks_needed_tmp; ++k) {
+            if (it != free_block_indices_.end() && *it == first_block_idx + static_cast<int>(k)) {
+                potential_blocks.push_back(*it);
+                it++;
+            } else {
+                break; // Not enough contiguous blocks starting from *it
+            }
+        }
+#if DEBUG_SRAM_MANAGER == 1
+        // Print potential_blocks for debugging
+        std::cout << "potential_blocks: ";
+        for (int block : potential_blocks) {
+            std::cout << block << " ";
+        }
+        std::cout << std::endl;
+#endif
+
+        if (potential_blocks.size() == blocks_needed) {
+            // Found a fit!
+            for (int block_idx : potential_blocks) {
+                if (static_cast<int>(block_idx) < num_blocks_) { // Boundary check
+                    block_status_[block_idx] = true;
+                } else {
+                     // Should not happen if logic is correct and num_blocks_ is set right
+                    std::cerr << "Error: Trying to mark out-of-bounds block " << block_idx << " as used." << std::endl;
+                    assert(false);
+                    return 0; // Critical error
+                }
+            }
+
+            // Remove allocated blocks from free_block_indices_
+            for (int block_idx_to_remove : potential_blocks) {
+                // std::list::remove is O(N), doing it multiple times is not ideal.
+                // A more optimized way would be to use list::erase with iterators if we knew them,
+                // or rebuild the list without these elements.
+                // For this example, list::remove is clear.
+                free_block_indices_.remove(block_idx_to_remove);
+            }
+            // AllocationID id = next_allocation_id_++;
+            std::cout << "\033[1;31m" << "ID ALLOC " << id << "\033[0m" << std::endl;
+
+            allocations_[id].insert(allocations_[id].end(), potential_blocks.begin(), potential_blocks.end());
+
+            return id;
+        }else{
+
+            blocks_needed_tmp = blocks_needed_tmp - potential_blocks.size();
+        }
+        // If not a fit, move to the next block in free_block_indices_
+        // The block *it might be part of a smaller free segment.
+        // We need to advance 'it' to the start of the next potential free segment.
+        // The current 'it' was the start of the segment we just checked.
+        // If potential_blocks.size() < blocks_needed, we continue from the *next* free block.
+        // it++;
+    }
+    assert(false && "No suitable contiguous block sequence found");
+    return 0; // No suitable contiguous block sequence found
+}
+
 // Deallocate memory
 bool SramManager::deallocate(AllocationID id) {
     if (id == 0) return false; // Invalid ID

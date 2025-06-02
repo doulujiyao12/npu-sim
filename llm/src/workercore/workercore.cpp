@@ -49,6 +49,7 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
     executor = new WorkerCoreExecutor(sc_gen_unique_name("workercore-exec"),
                                       cid, this->event_engine);
     executor->MaxDramAddr =  dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
+    g_dram_kvtable = new DramKVTable(executor->MaxDramAddr, (uint64_t)50 * 1024 * 1024, 20);
     executor->systolic_config = systolic_config;
     executor->other_config = other_config;
     // dummy_dcache =  new DummyDCache("dcache");
@@ -977,7 +978,7 @@ void WorkerCoreExecutor::recv_logic() {
 
                                 sram_pos_locator->findPair(input_label,
                                                            inp_key);
-                                inp_key.size += max_recv * M_D_DATA;
+                                inp_key.size = 0;//+= max_recv * M_D_DATA;
 
                                 u_int64_t temp;
                                 sram_pos_locator->addPair(input_label, inp_key);
@@ -1323,4 +1324,5 @@ WorkerCoreExecutor::~WorkerCoreExecutor() {
     delete start_global_mem_event;
     delete end_global_mem_event;
     delete sram_manager_;
+    delete g_dram_kvtable;
 }

@@ -72,10 +72,11 @@ int Clear_sram::task_core(TaskCoreContext &context) {
     }
 
     *(context.sram_addr) = pos;
+    cout << "[INFO] after clear_sram: sram_addr=" << pos << endl;
 #endif
     *(loop_cnt) += 1;
 
-    cout << "[INFO] after clear_sram: sram_addr=" << pos << endl;
+    
 
     // CTODO: GC time count
     return 0;

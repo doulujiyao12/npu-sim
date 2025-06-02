@@ -84,7 +84,9 @@
                     "outdata": "residual1_out"
                   },
                   "dram_address": {
-                    "data": -1
+                      "input": 0,
+                      "data": -1,
+                      "out": 98
                   }
                 },
                 {
@@ -124,6 +126,11 @@
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "attention1_out"
+                  },
+                  "dram_address": {
+                      "input": 0,
+                      "data": -1,
+                      "out": 98
                   }
                 },
                 {
@@ -149,7 +156,9 @@
                     "outdata": "residual2_out"
                   },
                   "dram_address": {
-                    "data": -1
+                      "input": 0,
+                      "data": -1,
+                      "out": 98
                   }
                 },
                 {
@@ -189,6 +198,11 @@
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "attention1_out"
+                  },
+                  "dram_address": {
+                      "input": 0,
+                      "data": -1,
+                      "out": 98
                   }
                 },
                 {
@@ -214,7 +228,9 @@
                     "outdata": "residual3_out"
                   },
                   "dram_address": {
-                    "data": -1
+                      "input": 0,
+                      "data": -1,
+                      "out": 98
                   }
                 }
               ]
