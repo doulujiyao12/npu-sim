@@ -1,14 +1,8 @@
-#include "systemc.h"
-
-#include "common/memory.h"
-#include "defs/global.h"
-#include "memory/dram/Dcachecore.h"
-#include "prims/comp_prims.h"
+#include "prims/pd_prims.h"
 #include "utils/memory_utils.h"
-#include "utils/system_utils.h"
 
-void Attention_f_decode::print_self(string prefix) {
-    cout << prefix << "<attention_forward_decode>\n";
+void attention_forward_pd::print_self(string prefix) {
+    cout << prefix << "<attention_forward_pd>\n";
     cout << prefix << "\tB: " << B << ", T: " << T << ", C: " << C << endl;
     cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size
          << ", previous_inp_size: " << p_inp_size << endl;
@@ -16,15 +10,19 @@ void Attention_f_decode::print_self(string prefix) {
          << ", input_offset: " << inp_offset << endl;
 }
 
-void Attention_f_decode::parse_json(json j) {
+void attention_forward_pd::initialize() {
+    out_size = B * T * C;
+    p_inp_size = B * T * 3 * C;
+    inp_size = B * T * 3 * C;
+}
+
+void attention_forward_pd::parse_json(json j) {
     B = find_var(j["B"]);
     T = find_var(j["T"]);
     C = find_var(j["C"]);
     NH = find_var(j["NH"]);
 
-    out_size = B * T * C;
-    p_inp_size = B * T * C;
-    inp_size = B * T * C + 2 * B * NH * T * T;
+    initialize();
 
     if (j.contains("dram_address")) {
         parse_address(j["dram_address"]);
@@ -35,37 +33,66 @@ void Attention_f_decode::parse_json(json j) {
     }
 }
 
-void Attention_f_decode::deserialize(sc_bv<128> buffer) {
+int attention_forward_pd::sram_utilization(DATATYPE datatype) {
+    int total_sram = 0;
+    int data_byte = 0;
+
+    if (datatype == DATATYPE::FP16) {
+        data_byte = 2;
+    } else if (datatype == DATATYPE::INT8) {
+        data_byte = 1;
+    }
+
+    int p_inp_sram =
+        ceiling_division(B * T * 3 * C * data_byte * 8, SRAM_BITWIDTH);
+    int a_sram =
+        ceiling_division(B * NH * T * T * data_byte * 8, SRAM_BITWIDTH);
+    int out_sram = ceiling_division(out_size * data_byte * 8, SRAM_BITWIDTH);
+
+    total_sram = p_inp_sram + a_sram + out_sram;
+
+    return total_sram;
+}
+
+void attention_forward_pd::deserialize(sc_bv<128> buffer) {
     inp_offset = buffer.range(23, 8).to_uint64();
+    inp_offset *= 1024;
     out_offset = buffer.range(39, 24).to_uint64();
+    out_offset *= 1024;
     B = buffer.range(55, 40).to_uint64();
     T = buffer.range(71, 56).to_uint64();
     C = buffer.range(87, 72).to_uint64();
     NH = buffer.range(103, 88).to_uint64();
+    datatype = DATATYPE(buffer.range(105, 104).to_uint64());
 
     prea_offset = B * T * 3 * C + inp_offset;
     a_offset = B * NH * T * T + prea_offset;
+
+    initialize();
 }
 
-sc_bv<128> Attention_f_decode::serialize() {
+sc_bv<128> attention_forward_pd::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(0x12);
+    d.range(7, 0) = sc_bv<8>(0xc1);
     d.range(23, 8) = sc_bv<16>(inp_offset);
     d.range(39, 24) = sc_bv<16>(out_offset);
     d.range(55, 40) = sc_bv<16>(B);
     d.range(71, 56) = sc_bv<16>(T);
     d.range(87, 72) = sc_bv<16>(C);
     d.range(103, 88) = sc_bv<16>(NH);
+    d.range(105, 104) = sc_bv<2>(datatype);
 
     return d;
 }
 
-int Attention_f_decode::task_core(TaskCoreContext &context) {
+int attention_forward_pd::task_core(TaskCoreContext &context) {
 #if USE_NB_DRAMSYS == 0
     auto wc = context.wc;
 #endif
     auto mau = context.mau;
     auto hmau = context.hmau;
+    auto temp_mau = context.temp_mau;
+    auto temp_hmau = context.temp_hmau;
     auto &msg_data = context.msg_data;
     auto sram_addr = context.sram_addr;
     int data_byte = 0;
@@ -74,10 +101,11 @@ int Attention_f_decode::task_core(TaskCoreContext &context) {
     } else if (datatype == FP16) {
         data_byte = 2;
     }
-
     u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
     u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
+    u_int64_t prea_global_addr = dram_addr_tile + prea_offset * data_byte;
+    u_int64_t a_global_addr = dram_addr_tile + a_offset * data_byte;
 
 #if DUMMY == 1
     float *dram_start = nullptr;
@@ -85,14 +113,17 @@ int Attention_f_decode::task_core(TaskCoreContext &context) {
     float *dram_start = (float *)(dram_array[cid]);
     float *inp = dram_start + inp_offset;
     float *out = dram_start + out_offset;
+    float *preatt = dram_start + prea_offset;
+    float *att = dram_start + a_offset;
 #endif
 
     u_int64_t dram_time = 0;
 
-    int data_size_out = B * T * C;
-    int data_size_input = B * T * C;
-    int data_size_preatt = B * NH * T; // preatt
-    int data_size_att = B * NH * T;    // att
+
+    int data_size_input = B * T * 3 * C;   // QKV input
+    int data_size_preatt = B * NH * T * T; // preatt
+    int data_size_att = B * NH * T * T;    // att
+    int data_size_out = B * T * C;         // output
 
     u_int64_t time_fetched = 0;
     u_int64_t time_prefetched = 0;
@@ -117,7 +148,7 @@ int Attention_f_decode::task_core(TaskCoreContext &context) {
                 datapass_label.indata[0].substr(space_pos + 1);
         }
 
-        printf("[INFO] Attention_f_decode: read from dram, label: %s\n",
+        printf("[INFO] attention_forward_pd: read from dram, label: %s\n",
                datapass_label.indata[0].c_str());
 
         AddrPosKey inp_key =
@@ -129,9 +160,10 @@ int Attention_f_decode::task_core(TaskCoreContext &context) {
         int flag =
             sram_pos_locator->findPair(datapass_label.indata[0], inp_key);
         if (flag == -1) {
-            printf("[ERROR] Attention_f: sram_pos_locator cannot find the "
-                   "label: %s\n",
-                   datapass_label.indata[0].c_str());
+            printf(
+                "[ERROR] attention_forward_pd: sram_pos_locator cannot find the "
+                "label: %s\n",
+                datapass_label.indata[0].c_str());
             sc_stop();
         } else if (flag > 0) {
             sram_first_write_generic(context, flag, inp_global_addr, dram_time,
@@ -143,20 +175,36 @@ int Attention_f_decode::task_core(TaskCoreContext &context) {
         }
     }
 
-    // 获取前缀label
-    std::size_t pos = datapass_label.outdata.find_last_of('_');
-    std::string prefix;
-    if (pos != std::string::npos) {
-        prefix = datapass_label.outdata.substr(0, pos);
-    } else {
-        prefix = datapass_label.outdata;
-    }
+    // // 获取前缀label
+    // std::size_t pos = datapass_label.outdata.find_last_of('_');
+    // std::string prefix;
+    // if (pos != std::string::npos) {
+    //     prefix = datapass_label.outdata.substr(0, pos);
+    // } else {
+    //     prefix = datapass_label.outdata;
+    // }
 
-    printf("attention_forward_decode: dram time 1: %ld\n", dram_time);
+    // auto label_preatt = ETERNAL_PREFIX + prefix + "_preatt";
+    // AddrPosKey preatt_key =
+    //     AddrPosKey(*sram_addr, data_byte * data_size_preatt);
+    // sram_pos_locator->addPair(label_preatt, preatt_key, context, dram_time);
+    // sram_write_append_generic(context, data_byte * data_size_preatt,
+    // dram_time);
+
+    // auto label_att = ETERNAL_PREFIX + prefix + "_att";
+    // AddrPosKey att_key = AddrPosKey(*sram_addr, data_byte * data_size_att);
+    // sram_pos_locator->addPair(label_att, att_key, context, dram_time);
+    // sram_write_append_generic(context, data_byte * data_size_att, dram_time);
+
+    printf("attention_forward_pd: dram time 1: %ld\n", dram_time);
+
     int cur_tokens = 0;
 
-    // 查找kvcache! 需要使用相应的kvcache label
-    for (int batch = 0; batch < B; batch++) {
+    // 查找kvcache! 需要使用相应的kvcache label 读出KV
+    // 根据batchInfo进行，逻辑和普通prefill和decode相同
+    for (auto stage : batchInfo) {
+        int batch = stage.req_id;
+
         AddrPosKey kcache;
         char format_label_k[100];
         sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
@@ -165,7 +213,7 @@ int Attention_f_decode::task_core(TaskCoreContext &context) {
 
         int flag = sram_pos_locator->findPair(label_decode_k, kcache);
         if (flag == -1) {
-            printf("[ERROR] attention_forward_decode: failed to find label %s, "
+            printf("[ERROR] attention_forward_pd: failed to find label %s, "
                    "exit.\n",
                    label_decode_k.c_str());
             sc_stop();
@@ -179,7 +227,7 @@ int Attention_f_decode::task_core(TaskCoreContext &context) {
 
         flag = sram_pos_locator->findPair(label_decode_v, vcache);
         if (flag == -1) {
-            printf("[ERROR] attention_forward_decode: failed to find label %s, "
+            printf("[ERROR] attention_forward_pd: failed to find label %s, "
                    "exit.\n",
                    label_decode_v.c_str());
             sc_stop();
@@ -192,26 +240,11 @@ int Attention_f_decode::task_core(TaskCoreContext &context) {
         cur_tokens = kcache.size / (B * C * data_byte);
     }
 
-    // 读出q
+    // 读出Q
     sram_pos_locator->findPair(datapass_label.indata[0], inp_sram_offset);
-    sram_read_generic(context, data_byte * data_size_input, inp_sram_offset,
+    sram_read_generic(context, data_byte * data_size_input / 3, inp_sram_offset,
                       dram_time);
-
-    // // 中间步骤，写回读出preatt和att
-    // auto label_preatt = ETERNAL_PREFIX + prefix + "_preatt";
-    // AddrPosKey preatt_key =
-    //     AddrPosKey(*sram_addr, data_byte * data_size_preatt);
-    // sram_pos_locator->addPair(label_preatt, preatt_key, context, dram_time);
-    // sram_write_append_generic(context, data_byte * data_size_preatt,
-    // dram_time);
-
-    // auto label_att = ETERNAL_PREFIX + prefix + "_att";
-    // AddrPosKey att_key = AddrPosKey(*sram_addr, data_byte * data_size_att);
-    // sram_pos_locator->addPair(label_att, att_key, context, dram_time);
-    // sram_write_append_generic(context, data_byte * data_size_att, dram_time);
-
-    // 模拟读出
-
+    // 写入preatt中间结果
     int temp_sram_addr = 0;
     int temp_sram_addr_piror = 0;
     temp_sram_addr_piror = temp_sram_addr;
@@ -223,32 +256,25 @@ int Attention_f_decode::task_core(TaskCoreContext &context) {
     temp_sram_addr_piror = temp_sram_addr;
     sram_write_back_temp(context, data_byte * data_size_att, temp_sram_addr,
                          dram_time);
-    // 读出att和V
+    // 读出att
     sram_read_generic_temp(context, data_byte * data_size_att,
                            temp_sram_addr_piror, dram_time);
 
-    // 在这里及时删除标签
-    // TODO:
+    // 删除标签
     if (!input_reuse) {
         sram_pos_locator->deletePair(datapass_label.indata[0]);
     }
 
-    printf("attention_forward_decode: dram time 2: %ld\n", dram_time);
+    printf("attention_forward_pd: dram time 2: %ld\n", dram_time);
 #else
-
+    // CTODO: do dram only
 #endif
 
     // 计算overlap
     int cycle = 0;
     if (tile_exu.type == MAC_Array) {
-        // pass 1: B*Tc*C*2 + B*Tc*NH
-        // pass 2: B*NH*Tc*3
-        // pass 3: B*NH*Tc
-        // pass 4: B*Tc*C*2
-        cycle = (B * cur_tokens) * (4 * C + 5 * NH) /
+        cycle = (B * NH * T * (T - 1) / 2 * (4 * C / NH + 5)) /
                 (2 * tile_exu.x_dims * tile_exu.y_dims * comp_util) * CYCLE;
-        std::cout << "[COMPUTE] Token num " << cur_tokens
-                  << ", cycle: " << cycle << std::endl;
     } else {
         assert(false && "Unsupported tile type");
     }
@@ -283,93 +309,6 @@ int Attention_f_decode::task_core(TaskCoreContext &context) {
 #else
     // CTODO: do dram only
 #endif
-    printf("attention_forward_decode: overlap_time: %ld\n", overlap_time);
+    printf("attention_forward_pd: overlap_time: %ld\n", overlap_time);
     return overlap_time;
 }
-
-int Attention_f_decode::task() {
-    int hs = C / NH; // head size
-    float scale = 1.0 / sqrtf(hs);
-    int TOKENS = KVCache_g.Kstart / C;
-
-    int data_byte = 4;
-
-    int cycle = 0;
-    if (tile_exu.type == MAC_Array) {
-        cycle = (B * NH * T * (T - 1) / 2 * (4 * hs + 5)) /
-                (2 * tile_exu.x_dims * tile_exu.y_dims) * CYCLE;
-    } else {
-        assert(false && "Unsupported tile type");
-    }
-    // cycle = (B * NH * T * (T - 1) / 2 * (4*hs+5)) / (2 * 16 * 16);
-
-    float *dram_start = (float *)(dram_array[cid]);
-    float *inp = dram_start + inp_offset;
-    float *out = dram_start + out_offset;
-
-    // float *preatt = dram_start + prea_offset;
-    // float *att = dram_start + a_offset;
-
-    // 存放中间结果
-    float preatt[NH * TOKENS];
-    float att[NH * TOKENS];
-
-    // 这里的T为1，即只有一个token
-    // Q为1*C，K为C*tokens，V为tokens*C
-
-#pragma omp parallel for collapse(2)
-    for (int h = 0; h < NH; h++) {
-        float *query = inp + h * hs;
-
-        // Calculate query dot key and find maxval
-        float maxval = -10000.0f; // Initial negative value for maxval
-        for (int t2 = 0; t2 < TOKENS; t2++) {
-            float *key =
-                &KVCache_g.kvcache[t2 * C + h * hs]; // Index into KV cache
-
-            float val = 0.0f;
-            for (int i = 0; i < hs; i++) {
-                val += query[i] * key[i];
-            }
-            val *= scale;
-            if (val > maxval) {
-                maxval = val;
-            }
-
-            preatt[h * TOKENS + t2] = val;
-        }
-
-        // Calculate exp and keep track of sum
-        float expsum = 0.0f;
-        for (int t2 = 0; t2 < TOKENS; t2++) {
-            float expv = expf(preatt[h * TOKENS + t2] - maxval);
-            expsum += expv;
-            att[h * TOKENS + t2] = expv;
-        }
-        float expsum_inv = expsum == 0.0f ? 0.0f : 1.0f / expsum;
-
-        // Normalize to get softmax
-        for (int t2 = 0; t2 < TOKENS; t2++) {
-            att[h * TOKENS + t2] *= expsum_inv;
-        }
-
-        // Accumulate weighted values into the output
-        float *out_h = out + h * hs;
-        for (int i = 0; i < hs; i++) {
-            out_h[i] = 0.0f;
-        }
-        for (int t2 = 0; t2 < TOKENS; t2++) {
-            float *value =
-                &KVCache_g.kvcache[KVCACHE_MAX_SIZE / 2 + t2 * C + h * hs];
-            float att_val = att[h * TOKENS + t2];
-            for (int i = 0; i < hs; i++) {
-                out_h[i] += att_val * value[i];
-            }
-        }
-    }
-
-    cout << "attention" << endl;
-    return 0;
-}
-
-int Attention_f_decode::sram_utilization(DATATYPE datatype) { return 0; }

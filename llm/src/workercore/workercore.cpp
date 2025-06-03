@@ -439,6 +439,9 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     case 0xc0:
         task = new matmul_forward_pd();
         break;
+    case 0xc1:
+        task = new attention_forward_pd();
+        break;
     case 0x20:
         task = new Send_global_memory();
         break;
