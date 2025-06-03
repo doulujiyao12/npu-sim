@@ -20,8 +20,8 @@
 #define USE_L1L2_CACHE 1
 #define FAST_WARMUP 1
 #define SR_PARA 0
-#define GPU_CACHE_DEBUG 1
-#define GPU_TMP_DEBUG 1
+#define GPU_CACHE_DEBUG 0
+#define GPU_TMP_DEBUG 0
 #define NB_CACHE_DEBUG 0
 #define DEBUG_SRAM_MANAGER 0
 #define DRAM_ALIGN 1024
