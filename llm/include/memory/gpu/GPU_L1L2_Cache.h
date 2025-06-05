@@ -304,6 +304,11 @@ public:
 #endif
             cpu_socket->nb_transport_bw(payload, l2Phase, l2Delay);
         } else if (phase == tlm::END_REQ) {
+#if GPU_CACHE_DEBUG == 1
+                    cout << "L1Cache [" << cacheId << "]: END REQ."
+                         << " Time stamp: " << sc_time_stamp()
+                         << " Address: " << payload.get_address() << endl;
+#endif
 
             tlm_phase l2Phase = END_REQ;
             sc_time l2Delay = SC_ZERO_TIME;
@@ -526,6 +531,11 @@ public:
                         // 返回ACCEPTED，表示请求已接受但尚未完成
                         return TLM_ACCEPTED;
                     } else {
+#if GPU_CACHE_DEBUG == 1
+                    cout << "L1Cache [" << cacheId << "]: mshr full."
+                         << " Time stamp: " << sc_time_stamp()
+                         << " Address: " << trans.get_address() << endl;
+#endif
                         // MSHR已满，拒绝请求
                         trans.set_response_status(TLM_INCOMPLETE_RESPONSE);
                         return TLM_COMPLETED;
@@ -1011,6 +1021,12 @@ public:
 
     void processRequests() {
         while (true) {
+#if GPU_CACHE_DEBUG == 1 
+                cout << "BUS FROM L1CACHE ["
+                     << "]: processRequests "
+                     << " Time stamp: " << sc_time_stamp() << endl;
+       
+#endif
             if (requestQueue.empty()) {
 #if DEBUG == 1
                 SC_REPORT_INFO("Event Wait,(Waiting for for Bus: ",
@@ -1061,7 +1077,23 @@ public:
                         l1Caches[i]->handleInvalidateRequest(request.address);
                     }
                 }
+#if GPU_CACHE_DEBUG == 1 
+
+                SourceIDExtension *id_ext;
+                (*request.transaction).get_extension(id_ext);
+
+                if (!id_ext) {
+                    SC_REPORT_ERROR("Bus", "Missing source ID extension");
+                }
+
+                int targetId = id_ext->get_id();
+                cout << "BUS FROM L1CACHE [" << targetId
+                     << "]: INVAlidate "
+                     << " Time stamp: " << sc_time_stamp() << endl;
+       
+#endif
                 wait(CYCLE, SC_NS); // 总线仲裁延迟
+                requestQueue.pop();
 
                 // 无效化请求完成后，回复发起者
                 // tlm_phase phase = BEGIN_RESP;
@@ -1100,6 +1132,11 @@ public:
             } else {
                 reqType = INVALIDATE; // 简化处理
             }
+#if GPU_CACHE_DEBUG == 1
+            cout << "BUS FROM L1CACHE [" << id << "]: BUS SEND REQ TO L2 FROM L1"
+                 << " Time stamp: " << sc_time_stamp() << " Core ID " << sourceId
+                 << " Address: " << trans.get_address() << endl;
+#endif
 
             // 将请求加入队列
             BusRequest request(trans.get_address(), reqType, sourceId, &trans);
