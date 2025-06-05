@@ -22,8 +22,8 @@ void CoreConfig::print_self() {
     cout << "Core id: " << id << endl;
     cout << "\tprim_copy: " << prim_copy << endl;
     cout << "\tsend_global_mem: " << send_global_mem << endl;
-    cout << "\tloop: " <<  " " << loop << endl;
-    
+    cout << "\tloop: " << " " << loop << endl;
+
     for (auto work : worklist) {
         cout << "\t<Worklist>\n";
         work.print_self();
@@ -74,7 +74,8 @@ void from_json(const json &j, CoreJob &c) {
             c.cast.push_back(temp);
         }
     } else {
-        // cout << "[WARN] You need to designate CAST field unless you are running SIM_PD.\n";
+        // cout << "[WARN] You need to designate CAST field unless you are
+        // running SIM_PD.\n";
     } // NOTE: 如果配置文件中没有cast，需要手动指派。
 
     j.at("recv_cnt").get_to(c.recv_cnt);
@@ -121,7 +122,11 @@ void from_json(const json &j, CoreConfig &c) {
     }
 
     if (j.contains("loop")) {
-        c.loop = find_var(j["loop"]);
+        auto &loop_val = j["loop"];
+        if (loop_val.is_number_integer()) {
+            c.loop = loop_val;
+        } else
+            c.loop = find_var(j["loop"]);
     } else {
         c.loop = 1;
     }

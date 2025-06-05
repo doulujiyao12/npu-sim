@@ -47,7 +47,7 @@ void Send_prim::deserialize(sc_bv<128> buffer) {
 
 sc_bv<128> Send_prim::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(0x6);
+    d.range(7, 0) = sc_bv<8>(SEND_PRIM_TYPE);
     d.range(23, 8) = sc_bv<16>(des_id);
     d.range(39, 24) = sc_bv<16>(des_offset);
     d.range(55, 40) = sc_bv<16>(local_offset);

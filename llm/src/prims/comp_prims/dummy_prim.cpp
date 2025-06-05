@@ -39,7 +39,7 @@ void Dummy_p::deserialize(sc_bv<128> buffer) {}
 
 sc_bv<128> Dummy_p::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(0xd0);
+    d.range(7, 0) = sc_bv<8>(DUMMY_P_TYPE);
     d.range(9, 8) = sc_bv<2>(datatype);
 
     return d;

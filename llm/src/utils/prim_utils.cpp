@@ -5,6 +5,7 @@
 #include "prims/pd_prims.h"
 #include "prims/prim_base.h"
 #include "systemc.h"
+#include "utils/memory_utils.h"
 
 prim_base *new_prim(string type) {
     prim_base *prim = nullptr;
@@ -79,6 +80,14 @@ prim_base *new_prim(string type) {
         prim = new Recv_global_memory();
     else if (type == "switch_data")
         prim = new switch_data();
+    else if (type == "rmsnorm_forward")
+        prim = new rmsnorm_forward();
+    else if (type == "rope_forward")
+        prim = new rope_f();
+    else if (type == "silu_forward")
+        prim = new silu_forward();
+    else if (type == "swiglu_forward")
+        prim = new swiglu_forward();
 
     else {
         cout << "Parse config prim: Not Implemented.\n";
@@ -115,8 +124,7 @@ std::string get_recv_type_name(RECV_TYPE type) {
         {RECV_TYPE::RECV_DATA, "RECV_DATA"},
         {RECV_TYPE::RECV_SRAM, "RECV_SRAM"},
         {RECV_TYPE::RECV_WEIGHT, "RECV_WEIGHT"},
-        {RECV_TYPE::RECV_START, "RECV_START"}
-    };
+        {RECV_TYPE::RECV_START, "RECV_START"}};
 
     auto it = RECV_TYPE_NAMES.find(type);
     if (it != RECV_TYPE_NAMES.end()) {

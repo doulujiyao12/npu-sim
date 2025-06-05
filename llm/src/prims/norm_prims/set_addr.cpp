@@ -31,7 +31,7 @@ void Set_addr::deserialize(sc_bv<128> buffer) {
 
 sc_bv<128> Set_addr::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(0xd1);
+    d.range(7, 0) = sc_bv<8>(SET_ADDR_TYPE);
     d.range(31, 8) = sc_bv<24>(sram_addr);
     d.range(33, 32) = sc_bv<2>(datatype);
 

@@ -15,7 +15,7 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
                                u_int64_t &dram_time, std::string label_name = "default_key", bool use_manager = false, SramPosLocator *sram_pos_locator = nullptr, u_int64_t global_addr = 0);
 void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
                              int &temp_sram_addr, u_int64_t &dram_time);
-void sram_update_cahce(TaskCoreContext &context, string label_k, SramPosLocator *sram_pos_locator, int data_size_in_byte, u_int64_t &dram_time);
+void sram_update_cache(TaskCoreContext &context, string label_k, SramPosLocator *sram_pos_locator, int data_size_in_byte, u_int64_t &dram_time);
 void check_freq(std::unordered_map<u_int64_t, u_int16_t> &freq, u_int64_t *tags,
                 u_int32_t set, u_int64_t elem_tag);
 

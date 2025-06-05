@@ -22,7 +22,7 @@ void Load_prim::deserialize(sc_bv<128> buffer) {
 
 sc_bv<128> Load_prim::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(0x8);
+    d.range(7, 0) = sc_bv<8>(LOAD_PRIM_TYPE);
     d.range(23, 8) = sc_bv<16>(dram_addr);
     d.range(39, 24) = sc_bv<16>(sram_addr);
     d.range(55, 40) = sc_bv<16>(size);

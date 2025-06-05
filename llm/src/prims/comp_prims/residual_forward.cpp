@@ -39,9 +39,8 @@ void Residual_f::parse_json(json j) {
         
         inp_offset = (out_offset * 1024 - 2 * N) / 1024;
     }
-    if (out_offset == - 1){
+    if (out_offset == -1){
         assert(0 && "Residual_f: out_offset not set");
-
     }
 
     // 添加以下三行以打印相关信息
@@ -83,12 +82,12 @@ void Residual_f::deserialize(sc_bv<128> buffer) {
 
     initialize();
 
-    inp2_offset = N + inp_offset;
+    inp2_offset = N * data_byte + inp_offset;
 }
 
 sc_bv<128> Residual_f::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(0x5);
+    d.range(7, 0) = sc_bv<8>(RESIDUAL_F_TYPE);
     d.range(23, 8) = sc_bv<16>(inp_offset);
     d.range(39, 24) = sc_bv<16>(out_offset);
     d.range(71, 40) = sc_bv<32>(N);

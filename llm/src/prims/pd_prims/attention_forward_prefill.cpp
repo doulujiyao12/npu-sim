@@ -1,7 +1,7 @@
 #include "systemc.h"
 
 #include "prims/comp_base.h"
-#include "prims/comp_prims.h"
+#include "prims/pd_prims.h"
 #include "utils/memory_utils.h"
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
@@ -82,7 +82,7 @@ void Attention_f_prefill::deserialize(sc_bv<128> buffer) {
 
 sc_bv<128> Attention_f_prefill::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(0x15);
+    d.range(7, 0) = sc_bv<8>(ATTENTION_F_PREFILL_TYPE);
     d.range(23, 8) = sc_bv<16>(inp_offset);
     d.range(39, 24) = sc_bv<16>(out_offset);
     d.range(55, 40) = sc_bv<16>(B);
@@ -262,7 +262,7 @@ int Attention_f_prefill::task_core(TaskCoreContext &context) {
     temp_sram_addr_piror = temp_sram_addr;
     sram_write_back_temp(context, data_byte * data_size_att, temp_sram_addr,
                          dram_time);
-    // 读出att和V
+    // 读出att
     sram_read_generic_temp(context, data_byte * data_size_att,
                            temp_sram_addr_piror, dram_time);
 
@@ -318,6 +318,7 @@ int Attention_f_prefill::task_core(TaskCoreContext &context) {
     printf("attention_forward: overlap_time: %ld\n", overlap_time);
     return overlap_time;
 }
+
 int Attention_f_prefill::task() {
     int C3 = C * 3;
     int hs = C / NH; // head size

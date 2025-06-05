@@ -31,7 +31,7 @@ void Set_batch::deserialize(sc_bv<128> buffer) {
 
 sc_bv<128> Set_batch::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(0xd3);
+    d.range(7, 0) = sc_bv<8>(SET_BATCH_TYPE);
     d.range(11, 8) = sc_bv<4>(batchInfo.size());
 
     int pos = 12;

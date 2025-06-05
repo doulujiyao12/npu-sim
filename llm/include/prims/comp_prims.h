@@ -4,25 +4,6 @@
 #include "common/system.h"
 #include "prims/comp_base.h"
 
-class Attention_f_decode : public comp_base {
-public:
-    int B, T, C, NH;
-    int prea_offset, a_offset;
-
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parse_json(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
-
-
-    Attention_f_decode() { name = "Attention_f_decode"; }
-};
-
 class Attention_f : public comp_base {
 public:
     int B, T, C, NH;
@@ -42,26 +23,6 @@ public:
     Attention_f() { name = "Attention_f"; }
 };
 
-class Attention_f_prefill : public comp_base {
-    public:
-        int B, T, C, NH;
-        int prea_offset, a_offset;
-    
-        int task();
-        int task_core(TaskCoreContext &context);
-    
-        sc_bv<128> serialize();
-        void deserialize(sc_bv<128> buffer);
-    
-        void parse_json(json j);
-        void print_self(string prefix);
-        int sram_utilization(DATATYPE datatype);
-
-    
-        Attention_f_prefill() { name = "Attention_f_prefill"; }
-    };
-    
-
 
 class Batchnorm_f : public comp_base {
 public:
@@ -77,7 +38,6 @@ public:
     void parse_json(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype);
-
 
     Batchnorm_f() { name = "Batchnorm_f"; }
 };
@@ -373,6 +333,45 @@ public:
 };
 
 
+class rmsnorm_forward : public comp_base {
+public:
+    int B, T, C;
+    int w_offset;
+
+    int task();
+    int task_core(TaskCoreContext &context);
+
+    sc_bv<128> serialize();
+    void deserialize(sc_bv<128> buffer);
+
+    void parse_json(json j);
+    void print_self(string prefix);
+    int sram_utilization(DATATYPE datatype);
+
+    void initialize();
+    rmsnorm_forward() { name = "rmsnorm_forward"; }
+};
+
+
+class silu_forward : public comp_base {
+public:
+    int N;
+
+    int task();
+    int task_core(TaskCoreContext &context);
+
+    sc_bv<128> serialize();
+    void deserialize(sc_bv<128> buffer);
+
+    void parse_json(json j);
+    void print_self(string prefix);
+    int sram_utilization(DATATYPE datatype);
+
+    void initialize();
+    silu_forward() { name = "silu_forward"; }
+};
+
+
 class Split_conv : public comp_base {
 public:
     int W, H, C, B;
@@ -414,28 +413,48 @@ public:
     int sram_utilization(DATATYPE datatype);
 
     void parse_matmul(Matmul_f *matmul);
- 
+
     Split_matmul() { name = "Split_matmul"; }
 };
 
+
+class swiglu_forward : public comp_base {
+public:
+    int N;
+    int inp2_offset;
+    
+    int task();
+    int task_core(TaskCoreContext &context);
+
+    sc_bv<128> serialize();
+    void deserialize(sc_bv<128> buffer);
+
+    void parse_json(json j);
+    void print_self(string prefix);
+    int sram_utilization(DATATYPE datatype);
+
+    void initialize();
+    swiglu_forward() { name = "swiglu_forward"; }
+};
+
+
 class Send_global_memory : public comp_base {
 public:
-
     GLOBAL_SEND_TYPE type;
     int enable;
-    int des_id; // global memory's id (reserved for c2c)
-    int des_offset; // global memory's offset
+    int des_id;       // global memory's id (reserved for c2c)
+    int des_offset;   // global memory's offset
     int local_offset; // local memory's offset
-    int max_packet; // max packet size
-    int tag_id; // tag id
-    int end_length; // end length
+    int max_packet;   // max packet size
+    int tag_id;       // tag id
+    int end_length;   // end length
 
-    int data_packet_id; //已经发送的包数量
+    int data_packet_id; // 已经发送的包数量
 
     int task();
     int task_core(TaskCoreContext &context);
 
-    sc_bv<128> serialize(); 
+    sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
     void parse_json(json j);
@@ -447,7 +466,6 @@ public:
 
 class Recv_global_memory : public comp_base {
 public:
-
     GLOBAL_RECV_TYPE type;
     int tag_id;
     int recv_cnt;

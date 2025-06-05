@@ -108,7 +108,7 @@ void Attention_f::deserialize(sc_bv<128> buffer) {
 
 sc_bv<128> Attention_f::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(0x3);
+    d.range(7, 0) = sc_bv<8>(ATTENTION_F_TYPE);
     d.range(23, 8) = sc_bv<16>(inp_offset);
     d.range(39, 24) = sc_bv<16>(out_offset);
     d.range(55, 40) = sc_bv<16>(B);

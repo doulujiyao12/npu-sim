@@ -139,15 +139,15 @@ void config_helper_pd::iter_done(vector<Msg> done_msg) {
                     record.decode_counter >= (1.5) / (eof_chance)) {
                     stage.type = record.phase = PD_DONE;
                     char format_label_k[100];
-                    sprintf(format_label_k, "%s%skREQ%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
-                            stage.req_id);
+                    sprintf(format_label_k, "%s%skREQ%d", ETERNAL_PREFIX,
+                            KVCACHE_PREFIX, stage.req_id);
                     string label_k = format_label_k;
                     g_dram_kvtable->remove(label_k);
-                    
+
 
                     char format_label_v[100];
-                    sprintf(format_label_v, "%s%svREQ%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
-                            stage.req_id);
+                    sprintf(format_label_v, "%s%svREQ%d", ETERNAL_PREFIX,
+                            KVCACHE_PREFIX, stage.req_id);
                     string label_v = format_label_v;
                     g_dram_kvtable->remove(label_v);
 
@@ -371,28 +371,31 @@ void config_helper_pd::generate_prims(int i) {
         Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, set_batch->serialize()));
 
     if (status.batchInfo.size()) {
-        for (auto prim : work.prims) {
-            prim_base *set_addr = new_prim("Set_addr");
-            auto label = ((Set_addr *)set_addr)->datapass_label;
-            for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-                if (prim->prim_type == PD_PRIM) {
-                    label->indata[i] =
-                        ((pd_base *)prim)->datapass_label.indata[i];
-                } else if (prim->prim_type == COMP_PRIM) {
-                    label->indata[i] =
-                        ((comp_base *)prim)->datapass_label.indata[i];
+        for (int loop = 0; loop < core.loop; loop++) {
+            for (auto prim : work.prims) {
+                prim_base *set_addr = new_prim("Set_addr");
+                auto label = ((Set_addr *)set_addr)->datapass_label;
+                for (int i = 0; i < MAX_SPLIT_NUM; i++) {
+                    if (prim->prim_type == PD_PRIM) {
+                        label->indata[i] =
+                            ((pd_base *)prim)->datapass_label.indata[i];
+                    } else if (prim->prim_type == COMP_PRIM) {
+                        label->indata[i] =
+                            ((comp_base *)prim)->datapass_label.indata[i];
+                    }
                 }
-            }
-            if (prim->prim_type == PD_PRIM) {
-                label->outdata = ((pd_base *)prim)->datapass_label.outdata;
-            } else if (prim->prim_type == COMP_PRIM) {
-                label->outdata = ((comp_base *)prim)->datapass_label.outdata;
-            }
+                if (prim->prim_type == PD_PRIM) {
+                    label->outdata = ((pd_base *)prim)->datapass_label.outdata;
+                } else if (prim->prim_type == COMP_PRIM) {
+                    label->outdata =
+                        ((comp_base *)prim)->datapass_label.outdata;
+                }
 
-            temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i,
-                                      set_addr->serialize()));
-            temp_config.push_back(
-                Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, prim->serialize()));
+                temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
+                                          i, set_addr->serialize()));
+                temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
+                                          i, prim->serialize()));
+            }
         }
     }
 
@@ -436,7 +439,8 @@ void config_helper_pd::generate_prims(int i) {
             Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, recv_ack->serialize()));
         temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i,
                                   send_data->serialize()));
-        // stage 1 的话又要接受新的prefilling recv_data1 这里的recv_data2 是来自decoding 的数据
+        // stage 1 的话又要接受新的prefilling recv_data1 这里的recv_data2
+        // 是来自decoding 的数据
         temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i,
                                   recv_data_2->serialize()));
     }

@@ -86,7 +86,7 @@ void Gelu_f::deserialize(sc_bv<128> buffer) {
 
 sc_bv<128> Gelu_f::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(0x4);
+    d.range(7, 0) = sc_bv<8>(GELU_F_TYPE);
     d.range(23, 8) = sc_bv<16>(inp_offset);
     d.range(39, 24) = sc_bv<16>(out_offset);
     d.range(71, 40) = sc_bv<32>(N);

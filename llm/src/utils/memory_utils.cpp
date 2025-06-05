@@ -536,7 +536,7 @@ void sram_read_generic_temp(TaskCoreContext &context, int data_size_in_byte,
     }
 }
 
-void sram_update_cahce(TaskCoreContext &context, string label_k, SramPosLocator *sram_pos_locator, int data_size_in_byte, u_int64_t &dram_time){
+void sram_update_cache(TaskCoreContext &context, string label_k, SramPosLocator *sram_pos_locator, int data_size_in_byte, u_int64_t &dram_time){
 
     auto k_daddr_tmp = g_dram_kvtable->get(label_k);
     if (k_daddr_tmp.has_value()) {

@@ -152,10 +152,20 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
     jfile >> j;
 
     // 收集相关参数
-    auto config_vars = j["vars"];
+    auto config_vars = j["v+ars"];
     for (auto var : config_vars.items()) {
         vtable.push_back(make_pair(var.key(), var.value()));
     }
+
+    if (config_vars.contains("B"))
+        batch_size = config_vars["B"];
+    else
+        batch_size = 1;
+
+    if (config_vars.contains("T"))
+        seq_len = config_vars["T"];
+    else
+        seq_len = 128;
 
     auto config_source = j["source"];
     for (auto source : config_source) {
@@ -255,6 +265,13 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
                                                config.worklist[0].recv_tag, 0);
         q[index].push(Msg(false, MSG_TYPE::CONFIG, 1, config.id,
                           recv_weight->serialize()));
+
+        // 组装要处理的req信息，在此根据B简单判断即可
+        vector<Stage> batchInfo;
+        for (int i = 0; i < batch_size; i++) 
+            batchInfo.push_back(Stage(i + 1, PREFILL, seq_len));
+        
+        prim_base *set_batch = new Set_batch(batchInfo);
 
         cout << "core " << config.id << ", loop: " << config.loop << endl;
 
@@ -491,20 +508,20 @@ void config_helper_core::calculate_address(bool do_loop) {
                     temp->end_length = end_length;
 
                     index++;
-                }
-                else if(typeid(*prim) == typeid(Send_global_memory)){
-                    int weight = 1; //先假设是-1
+                } else if (typeid(*prim) == typeid(Send_global_memory)) {
+                    int weight = 1; // 先假设是-1
                     Send_global_memory *g = (Send_global_memory *)prim;
                     g->type = GLOBAL_SEND_DATA;
                     g->des_id = coreconfigs[i].send_global_mem;
                     int slice_size = (output_size % weight)
-                        ? (output_size / weight + 1)
-                        : (output_size / weight);
+                                         ? (output_size / weight + 1)
+                                         : (output_size / weight);
                     int slice_size_in_bit = slice_size * sizeof(float);
                     int pkg_nums = (slice_size_in_bit % M_D_DATA)
                                        ? (slice_size_in_bit / M_D_DATA + 1)
                                        : (slice_size_in_bit / M_D_DATA);
-                    int end_length = slice_size_in_bit - (pkg_nums - 1) * M_D_DATA;
+                    int end_length =
+                        slice_size_in_bit - (pkg_nums - 1) * M_D_DATA;
                     g->local_offset = output_offset;
                     g->max_packet = pkg_nums;
                     g->end_length = end_length;

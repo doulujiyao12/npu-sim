@@ -343,110 +343,122 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     int type = buffer.range(7, 0).to_uint64();
 
     switch (type) {
-    case 0x1:
+    case LAYERNORM_F_TYPE:
         task = new Layernorm_f();
         break;
-    case 0x2:
+    case MATMUL_F_TYPE:
         task = new Matmul_f();
         break;
-    case 0x3:
+    case ATTENTION_F_TYPE:
         task = new Attention_f();
         break;
-    case 0x4:
+    case GELU_F_TYPE:
         task = new Gelu_f();
         break;
-    case 0x5:
+    case RESIDUAL_F_TYPE:
         task = new Residual_f();
         break;
-    case 0x6:
+    case SEND_PRIM_TYPE:
         task = new Send_prim();
         break;
-    case 0x7:
+    case RECV_PRIM_TYPE:
         task = new Recv_prim();
         break;
-    case 0x8:
+    case LOAD_PRIM_TYPE:
         task = new Load_prim();
         break;
-    case 0x9:
+    case STORE_PRIM_TYPE:
         task = new Store_prim();
         break;
-    case 0xa:
+    case CONV_F_TYPE:
         task = new Conv_f();
         break;
-    case 0xb:
+    case RELU_F_TYPE:
         task = new Relu_f();
         break;
-    case 0xc:
+    case SPLIT_MATMUL_TYPE:
         task = new Split_matmul();
         break;
-    case 0xd:
+    case MERGE_MATMUL_TYPE:
         task = new Merge_matmul();
         break;
-    case 0xe:
+    case SPLIT_CONV_TYPE:
         task = new Split_conv();
         break;
-    case 0xf:
+    case MERGE_CONV_TYPE:
         task = new Merge_conv();
         break;
-    case 0x10:
+    case BATCHNORM_F_TYPE:
         task = new Batchnorm_f();
         break;
-    case 0x11:
+    case MATMUL_F_DECODE_TYPE:
         task = new Matmul_f_decode();
         break;
-    case 0x12:
+    case ATTENTION_F_DECODE_TYPE:
         task = new Attention_f_decode();
         break;
-    case 0x15:
+    case ATTENTION_F_PREFILL_TYPE:
         task = new Attention_f_prefill();
         break;
-    case 0x13:
+    case MAX_POOL_TYPE:
         task = new Max_pool();
         break;
-    case 0x14:
+    case MATMUL_F_PREFILL_TYPE:
         task = new Matmul_f_prefill();
         break;
-    case 0xd0:
+    case DUMMY_P_TYPE:
         task = new Dummy_p();
         break;
-    case 0xd1:
+    case SET_ADDR_TYPE:
         task = new Set_addr(this->next_datapass_label);
         break;
-    case 0xd2:
+    case CLEAR_SRAM_TYPE:
         task = new Clear_sram(this->sram_pos_locator, &loop_cnt);
         break;
-    case 0xd3:
+    case SET_BATCH_TYPE:
         task = new Set_batch(this->batchInfo);
         break;
-    case 0xd4:
+    case SWITCH_DATA_TYPE:
         task = new switch_data();
         break;
-    case 0xe0:
+    case MATMUL_F_GPU_TYPE:
         task = new Matmul_f_gpu();
         break;
-    case 0xe1:
+    case ATTENTION_F_GPU_TYPE:
         task = new Attention_f_gpu();
         break;
-    case 0xe2:
+    case GELU_F_GPU_TYPE:
         task = new Gelu_f_gpu();
         break;
-    case 0xe3:
+    case RESIDUAL_F_GPU_TYPE:
         task = new Residual_f_gpu();
         break;
-    case 0xe4:
+    case LAYERNORM_F_GPU_TYPE:
         task = new Layernorm_f_gpu();
         break;
-    case 0xc0:
+    case MATMUL_FORWARD_PD_TYPE:
         task = new matmul_forward_pd();
         break;
-    case 0xc1:
+    case ATTENTION_FORWARD_PD_TYPE:
         task = new attention_forward_pd();
         break;
-    case 0x20:
+    case SEND_GLOBAL_MEMORY_TYPE:
         task = new Send_global_memory();
         break;
-    case 0x21:
+    case RECV_GLOBAL_MEMORY_TYPE:
         task = new Recv_global_memory();
+        break;
+    case RMSNORM_F_TYPE:
+        task = new rmsnorm_forward();
+        break;
+    case ROPE_F_TYPE:
+        task = new rope_f();
+        break;
+    case SILU_F_TYPE:
+        task = new silu_forward();
+        break;
+    case SWIGLU_F_TYPE:
+        task = new swiglu_forward();
         break;
     default:
         assert(0 && "Unknown prim");

@@ -22,7 +22,6 @@ void Layernorm_f::initialize() {
     dram_inp_size = (B * T * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
     dram_out_size = (B * T * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
     dram_data_size = (C + C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
-    
 }
 
 void Layernorm_f::parse_json(json j) {
@@ -32,7 +31,7 @@ void Layernorm_f::parse_json(json j) {
 
     data_offset（必要） matmul 需要指定权重位置
 
-    out_offset（选填）: 可以根据 data_offset 计算，也可以手动设置 out_offset 
+    out_offset（选填）: 可以根据 data_offset 计算，也可以手动设置 out_offset
 
 
     */
@@ -48,17 +47,17 @@ void Layernorm_f::parse_json(json j) {
         parse_address(j["dram_address"]);
     }
 
-    if (inp_offset == -1 && out_offset == -1 && data_offset == -1){
+    if (inp_offset == -1 && out_offset == -1 && data_offset == -1) {
 
-        assert(0 && "no dram address found");    
+        assert(0 && "no dram address found");
     }
     // assert(0 && "no dram address found");
 
 
-    if (inp_offset == -1 && data_offset != -1){
+    if (inp_offset == -1 && data_offset != -1) {
         inp_offset = (data_offset * 1024 - B * T * C) / 1024;
     }
-    if (out_offset == -1 && data_offset != -1){
+    if (out_offset == -1 && data_offset != -1) {
         out_offset = (data_offset * 1024 + C + C) / 1024;
     }
     // 添加以下三行以打印相关信息
@@ -109,7 +108,7 @@ void Layernorm_f::deserialize(sc_bv<128> buffer) {
 
 sc_bv<128> Layernorm_f::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(0x1);
+    d.range(7, 0) = sc_bv<8>(LAYERNORM_F_TYPE);
     d.range(23, 8) = sc_bv<16>(inp_offset);
     d.range(39, 24) = sc_bv<16>(out_offset);
     d.range(55, 40) = sc_bv<16>(B);
@@ -172,7 +171,7 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
 
     auto inp_sram_offset = 0;
     if (datapass_label.indata[0].find(DRAM_LABEL) == 0) {
-        
+
 
         size_t space_pos = datapass_label.indata[0].find(' ');
         if (space_pos != std::string::npos) {
@@ -183,8 +182,9 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
         printf("[INFO] core %d, Layernorm_f: read from dram, label: %s\n", cid,
                datapass_label.indata[0].c_str());
 #if USE_SRAM_MANAGER == 1
-        sram_first_write_generic(context, data_byte * data_size_input,
-            inp_global_addr, dram_time, dram_start, datapass_label.indata[0], true, sram_pos_locator);
+        sram_first_write_generic(
+            context, data_byte * data_size_input, inp_global_addr, dram_time,
+            dram_start, datapass_label.indata[0], true, sram_pos_locator);
 
 #else
         sram_first_write_generic(context, data_byte * data_size_input,
@@ -209,9 +209,10 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
         } else if (flag > 0) {
 #if USE_SRAM_MANAGER == 1
             cout << "[INFO] core " << cid << ", Layernorm_f: sram_pos_locator "
-                  << "find the label: " << datapass_label.indata[0] << endl;
+                 << "find the label: " << datapass_label.indata[0] << endl;
             sram_first_write_generic(context, flag, inp_global_addr, dram_time,
-                dram_start, datapass_label.indata[0], true, sram_pos_locator);
+                                     dram_start, datapass_label.indata[0], true,
+                                     sram_pos_locator);
 
 #else
             sram_first_write_generic(context, flag, inp_global_addr, dram_time,
@@ -221,21 +222,22 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
             sram_pos_locator->addPair(datapass_label.indata[0], inp_key,
                                       context, dram_time);
 #endif
-        }else{
+        } else {
 #if USE_SRAM_MANAGER == 1
             cout << "[INFO] core " << cid << ", Layernorm_f: sram_pos_locator "
-                  << "flag " << flag << endl;
+                 << "flag " << flag << endl;
             AddrPosKey inp_key;
             int flag =
                 sram_pos_locator->findPair(datapass_label.indata[0], inp_key);
             cout << " inp_key.alloc_id " << inp_key.alloc_id << endl;
-            if (inp_key.alloc_id == 0){
-            cout << "dummy alloc" << endl;
-            sram_first_write_generic(context, data_byte * data_size_input, inp_global_addr, dram_time,
-                dram_start, datapass_label.indata[0], true, sram_pos_locator, true);
+            if (inp_key.alloc_id == 0) {
+                cout << "dummy alloc" << endl;
+                sram_first_write_generic(context, data_byte * data_size_input,
+                                         inp_global_addr, dram_time, dram_start,
+                                         datapass_label.indata[0], true,
+                                         sram_pos_locator, true);
             }
 #endif
-
         }
     }
 
@@ -253,8 +255,9 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
     int flag = sram_pos_locator->findPair(label_weight, w_key);
     if (flag == -1) {
 #if USE_SRAM_MANAGER == 1
-        sram_first_write_generic(context, data_byte * data_size_weight, weight_global_addr, dram_time,
-            dram_start, label_weight, true, sram_pos_locator);
+        sram_first_write_generic(context, data_byte * data_size_weight,
+                                 weight_global_addr, dram_time, dram_start,
+                                 label_weight, true, sram_pos_locator);
 #else
         sram_first_write_generic(context, data_byte * data_size_weight,
                                  weight_global_addr, dram_time, dram_start);
@@ -265,7 +268,8 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
     } else if (flag > 0) {
 #if USE_SRAM_MANAGER == 1
         sram_first_write_generic(context, flag, weight_global_addr, dram_time,
-            dram_start, label_weight, true, sram_pos_locator);
+                                 dram_start, label_weight, true,
+                                 sram_pos_locator);
 
 #else
         sram_first_write_generic(context, flag, weight_global_addr, dram_time,
@@ -281,8 +285,9 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
     flag = sram_pos_locator->findPair(label_bias, b_key);
     if (flag == -1) {
 #if USE_SRAM_MANAGER == 1
-        sram_first_write_generic(context, data_byte * data_size_bias, bias_global_addr, dram_time,
-            dram_start, label_bias, true, sram_pos_locator);
+        sram_first_write_generic(context, data_byte * data_size_bias,
+                                 bias_global_addr, dram_time, dram_start,
+                                 label_bias, true, sram_pos_locator);
 #else
         sram_first_write_generic(context, data_byte * data_size_bias,
                                  bias_global_addr, dram_time, dram_start);
@@ -293,7 +298,8 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
     } else if (flag > 0) {
 #if USE_SRAM_MANAGER == 1
         sram_first_write_generic(context, flag, bias_global_addr, dram_time,
-            dram_start, label_bias, true, sram_pos_locator);
+                                 dram_start, label_bias, true,
+                                 sram_pos_locator);
 
 #else
         sram_first_write_generic(context, flag, bias_global_addr, dram_time,
@@ -319,11 +325,11 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
     std::cout << "Weight Key Allocation ID: " << w_key.alloc_id << std::endl;
     std::cout << "Bias Key Allocation ID: " << b_key.alloc_id << std::endl;
     sram_read_generic(context, data_byte * data_size_input, inp_sram_offset,
-        dram_time, input_key.alloc_id, true, sram_pos_locator);
+                      dram_time, input_key.alloc_id, true, sram_pos_locator);
     sram_read_generic(context, data_byte * data_size_weight, w_sram_offset,
-            dram_time, w_key.alloc_id, true, sram_pos_locator);
+                      dram_time, w_key.alloc_id, true, sram_pos_locator);
     sram_read_generic(context, data_byte * data_size_bias, b_sram_offset,
-            dram_time, b_key.alloc_id, true, sram_pos_locator);
+                      dram_time, b_key.alloc_id, true, sram_pos_locator);
 
 
 #else
@@ -380,8 +386,9 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
 #if USE_SRAM == 1
 #if USE_SRAM_MANAGER == 1
     sram_write_append_generic(context, data_byte * data_size_out, overlap_time,
-        datapass_label.outdata, true, sram_pos_locator, out_global_addr);
-      
+                              datapass_label.outdata, true, sram_pos_locator,
+                              out_global_addr);
+
 
 #else
     // 写入out

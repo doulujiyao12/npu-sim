@@ -73,7 +73,7 @@ void attention_forward_pd::deserialize(sc_bv<128> buffer) {
 
 sc_bv<128> attention_forward_pd::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(0xc1);
+    d.range(7, 0) = sc_bv<8>(ATTENTION_FORWARD_PD_TYPE);
     d.range(23, 8) = sc_bv<16>(inp_offset);
     d.range(39, 24) = sc_bv<16>(out_offset);
     d.range(55, 40) = sc_bv<16>(B);
@@ -160,10 +160,10 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
         int flag =
             sram_pos_locator->findPair(datapass_label.indata[0], inp_key);
         if (flag == -1) {
-            printf(
-                "[ERROR] attention_forward_pd: sram_pos_locator cannot find the "
-                "label: %s\n",
-                datapass_label.indata[0].c_str());
+            printf("[ERROR] attention_forward_pd: sram_pos_locator cannot find "
+                   "the "
+                   "label: %s\n",
+                   datapass_label.indata[0].c_str());
             sc_stop();
         } else if (flag > 0) {
             sram_first_write_generic(context, flag, inp_global_addr, dram_time,
@@ -207,7 +207,7 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
 
         AddrPosKey kcache;
         char format_label_k[100];
-        sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+        sprintf(format_label_k, "%s%skREQ%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
                 batch);
         string label_decode_k = format_label_k;
 
@@ -221,7 +221,7 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
 
         AddrPosKey vcache;
         char format_label_v[100];
-        sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+        sprintf(format_label_v, "%s%svREQ%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
                 batch);
         string label_decode_v = format_label_v;
 
@@ -312,3 +312,5 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
     printf("attention_forward_pd: overlap_time: %ld\n", overlap_time);
     return overlap_time;
 }
+
+int attention_forward_pd::task() { return 0; }

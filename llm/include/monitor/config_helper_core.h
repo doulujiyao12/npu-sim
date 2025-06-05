@@ -8,6 +8,9 @@ using namespace std;
 
 class config_helper_core : public config_helper_base {
 public:
+    int batch_size;
+    int seq_len;
+
     config_helper_core(string filename, string font_ttf,
                        int config_chip_id = 0);
 

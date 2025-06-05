@@ -3,7 +3,7 @@
 #include "common/memory.h"
 #include "defs/global.h"
 #include "memory/dram/Dcachecore.h"
-#include "prims/comp_prims.h"
+#include "prims/pd_prims.h"
 #include "utils/memory_utils.h"
 #include "utils/system_utils.h"
 
@@ -49,7 +49,7 @@ void Attention_f_decode::deserialize(sc_bv<128> buffer) {
 
 sc_bv<128> Attention_f_decode::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(0x12);
+    d.range(7, 0) = sc_bv<8>(ATTENTION_F_DECODE_TYPE);
     d.range(23, 8) = sc_bv<16>(inp_offset);
     d.range(39, 24) = sc_bv<16>(out_offset);
     d.range(55, 40) = sc_bv<16>(B);

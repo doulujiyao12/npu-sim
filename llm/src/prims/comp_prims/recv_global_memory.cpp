@@ -9,7 +9,7 @@
 
 sc_bv<128> Recv_global_memory::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(0x21);
+    d.range(7, 0) = sc_bv<8>(RECV_GLOBAL_MEMORY_TYPE);
     d.range(11, 8) = sc_bv<4>(type);
     d.range(19, 12) = sc_bv<8>(tag_id);
     d.range(27, 20) = sc_bv<8>(recv_cnt);

@@ -71,7 +71,7 @@ void Residual_f_gpu::deserialize(sc_bv<128> buffer) {
 
 sc_bv<128> Residual_f_gpu::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(0xe3);
+    d.range(7, 0) = sc_bv<8>(RESIDUAL_F_GPU_TYPE);
     d.range(71, 40) = sc_bv<32>(N);
     d.range(73, 72) = sc_bv<2>(datatype);
 

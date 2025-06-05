@@ -21,7 +21,7 @@ void Gelu_f_gpu::parse_json(json j) {
 
 sc_bv<128> Gelu_f_gpu::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(0xe2);
+    d.range(7, 0) = sc_bv<8>(GELU_F_GPU_TYPE);
     d.range(71, 40) = sc_bv<32>(N);
     d.range(73, 72) = sc_bv<2>(datatype);
 

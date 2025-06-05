@@ -14,7 +14,7 @@ void Clear_sram::deserialize(sc_bv<128> buffer) {}
 
 sc_bv<128> Clear_sram::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(0xd2);
+    d.range(7, 0) = sc_bv<8>(CLEAR_SRAM_TYPE);
 
     return d;
 }

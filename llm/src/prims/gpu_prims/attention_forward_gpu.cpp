@@ -92,7 +92,7 @@ void Attention_f_gpu::deserialize(sc_bv<128> buffer) {
 
 sc_bv<128> Attention_f_gpu::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(0xe1);
+    d.range(7, 0) = sc_bv<8>(ATTENTION_F_GPU_TYPE);
     d.range(55, 40) = sc_bv<16>(B);
     d.range(71, 56) = sc_bv<16>(T);
     d.range(87, 72) = sc_bv<16>(C);
