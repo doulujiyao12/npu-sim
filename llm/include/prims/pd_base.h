@@ -13,7 +13,7 @@ public:
 
     vector<Stage> batchInfo;
     vector<bool> *decode_done;
-    
+
     void parse_address(json j);
     void parse_sram_label(json j);
 

@@ -131,6 +131,8 @@ int Residual_f::task_core(TaskCoreContext &context) {
     int data_size_single_input = N;
     int data_size_out = N;
 
+    BETTER_PRINT(N);
+
     u_int64_t time_fetched = 0;
     u_int64_t time_prefetched = 0;
     u_int64_t prefetch_tag = 0;

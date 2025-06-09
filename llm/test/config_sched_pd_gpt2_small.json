@@ -3,11 +3,19 @@
   "requests": {
     "count": 20,
     "seq_len": 128,
-    "arrival": [1, 10, 20, 30, 40, 10000000, 10010000, 10500000, 10510000, 10600000, 20000000, 21000000, 21000010, 21000020, 21000030, 21000040, 21000100, 21000200, 30000000, 30000100],
+    "arrival": [
+      1, 10, 20, 30, 40, 10000000, 10010000, 10500000, 10510000, 10600000,
+      20000000, 21000000, 21000010, 21000020, 21000030, 21000040, 21000100,
+      21000200, 30000000, 30000100
+    ]
+  },
+  "model": {
     "heads": 12,
     "eof_chance": 0.1,
     "stage": 4,
-    "batch": 2
+    "batch": 2,
+    "kv_heads": 12,
+    "head_size": 64
   },
   "chips": [
     {
@@ -84,9 +92,9 @@
                     "outdata": "residual1_out"
                   },
                   "dram_address": {
-                      "input": 0,
-                      "data": -1,
-                      "out": 98
+                    "input": 0,
+                    "data": -1,
+                    "out": 98
                   }
                 },
                 {
@@ -128,9 +136,9 @@
                     "outdata": "attention1_out"
                   },
                   "dram_address": {
-                      "input": 0,
-                      "data": -1,
-                      "out": 98
+                    "input": 0,
+                    "data": -1,
+                    "out": 98
                   }
                 },
                 {
@@ -156,9 +164,9 @@
                     "outdata": "residual2_out"
                   },
                   "dram_address": {
-                      "input": 0,
-                      "data": -1,
-                      "out": 98
+                    "input": 0,
+                    "data": -1,
+                    "out": 98
                   }
                 },
                 {
@@ -200,9 +208,9 @@
                     "outdata": "attention1_out"
                   },
                   "dram_address": {
-                      "input": 0,
-                      "data": -1,
-                      "out": 98
+                    "input": 0,
+                    "data": -1,
+                    "out": 98
                   }
                 },
                 {
@@ -228,9 +236,9 @@
                     "outdata": "residual3_out"
                   },
                   "dram_address": {
-                      "input": 0,
-                      "data": -1,
-                      "out": 98
+                    "input": 0,
+                    "data": -1,
+                    "out": 98
                   }
                 }
               ]

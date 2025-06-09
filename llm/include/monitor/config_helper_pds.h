@@ -37,6 +37,8 @@ public:
     int prefill_core, decode_core;
     vector<int> stage_index;
     int batch_size;
+    int head_size;
+    int kv_heads;
 
     config_helper_pds(string filename, string font_ttf, sc_event *ev_sig,
                       int config_chip_id = 0);
@@ -62,4 +64,6 @@ public:
 
     void iter_start(PD_JOB type); // 填充原语，发送在meminterface完成
     void iter_done(PD_JOB type);
+
+    void set_global_vars(int T);
 };

@@ -23,9 +23,11 @@ public:
 
     // 模型配置
     int heads;
+    int head_size;
     double eof_chance;
     int model_stage;
     int batch_size;
+    int kv_heads;
 
     config_helper_pd(string filename, string font_ttf, sc_event *ev_sig,
                      int config_chip_id = 0);
@@ -50,4 +52,6 @@ public:
 
     void iter_start(); // 填充原语，发送在meminterface完成
     void iter_done(vector<Msg> done_msg);
+
+    void set_global_vars(int T);
 };

@@ -16,7 +16,10 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
     // 收集相关参数
     auto config_reqs = j["requests"];
     int req_cnt = config_reqs["count"];
+    
     heads = config_reqs["heads"];
+    head_size = config_reqs["head_size"];
+    kv_heads = config_reqs["kv_heads"];
     eof_chance = config_reqs["eof_chance"];
     prefill_stage = config_reqs["prefill_stage"];
     decode_stage = config_reqs["decode_stage"];
@@ -112,7 +115,7 @@ void config_helper_pds::fill_queue_start(queue<Msg> *q) {
         for (int i = 0; i < status.batchInfo.size(); i++) {
             auto stage = status.batchInfo[i];
             auto record = requestRecords[stage.req_id];
-            int size = record.seq_len / record.prefill_iters * heads * 64;
+            int size = record.seq_len / record.prefill_iters * heads * head_size;
             int send_size_in_bit = size * sizeof(float) * 8;
             int pkg_num = (send_size_in_bit % M_D_DATA)
                               ? (send_size_in_bit / M_D_DATA + 1)
@@ -379,7 +382,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
     cout << "Generate prims: Core " << i << endl;
     auto status = coreStatus[i];
 
-    int B = 1, NH = heads, T = 0, C = heads * 64;
+    int B = 1, NH = heads, T = 0, C = heads * head_size;
     bool exist_prefill = false;
     for (auto stage : status.batchInfo) {
         auto record = requestRecords[stage.req_id];
@@ -395,7 +398,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
     }
 
     // TODO: 其他decoder模型适配？
-    set_var_gpt2(B, T, C, NH);
+    set_global_vars(T);
     CoreConfig core =
         status.job_type == JOB_PREFILL ? json_template_p : json_template_d;
     auto &work = core.worklist[0];
@@ -590,4 +593,20 @@ void config_helper_pds::parse_done_msg(Event_engine *event_engine,
         wait_schedule_d = true;
         notify_event->notify(CYCLE, SC_NS);
     }
+}
+
+void config_helper_pds::set_global_vars(int T) {
+    vtable.clear();
+    vtable.push_back(make_pair("B", 1));
+    vtable.push_back(make_pair("T", T));
+    vtable.push_back(make_pair("C", heads * head_size));
+    vtable.push_back(make_pair("NH", heads));
+    vtable.push_back(make_pair("3C", 3 * heads * head_size));
+    vtable.push_back(make_pair("4C", 4 * heads * head_size));
+    vtable.push_back(make_pair("BTC", T * heads * head_size));
+    vtable.push_back(make_pair("2BTC", 2 * T * heads * head_size));
+    vtable.push_back(make_pair("3BTC", 3 * T * heads * head_size));
+    vtable.push_back(make_pair("4BTC", 4 * T * heads * head_size));
+    vtable.push_back(make_pair("CR", head_size * kv_heads));
+    vtable.push_back(make_pair("3CR", 3 * kv_heads * head_size));
 }

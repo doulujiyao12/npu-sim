@@ -1,5 +1,7 @@
 #pragma once
+#include <iostream>
 #include <string>
+#include <utility>
 
 using namespace std;
 
@@ -7,7 +9,6 @@ bool rand_result(int threshold);
 
 // 在全局vtable中查找对应名字的参数
 int find_var(string var);
-void set_var_gpt2(int B, int T, int C, int NH);
 
 int ceiling_division(int a, int b);
 
@@ -34,4 +35,6 @@ uint64_t get_bank_index(uint64_t address);
 void print_configuration(ostream &fout);
 
 // split字符串
-std::vector<std::string> split(const std::string& s, char delimiter);
+std::vector<std::string> split(const std::string &s, char delimiter);
+
+#define BETTER_PRINT(var) do {std::cout << __PRETTY_FUNCTION__ << " print: " << #var << ": " << (var) << std::endl;} while (0)

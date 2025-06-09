@@ -1086,34 +1086,7 @@ TaskCoreContext generate_context(WorkerCoreExecutor *workercore) {
     NB_GlobalMemIF *nb_global_memif = workercore->nb_global_mem_socket;
     sc_event *start_global_event = workercore->start_global_mem_event;
     sc_event *end_global_event = workercore->end_global_mem_event;
-// #if USE_NB_DRAMSYS == 1
-//     NB_DcacheIF *nb_dcache =
-//         workercore->nb_dcache_socket; // 实例化或获取 NB_DcacheIF 对象
-// #else
-
-//     DcacheCore *wc = this->dcache_socket; // 实例化或获取 DcacheCore 对象
-// #endif
-//     sc_event *end_nb_gpu_dram_event =
-//         workercore->end_nb_gpu_dram_event; // 实例化或获取 end_nb_gpu_dram_event
-//                                            // 对象
-//     sc_event *start_nb_gpu_dram_event =
-//         workercore->start_nb_gpu_dram_event; // 实例化或获取
-//                                              // start_nb_gpu_dram_event 对象
-//     sc_event *s_nbdram =
-//         workercore->start_nb_dram_event; // 实例化或获取 start_nb_dram_event 对象
-//     sc_event *e_nbdram =
-//         workercore->end_nb_dram_event; // 实例化或获取 end_nb_dram_event 对象
-//     mem_access_unit *mau =
-//         workercore->mem_access_port; // 实例化或获取 mem_access_unit 对象
-//     high_bw_mem_access_unit *hmau =
-//         workercore->high_bw_mem_access_port; // 实例化或获取
-//                                              // high_bw_mem_access_unit 对象
-
-//     mem_access_unit *temp_mau =
-//         workercore->temp_mem_access_port; // 实例化或获取 mem_access_unit 对象
-//     high_bw_mem_access_unit *temp_hmau =
-//         workercore->high_bw_temp_mem_access_port; // 实例化或获取
-//                                              // high_bw_mem_access_unit 对象 
+    
 #if USE_L1L2_CACHE == 1
     // 创建类实例
     TaskCoreContext context(workercore->mem_access_port, workercore->high_bw_mem_access_port, workercore->temp_mem_access_port, workercore->high_bw_temp_mem_access_port, msg_data, workercore->sram_addr,

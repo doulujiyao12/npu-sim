@@ -1,9 +1,12 @@
 {
   "mode": "sched_pd",
+  "core_config": "../llm/test/config_sched_pd_qwen2.5_0.5B.json",
   "requests": {
     "count": 2,
     "seq_len": 128,
-    "arrival": [1, 10],
+    "arrival": [1, 10]
+  },
+  "model": {
     "heads": 14,
     "kv_heads": 2,
     "head_size": 64,
@@ -45,7 +48,7 @@
                   "T": "T",
                   "C": "C",
                   "OC": "3CR",
-                  "sram_address": {
+                  "sram_address": { 
                     "indata": "rmsnorm1_out",
                     "outdata": "matmul1_out"
                   },

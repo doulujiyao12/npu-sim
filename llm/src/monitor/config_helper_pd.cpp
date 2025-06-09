@@ -20,11 +20,15 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
 
     // 收集相关参数
     auto config_reqs = j["requests"];
+    auto config_model = j["model"];
+
     int req_cnt = config_reqs["count"];
-    heads = config_reqs["heads"];
-    eof_chance = config_reqs["eof_chance"];
-    model_stage = config_reqs["stage"];
-    batch_size = config_reqs["batch"];
+    heads = config_model["heads"];
+    head_size = config_model["head_size"];
+    eof_chance = config_model["eof_chance"];
+    model_stage = config_model["stage"];
+    batch_size = config_model["batch"];
+    kv_heads = config_model["kv_heads"];
 
     // 收集req的arrive时间
     if (config_reqs["arrival"].size() != req_cnt) {
@@ -85,7 +89,8 @@ void config_helper_pd::fill_queue_start(queue<Msg> *q) {
             if (stage.type == PREFILL) {
                 has_prefill = true;
                 auto record = requestRecords[stage.req_id];
-                int size = record.seq_len / record.prefill_iters * heads * 64;
+                int size =
+                    record.seq_len / record.prefill_iters * heads * head_size;
                 int send_size_in_bit = size * sizeof(float) * 8;
                 int pkg_num = (send_size_in_bit % M_D_DATA)
                                   ? (send_size_in_bit / M_D_DATA + 1)
@@ -329,7 +334,7 @@ void config_helper_pd::generate_prims(int i) {
     cout << "Generate prims: Core " << i << endl;
     auto status = coreStatus[i];
 
-    int B = 1, NH = heads, T = 0, C = heads * 64;
+    int B = 1, NH = heads, T = 0, C = heads * head_size;
     bool exist_prefill = false;
     for (auto stage : status.batchInfo) {
         auto record = requestRecords[stage.req_id];
@@ -345,7 +350,7 @@ void config_helper_pd::generate_prims(int i) {
     }
 
     // TODO: 其他decoder模型适配？
-    set_var_gpt2(B, T, C, NH);
+    set_global_vars(T);
     CoreConfig core = json_template;
     auto &work = core.worklist[0];
 
@@ -502,4 +507,20 @@ void config_helper_pd::parse_done_msg(Event_engine *event_engine,
         g_recv_done_cnt = 0;
         notify_event->notify(CYCLE, SC_NS);
     }
+}
+
+void config_helper_pd::set_global_vars(int T) {
+    vtable.clear();
+    vtable.push_back(make_pair("B", 1));
+    vtable.push_back(make_pair("T", T));
+    vtable.push_back(make_pair("C", heads * head_size));
+    vtable.push_back(make_pair("NH", heads));
+    vtable.push_back(make_pair("3C", 3 * heads * head_size));
+    vtable.push_back(make_pair("4C", 4 * heads * head_size));
+    vtable.push_back(make_pair("BTC", T * heads * head_size));
+    vtable.push_back(make_pair("2BTC", 2 * T * heads * head_size));
+    vtable.push_back(make_pair("3BTC", 3 * T * heads * head_size));
+    vtable.push_back(make_pair("4BTC", 4 * T * heads * head_size));
+    vtable.push_back(make_pair("CR", head_size * kv_heads));
+    vtable.push_back(make_pair("3CR", 3 * kv_heads * head_size));
 }

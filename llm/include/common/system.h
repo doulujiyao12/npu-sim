@@ -154,3 +154,14 @@ public:
           MaxDramAddr(MaxDramAddr) {}
 #endif
 };
+
+class CoreHWConfig {
+public:
+    int MAC_size;
+    int sram_bitwidth;
+    int sram_banks;
+
+    CoreHWConfig(int mac_size, int sram_bitwidth, int sram_banks)
+        : MAC_size(mac_size), sram_bitwidth(sram_bitwidth), sram_banks(sram_banks) {}
+    CoreHWConfig() : MAC_size(128), sram_bitwidth(128), sram_banks(0) {}
+};
