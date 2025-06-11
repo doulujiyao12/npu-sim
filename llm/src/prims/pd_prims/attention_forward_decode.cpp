@@ -156,7 +156,9 @@ int Attention_f_decode::task_core(TaskCoreContext &context) {
     int cur_tokens = 0;
 
     // 查找kvcache! 需要使用相应的kvcache label
-    for (int batch = 0; batch < B; batch++) {
+    for (auto stage : batchInfo) {
+        int batch = stage.req_id;
+        
         AddrPosKey kcache;
         char format_label_k[100];
         sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,

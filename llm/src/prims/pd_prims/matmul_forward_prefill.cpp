@@ -5,8 +5,8 @@
 
 #include "common/system.h"
 #include "memory/dram/Dcachecore.h"
-#include "prims/comp_base.h"
-#include "prims/comp_prims.h"
+#include "prims/pd_base.h"
+#include "prims/pd_prims.h"
 #include "utils/memory_utils.h"
 #include "utils/system_utils.h"
 
@@ -295,7 +295,9 @@ int Matmul_f_prefill::task_core(TaskCoreContext &context) {
                       dram_time);
 
     // 写入kvcache
-    for (int batch = 0; batch < B; batch++) {
+    for (auto stage : batchInfo) {
+        int batch = stage.req_id;
+        
         AddrPosKey kcache;
         char format_label_k[100];
         sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,

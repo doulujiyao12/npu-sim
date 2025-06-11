@@ -1,34 +1,31 @@
 #include "nlohmann/json.hpp"
 
-#include <iostream> 
-#include <fstream>
-#include <vector>
-#include <string>
-#include <map>
-#include "prims/prim_base.h"
-#include "prims/comp_base.h"
-#include "utils/prim_utils.h"
 #include "defs/const.h"
 #include "defs/enums.h"
 #include "defs/global.h"
+#include "prims/comp_base.h"
+#include "prims/prim_base.h"
+#include "utils/prim_utils.h"
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <string>
+#include <vector>
 
 
 using namespace std;
 
 
-using json_order = nlohmann::ordered_json; 
+using json_order = nlohmann::ordered_json;
 
 
 class CorePrims {
 public:
-
-
     vector<prim_base *> prims;
 
 
     void print_self();
     CorePrims() {}
-
 };
 
 void from_json(const json &j, CorePrims &c) {
@@ -51,14 +48,14 @@ void from_json(const json &j, CorePrims &c) {
 
 
 struct prim_dram_info {
-    string name;    
+    string name;
     int input;
     int data;
     int out;
 };
 
 
-int sc_main(int argc, char *argv[]){
+int sc_main(int argc, char *argv[]) {
     if (argc < 2) {
         std::cerr << "Usage: " << argv[0] << " <config_file_path>" << std::endl;
         return 1;
@@ -77,7 +74,7 @@ int sc_main(int argc, char *argv[]){
 
     try {
         jfile >> j;
-    } catch (const json::parse_error& e) {
+    } catch (const json::parse_error &e) {
         std::cerr << "JSON parse error: " << e.what() << std::endl;
         return 1;
     }
@@ -95,12 +92,12 @@ int sc_main(int argc, char *argv[]){
 
 
     int core_dram = 0;
-    
+
 
     for (auto p : config_prims.prims) {
 
-        if (p == config_prims.prims.front()){
-            
+        if (p == config_prims.prims.front()) {
+
             prim_dram_info tmp;
             tmp.name = p->name;
             tmp.input = core_dram;
@@ -110,7 +107,7 @@ int sc_main(int argc, char *argv[]){
             tmp.out = core_dram;
             core_dram += p->dram_out_size;
             prims_dram_config.push_back(tmp);
-        }else{
+        } else {
 
             prim_dram_info tmp;
             tmp.name = p->name;
@@ -121,25 +118,24 @@ int sc_main(int argc, char *argv[]){
             core_dram += p->dram_out_size;
             prims_dram_config.push_back(tmp);
         }
-
     }
 
 
     json_order dram_json_array = json_order::array();
 
-    for (const auto& info : prims_dram_config) {
+    for (const auto &info : prims_dram_config) {
         json_order prim_obj;
         json_order dram_address_obj;
-    
+
         // 构建 dram_address 子对象
         dram_address_obj["input"] = info.input;
         dram_address_obj["data"] = info.data;
         dram_address_obj["out"] = info.out;
-    
+
         // 设置顶层字段
         prim_obj["name"] = info.name;
         prim_obj["dram_address"] = dram_address_obj;
-    
+
         // 添加到数组
         dram_json_array.push_back(prim_obj);
     }
@@ -147,7 +143,8 @@ int sc_main(int argc, char *argv[]){
     // Write to file
     std::ofstream out_file("dram_config.json");
     if (out_file.is_open()) {
-        out_file << dram_json_array.dump(4);  // pretty print with indent of 4 spaces
+        out_file << dram_json_array.dump(
+            4); // pretty print with indent of 4 spaces
         out_file.close();
         std::cout << "Successfully saved dram_config.json" << std::endl;
     } else {
@@ -155,12 +152,5 @@ int sc_main(int argc, char *argv[]){
     }
 
 
-
-
-
-
-
-
-
-    return 0;   
+    return 0;
 }

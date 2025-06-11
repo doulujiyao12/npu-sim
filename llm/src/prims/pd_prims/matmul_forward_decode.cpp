@@ -3,8 +3,8 @@
 #include "common/system.h"
 #include "defs/global.h"
 #include "memory/dram/Dcachecore.h"
-#include "prims/comp_base.h"
-#include "prims/comp_prims.h"
+#include "prims/pd_base.h"
+#include "prims/pd_prims.h"
 #include "utils/memory_utils.h"
 #include "utils/system_utils.h"
 
@@ -161,7 +161,7 @@ int Matmul_f_decode::task_core(TaskCoreContext &context) {
     } else {
         AddrPosKey inp_key;
         int flag = sram_pos_locator->findPair(datapass_label.indata[0],
-                                               inp_sram_offset);
+                                              inp_sram_offset);
         printf("[INFO] Matmul_f_decode: read from sram, label: %s, value: %d\n",
                datapass_label.indata[0].c_str(), inp_sram_offset);
         if (flag == -1) {
@@ -237,7 +237,9 @@ int Matmul_f_decode::task_core(TaskCoreContext &context) {
                       dram_time);
 
     // 写入kvcache
-    int batch = 0;
+    for (auto stage : batchInfo) {
+        int batch = stage.req_id;
+
         AddrPosKey kcache;
         char format_label_k[100];
         sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
@@ -249,9 +251,9 @@ int Matmul_f_decode::task_core(TaskCoreContext &context) {
         //       << endl;
         if (flag == -1) {
             // sram_pos_locator->printAllKeys();
-// #if ASSERT_MODE == 1
-//             assert(0 && "Miss prefill KV Cache label");
-// #endif
+            // #if ASSERT_MODE == 1
+            //             assert(0 && "Miss prefill KV Cache label");
+            // #endif
             // 理论而言，这里必须要找到对应的pair。因为在运行该算子之前会先运行prefill的matmul，
             // 在这个时候会首先创建对应大小的kcache和vcache的标签，尽管在这个时候里面还没有任何东西。
             // 但为了便于测试，这里直接创建一个新的标签，不会影响最终的性能。
@@ -262,7 +264,7 @@ int Matmul_f_decode::task_core(TaskCoreContext &context) {
 
             kcache.size = data_byte * data_size_out / 3;
             sram_pos_locator->addPair(label_decode_k, kcache, context,
-                                      dram_time); 
+                                      dram_time);
         } else {
             // 如果有的话，那么直接修改大小，写入
             kcache.size += data_byte * data_size_out / 3;
@@ -294,7 +296,7 @@ int Matmul_f_decode::task_core(TaskCoreContext &context) {
                                       dram_time);
         } else {
             // 如果有的话，那么直接修改大小，写入
-            vcache.size += data_size_out / 3;
+            vcache.size += data_byte * data_size_out / 3;
 
             auto temp_sram = *sram_addr;
             sram_write_append_generic(context, data_byte * data_size_out / 3,
@@ -304,7 +306,8 @@ int Matmul_f_decode::task_core(TaskCoreContext &context) {
             sram_pos_locator->addPair(label_decode_v, vcache, context,
                                       dram_time);
         }
-    
+    }
+
 
     // 删除标签
     if (!input_reuse) {
@@ -346,11 +349,12 @@ int Matmul_f_decode::task_core(TaskCoreContext &context) {
 #endif
 
 #if USE_SRAM == 1
-    // 写入 Q 
+    // 写入 Q
     AddrPosKey out_key = AddrPosKey(*sram_addr, data_byte * data_size_out / 3);
     sram_pos_locator->addPair(datapass_label.outdata, out_key, context,
                               dram_time);
-    sram_write_append_generic(context, data_byte * data_size_out / 3, overlap_time);
+    sram_write_append_generic(context, data_byte * data_size_out / 3,
+                              overlap_time);
 #else
 
 #endif

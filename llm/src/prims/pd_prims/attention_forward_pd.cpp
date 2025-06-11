@@ -207,7 +207,7 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
 
         AddrPosKey kcache;
         char format_label_k[100];
-        sprintf(format_label_k, "%s%skREQ%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+        sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
                 batch);
         string label_decode_k = format_label_k;
 
@@ -221,7 +221,7 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
 
         AddrPosKey vcache;
         char format_label_v[100];
-        sprintf(format_label_v, "%s%svREQ%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+        sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
                 batch);
         string label_decode_v = format_label_v;
 
@@ -266,8 +266,6 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
     }
 
     printf("attention_forward_pd: dram time 2: %ld\n", dram_time);
-#else
-    // CTODO: do dram only
 #endif
 
     // 计算overlap

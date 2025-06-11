@@ -162,214 +162,66 @@ sc_bv<128> Conv_f::serialize() {
     return d;
 }
 int Conv_f::task_core(TaskCoreContext &context) {
-#if USE_NB_DRAMSYS == 0
-    auto wc = context.wc;
-#endif
-    auto mau = context.mau;
-    auto hmau = context.hmau;
-    auto &msg_data = context.msg_data;
-    auto sram_addr = context.sram_addr;
-
-    int data_byte = 0;
-    if (datatype == INT8) {
-        data_byte = 1;
-    } else if (datatype == FP16) {
-        data_byte = 2;
-    }
-    u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
-    u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
-    u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
-    u_int64_t weight_global_addr = dram_addr_tile + k_offset * data_byte;
-    u_int64_t bias_global_addr = dram_addr_tile + b_offset * data_byte;
-
-#if DUMMY == 1
-    float *dram_start = nullptr;
-#else
-    float *dram_start = (float *)(dram_array[cid]);
-    float *input = dram_start + inp_offset;
-    float *output = dram_start + out_offset;
-    float *kernel = dram_start + k_offset;
-    float *bias = dram_start + b_offset;
-#endif
+    // 所用时间
     u_int64_t dram_time = 0;
+    u_int64_t overlap_time = 0;
 
-
+    // 数据维度
     int data_size_input = B * C * H * W;
     int data_size_weight = F * C * kX * kY;
     int data_size_bias = F;
     int data_size_out = B * oC * oH * oW;
 
-#if USE_SRAM == 1
-    // 检查是否可以在此原语结束之后立刻释放中间结果
+    // dram地址
+    u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
+    u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
+    u_int64_t weight_global_addr = dram_addr_tile + k_offset * data_byte;
+    u_int64_t bias_global_addr = dram_addr_tile + b_offset * data_byte;
+
+    // 检查数据重利用
     bool input_reuse = false;
     if (datapass_label.indata[0][0] == '_') {
         input_reuse = true;
         datapass_label.indata[0] = datapass_label.indata[0].substr(1);
     }
 
-    auto inp_sram_offset = 0;
-    if (datapass_label.indata[0].find(DRAM_LABEL) == 0) {
-        sram_first_write_generic(context, data_byte * data_size_input,
-                                 inp_global_addr, dram_time, dram_start);
-
-        size_t space_pos = datapass_label.indata[0].find(' ');
-        if (space_pos != std::string::npos) {
-            datapass_label.indata[0] =
-                datapass_label.indata[0].substr(space_pos + 1);
-        }
-
-        printf("[INFO] Conv_f: read from dram, label: %s\n",
-               datapass_label.indata[0].c_str());
-
-        AddrPosKey inp_key =
-            AddrPosKey(*sram_addr, data_byte * data_size_input);
-        sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context,
-                                  dram_time);
-    } else {
-        AddrPosKey inp_key;
-        int flag =
-            sram_pos_locator->findPair(datapass_label.indata[0], inp_key);
-        if (flag == -1) {
-            printf(
-                "[ERROR] Conv_f: sram_pos_locator cannot find the label: %s\n",
-                datapass_label.indata[0].c_str());
-            sc_stop();
-        } else if (flag > 0) {
-            sram_first_write_generic(context, flag, inp_global_addr, dram_time,
-                                     dram_start);
-            inp_key.size = data_byte * data_size_input;
-            inp_key.spill_size = 0;
-            sram_pos_locator->addPair(datapass_label.indata[0], inp_key,
-                                      context, dram_time);
-        }
-    }
-
     // 获取前缀label
     std::size_t pos = datapass_label.outdata.find_last_of('_');
     std::string prefix;
-    if (pos != std::string::npos) {
+    if (pos != std::string::npos)
         prefix = datapass_label.outdata.substr(0, pos);
-    } else {
+    else
         prefix = datapass_label.outdata;
-    }
 
+    // 读入input数据
+    check_input_data(context, dram_time, inp_global_addr, data_size_input);
+    printf("rope_f: dram time 1: %ld\n", dram_time);
+
+#if USE_SRAM == 1
     auto label_weight = ETERNAL_PREFIX + prefix + "_w";
-    AddrPosKey w_key;
-    int flag = sram_pos_locator->findPair(label_weight, w_key);
-    if (flag == -1) {
-        sram_first_write_generic(context, data_byte * data_size_weight,
-                                 weight_global_addr, dram_time, dram_start);
-
-        w_key = AddrPosKey(*sram_addr, data_byte * data_size_weight);
-        sram_pos_locator->addPair(label_weight, w_key, context, dram_time);
-    } else if (flag > 0) {
-        sram_first_write_generic(context, flag, inp_global_addr, dram_time,
-                                 dram_start);
-        w_key.size = data_byte * data_size_weight;
-        w_key.spill_size = 0;
-        sram_pos_locator->addPair(label_weight, w_key, context, dram_time);
-    }
+    check_static_data(context, dram_time, weight_global_addr, data_size_weight,
+                      label_weight);
 
     auto label_bias = ETERNAL_PREFIX + prefix + "_b";
-    AddrPosKey b_key;
-    flag = sram_pos_locator->findPair(label_bias, b_key);
-    if (flag == -1) {
-        sram_first_write_generic(context, data_byte * data_size_bias,
-                                 bias_global_addr, dram_time, dram_start);
-
-        b_key = AddrPosKey(*sram_addr, data_byte * data_size_bias);
-        sram_pos_locator->addPair(label_bias, b_key, context, dram_time);
-    } else if (flag > 0) {
-        sram_first_write_generic(context, flag, bias_global_addr, dram_time,
-                                 dram_start);
-        b_key.size = data_byte * data_size_bias;
-        b_key.spill_size = 0;
-        sram_pos_locator->addPair(label_bias, b_key, context, dram_time);
-    }
+    check_static_data(context, dram_time, bias_global_addr, data_size_bias,
+                      label_bias);
 
     printf("Conv_f: dram time 1: %ld\n", dram_time);
 
-    // 简化读出所有数据即可
-    int w_sram_offset, b_sram_offset;
-    sram_pos_locator->findPair(datapass_label.indata[0], inp_sram_offset);
-    sram_pos_locator->findPair(label_weight, w_sram_offset);
-    sram_pos_locator->findPair(label_bias, b_sram_offset);
-    sram_read_generic(context, data_byte * data_size_input, inp_sram_offset,
-                      dram_time);
-    sram_read_generic(context, data_byte * data_size_weight, w_sram_offset,
-                      dram_time);
-    sram_read_generic(context, data_byte * data_size_bias, b_sram_offset,
-                      dram_time);
-
     // 删除标签
-    if (!input_reuse) {
+    if (!input_reuse)
         sram_pos_locator->deletePair(datapass_label.indata[0]);
-    }
 
     printf("Conv_f: dram time 2: %ld\n", dram_time);
 #else
     assert(false && "Unsupported USE_SRAM == 0");
 #endif
 
-
-    u_int64_t cycle = 0;
-    if (tile_exu.type == MAC_Array) {
-        cycle = B * C * oC * oH * oW * kX * kY * 2 /
-                (2 * tile_exu.x_dims * tile_exu.y_dims * comp_util) * CYCLE;
-        cout << "Conv_f1: dram time: " << dram_time << " cycle: " << cycle
-             << endl;
-        std::cout << "Variables:" << std::endl;
-        std::cout << "B (Batch size): " << B << std::endl;
-        std::cout << "C (Input Channels): " << C << std::endl;
-        std::cout << "oC (Output Channels): " << oC << std::endl;
-        std::cout << "oH (Output Height): " << oH << std::endl;
-        std::cout << "oW (Output Width): " << oW << std::endl;
-        std::cout << "kX (Kernel Width): " << kX << std::endl;
-        std::cout << "kY (Kernel Height): " << kY << std::endl;
-        std::cout << "tile_exu.x_dims: " << tile_exu.x_dims << std::endl;
-        std::cout << "tile_exu.y_dims: " << tile_exu.y_dims << std::endl;
-        std::cout << "CYCLE: " << CYCLE << std::endl;
-
-        // 打印计算结果
-        std::cout << "Calculated cycle: " << cycle << std::endl;
-    } else {
-        assert(false && "Unsupported tile type");
-    }
-    u_int64_t overlap_time = 0;
-
-#if USE_SRAM == 1
-    cout << "Conv_f: dram time: " << dram_time << " cycle: " << cycle << endl;
-    if (dram_time > cycle) {
-        // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
-        overlap_time = 0;
-        std::cout << RED << "cycle: " << cycle << ", dram_time: " << dram_time
-                  << RESET << std::endl;
-    } else {
-        overlap_time = cycle - dram_time;
-        std::cout << GREEN << "cycle: " << cycle << ", dram_time: " << dram_time
-                  << RESET << std::endl;
-    }
-#else
-    if (dram_time > cycle) {
-        overlap_time = dram_time;
-    } else {
-        overlap_time = cycle;
-    }
-#endif
-
-#if USE_SRAM == 1
-    // 写入out
-    // label kv in sram locator
-    AddrPosKey out_key = AddrPosKey(*sram_addr, data_byte * data_size_out);
-    sram_pos_locator->addPair(datapass_label.outdata, out_key, context,
-                              dram_time);
-    sram_write_append_generic(context, data_byte * data_size_out, overlap_time);
-#else
-    assert(false && "Unsupported USE_SRAM == 0");
-#endif
-    printf("output conv_f_cycle %ld \n", overlap_time);
+    write_output_data(context, B * C * oC * oH * oW * kX * kY * 2, dram_time,
+                      overlap_time, data_size_out);
     return overlap_time;
 }
+
 int Conv_f::task() {
     // CTODO: 计算cycle数
     // TODO DAHU TIME ??
