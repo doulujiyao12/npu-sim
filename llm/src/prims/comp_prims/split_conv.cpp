@@ -71,54 +71,55 @@ sc_bv<128> Split_conv::serialize() {
 
     return d;
 }
+
 int Split_conv::task_core(TaskCoreContext &context) { return 0; }
 int Split_conv::task() {
 
 
-#if DUMMY == 1
+// #if DUMMY == 1
 
 
-#else
+// #else
 
 
-    float *dram_start = (float *)(dram_array[cid]);
-    float *input = dram_start + inp_offset;
-    float *output = dram_start + out_offset;
+//     float *dram_start = (float *)(dram_array[cid]);
+//     float *input = dram_start + inp_offset;
+//     float *output = dram_start + out_offset;
 
-    std::vector<float> padded_input(B * C * (H + 2 * pY) * (W + 2 * pX), 0);
+//     std::vector<float> padded_input(B * C * (H + 2 * pY) * (W + 2 * pX), 0);
 
-    for (int b = 0; b < B; ++b) {
-        for (int c = 0; c < C; ++c) {
-            for (int h = 0; h < H; ++h) {
-                for (int w = 0; w < W; ++w) {
-                    padded_input[b * C * (H + 2 * pY) * (W + 2 * pX) +
-                                 c * (H + 2 * pY) * (W + 2 * pX) +
-                                 (h + pY) * (W + 2 * pX) + (w + pX)] =
-                        input[b * C * H * W + c * H * W + h * W + w];
-                }
-            }
-        }
-    }
+//     for (int b = 0; b < B; ++b) {
+//         for (int c = 0; c < C; ++c) {
+//             for (int h = 0; h < H; ++h) {
+//                 for (int w = 0; w < W; ++w) {
+//                     padded_input[b * C * (H + 2 * pY) * (W + 2 * pX) +
+//                                  c * (H + 2 * pY) * (W + 2 * pX) +
+//                                  (h + pY) * (W + 2 * pX) + (w + pX)] =
+//                         input[b * C * H * W + c * H * W + h * W + w];
+//                 }
+//             }
+//         }
+//     }
 
-    int offset = 0;
-    int new_W = W + 2 * pX;
-    for (int s = 0; s < slice; s++) {
-        for (int b = 0; b < B; b++) {
-            for (int c = 0; c < C; c++) {
-                for (int h = 0; h < new_H; h++) {
-                    for (int w = 0; w < new_W; w++) {
-                        // CTODO: finish this
-                        int inp_h = new_H * s - (s - 1) * (K - S) + h;
-                        output[offset++] =
-                            padded_input[b * C * (H + 2 * pY) * (W + 2 * pX) +
-                                         c * (H + 2 * pY) * (W + 2 * pX) +
-                                         inp_h * (W + 2 * pX) + w];
-                    }
-                }
-            }
-        }
-    }
-#endif
+//     int offset = 0;
+//     int new_W = W + 2 * pX;
+//     for (int s = 0; s < slice; s++) {
+//         for (int b = 0; b < B; b++) {
+//             for (int c = 0; c < C; c++) {
+//                 for (int h = 0; h < new_H; h++) {
+//                     for (int w = 0; w < new_W; w++) {
+//                         // CTODO: finish this
+//                         int inp_h = new_H * s - (s - 1) * (K - S) + h;
+//                         output[offset++] =
+//                             padded_input[b * C * (H + 2 * pY) * (W + 2 * pX) +
+//                                          c * (H + 2 * pY) * (W + 2 * pX) +
+//                                          inp_h * (W + 2 * pX) + w];
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// #endif
     return 0;
 }
 

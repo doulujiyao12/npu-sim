@@ -208,3 +208,27 @@ void from_json(const json &j, StreamConfig &c) {
         c.loop = 1;
     }
 }
+
+void from_json(const json &j, CoreHWConfig &c) {
+    j.at("id").get_to(c.id);
+
+    if (j.contains("exu_x"))
+        j.at("exu_x").get_to(c.exu_x);
+    else
+        c.exu_x = 128;
+
+    if (j.contains("exu_y"))
+        j.at("exu_y").get_to(c.exu_y);
+    else
+        c.exu_y = 128;
+
+    if (j.contains("sfu_x"))
+        j.at("sfu_x").get_to(c.sfu_x);
+    else
+        c.sfu_x = 2048;
+
+    if (j.contains("sram_bitwidth"))
+        j.at("sram_bitwidth").get_to(c.sram_bitwidth);
+    else
+        c.sram_bitwidth = 128;
+}

@@ -2,82 +2,114 @@
     "cores": [
         {
             "id": 0,
-            "mac": 128,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
             "sram_bitwidth": 128
         },
         {
             "id": 1,
-            "mac": 128,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
             "sram_bitwidth": 128
         },
         {
             "id": 2,
-            "mac": 128,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
             "sram_bitwidth": 128
         },
         {
             "id": 3,
-            "mac": 128,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
             "sram_bitwidth": 128
         },
         {
             "id": 4,
-            "mac": 128,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
             "sram_bitwidth": 128
         },
         {
             "id": 5,
-            "mac": 128,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
             "sram_bitwidth": 128
         },
         {
             "id": 6,
-            "mac": 128,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
             "sram_bitwidth": 128
         },
         {
             "id": 7,
-            "mac": 128,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
             "sram_bitwidth": 128
         },
         {
             "id": 8,
-            "mac": 128,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
             "sram_bitwidth": 128
         },
         {
             "id": 9,
-            "mac": 128,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
             "sram_bitwidth": 128
         },
         {
             "id": 10,
-            "mac": 128,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
             "sram_bitwidth": 128
         },
         {
             "id": 11,
-            "mac": 128,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
             "sram_bitwidth": 128
         },
         {
             "id": 12,
-            "mac": 128,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
             "sram_bitwidth": 128
         },
         {
             "id": 13,
-            "mac": 128,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
             "sram_bitwidth": 128
         },
         {
             "id": 14,
-            "mac": 128,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
             "sram_bitwidth": 128
         },
         {
             "id": 15,
-            "mac": 128,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
             "sram_bitwidth": 128
         }
     ]

@@ -29,6 +29,11 @@ void Conv_f::initialize() {
     out_size = B * oC * oH * oW;
     p_inp_size = B * C * H * W;
     inp_size = B * C * H * W + F * C * kX * kY + F;
+
+    if (datatype == INT8)
+        data_byte = 1;
+    else if (datatype == FP16)
+        data_byte = 2;
 }
 
 void Conv_f::parse_json(json j) {
@@ -54,23 +59,15 @@ void Conv_f::parse_json(json j) {
 
     initialize();
 
-    if (j.contains("dram_address")) {
+    if (j.contains("dram_address"))
         parse_address(j["dram_address"]);
-    }
 
-    if (j.contains("sram_address")) {
+    if (j.contains("sram_address"))
         parse_sram_label(j["sram_address"]);
-    }
 }
 int Conv_f::sram_utilization(DATATYPE datatype) {
-
     int total_sram = 0;
-    int data_byte = 0;
-    if (datatype == INT8) {
-        data_byte = 1;
-    } else if (datatype == FP16) {
-        data_byte = 2;
-    }
+
     int p_inp_sram_byte = B * C * H * W * data_byte * 8;
     int p_inp_sram = ceiling_division(p_inp_sram_byte, (int)SRAM_BITWIDTH);
     int w1_inps_sram =
@@ -177,6 +174,7 @@ int Conv_f::task_core(TaskCoreContext &context) {
     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
     u_int64_t weight_global_addr = dram_addr_tile + k_offset * data_byte;
     u_int64_t bias_global_addr = dram_addr_tile + b_offset * data_byte;
+    u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
 
     // 检查数据重利用
     bool input_reuse = false;
@@ -217,71 +215,77 @@ int Conv_f::task_core(TaskCoreContext &context) {
     assert(false && "Unsupported USE_SRAM == 0");
 #endif
 
-    write_output_data(context, B * C * oC * oH * oW * kX * kY * 2, dram_time,
-                      overlap_time, data_size_out);
+    write_output_data(context, B * C * oC * oH * oW * kX * kY * 2, 0, dram_time,
+                      overlap_time, data_size_out, out_global_addr);
+    BETTER_PRINT(overlap_time);
+
     return overlap_time;
 }
 
 int Conv_f::task() {
-    // CTODO: 计算cycle数
-    // TODO DAHU TIME ??
+    //     // CTODO: 计算cycle数
+    //     // TODO DAHU TIME ??
 
 
-#if DUMMY == 1
+    // #if DUMMY == 1
 
 
-#else
-    float *dram_start = (float *)(dram_array[cid]);
-    float *input = dram_start + inp_offset;
-    float *output = dram_start + out_offset;
-    float *kernel = dram_start + k_offset;
-    float *bias = dram_start + b_offset;
-    std::vector<float> padded_input(B * C * (H + 2 * pY) * (W + 2 * pX), 0);
+    // #else
+    //     float *dram_start = (float *)(dram_array[cid]);
+    //     float *input = dram_start + inp_offset;
+    //     float *output = dram_start + out_offset;
+    //     float *kernel = dram_start + k_offset;
+    //     float *bias = dram_start + b_offset;
+    //     std::vector<float> padded_input(B * C * (H + 2 * pY) * (W + 2 * pX),
+    //     0);
 
-    for (int b = 0; b < B; ++b) {
-        for (int c = 0; c < C; ++c) {
-            for (int h = 0; h < H; ++h) {
-                for (int w = 0; w < W; ++w) {
-                    padded_input[b * C * (H + 2 * pY) * (W + 2 * pX) +
-                                 c * (H + 2 * pY) * (W + 2 * pX) +
-                                 (h + pY) * (W + 2 * pX) + (w + pX)] =
-                        input[b * C * H * W + c * H * W + h * W + w];
-                }
-            }
-        }
-    }
+    //     for (int b = 0; b < B; ++b) {
+    //         for (int c = 0; c < C; ++c) {
+    //             for (int h = 0; h < H; ++h) {
+    //                 for (int w = 0; w < W; ++w) {
+    //                     padded_input[b * C * (H + 2 * pY) * (W + 2 * pX) +
+    //                                  c * (H + 2 * pY) * (W + 2 * pX) +
+    //                                  (h + pY) * (W + 2 * pX) + (w + pX)] =
+    //                         input[b * C * H * W + c * H * W + h * W + w];
+    //                 }
+    //             }
+    //         }
+    //     }
 
-    // 进行卷积操作
-    for (int b = 0; b < B; ++b) {
-        for (int c_out = 0; c_out < oC; ++c_out) {
-            for (int h_out = 0; h_out < oH; ++h_out) {
-                for (int w_out = 0; w_out < oW; ++w_out) {
-                    float sum = 0.0f;
+    //     // 进行卷积操作
+    //     for (int b = 0; b < B; ++b) {
+    //         for (int c_out = 0; c_out < oC; ++c_out) {
+    //             for (int h_out = 0; h_out < oH; ++h_out) {
+    //                 for (int w_out = 0; w_out < oW; ++w_out) {
+    //                     float sum = 0.0f;
 
-                    for (int c_in = 0; c_in < C; ++c_in) {
-                        for (int k_h = 0; k_h < kY; ++k_h) {
-                            for (int k_w = 0; k_w < kX; ++k_w) {
-                                int h_in = h_out * sY + k_h;
-                                int w_in = w_out * sX + k_w;
+    //                     for (int c_in = 0; c_in < C; ++c_in) {
+    //                         for (int k_h = 0; k_h < kY; ++k_h) {
+    //                             for (int k_w = 0; k_w < kX; ++k_w) {
+    //                                 int h_in = h_out * sY + k_h;
+    //                                 int w_in = w_out * sX + k_w;
 
-                                sum +=
-                                    padded_input[b * C * (H + 2 * pY) *
-                                                     (W + 2 * pX) +
-                                                 c_in * (H + 2 * pY) *
-                                                     (W + 2 * pX) +
-                                                 h_in * (W + 2 * pX) + w_in] *
-                                    kernel[c_out * C * kY * kX +
-                                           c_in * kY * kX + k_h * kX + k_w];
-                            }
-                        }
-                    }
+    //                                 sum +=
+    //                                     padded_input[b * C * (H + 2 * pY) *
+    //                                                      (W + 2 * pX) +
+    //                                                  c_in * (H + 2 * pY) *
+    //                                                      (W + 2 * pX) +
+    //                                                  h_in * (W + 2 * pX) +
+    //                                                  w_in] *
+    //                                     kernel[c_out * C * kY * kX +
+    //                                            c_in * kY * kX + k_h * kX +
+    //                                            k_w];
+    //                             }
+    //                         }
+    //                     }
 
-                    output[b * oC * oH * oW + c_out * oH * oW + h_out * oW +
-                           w_out] = sum + bias[c_out];
-                }
-            }
-        }
-    }
-#endif
+    //                     output[b * oC * oH * oW + c_out * oH * oW + h_out *
+    //                     oW +
+    //                            w_out] = sum + bias[c_out];
+    //                 }
+    //             }
+    //         }
+    //     }
+    // #endif
     return 0;
 }

@@ -20,30 +20,33 @@ void Gelu_f::print_self(string prefix) {
 
 
 void Gelu_f::initialize() {
+    inp_size = N;
+    out_size = N;
+    p_inp_size = N;
 
     dram_inp_size = (N + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
     dram_out_size = (N + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
     dram_data_size = 0;
+
+    if (datatype == INT8)
+        data_byte = 1;
+    else if (datatype == FP16)
+        data_byte = 2;
 }
 
 void Gelu_f::parse_json(json j) {
     N = find_var(j["N"]);
 
-    inp_size = N;
-    out_size = N;
-    p_inp_size = N;
+    initialize();
 
-    if (j.contains("dram_address")) {
+    if (j.contains("dram_address"))
         parse_address(j["dram_address"]);
-    }
 
-    if (inp_offset == -1) {
+    if (inp_offset == -1)
         inp_offset = (out_offset * 1024 - N) / 1024;
-    }
-    if (out_offset == -1) {
 
+    if (out_offset == -1)
         assert(0 && "Gelu_f: out_offset not set");
-    }
 
     // 添加以下三行以打印相关信息
     cout << "\033[1;33m" << "Gelu_f" << "\033[0m" << endl;
@@ -51,9 +54,8 @@ void Gelu_f::parse_json(json j) {
     cout << "out_offset: " << out_offset << endl;
 
 
-    if (j.contains("sram_address")) {
+    if (j.contains("sram_address"))
         parse_sram_label(j["sram_address"]);
-    }
 }
 
 int Gelu_f::sram_utilization(DATATYPE datatype) {
@@ -81,6 +83,8 @@ void Gelu_f::deserialize(sc_bv<128> buffer) {
     out_offset *= 1024;
     N = buffer.range(71, 40).to_uint64();
     datatype = DATATYPE(buffer.range(73, 72).to_uint64());
+
+    initialize();
 }
 
 sc_bv<128> Gelu_f::serialize() {
@@ -95,260 +99,131 @@ sc_bv<128> Gelu_f::serialize() {
 }
 
 int Gelu_f::task_core(TaskCoreContext &context) {
-#if USE_NB_DRAMSYS == 0
-    auto wc = context.wc;
-#endif
-    auto mau = context.mau;
-    auto hmau = context.hmau;
-    auto &msg_data = context.msg_data;
-    auto sram_addr = context.sram_addr;
-    int data_byte = 0;
-    if (datatype == INT8) {
-        data_byte = 1;
-    } else if (datatype == FP16) {
-        data_byte = 2;
-    }
+    // 所用时间
+    u_int64_t dram_time = 0;
+    u_int64_t overlap_time = 0;
+
+    // 数据维度
+    int data_size_input = N;
+    int data_size_out = N;
+
+    // dram地址
     u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
     u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
 
-#if DUMMY == 1
-    float *dram_start = nullptr;
-#else
-    float *dram_start = (float *)(dram_array[cid]);
-    float *inp = dram_start + inp_offset;
-    float *out = dram_start + out_offset;
-#endif
-
-    u_int64_t dram_time = 0;
-
-
-    int data_size_input = N;
-    int data_size_out = N;
-
-    u_int64_t time_fetched = 0;
-    u_int64_t time_prefetched = 0;
-    u_int64_t prefetch_tag = 0;
-
-#if USE_SRAM == 1
-    // 检查是否可以在此原语结束之后立刻释放中间结果
+    // 检查数据重利用
     bool input_reuse = false;
     if (datapass_label.indata[0][0] == '_') {
         input_reuse = true;
         datapass_label.indata[0] = datapass_label.indata[0].substr(1);
     }
 
-    auto inp_sram_offset = 0;
-    if (datapass_label.indata[0].find(DRAM_LABEL) == 0) {
+    // 获取前缀label
+    std::size_t pos = datapass_label.outdata.find_last_of('_');
+    std::string prefix;
+    if (pos != std::string::npos)
+        prefix = datapass_label.outdata.substr(0, pos);
+    else
+        prefix = datapass_label.outdata;
 
-
-        size_t space_pos = datapass_label.indata[0].find(' ');
-        if (space_pos != std::string::npos) {
-            datapass_label.indata[0] =
-                datapass_label.indata[0].substr(space_pos + 1);
-        }
-
-        printf("[INFO] Gelu_f: read from dram, label: %s\n",
-               datapass_label.indata[0].c_str());
-#if USE_SRAM_MANAGER == 1
-        sram_first_write_generic(
-            context, data_byte * data_size_input, inp_global_addr, dram_time,
-            dram_start, datapass_label.indata[0], true, sram_pos_locator);
-#else
-
-        sram_first_write_generic(context, data_byte * data_size_input,
-                                 inp_global_addr, dram_time, dram_start);
-
-        AddrPosKey inp_key =
-            AddrPosKey(*sram_addr, data_byte * data_size_input);
-        sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context,
-                                  dram_time);
-#endif
-    } else {
-        AddrPosKey inp_key;
-        int flag = sram_pos_locator->findPair(datapass_label.indata[0],
-                                              inp_sram_offset);
-        if (flag == -1) {
-            printf(
-                "[ERROR] Gelu_f: sram_pos_locator cannot find the label: %s\n",
-                datapass_label.indata[0].c_str());
-            sc_stop();
-        } else if (flag > 0) {
-#if USE_SRAM_MANAGER == 1
-            sram_first_write_generic(context, flag, inp_global_addr, dram_time,
-                                     dram_start, datapass_label.indata[0], true,
-                                     sram_pos_locator);
-
-#else
-            sram_first_write_generic(context, flag, inp_global_addr, dram_time,
-                                     dram_start);
-            inp_key.size = data_byte * data_size_input;
-            inp_key.spill_size = 0;
-            sram_pos_locator->addPair(datapass_label.indata[0], inp_key,
-                                      context, dram_time);
-#endif
-        } else {
-#if USE_SRAM_MANAGER == 1
-            AddrPosKey inp_key;
-            int flag =
-                sram_pos_locator->findPair(datapass_label.indata[0], inp_key);
-            if (inp_key.alloc_id == 0) {
-                sram_first_write_generic(context, data_byte * data_size_input,
-                                         inp_global_addr, dram_time, dram_start,
-                                         datapass_label.indata[0], true,
-                                         sram_pos_locator, true);
-            }
-#endif
-        }
-    }
-
+    // 读入input数据
+    check_input_data(context, dram_time, inp_global_addr, data_size_input);
     BETTER_PRINT(dram_time);
-#if USE_SRAM_MANAGER == 1
-    AddrPosKey input_key;
-    sram_pos_locator->findPair(datapass_label.indata[0], input_key);
-    sram_pos_locator->printAllKeysWithAllocId();
-    // Print allocation IDs for debugging
-    std::cout << "Input Key Allocation ID: " << input_key.alloc_id << std::endl;
-    sram_read_generic(context, data_byte * data_size_input, inp_sram_offset,
-                      dram_time, input_key.alloc_id, true, sram_pos_locator);
-#else
-    // 读出input
-    sram_pos_locator->findPair(datapass_label.indata[0], inp_sram_offset);
-    sram_read_generic(context, data_byte * data_size_input, inp_sram_offset,
-                      dram_time);
-
-#endif
-
-    // 删除标签
-    if (!input_reuse) {
-        sram_pos_locator->deletePair(datapass_label.indata[0]);
-    }
-
-    printf("gelu_forward: dram time 2: %ld\n", dram_time);
-#else
-    // CTODO: do dram only
-#endif
-
-    // 计算overlap
-    int cycle = 0;
-    if (tile_sfu.type == Linear) {
-        cout << "[GELU] N: " << N << ", x_dim: " << tile_sfu.x_dims << endl;
-        cycle = (11 * N) / (tile_sfu.x_dims) * CYCLE;
-        cout << cycle << endl;
-    } else {
-        assert(false && "Unsupported tile type");
-    }
-    // cycle = (11 * N) / (2 * 16 * 16);
-    u_int64_t overlap_time = 0;
 
 #if USE_SRAM == 1
-    if (dram_time > cycle) {
-        // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
-        overlap_time = 0;
-        std::cout << RED << "cycle: " << cycle << ", dram_time: " << dram_time
-                  << RESET << std::endl;
-    } else {
-        overlap_time = cycle - dram_time;
-        std::cout << GREEN << "cycle: " << cycle << ", dram_time: " << dram_time
-                  << RESET << std::endl;
-    }
-#else
-    if (dram_time > cycle) {
-        overlap_time = dram_time;
-    } else {
-        overlap_time = cycle;
-    }
-#endif
+    {
+        // 删除标签
+        if (!input_reuse)
+            sram_pos_locator->deletePair(datapass_label.indata[0]);
 
-#if USE_SRAM == 1
-#if USE_SRAM_MANAGER == 1
-    sram_write_append_generic(context, data_byte * data_size_out, overlap_time,
-                              datapass_label.outdata, true, sram_pos_locator,
-                              out_global_addr);
-#else
-    // 写入out
-    AddrPosKey out_key = AddrPosKey(*sram_addr, data_byte * data_size_out);
-    sram_pos_locator->addPair(datapass_label.outdata, out_key, context,
-                              dram_time);
-    sram_write_append_generic(context, data_byte * data_size_out, overlap_time);
+        BETTER_PRINT(dram_time);
+    }
 #endif
-#else
-    // CTODO: do dram only
-#endif
-    printf("gelu_forward: overlap_time: %ld\n", overlap_time);
+    // 计算overlap并写回output数据
+    write_output_data(context, 0, N, dram_time, overlap_time, data_size_out,
+                      out_global_addr);
+    BETTER_PRINT(overlap_time);
+
     return overlap_time;
 }
 
 int Gelu_f::task() {
-    int cycle = 0;
-    if (tile_sfu.type == Linear) {
-        cycle = (11 * N) / (tile_sfu.x_dims) * CYCLE;
-    } else {
-        assert(false && "Unsupported tile type");
-    }
-    // cycle = (11 * N) / (2 * 16 * 16);
-    int data_byte = 0;
-    if (datatype == INT8) {
-        data_byte = 1;
-    } else if (datatype == FP16) {
-        data_byte = 2;
-    }
-    u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
-    u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
-    u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
+    //     int cycle = 0;
+    //     if (tile_sfu.type == Linear) {
+    //         cycle = (11 * N) / (tile_sfu.x_dims) * CYCLE;
+    //     } else {
+    //         assert(false && "Unsupported tile type");
+    //     }
+    //     // cycle = (11 * N) / (2 * 16 * 16);
+    //     int data_byte = 0;
+    //     if (datatype == INT8) {
+    //         data_byte = 1;
+    //     } else if (datatype == FP16) {
+    //         data_byte = 2;
+    //     }
+    //     u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
+    //     u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
+    //     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
 
-    u_int64_t time_fetched = 0;
-    u_int64_t time_prefetched = 0;
-    u_int64_t prefetch_tag = 0;
+    //     u_int64_t time_fetched = 0;
+    //     u_int64_t time_prefetched = 0;
+    //     u_int64_t prefetch_tag = 0;
 
-    u_int64_t dram_time = 0;
-
-
-    u_int64_t in_dcacheline, out_dcacheline;
-
-    for (int i = 0; i < N; i++) {
-        in_dcacheline = (inp_global_addr >> dcache_words_in_line_log2) >> 2;
-        dram_time += check_dcache(
-            0, 0, in_dcacheline << (dcache_words_in_line_log2 + 2), dram_time,
-            time_fetched, time_prefetched, prefetch_tag, false);
-        in_dcacheline += data_byte;
-    }
-
-    u_int64_t overlap_time = 0;
-
-    if (dram_time > cycle) {
-        overlap_time = dram_time;
-    } else {
-        overlap_time = cycle;
-    }
-
-    for (int i = 0; i < N; i++) {
-        out_dcacheline = (out_global_addr >> dcache_words_in_line_log2) >> 2;
-        overlap_time += check_dcache(
-            0, 0, out_dcacheline << (dcache_words_in_line_log2 + 2),
-            overlap_time, time_fetched, time_prefetched, prefetch_tag, false);
-        out_dcacheline += data_byte;
-    }
-
-    /* --------------------------------------------------------------------------------------------
-     */
-#if DUMMY == 1
+    //     u_int64_t dram_time = 0;
 
 
-#else
-    float *dram_start = (float *)(dram_array[cid]);
-    float *inp = dram_start + inp_offset;
-    float *out = dram_start + out_offset;
-    for (int i = 0; i < N; i++) {
-        float x = inp[i];
-        float cube = 0.044715f * x * x * x; // compute: 3N
-        out[i] = 0.5f * x *
-                 (1.0f +
-                  tanhf(GELU_SCALING_FACTOR * (x + cube))); // compute: (2+2+4)N
-    }
-#endif
-    cout << "gelu" << endl;
+    //     u_int64_t in_dcacheline, out_dcacheline;
+
+    //     for (int i = 0; i < N; i++) {
+    //         in_dcacheline = (inp_global_addr >> dcache_words_in_line_log2) >>
+    //         2; dram_time += check_dcache(
+    //             0, 0, in_dcacheline << (dcache_words_in_line_log2 + 2),
+    //             dram_time, time_fetched, time_prefetched, prefetch_tag,
+    //             false);
+    //         in_dcacheline += data_byte;
+    //     }
+
+    //     u_int64_t overlap_time = 0;
+
+    //     if (dram_time > cycle) {
+    //         overlap_time = dram_time;
+    //     } else {
+    //         overlap_time = cycle;
+    //     }
+
+    //     for (int i = 0; i < N; i++) {
+    //         out_dcacheline = (out_global_addr >> dcache_words_in_line_log2)
+    //         >> 2; overlap_time += check_dcache(
+    //             0, 0, out_dcacheline << (dcache_words_in_line_log2 + 2),
+    //             overlap_time, time_fetched, time_prefetched, prefetch_tag,
+    //             false);
+    //         out_dcacheline += data_byte;
+    //     }
+
+    //     /*
+    //     --------------------------------------------------------------------------------------------
+    //      */
+    // #if DUMMY == 1
 
 
-    return overlap_time;
+    // #else
+    //     float *dram_start = (float *)(dram_array[cid]);
+    //     float *inp = dram_start + inp_offset;
+    //     float *out = dram_start + out_offset;
+    //     for (int i = 0; i < N; i++) {
+    //         float x = inp[i];
+    //         float cube = 0.044715f * x * x * x; // compute: 3N
+    //         out[i] = 0.5f * x *
+    //                  (1.0f +
+    //                   tanhf(GELU_SCALING_FACTOR * (x + cube))); // compute:
+    //                   (2+2+4)N
+    //     }
+    // #endif
+    //     cout << "gelu" << endl;
+
+
+    //     return overlap_time;
+
+    return 0;
 }

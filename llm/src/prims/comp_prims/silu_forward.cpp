@@ -28,24 +28,15 @@ void silu_forward::parse_json(json j) {
 
     initialize();
 
-    if (j.contains("dram_address")) {
+    if (j.contains("dram_address"))
         parse_address(j["dram_address"]);
-    }
 
-    if (j.contains("sram_address")) {
+    if (j.contains("sram_address"))
         parse_sram_label(j["sram_address"]);
-    }
 }
 
 int silu_forward::sram_utilization(DATATYPE datatype) {
     int total_sram = 0;
-    int data_byte = 0;
-
-    if (datatype == DATATYPE::FP16) {
-        data_byte = 2;
-    } else if (datatype == DATATYPE::INT8) {
-        data_byte = 1;
-    }
 
     int inp_sram = ceiling_division(N * data_byte * 8, SRAM_BITWIDTH);
     int out_sram = ceiling_division(N * data_byte * 8, SRAM_BITWIDTH);
@@ -89,6 +80,7 @@ int silu_forward::task_core(TaskCoreContext &context) {
     // dram地址
     u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
+    u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
 
     // 检查数据重利用
     bool input_reuse = false;
@@ -107,20 +99,20 @@ int silu_forward::task_core(TaskCoreContext &context) {
 
     // 读入input数据
     check_input_data(context, dram_time, inp_global_addr, data_size_input);
-    printf("silu_f: dram time 1: %ld\n", dram_time);
+    BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
     // 删除标签
     if (!input_reuse)
         sram_pos_locator->deletePair(datapass_label.indata[0]);
 
-    printf("rope_f: dram time 2: %ld\n", dram_time);
+    BETTER_PRINT(dram_time);
 #endif
 
     // 计算overlap并写回output数据
-    write_output_data(context, 8 * N, dram_time, overlap_time,
-                      data_size_out);
-    printf("rope_f: overlap_time: %ld\n", overlap_time);
+    write_output_data(context, 8 * N, 0, dram_time, overlap_time, data_size_out,
+                      out_global_addr);
+    BETTER_PRINT(overlap_time);
 
     return overlap_time;
 }

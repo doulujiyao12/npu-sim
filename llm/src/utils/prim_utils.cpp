@@ -48,14 +48,6 @@ prim_base *new_prim(string type) {
         prim = new Split_matmul();
     else if (type == "Store_prim")
         prim = new Store_prim();
-    else if (type == "Attention_f_decode")
-        prim = new Attention_f_decode();
-    else if (type == "Attention_f_prefill")
-        prim = new Attention_f_prefill();
-    else if (type == "Matmul_f_decode")
-        prim = new Matmul_f_decode();
-    else if (type == "Matmul_f_prefill")
-        prim = new Matmul_f_prefill();
     else if (type == "Set_addr")
         prim = new Set_addr();
     else if (type == "Clear_sram")

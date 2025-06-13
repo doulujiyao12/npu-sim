@@ -23,6 +23,8 @@ public:
 
     int pipeline; // 是否进行input连续输入，从而增加pipeline并行度，数值大小为需要连续进行的pipe段数
 
+    void set_hw_config(string filename);
+
     virtual void fill_queue_config(queue<Msg> *q) = 0;
     virtual void fill_queue_start(queue<Msg> *q) = 0;
     void fill_queue_data(queue<Msg> *q);

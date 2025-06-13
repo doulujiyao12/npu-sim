@@ -27,6 +27,44 @@ int find_var(string var) {
     return 1;
 }
 
+
+ExuConfig *get_exu_config(int id) {
+    for (auto pair : tile_exu) {
+        if (pair.first == id)
+            return pair.second;
+    }
+
+    cout << "[ERROR]: exu id " << id << " not found!" << endl;
+    sc_stop();
+
+    return new ExuConfig();
+}
+
+SfuConfig *get_sfu_config(int id) {
+    for (auto pair : tile_sfu) {
+        if (pair.first == id)
+            return pair.second;
+    }
+
+    cout << "[ERROR]: sfu id " << id << " not found!" << endl;
+    sc_stop();
+
+    return new SfuConfig();
+}
+
+int get_sram_bitwidth(int id) {
+    for (auto pair : mem_sram_bw) {
+        if (pair.first == id)
+            return pair.second;
+    }
+
+    cout << "[ERROR]: sram bitwidth for id " << id << " not found!" << endl;
+    sc_stop();
+
+    return 128; // 默认返回128位
+}
+
+
 int ceiling_division(int a, int b) {
     if (b == 0) {
         throw std::invalid_argument("Division by zero is not allowed.");

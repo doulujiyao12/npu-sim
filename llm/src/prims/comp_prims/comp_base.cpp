@@ -63,8 +63,8 @@ void comp_base::parse_sram_label(json j) {
 }
 
 void comp_base::check_input_data(TaskCoreContext &context, uint64_t &dram_time,
-                                 uint64_t inp_global_addr,
-                                 int data_size_input) {
+                                 uint64_t inp_global_addr, int data_size_input,
+                                 int partition) {
 #if USE_NB_DRAMSYS == 0
     auto wc = context.wc;
 #endif
@@ -84,89 +84,98 @@ void comp_base::check_input_data(TaskCoreContext &context, uint64_t &dram_time,
 #endif
 
 #if USE_SRAM == 1
-    if (datapass_label.indata[0].find(DRAM_LABEL) == 0) {
-        size_t space_pos = datapass_label.indata[0].find(' ');
-        if (space_pos != std::string::npos) {
-            datapass_label.indata[0] =
-                datapass_label.indata[0].substr(space_pos + 1);
-        }
+    for (int p = 0; p < partition; p++) {
+        uint64_t p_global_addr =
+            inp_global_addr + p * data_byte * data_size_input / partition;
 
-        printf("[INFO] comp_base: read from dram, label: %s\n",
-               datapass_label.indata[0].c_str());
-#if USE_SRAM_MANAGER == 1
-        sram_first_write_generic(
-            context, data_byte * data_size_input, inp_global_addr, dram_time,
-            dram_start, datapass_label.indata[0], true, sram_pos_locator);
-#else
-        sram_first_write_generic(context, data_byte * data_size_input,
-                                 inp_global_addr, dram_time, dram_start);
-        AddrPosKey inp_key =
-            AddrPosKey(*sram_addr, data_byte * data_size_input);
-        sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context,
-                                  dram_time);
-#endif
-    } else {
-        AddrPosKey inp_key;
-        printf("[INFO] comp_base: read from sram, label: %s\n",
-               datapass_label.indata[0].c_str());
-        int flag =
-            sram_pos_locator->findPair(datapass_label.indata[0], inp_key);
-        if (flag == -1) {
-            printf("[ERROR] comp_base: sram_pos_locator cannot find the "
-                   "label: %s\n",
-                   datapass_label.indata[0].c_str());
-            sc_stop();
-        } else if (flag > 0) {
-#if USE_SRAM_MANAGER == 1
-            std::cout << "[INFO] comp_base: sram_pos_locator find the "
-                         "label: "
-                      << datapass_label.indata[0] << " with flag: " << flag
-                      << std::endl;
-            sram_first_write_generic(context, flag, inp_global_addr, dram_time,
-                                     dram_start, datapass_label.indata[0], true,
-                                     sram_pos_locator);
+        if (datapass_label.indata[p].find(DRAM_LABEL) == 0) {
+            size_t space_pos = datapass_label.indata[p].find(' ');
+            if (space_pos != std::string::npos) {
+                datapass_label.indata[p] =
+                    datapass_label.indata[p].substr(space_pos + 1);
+            }
 
+            printf("[INFO] comp_base: read from dram, label: %s\n",
+                   datapass_label.indata[p].c_str());
+#if USE_SRAM_MANAGER == 1
+            sram_first_write_generic(
+                context, data_byte * data_size_input / partition, p_global_addr,
+                dram_time, dram_start, datapass_label.indata[p], true,
+                sram_pos_locator);
 #else
-            sram_first_write_generic(context, flag, inp_global_addr, dram_time,
-                                     dram_start);
-            inp_key.size = data_size_input;
-            inp_key.spill_size = 0;
-            sram_pos_locator->addPair(datapass_label.indata[0], inp_key,
+            sram_first_write_generic(context,
+                                     data_byte * data_size_input / partition,
+                                     p_global_addr, dram_time, dram_start);
+            AddrPosKey inp_key =
+                AddrPosKey(*sram_addr, data_byte * data_size_input / partition);
+            sram_pos_locator->addPair(datapass_label.indata[p], inp_key,
                                       context, dram_time);
 #endif
         } else {
-#if USE_SRAM_MANAGER == 1
-            std::cout << "[INFO] comp_base: sram_pos_locator find the "
-                         "label: "
-                      << datapass_label.indata[0] << " with flag: " << flag
-                      << std::endl;
             AddrPosKey inp_key;
+            printf("[INFO] comp_base: read from sram, label: %s\n",
+                   datapass_label.indata[p].c_str());
             int flag =
-                sram_pos_locator->findPair(datapass_label.indata[0], inp_key);
-            if (inp_key.alloc_id == 0) {
-                sram_first_write_generic(context, data_byte * data_size_input,
-                                         inp_global_addr, dram_time, dram_start,
-                                         datapass_label.indata[0], true,
-                                         sram_pos_locator, true);
-            }
+                sram_pos_locator->findPair(datapass_label.indata[p], inp_key);
+            if (flag == -1) {
+                printf("[ERROR] comp_base: sram_pos_locator cannot find the "
+                       "label: %s\n",
+                       datapass_label.indata[p].c_str());
+                sc_stop();
+            } else if (flag > 0) {
+#if USE_SRAM_MANAGER == 1
+                std::cout << "[INFO] comp_base: sram_pos_locator find the "
+                             "label: "
+                          << datapass_label.indata[p] << " with flag: " << flag
+                          << std::endl;
+                sram_first_write_generic(
+                    context, flag, p_global_addr, dram_time, dram_start,
+                    datapass_label.indata[p], true, sram_pos_locator);
+
+#else
+                sram_first_write_generic(context, flag, p_global_addr,
+                                         dram_time, dram_start);
+                inp_key.size = data_size_input;
+                inp_key.spill_size = 0;
+                sram_pos_locator->addPair(datapass_label.indata[p], inp_key,
+                                          context, dram_time);
 #endif
+            } else {
+#if USE_SRAM_MANAGER == 1
+                std::cout << "[INFO] comp_base: sram_pos_locator find the "
+                             "label: "
+                          << datapass_label.indata[p] << " with flag: " << flag
+                          << std::endl;
+                AddrPosKey inp_key;
+                int flag = sram_pos_locator->findPair(datapass_label.indata[p],
+                                                      inp_key);
+                if (inp_key.alloc_id == 0) {
+                    sram_first_write_generic(
+                        context, data_byte * data_size_input / partition,
+                        p_global_addr, dram_time, dram_start,
+                        datapass_label.indata[p], true, sram_pos_locator, true);
+                }
+#endif
+            }
         }
-    }
 
 #if USE_SRAM_MANAGER == 1
-    AddrPosKey input_key;
-    sram_pos_locator->findPair(datapass_label.indata[0], input_key);
-    sram_pos_locator->printAllKeysWithAllocId();
-    // Print allocation IDs for debugging
-    std::cout << "Input Key Allocation ID: " << input_key.alloc_id << std::endl;
-    sram_read_generic(context, data_byte * data_size_input, inp_sram_offset,
-                      dram_time, input_key.alloc_id, true, sram_pos_locator);
+        AddrPosKey input_key;
+        sram_pos_locator->findPair(datapass_label.indata[p], input_key);
+        sram_pos_locator->printAllKeysWithAllocId();
+        // Print allocation IDs for debugging
+        std::cout << "Input Key Allocation ID: " << input_key.alloc_id
+                  << std::endl;
+        sram_read_generic(context, data_byte * data_size_input / partition,
+                          inp_sram_offset, dram_time, input_key.alloc_id, true,
+                          sram_pos_locator);
 #else
-    // 读出input
-    sram_pos_locator->findPair(datapass_label.indata[0], inp_sram_offset);
-    sram_read_generic(context, data_byte * data_size_input, inp_sram_offset,
-                      dram_time);
+        // 读出input
+        sram_pos_locator->findPair(datapass_label.indata[p], inp_sram_offset);
+        sram_read_generic(context, data_byte * data_size_input / partition,
+                          inp_sram_offset, dram_time);
 #endif
+    }
 #endif
 }
 
@@ -214,14 +223,38 @@ void comp_base::check_static_data(TaskCoreContext &context, uint64_t &dram_time,
         sram_pos_locator->addPair(label_name, sc_key, context, dram_time);
 #endif
     }
+
+    int sram_offset;
+    sram_pos_locator->findPair(label_name, sc_key);
+#if USE_SRAM_MANAGER == 1
+    sram_pos_locator->printAllKeysWithAllocId();
+    // Print allocation IDs for debugging
+    std::cout << label_name << " Key Allocation ID: " << sc_key.alloc_id
+              << std::endl;
+    sram_read_generic(context, data_byte * data_size_label, sram_offset,
+                      dram_time, sc_key.alloc_id, true, sram_pos_locator);
+#else
+    sram_read_generic(context, data_byte * data_size_label, sram_offset,
+                      dram_time);
+#endif
 }
 
-void comp_base::write_output_data(TaskCoreContext &context, int flops,
-                                  uint64_t dram_time, uint64_t &overlap_time,
-                                  int data_size_out) {
+void comp_base::write_output_data(TaskCoreContext &context, int exu_flops,
+                                  int sfu_flops, uint64_t dram_time,
+                                  uint64_t &overlap_time, int data_size_out,
+                                  uint64_t out_global_addr) {
     int cycle = 0;
-    if (tile_exu.type == MAC_Array)
-        cycle = flops / (tile_exu.x_dims * tile_exu.y_dims * comp_util) * CYCLE;
+    int cid = context.cid;
+    ExuConfig *exu = get_exu_config(cid);
+    SfuConfig *sfu = get_sfu_config(cid);
+
+    if (exu->type == MAC_Array)
+        cycle += exu_flops / (exu->x_dims * exu->y_dims * comp_util) * CYCLE;
+    else
+        assert(false && "Unsupported tile type");
+
+    if (sfu->type == Linear)
+        cycle += sfu_flops / sfu->x_dims * CYCLE;
     else
         assert(false && "Unsupported tile type");
 
@@ -238,17 +271,35 @@ void comp_base::write_output_data(TaskCoreContext &context, int flops,
                   << RESET << std::endl;
     }
 
-// 写入out
+    // 写入out
+    std::vector<std::string> out_labels;
+    std::istringstream iss(datapass_label.outdata);
+    std::string label;
+    while (iss >> label)
+        out_labels.push_back(label);
+
+    int temp_out_sram_offset = *(context.sram_addr);
+
+
 #if USE_SRAM_MANAGER == 1
-    sram_write_append_generic(context, data_byte * data_size_out, overlap_time,
-                              datapass_label.outdata, true, sram_pos_locator,
-                              out_global_addr);
+    for (int i = 0; i < out_labels.size(); i++) {
+        sram_write_append_generic(
+            context, data_byte * data_size_out / out_labels.size(),
+            overlap_time, out_labels[i], true, sram_pos_locator,
+            out_global_addr +
+                i * data_byte * data_size_out / out_labels.size());
+    }
 #else
-    AddrPosKey out_key =
-        AddrPosKey(*(context.sram_addr), data_byte * data_size_out);
-    sram_pos_locator->addPair(datapass_label.outdata, out_key, context,
-                              dram_time);
     sram_write_append_generic(context, data_byte * data_size_out, overlap_time);
+    auto interval =
+        (*(context.sram_addr) - temp_out_sram_offset) / out_labels.size();
+
+    for (int i = 0; i < out_labels.size(); i++) {
+        AddrPosKey out_key =
+            AddrPosKey(static_cast<int>(temp_out_sram_offset + i * interval),
+                       data_byte * data_size_out / out_labels.size());
+        sram_pos_locator->addPair(out_labels[i], out_key, context, dram_time);
+    }
 #endif
 #endif
 }

@@ -18,6 +18,7 @@ int rope_f::task_core(TaskCoreContext &context) {
     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
     u_int64_t sincos_global_addr =
         inp_global_addr + data_size_input * data_byte;
+    u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
 
     // 检查数据重利用
     bool input_reuse = false;
@@ -36,7 +37,7 @@ int rope_f::task_core(TaskCoreContext &context) {
 
     // 读入input数据
     check_input_data(context, dram_time, inp_global_addr, data_size_input);
-    printf("rope_f: dram time 1: %ld\n", dram_time);
+    BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
     // 此时默认已经分好注意力头了。对于每一个注意力头，对应的sincos数据大小均为B
@@ -59,12 +60,12 @@ int rope_f::task_core(TaskCoreContext &context) {
         total_tokens += stage.token_num;
 
         char format_label_k[100];
-        sprintf(format_label_k, "%s%skREQ%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+        sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
                 stage.req_id);
         string label_k = format_label_k;
 
         char format_label_v[100];
-        sprintf(format_label_v, "%s%svREQ%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+        sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
                 stage.req_id);
         string label_v = format_label_v;
 
@@ -93,13 +94,13 @@ int rope_f::task_core(TaskCoreContext &context) {
     if (!input_reuse)
         sram_pos_locator->deletePair(datapass_label.indata[0]);
 
-    printf("rope_f: dram time 2: %ld\n", dram_time);
+    BETTER_PRINT(dram_time);
 #endif
 
     // 计算overlap并写回output数据
-    write_output_data(context, 6 * total_tokens * C, dram_time, overlap_time,
-                      data_size_out);
-    printf("rope_f: overlap_time: %ld\n", overlap_time);
+    write_output_data(context, 6 * total_tokens * C, 0, dram_time, overlap_time,
+                      data_size_out, out_global_addr);
+    BETTER_PRINT(overlap_time);
 
     return overlap_time;
 }

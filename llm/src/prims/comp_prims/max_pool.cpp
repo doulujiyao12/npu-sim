@@ -29,6 +29,14 @@ void Max_pool::initialize() {
     out_size = B * oC * oH * oW;
     p_inp_size = B * C * H * W;
     inp_size = B * C * H * W;
+
+    if (datatype == INT8)
+        data_byte = 1;
+    else if (datatype == FP16)
+        data_byte = 2;
+
+    k_offset = B * C * H * W + inp_offset;
+    b_offset = 1 * C * kX * kY + k_offset;
 }
 
 void Max_pool::parse_json(json j) {
@@ -59,12 +67,6 @@ void Max_pool::parse_json(json j) {
 int Max_pool::sram_utilization(DATATYPE datatype) {
 
     int total_sram = 0;
-    int data_byte = 0;
-    if (datatype == INT8) {
-        data_byte = 1;
-    } else if (datatype == FP16) {
-        data_byte = 2;
-    }
 
     int p_inp_sram =
         ceiling_division(B * C * H * W * data_byte * 8, SRAM_BITWIDTH);
@@ -95,9 +97,6 @@ void Max_pool::deserialize(sc_bv<128> buffer) {
     datatype = DATATYPE(buffer.range(125, 124).to_uint64());
 
     initialize();
-
-    k_offset = B * C * H * W + inp_offset;
-    b_offset = 1 * C * kX * kY + k_offset;
 }
 
 sc_bv<128> Max_pool::serialize() {
@@ -122,159 +121,66 @@ sc_bv<128> Max_pool::serialize() {
 }
 
 int Max_pool::task_core(TaskCoreContext &context) {
-#if USE_NB_DRAMSYS == 0
-    auto wc = context.wc;
-#endif
-    auto mau = context.mau;
-    auto hmau = context.hmau;
-    auto &msg_data = context.msg_data;
-    auto sram_addr = context.sram_addr;
+    // 所用时间
+    u_int64_t dram_time = 0;
+    u_int64_t overlap_time = 0;
 
-    int data_byte = 0;
-    if (datatype == INT8) {
-        data_byte = 1;
-    } else if (datatype == FP16) {
-        data_byte = 2;
-    }
+    // 数据维度
+    int data_size_input = B * C * H * W;
+    int data_size_out = B * oC * oH * oW;
+
+    // dram地址
     u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
     u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
 
-
-#if DUMMY == 1
-    float *dram_start = nullptr;
-#else
-    float *dram_start = (float *)(dram_array[cid]);
-    float *input = dram_start + inp_offset;
-    float *output = dram_start + out_offset;
-    float *kernel = dram_start + k_offset;
-    float *bias = dram_start + b_offset;
-#endif
-    u_int64_t dram_time = 0;
-
-
-    int data_size_input = B * C * H * W;
-
-    int data_size_out = B * oC * oH * oW;
-
-#if USE_SRAM == 1
-    // 检查是否可以在此原语结束之后立刻释放中间结果
+    // 检查数据重利用
     bool input_reuse = false;
     if (datapass_label.indata[0][0] == '_') {
         input_reuse = true;
         datapass_label.indata[0] = datapass_label.indata[0].substr(1);
     }
 
-    auto inp_sram_offset = 0;
-    if (datapass_label.indata[0].find(DRAM_LABEL) == 0) {
-        sram_first_write_generic(context, data_byte * data_size_input,
-                                 inp_global_addr, dram_time, dram_start);
+    // 获取前缀label
+    std::size_t pos = datapass_label.outdata.find_last_of('_');
+    std::string prefix;
+    if (pos != std::string::npos)
+        prefix = datapass_label.outdata.substr(0, pos);
+    else
+        prefix = datapass_label.outdata;
 
-        size_t space_pos = datapass_label.indata[0].find(' ');
-        if (space_pos != std::string::npos) {
-            datapass_label.indata[0] =
-                datapass_label.indata[0].substr(space_pos + 1);
-        }
-
-        printf("[INFO] Max_pool: read from dram, label: %s\n",
-               datapass_label.indata[0].c_str());
-
-        AddrPosKey inp_key =
-            AddrPosKey(*sram_addr, data_byte * data_size_input);
-        sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context,
-                                  dram_time);
-    } else {
-        AddrPosKey inp_key;
-        int flag = sram_pos_locator->findPair(datapass_label.indata[0],
-                                               inp_sram_offset);
-        printf("[INFO] Max_pool: read from sram, label: %s, value: %d\n",
-               datapass_label.indata[0].c_str(), inp_sram_offset);
-        if (flag == -1) {
-            printf("[ERROR] Max_pool: sram_pos_locator cannot find the label: "
-                   "%s\n",
-                   datapass_label.indata[0].c_str());
-            sc_stop();
-        } else if (flag > 0) {
-            sram_first_write_generic(context, flag, inp_global_addr, dram_time,
-                                     dram_start);
-            inp_key.size = data_byte * data_size_input;
-            inp_key.spill_size = 0;
-            sram_pos_locator->addPair(datapass_label.indata[0], inp_key,
-                                      context, dram_time);
-        }
-    }
-
-    printf("Max_pool: dram time 1: %ld\n", dram_time);
-
-    // 简化读出所有数据即可
-    sram_pos_locator->findPair(datapass_label.indata[0], inp_sram_offset);
-    sram_read_generic(context, data_byte * data_size_input, inp_sram_offset,
-                      dram_time);
-
-    // 删除标签
-    if (!input_reuse) {
-        sram_pos_locator->deletePair(datapass_label.indata[0]);
-    }
-
-    printf("Max_pool: dram time 2: %ld\n", dram_time);
-#else
-    assert(false && "Unsupported USE_SRAM == 0");
-#endif
-
-    u_int64_t cycle = 0;
-    if (tile_sfu.type == Linear) {
-        cycle = B * oC * oH * oW * kX * kY / (tile_sfu.x_dims) * CYCLE;
-    } else {
-        assert(false && "Unsupported tile type");
-    }
-    u_int64_t overlap_time = 0;
+    // 读入input数据
+    check_input_data(context, dram_time, inp_global_addr, data_size_input);
+    BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
-    if (dram_time > cycle) {
-        // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
-        overlap_time = 0;
-        std::cout << RED << "cycle: " << cycle << ", dram_time: " << dram_time
-                  << RESET << std::endl;
+    { // 删除标签
+        if (!input_reuse)
+            sram_pos_locator->deletePair(datapass_label.indata[0]);
 
-    } else {
-        overlap_time = cycle - dram_time;
-        std::cout << GREEN << "cycle: " << cycle << ", dram_time: " << dram_time
-                  << RESET << std::endl;
-    }
-#else
-    if (dram_time > cycle) {
-        overlap_time = dram_time;
-    } else {
-        overlap_time = cycle;
+        BETTER_PRINT(dram_time);
     }
 #endif
 
-#if USE_SRAM == 1
-    // 写入out
-    // label kv in sram locator
-    AddrPosKey out_key = AddrPosKey(*sram_addr, data_byte * data_size_out);
-    sram_pos_locator->addPair(datapass_label.outdata, out_key, context,
-                              dram_time);
-    sram_write_append_generic(context, data_byte * data_size_out, overlap_time);
-#else
-    assert(false && "Unsupported USE_SRAM == 0");
-#endif
-    printf("output conv_f_cycle %ld \n", overlap_time);
+    // 计算overlap并写回output数据
+    write_output_data(context, 0, B * oC * oH * oW * kX * kY, dram_time,
+                      overlap_time, data_size_out, out_global_addr);
+    BETTER_PRINT(overlap_time);
+
     return overlap_time;
 }
 
-
 int Max_pool::task() {
-    // CTODO: 计算cycle数
-    // TODO DAHU TIME ??
+    //     // CTODO: 计算cycle数
+    //     // TODO DAHU TIME ??
 
 
-#if DUMMY == 1
+    // #if DUMMY == 1
 
 
-#else
-    assert(false && "Unsupported DUMMY == 0");
+    // #else
+    //     assert(false && "Unsupported DUMMY == 0");
 
-#endif
+    // #endif
     return 0;
 }

@@ -6,6 +6,7 @@
 
 #include "common/msg.h"
 #include "monitor/config_helper_base.h"
+#include "defs/global.h"
 
 using json = nlohmann::json;
 
@@ -102,5 +103,32 @@ void config_helper_base::fill_queue_data(queue<Msg> *q) {
 
         cout << "core " << config.id << " send " << pkg_index + 1
              << " data packages.\n";
+    }
+}
+
+void config_helper_base::set_hw_config(string filename) {
+    json j;
+
+    ifstream jfile(filename);
+    if (!jfile.is_open()) {
+        cout << "[ERROR] Failed to open file " << filename << ".\n";
+        sc_stop();
+    }
+
+    jfile >> j;
+
+    auto config_cores = j["cores"];
+    if (config_cores.size() != GRID_SIZE) {
+        cout << "[ERROR] Core number mismatch in core hw config and "
+                "GRID_SIZE.\n";
+        sc_stop();
+    }
+
+    for (auto core : config_cores) {
+        CoreHWConfig c = core;
+        tile_exu.push_back(
+            make_pair(c.id, new ExuConfig(MAC_Array, c.exu_x, c.exu_y)));
+        tile_sfu.push_back(make_pair(c.id, new SfuConfig(Linear, c.sfu_x)));
+        mem_sram_bw.push_back(make_pair(c.id, c.sram_bitwidth));
     }
 }

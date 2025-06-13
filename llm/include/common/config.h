@@ -52,8 +52,8 @@ void from_json(const json &j, CoreJob &c);
 class CoreConfig {
 public:
     int id;
-    int prim_copy;    // 是否需要复制其他核的计算原语
-    int send_global_mem; //是否需要将计算结果发送给Global Mem
+    int prim_copy;       // 是否需要复制其他核的计算原语
+    int send_global_mem; // 是否需要将计算结果发送给Global Mem
 
     int loop; // 用于指定所有CoreJob需要重复执行的次数
 
@@ -90,3 +90,33 @@ public:
 };
 
 void from_json(const json &j, StreamConfig &c);
+
+class CoreHWConfig {
+public:
+    int id;
+    int exu_x;         // 执行单元的X轴数量
+    int exu_y;         // 执行单元的Y轴数量
+    int sfu_x;         // SFU的X轴数量
+    int sram_bitwidth; // SRAM的位宽
+};
+
+void from_json(const json &j, CoreHWConfig &c);
+
+class ExuConfig {
+public:
+    Etype type; // exu type
+    int x_dims; // exu x array
+    int y_dims; // exu y array
+
+    ExuConfig() : type(MAC_Array), x_dims(128), y_dims(128) {}
+    ExuConfig(Etype t, int x, int y) : type(t), x_dims(x), y_dims(y) {}
+};
+
+class SfuConfig {
+public:
+    Sftype type; // exu type
+    int x_dims;  // exu x array
+
+    SfuConfig() : type(Linear), x_dims(16) {}
+    SfuConfig(Sftype t, int x) : type(t), x_dims(x) {}
+};

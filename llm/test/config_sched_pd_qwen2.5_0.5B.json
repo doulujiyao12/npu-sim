@@ -1,6 +1,5 @@
 {
   "mode": "sched_pd",
-  "core_config": "../llm/test/config_sched_pd_qwen2.5_0.5B.json",
   "requests": {
     "count": 2,
     "seq_len": 128,
@@ -19,6 +18,7 @@
       "chip_id": 0,
       "GridX": 2,
       "GridY": 2,
+      "core_config": "../llm/test/core_2x2.json",
       "cores": [
         {
           "id": 0,

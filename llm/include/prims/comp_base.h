@@ -28,13 +28,15 @@ public:
     void initialize() {}
 
     void check_input_data(TaskCoreContext &context, uint64_t &dram_time,
-                          uint64_t inp_global_addr, int data_size_input);
+                          uint64_t inp_global_addr, int data_size_input,
+                          int partition = 1);
     void check_static_data(TaskCoreContext &context, uint64_t &dram_time,
                            uint64_t label_global_addr, int data_size_label,
                            string label_name);
-    void write_output_data(TaskCoreContext &context, int flops,
-                           uint64_t dram_time, uint64_t &overlap_time,
-                           int data_size_out);
+    void write_output_data(TaskCoreContext &context, int exu_flops,
+                           int sfu_flops, uint64_t dram_time,
+                           uint64_t &overlap_time, int data_size_out,
+                           uint64_t out_global_addr);
 
     comp_base() { prim_type = COMP_PRIM; }
 };

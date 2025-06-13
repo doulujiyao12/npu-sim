@@ -16,7 +16,7 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
     // 收集相关参数
     auto config_reqs = j["requests"];
     int req_cnt = config_reqs["count"];
-    
+
     heads = config_reqs["heads"];
     head_size = config_reqs["head_size"];
     kv_heads = config_reqs["kv_heads"];
@@ -64,16 +64,21 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
         idle_decode.push_back(q);
     }
 
-    cout << "here\n";
-
     for (int i = 0; i < req_cnt; i++) {
         RequestRecord record =
             RequestRecord(i, config_reqs["seq_len"], heads, arrival_time[i]);
         requestRecords.push_back(record);
     }
 
-    cout << "here\n";
+    if (!j["chips"][config_chip_id].contains("core_config")) {
+        cout << "[ERROR] Missing field core_config in config_file.\n";
+        sc_stop();
+    } else {
+        string core_hw_config = j["chips"][config_chip_id]["core_config"];
+        set_hw_config(core_hw_config);
+    }
 
+    // 建立原语模板
     json_template_p = j["chips"][0]["cores"][0];
     json_template_d = j["chips"][0]["cores"][1];
     busy_d = busy_p = false;
@@ -115,7 +120,8 @@ void config_helper_pds::fill_queue_start(queue<Msg> *q) {
         for (int i = 0; i < status.batchInfo.size(); i++) {
             auto stage = status.batchInfo[i];
             auto record = requestRecords[stage.req_id];
-            int size = record.seq_len / record.prefill_iters * heads * head_size;
+            int size =
+                record.seq_len / record.prefill_iters * heads * head_size;
             int send_size_in_bit = size * sizeof(float) * 8;
             int pkg_num = (send_size_in_bit % M_D_DATA)
                               ? (send_size_in_bit / M_D_DATA + 1)

@@ -18,69 +18,60 @@ void Layernorm_f::print_self(string prefix) {
 
 
 void Layernorm_f::initialize() {
-
-    dram_inp_size = (B * T * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
-    dram_out_size = (B * T * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
-    dram_data_size = (C + C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
-}
-
-void Layernorm_f::parse_json(json j) {
-    /*
-
-    inp_offset（选填） 可以根据 data_offset 计算，也可以手动设置 inp_offset
-
-    data_offset（必要） matmul 需要指定权重位置
-
-    out_offset（选填）: 可以根据 data_offset 计算，也可以手动设置 out_offset
-
-
-    */
-    B = find_var(j["B"]);
-    T = find_var(j["T"]);
-    C = find_var(j["C"]);
-
     out_size = B * T * C;
     p_inp_size = B * T * C;
     inp_size = B * T * C + C + C;
 
-    if (j.contains("dram_address")) {
+    dram_inp_size = (B * T * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
+    dram_out_size = (B * T * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
+    dram_data_size = (C + C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
+
+    if (datatype == INT8)
+        data_byte = 1;
+    else if (datatype == FP16)
+        data_byte = 2;
+
+    w_offset = B * T * C + inp_offset;
+    b_offset = C + w_offset;
+}
+
+void Layernorm_f::parse_json(json j) {
+    /*
+    inp_offset（选填） 可以根据 data_offset 计算，也可以手动设置 inp_offset
+    data_offset（必要） matmul 需要指定权重位置
+    out_offset（选填）: 可以根据 data_offset 计算，也可以手动设置 out_offset
+    */
+
+    B = find_var(j["B"]);
+    T = find_var(j["T"]);
+    C = find_var(j["C"]);
+
+    initialize();
+
+    if (j.contains("dram_address"))
         parse_address(j["dram_address"]);
-    }
 
-    if (inp_offset == -1 && out_offset == -1 && data_offset == -1) {
-
+    if (inp_offset == -1 && out_offset == -1 && data_offset == -1)
         assert(0 && "no dram address found");
-    }
-    // assert(0 && "no dram address found");
 
-
-    if (inp_offset == -1 && data_offset != -1) {
+    if (inp_offset == -1 && data_offset != -1)
         inp_offset = (data_offset * 1024 - B * T * C) / 1024;
-    }
-    if (out_offset == -1 && data_offset != -1) {
+
+    if (out_offset == -1 && data_offset != -1)
         out_offset = (data_offset * 1024 + C + C) / 1024;
-    }
+
     // 添加以下三行以打印相关信息
     cout << "\033[1;33m" << "Layernorm_f" << "\033[0m" << endl;
     cout << "inp_offset: " << inp_offset << endl;
     cout << "out_offset: " << out_offset << endl;
     cout << "data_offset: " << data_offset << endl;
 
-
-    if (j.contains("sram_address")) {
+    if (j.contains("sram_address"))
         parse_sram_label(j["sram_address"]);
-    }
 }
 
 int Layernorm_f::sram_utilization(DATATYPE datatype) {
     int total_sram = 0;
-    int data_byte = 0;
-
-    if (datatype == DATATYPE::FP16) {
-        data_byte = 2;
-    } else if (datatype == DATATYPE::INT8) {
-        data_byte = 1;
-    }
 
     int p_inp_sram = ceiling_division(B * T * C * data_byte * 8, SRAM_BITWIDTH);
     int w_sram = ceiling_division(C * data_byte * 8, SRAM_BITWIDTH);
@@ -102,8 +93,7 @@ void Layernorm_f::deserialize(sc_bv<128> buffer) {
     C = buffer.range(87, 72).to_uint64();
     datatype = DATATYPE(buffer.range(89, 88).to_uint64());
 
-    w_offset = B * T * C + inp_offset;
-    b_offset = C + w_offset;
+    initialize();
 }
 
 sc_bv<128> Layernorm_f::serialize() {
@@ -120,441 +110,222 @@ sc_bv<128> Layernorm_f::serialize() {
 }
 
 int Layernorm_f::task_core(TaskCoreContext &context) {
-#if USE_NB_DRAMSYS == 0
-    auto wc = context.wc;
-#endif
-    auto mau = context.mau;
-    auto hmau = context.hmau;
-    auto &msg_data = context.msg_data;
-    auto sram_addr = context.sram_addr;
-    int data_byte = 0;
-    if (datatype == INT8) {
-        data_byte = 1;
-    } else if (datatype == FP16) {
-        data_byte = 2;
-    }
+    // 所用时间
+    u_int64_t dram_time = 0;
+    u_int64_t overlap_time = 0;
+
+    // 数据维度
+    int data_size_input = B * T * C;
+    int data_size_weight = C;
+    int data_size_bias = C;
+    int data_size_out = B * T * C;
+
+    // dram地址
     u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
     u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
     u_int64_t weight_global_addr = dram_addr_tile + w_offset * data_byte;
     u_int64_t bias_global_addr = dram_addr_tile + b_offset * data_byte;
 
-#if DUMMY == 1
-    float *dram_start = nullptr;
-#else
-    float *dram_start = (float *)(dram_array[cid]);
-    float *inp = dram_start + inp_offset;
-    float *out = dram_start + out_offset;
-    float *weight = dram_start + w_offset;
-    float *bias = dram_start + b_offset;
-#endif
-
-    u_int64_t dram_time = 0;
-
-
-    int data_size_input = B * T * C;
-    int data_size_weight = C;
-    int data_size_bias = C;
-    int data_size_out = B * T * C;
-
-    u_int64_t time_fetched = 0;
-    u_int64_t time_prefetched = 0;
-    u_int64_t prefetch_tag = 0;
-
-#if USE_SRAM == 1
-    // 检查是否可以在此原语结束之后立刻释放中间结果
+    // 检查数据重利用
     bool input_reuse = false;
     if (datapass_label.indata[0][0] == '_') {
         input_reuse = true;
         datapass_label.indata[0] = datapass_label.indata[0].substr(1);
     }
 
-    auto inp_sram_offset = 0;
-    if (datapass_label.indata[0].find(DRAM_LABEL) == 0) {
-
-
-        size_t space_pos = datapass_label.indata[0].find(' ');
-        if (space_pos != std::string::npos) {
-            datapass_label.indata[0] =
-                datapass_label.indata[0].substr(space_pos + 1);
-        }
-
-        printf("[INFO] core %d, Layernorm_f: read from dram, label: %s\n", cid,
-               datapass_label.indata[0].c_str());
-#if USE_SRAM_MANAGER == 1
-        sram_first_write_generic(
-            context, data_byte * data_size_input, inp_global_addr, dram_time,
-            dram_start, datapass_label.indata[0], true, sram_pos_locator);
-
-#else
-        sram_first_write_generic(context, data_byte * data_size_input,
-                                 inp_global_addr, dram_time, dram_start);
-        AddrPosKey inp_key =
-            AddrPosKey(*sram_addr, data_byte * data_size_input);
-        sram_pos_locator->addPair(datapass_label.indata[0], inp_key, context,
-                                  dram_time);
-#endif
-    } else {
-        printf("[INFO] core %d, Layernorm_f: read from sram, label: %s\n", cid,
-               datapass_label.indata[0].c_str());
-        AddrPosKey inp_key;
-        int flag = sram_pos_locator->findPair(datapass_label.indata[0],
-                                              inp_sram_offset);
-        if (flag == -1) {
-            printf("[ERROR] core %d, Layernorm_f: sram_pos_locator cannot find "
-                   "the "
-                   "label: %s\n",
-                   cid, datapass_label.indata[0].c_str());
-            sc_stop();
-        } else if (flag > 0) {
-#if USE_SRAM_MANAGER == 1
-            cout << "[INFO] core " << cid << ", Layernorm_f: sram_pos_locator "
-                 << "find the label: " << datapass_label.indata[0] << endl;
-            sram_first_write_generic(context, flag, inp_global_addr, dram_time,
-                                     dram_start, datapass_label.indata[0], true,
-                                     sram_pos_locator);
-
-#else
-            sram_first_write_generic(context, flag, inp_global_addr, dram_time,
-                                     dram_start);
-            inp_key.size = data_byte * data_size_input;
-            inp_key.spill_size = 0;
-            sram_pos_locator->addPair(datapass_label.indata[0], inp_key,
-                                      context, dram_time);
-#endif
-        } else {
-#if USE_SRAM_MANAGER == 1
-            cout << "[INFO] core " << cid << ", Layernorm_f: sram_pos_locator "
-                 << "flag " << flag << endl;
-            AddrPosKey inp_key;
-            int flag =
-                sram_pos_locator->findPair(datapass_label.indata[0], inp_key);
-            cout << " inp_key.alloc_id " << inp_key.alloc_id << endl;
-            if (inp_key.alloc_id == 0) {
-                cout << "dummy alloc" << endl;
-                sram_first_write_generic(context, data_byte * data_size_input,
-                                         inp_global_addr, dram_time, dram_start,
-                                         datapass_label.indata[0], true,
-                                         sram_pos_locator, true);
-            }
-#endif
-        }
-    }
-
     // 获取前缀label
     std::size_t pos = datapass_label.outdata.find_last_of('_');
     std::string prefix;
-    if (pos != std::string::npos) {
+    if (pos != std::string::npos)
         prefix = datapass_label.outdata.substr(0, pos);
-    } else {
+    else
         prefix = datapass_label.outdata;
-    }
 
-    auto label_weight = ETERNAL_PREFIX + prefix + "_w";
-    AddrPosKey w_key;
-    int flag = sram_pos_locator->findPair(label_weight, w_key);
-    if (flag == -1) {
-#if USE_SRAM_MANAGER == 1
-        sram_first_write_generic(context, data_byte * data_size_weight,
-                                 weight_global_addr, dram_time, dram_start,
-                                 label_weight, true, sram_pos_locator);
-#else
-        sram_first_write_generic(context, data_byte * data_size_weight,
-                                 weight_global_addr, dram_time, dram_start);
-
-        w_key = AddrPosKey(*sram_addr, data_byte * data_size_weight);
-        sram_pos_locator->addPair(label_weight, w_key, context, dram_time);
-#endif
-    } else if (flag > 0) {
-#if USE_SRAM_MANAGER == 1
-        sram_first_write_generic(context, flag, weight_global_addr, dram_time,
-                                 dram_start, label_weight, true,
-                                 sram_pos_locator);
-
-#else
-        sram_first_write_generic(context, flag, weight_global_addr, dram_time,
-                                 dram_start);
-        w_key.size = data_byte * data_size_weight;
-        w_key.spill_size = 0;
-        sram_pos_locator->addPair(label_weight, w_key, context, dram_time);
-#endif
-    }
-
-    auto label_bias = ETERNAL_PREFIX + prefix + "_b";
-    AddrPosKey b_key;
-    flag = sram_pos_locator->findPair(label_bias, b_key);
-    if (flag == -1) {
-#if USE_SRAM_MANAGER == 1
-        sram_first_write_generic(context, data_byte * data_size_bias,
-                                 bias_global_addr, dram_time, dram_start,
-                                 label_bias, true, sram_pos_locator);
-#else
-        sram_first_write_generic(context, data_byte * data_size_bias,
-                                 bias_global_addr, dram_time, dram_start);
-
-        AddrPosKey b_key = AddrPosKey(*sram_addr, data_byte * data_size_bias);
-        sram_pos_locator->addPair(label_bias, b_key, context, dram_time);
-#endif
-    } else if (flag > 0) {
-#if USE_SRAM_MANAGER == 1
-        sram_first_write_generic(context, flag, bias_global_addr, dram_time,
-                                 dram_start, label_bias, true,
-                                 sram_pos_locator);
-
-#else
-        sram_first_write_generic(context, flag, bias_global_addr, dram_time,
-                                 dram_start);
-        b_key.size = data_byte * data_size_bias;
-        b_key.spill_size = 0;
-        sram_pos_locator->addPair(label_bias, b_key, context, dram_time);
-#endif
-    }
-
-    printf("core %d, layernorm_forward: dram time 1: %ld\n", cid, dram_time);
-
-    // 简化读出所有数据即可
-    int w_sram_offset, b_sram_offset;
-#if USE_SRAM_MANAGER == 1
-    AddrPosKey input_key;
-    sram_pos_locator->findPair(datapass_label.indata[0], input_key);
-    sram_pos_locator->findPair(label_weight, w_key);
-    sram_pos_locator->findPair(label_bias, b_key);
-    sram_pos_locator->printAllKeysWithAllocId();
-    // Print allocation IDs for debugging
-    std::cout << "Input Key Allocation ID: " << input_key.alloc_id << std::endl;
-    std::cout << "Weight Key Allocation ID: " << w_key.alloc_id << std::endl;
-    std::cout << "Bias Key Allocation ID: " << b_key.alloc_id << std::endl;
-    sram_read_generic(context, data_byte * data_size_input, inp_sram_offset,
-                      dram_time, input_key.alloc_id, true, sram_pos_locator);
-    sram_read_generic(context, data_byte * data_size_weight, w_sram_offset,
-                      dram_time, w_key.alloc_id, true, sram_pos_locator);
-    sram_read_generic(context, data_byte * data_size_bias, b_sram_offset,
-                      dram_time, b_key.alloc_id, true, sram_pos_locator);
-
-
-#else
-    sram_pos_locator->findPair(datapass_label.indata[0], inp_sram_offset);
-    sram_pos_locator->findPair(label_weight, w_sram_offset);
-    sram_pos_locator->findPair(label_bias, b_sram_offset);
-    sram_read_generic(context, data_byte * data_size_input, inp_sram_offset,
-                      dram_time);
-    sram_read_generic(context, data_byte * data_size_weight, w_sram_offset,
-                      dram_time);
-    sram_read_generic(context, data_byte * data_size_bias, b_sram_offset,
-                      dram_time);
-#endif
-
-    // 删除标签
-    if (!input_reuse) {
-        sram_pos_locator->deletePair(datapass_label.indata[0]);
-    }
-
-    printf("core %d, layernorm_forward: dram time 2: %ld\n", cid, dram_time);
-#else
-    // CTODO: do dram only
-#endif
-
-    // 计算overlap
-    int cycle = 0;
-    if (tile_sfu.type == Linear) {
-        cycle = B * T * (8 * C + 5) / (tile_sfu.x_dims) * CYCLE;
-    } else {
-        assert(false && "Unsupported tile type");
-    }
-    // cycle = B * T * (8*C+5) / (2 * 16 * 16);
-    u_int64_t overlap_time = 0;
+    // 读入input数据
+    check_input_data(context, dram_time, inp_global_addr, data_size_input);
+    BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
-    if (dram_time > cycle) {
-        // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
-        overlap_time = 0;
-        std::cout << RED << "cycle: " << cycle << ", dram_time: " << dram_time
-                  << RESET << std::endl;
-    } else {
-        overlap_time = cycle - dram_time;
-        std::cout << GREEN << "cycle: " << cycle << ", dram_time: " << dram_time
-                  << RESET << std::endl;
+    {
+        auto label_weight = ETERNAL_PREFIX + prefix + "_w";
+        check_static_data(context, dram_time, weight_global_addr,
+                          data_size_weight, label_weight);
+
+        auto label_bias = ETERNAL_PREFIX + prefix + "_b";
+        check_static_data(context, dram_time, bias_global_addr, data_size_bias,
+                          label_bias);
+
+        // 删除标签
+        if (!input_reuse)
+            sram_pos_locator->deletePair(datapass_label.indata[0]);
+
+        BETTER_PRINT(dram_time);
     }
-#else
-    if (dram_time > cycle) {
-        overlap_time = dram_time;
-    } else {
-        overlap_time = cycle;
-    }
 #endif
 
-#if USE_SRAM == 1
-#if USE_SRAM_MANAGER == 1
-    sram_write_append_generic(context, data_byte * data_size_out, overlap_time,
-                              datapass_label.outdata, true, sram_pos_locator,
-                              out_global_addr);
+    // 计算overlap并写回output数据
+    write_output_data(context, 0, B * T * (8 * C + 5), dram_time, overlap_time,
+                      data_size_out, out_global_addr);
+    BETTER_PRINT(overlap_time);
 
-
-#else
-    // 写入out
-    // label kv in sram locator
-    AddrPosKey out_key = AddrPosKey(*sram_addr, data_byte * data_size_out);
-    sram_pos_locator->addPair(datapass_label.outdata, out_key, context,
-                              overlap_time);
-    sram_write_append_generic(context, data_byte * data_size_out, overlap_time);
-#endif
-#else
-    // CTODO: do dram only
-#endif
-    printf("core %d, layernorm_forward: overlap_time: %ld\n", cid,
-           overlap_time);
     return overlap_time;
 }
+
 int Layernorm_f::task() {
-    int cycle = 0;
-    if (tile_sfu.type == Linear) {
-        cycle = B * T * (8 * C + 5) / (tile_sfu.x_dims) * CYCLE;
-    } else {
-        assert(false && "Unsupported tile type");
-    }
-    // cycle = B * T * (8*C+5) / (2 * 16 * 16);
-    int data_byte = 0;
-    if (datatype == INT8) {
-        data_byte = 1;
-    } else if (datatype == FP16) {
-        data_byte = 2;
-    }
-    u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
-    u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
-    u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
-    u_int64_t weight_global_addr = dram_addr_tile + w_offset * data_byte;
-    u_int64_t bias_global_addr = dram_addr_tile + b_offset * data_byte;
+    //     int cycle = 0;
+    //     if (tile_sfu.type == Linear) {
+    //         cycle = B * T * (8 * C + 5) / (tile_sfu.x_dims) * CYCLE;
+    //     } else {
+    //         assert(false && "Unsupported tile type");
+    //     }
+    //     // cycle = B * T * (8*C+5) / (2 * 16 * 16);
+    //     int data_byte = 0;
+    //     if (datatype == INT8) {
+    //         data_byte = 1;
+    //     } else if (datatype == FP16) {
+    //         data_byte = 2;
+    //     }
+    //     u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
+    //     u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
+    //     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
+    //     u_int64_t weight_global_addr = dram_addr_tile + w_offset * data_byte;
+    //     u_int64_t bias_global_addr = dram_addr_tile + b_offset * data_byte;
 
 
-    u_int64_t dram_time = 0;
+    //     u_int64_t dram_time = 0;
 
 
-    u_int64_t time_fetched = 0;
-    u_int64_t time_prefetched = 0;
-    u_int64_t prefetch_tag = 0;
+    //     u_int64_t time_fetched = 0;
+    //     u_int64_t time_prefetched = 0;
+    //     u_int64_t prefetch_tag = 0;
 
-    u_int64_t dcacheline;
+    //     u_int64_t dcacheline;
 
-    for (int b = 0; b < B; b++) {
-        for (int t = 0; t < T; t++) {
-            u_int64_t x = inp_global_addr + (b * T + t) * C * 4;
-            for (int i = 0; i < C; i++) {
-                dcacheline = (x >> dcache_words_in_line_log2) >> 2;
-                dram_time += check_dcache(
-                    0, 0, x, dcacheline << (dcache_words_in_line_log2 + 2),
-                    time_fetched, time_prefetched, prefetch_tag, false);
-                x += data_byte;
-            }
+    //     for (int b = 0; b < B; b++) {
+    //         for (int t = 0; t < T; t++) {
+    //             u_int64_t x = inp_global_addr + (b * T + t) * C * 4;
+    //             for (int i = 0; i < C; i++) {
+    //                 dcacheline = (x >> dcache_words_in_line_log2) >> 2;
+    //                 dram_time += check_dcache(
+    //                     0, 0, x, dcacheline << (dcache_words_in_line_log2 +
+    //                     2), time_fetched, time_prefetched, prefetch_tag,
+    //                     false);
+    //                 x += data_byte;
+    //             }
 
-            x = inp_global_addr + (b * T + t) * C * 4;
-            for (int i = 0; i < C; i++) {
-                dcacheline = (x >> dcache_words_in_line_log2) >> 2;
-                dram_time += check_dcache(
-                    0, 0, dcacheline << (dcache_words_in_line_log2 + 2),
-                    dram_time, time_fetched, time_prefetched, prefetch_tag,
-                    false);
-                x += data_byte;
-            }
+    //             x = inp_global_addr + (b * T + t) * C * 4;
+    //             for (int i = 0; i < C; i++) {
+    //                 dcacheline = (x >> dcache_words_in_line_log2) >> 2;
+    //                 dram_time += check_dcache(
+    //                     0, 0, dcacheline << (dcache_words_in_line_log2 + 2),
+    //                     dram_time, time_fetched, time_prefetched,
+    //                     prefetch_tag, false);
+    //                 x += data_byte;
+    //             }
 
-            u_int64_t out_bt = out_global_addr + (b * T + t) * C * 4;
-            u_int64_t weight_bt = weight_global_addr;
-            u_int64_t bias_bt = bias_global_addr;
-            x = inp_global_addr + (b * T + t) * C * 4;
-            for (int i = 0; i < C; i++) {
-                dcacheline = (weight_bt >> dcache_words_in_line_log2) >> 2;
-                dram_time += check_dcache(
-                    0, 0, dcacheline << (dcache_words_in_line_log2 + 2),
-                    dram_time, time_fetched, time_prefetched, prefetch_tag,
-                    false);
-                weight_bt += data_byte;
+    //             u_int64_t out_bt = out_global_addr + (b * T + t) * C * 4;
+    //             u_int64_t weight_bt = weight_global_addr;
+    //             u_int64_t bias_bt = bias_global_addr;
+    //             x = inp_global_addr + (b * T + t) * C * 4;
+    //             for (int i = 0; i < C; i++) {
+    //                 dcacheline = (weight_bt >> dcache_words_in_line_log2) >>
+    //                 2; dram_time += check_dcache(
+    //                     0, 0, dcacheline << (dcache_words_in_line_log2 + 2),
+    //                     dram_time, time_fetched, time_prefetched,
+    //                     prefetch_tag, false);
+    //                 weight_bt += data_byte;
 
-                dcacheline = (bias_bt >> dcache_words_in_line_log2) >> 2;
-                dram_time += check_dcache(
-                    0, 0, dcacheline << (dcache_words_in_line_log2 + 2),
-                    dram_time, time_fetched, time_prefetched, prefetch_tag,
-                    false);
-                bias_bt += data_byte;
+    //                 dcacheline = (bias_bt >> dcache_words_in_line_log2) >> 2;
+    //                 dram_time += check_dcache(
+    //                     0, 0, dcacheline << (dcache_words_in_line_log2 + 2),
+    //                     dram_time, time_fetched, time_prefetched,
+    //                     prefetch_tag, false);
+    //                 bias_bt += data_byte;
 
-                dcacheline = (x >> dcache_words_in_line_log2) >> 2;
-                dram_time += check_dcache(
-                    0, 0, dcacheline << (dcache_words_in_line_log2 + 2),
-                    dram_time, time_fetched, time_prefetched, prefetch_tag,
-                    false);
-                x += data_byte;
-            }
-        }
-    }
+    //                 dcacheline = (x >> dcache_words_in_line_log2) >> 2;
+    //                 dram_time += check_dcache(
+    //                     0, 0, dcacheline << (dcache_words_in_line_log2 + 2),
+    //                     dram_time, time_fetched, time_prefetched,
+    //                     prefetch_tag, false);
+    //                 x += data_byte;
+    //             }
+    //         }
+    //     }
 
-    u_int64_t overlap_time = 0;
+    //     u_int64_t overlap_time = 0;
 
-    if (dram_time > cycle) {
-        overlap_time = dram_time;
-    } else {
-        overlap_time = cycle;
-    }
+    //     if (dram_time > cycle) {
+    //         overlap_time = dram_time;
+    //     } else {
+    //         overlap_time = cycle;
+    //     }
 
-    for (int b = 0; b < B; b++) {
-        for (int t = 0; t < T; t++) {
-            u_int64_t out_bt = out_global_addr + (b * T + t) * C * 4;
-            for (int i = 0; i < C; i++) {
-                dcacheline = (out_bt >> dcache_words_in_line_log2) >> 2;
-                overlap_time += check_dcache(
-                    0, 0, dcacheline << (dcache_words_in_line_log2 + 2),
-                    overlap_time, time_fetched, time_prefetched, prefetch_tag,
-                    false);
-                out_bt += data_byte;
-            }
-        }
-    }
+    //     for (int b = 0; b < B; b++) {
+    //         for (int t = 0; t < T; t++) {
+    //             u_int64_t out_bt = out_global_addr + (b * T + t) * C * 4;
+    //             for (int i = 0; i < C; i++) {
+    //                 dcacheline = (out_bt >> dcache_words_in_line_log2) >> 2;
+    //                 overlap_time += check_dcache(
+    //                     0, 0, dcacheline << (dcache_words_in_line_log2 + 2),
+    //                     overlap_time, time_fetched, time_prefetched,
+    //                     prefetch_tag, false);
+    //                 out_bt += data_byte;
+    //             }
+    //         }
+    //     }
 
-/* ------------------------------------------------------------------ */
-#if DUMMY == 1
+    // /* ------------------------------------------------------------------ */
+    // #if DUMMY == 1
 
 
-#else
+    // #else
 
-    float *dram_start = (float *)(dram_array[cid]);
-    float *inp = dram_start + inp_offset;
-    float *out = dram_start + out_offset;
-    float *weight = dram_start + w_offset;
-    float *bias = dram_start + b_offset;
-    float eps = 1e-5f;
-    for (int b = 0; b < B; b++) {
-        for (int t = 0; t < T; t++) {
-            // seek to the input position inp[b,t,:]
-            float *x = inp + b * T * C + t * C;
-            // calculate the mean
-            float m = 0.0f;
-            for (int i = 0; i < C; i++) {
-                m += x[i]; // compute: C
-            }
-            // mean
-            m = m / C; // compute: 1
-            // calculate the variance (without any bias correction)
-            float v = 0.0f;
-            for (int i = 0; i < C; i++) {
-                float xshift = x[i] - m; // compute: C
-                v += xshift * xshift;    // compute: 2C
-            }
-            v = v / C; // compute: 1
-            // calculate the rstd (reciprocal standard deviation)
-            // 标准差倒数
-            float s = 1.0f / sqrtf(v + eps); // compute: 3
-            // seek to the output position in out[b,t,:]
-            float *out_bt = out + b * T * C + t * C;
-            for (int i = 0; i < C; i++) {
-                float n = (s * (x[i] - m)); // normalize // compute: 2C
-                float o =
-                    n * weight[i] + bias[i]; // scale and shift // compute: 2C
-                out_bt[i] = o;               // write
-            }
-            // cache the mean and rstd for the backward pass later
-            // mean[b * T + t] = m;
-            // rstd[b * T + t] = s;
-        }
-    }
+    //     float *dram_start = (float *)(dram_array[cid]);
+    //     float *inp = dram_start + inp_offset;
+    //     float *out = dram_start + out_offset;
+    //     float *weight = dram_start + w_offset;
+    //     float *bias = dram_start + b_offset;
+    //     float eps = 1e-5f;
+    //     for (int b = 0; b < B; b++) {
+    //         for (int t = 0; t < T; t++) {
+    //             // seek to the input position inp[b,t,:]
+    //             float *x = inp + b * T * C + t * C;
+    //             // calculate the mean
+    //             float m = 0.0f;
+    //             for (int i = 0; i < C; i++) {
+    //                 m += x[i]; // compute: C
+    //             }
+    //             // mean
+    //             m = m / C; // compute: 1
+    //             // calculate the variance (without any bias correction)
+    //             float v = 0.0f;
+    //             for (int i = 0; i < C; i++) {
+    //                 float xshift = x[i] - m; // compute: C
+    //                 v += xshift * xshift;    // compute: 2C
+    //             }
+    //             v = v / C; // compute: 1
+    //             // calculate the rstd (reciprocal standard deviation)
+    //             // 标准差倒数
+    //             float s = 1.0f / sqrtf(v + eps); // compute: 3
+    //             // seek to the output position in out[b,t,:]
+    //             float *out_bt = out + b * T * C + t * C;
+    //             for (int i = 0; i < C; i++) {
+    //                 float n = (s * (x[i] - m)); // normalize // compute: 2C
+    //                 float o =
+    //                     n * weight[i] + bias[i]; // scale and shift //
+    //                     compute: 2C
+    //                 out_bt[i] = o;               // write
+    //             }
+    //             // cache the mean and rstd for the backward pass later
+    //             // mean[b * T + t] = m;
+    //             // rstd[b * T + t] = s;
+    //         }
+    //     }
 
-#endif
+    // #endif
 
-    return overlap_time;
+    //     return overlap_time;
+
+    return 0;
 }

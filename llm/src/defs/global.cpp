@@ -6,8 +6,11 @@ u_int64_t dcache_hits = 0;
 u_int64_t dcache_misses = 0;
 u_int64_t dcache_evictions = 0;
 
-ExuConfig tile_exu = {MAC_Array, 16, 16};
-SfuConfig tile_sfu = {Linear, 16};
+class ExuConfig;
+class SfuConfig;
+vector<pair<int, ExuConfig *>> tile_exu;
+vector<pair<int, SfuConfig *>> tile_sfu;
+vector<pair<int, int>> mem_sram_bw; // 用于记录每个核的sram bitwidth 
 
 class prim_base;
 vector<prim_base *> global_prim_stash;

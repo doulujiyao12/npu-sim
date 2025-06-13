@@ -14,6 +14,10 @@ void rmsnorm_forward::print_self(string prefix) {
 }
 
 void rmsnorm_forward::initialize() {
+    out_size = B * T * C;
+    p_inp_size = B * T * C;
+    inp_size = B * T * C + C;
+
     dram_inp_size = (B * T * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
     dram_out_size = (B * T * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
     dram_data_size = (C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
@@ -31,46 +35,32 @@ void rmsnorm_forward::parse_json(json j) {
     T = find_var(j["T"]);
     C = find_var(j["C"]);
 
-    out_size = B * T * C;
-    p_inp_size = B * T * C;
-    inp_size = B * T * C + C;
-
-    if (j.contains("dram_address")) {
+    if (j.contains("dram_address"))
         parse_address(j["dram_address"]);
-    }
 
-    if (inp_offset == -1 && out_offset == -1 && data_offset == -1) {
+    if (inp_offset == -1 && out_offset == -1 && data_offset == -1)
         assert(0 && "no dram address found");
-    }
 
-    if (inp_offset == -1 && data_offset != -1) {
+    if (inp_offset == -1 && data_offset != -1)
         inp_offset = (data_offset * 1024 - B * T * C) / 1024;
-    }
-    if (out_offset == -1 && data_offset != -1) {
+
+    if (out_offset == -1 && data_offset != -1)
         out_offset = (data_offset * 1024 + C + C) / 1024;
-    }
+
     // 添加以下三行以打印相关信息
     cout << "\033[1;33m" << "Layernorm_f" << "\033[0m" << endl;
     cout << "inp_offset: " << inp_offset << endl;
     cout << "out_offset: " << out_offset << endl;
     cout << "data_offset: " << data_offset << endl;
 
-    if (j.contains("sram_address")) {
+    if (j.contains("sram_address"))
         parse_sram_label(j["sram_address"]);
-    }
 
     initialize();
 }
 
 int rmsnorm_forward::sram_utilization(DATATYPE datatype) {
     int total_sram = 0;
-    int data_byte = 0;
-
-    if (datatype == DATATYPE::FP16) {
-        data_byte = 2;
-    } else if (datatype == DATATYPE::INT8) {
-        data_byte = 1;
-    }
 
     int p_inp_sram = ceiling_division(B * T * C * data_byte * 8, SRAM_BITWIDTH);
     int w_sram = ceiling_division(C * data_byte * 8, SRAM_BITWIDTH);
@@ -122,6 +112,7 @@ int rmsnorm_forward::task_core(TaskCoreContext &context) {
     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
     u_int64_t weight_global_addr =
         inp_global_addr + data_size_input * data_byte;
+    u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
 
     // 检查数据重利用
     bool input_reuse = false;
@@ -140,7 +131,7 @@ int rmsnorm_forward::task_core(TaskCoreContext &context) {
 
     // 读入input数据
     check_input_data(context, dram_time, inp_global_addr, data_size_input);
-    printf("rope_f: dram time 1: %ld\n", dram_time);
+    BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
     // 读入weight数据
@@ -149,17 +140,16 @@ int rmsnorm_forward::task_core(TaskCoreContext &context) {
                       label_weight);
 
     // 删除标签
-    if (!input_reuse) {
+    if (!input_reuse)
         sram_pos_locator->deletePair(datapass_label.indata[0]);
-    }
 
-    printf("rmsnorm_f: dram time 2: %ld\n", dram_time);
+    BETTER_PRINT(dram_time);
 #endif
 
     // 计算overlap并写回output数据
-    write_output_data(context, B * T * (4 * C + 3), dram_time, overlap_time,
-                      data_size_out);
-    printf("rmsnorm_f: overlap_time: %ld\n", overlap_time);
+    write_output_data(context, B * T * (4 * C + 3), 0, dram_time, overlap_time,
+                      data_size_out, out_global_addr);
+    BETTER_PRINT(overlap_time);
 
     return overlap_time;
 }

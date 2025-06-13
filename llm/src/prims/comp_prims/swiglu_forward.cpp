@@ -30,13 +30,11 @@ void swiglu_forward::parse_json(json j) {
 
     initialize();
 
-    if (j.contains("dram_address")) {
+    if (j.contains("dram_address"))
         parse_address(j["dram_address"]);
-    }
 
-    if (j.contains("sram_address")) {
+    if (j.contains("sram_address"))
         parse_sram_label(j["sram_address"]);
-    }
 }
 
 int swiglu_forward::sram_utilization(DATATYPE datatype) {
@@ -86,6 +84,7 @@ int swiglu_forward::task_core(TaskCoreContext &context) {
     u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
     u_int64_t inp1_global_addr = dram_addr_tile + inp_offset * data_byte;
     u_int64_t inp2_global_addr = dram_addr_tile + inp2_offset * data_byte;
+    u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
 
     // 检查数据重利用
     bool input_reuse[MAX_SPLIT_NUM];
@@ -110,7 +109,7 @@ int swiglu_forward::task_core(TaskCoreContext &context) {
                      data_size_input_single);
     check_input_data(context, dram_time, inp2_global_addr,
                      data_size_input_single);
-    printf("swiglu_f: dram time 1: %ld\n", dram_time);
+    BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
     // 计算过程：将input1进行silu，随后将input1与input2逐项相乘
@@ -120,12 +119,13 @@ int swiglu_forward::task_core(TaskCoreContext &context) {
         if (!input_reuse[i] && datapass_label.indata[i] != UNSET_LABEL)
             sram_pos_locator->deletePair(datapass_label.indata[i]);
 
-    printf("swiglu_f: dram time 2: %ld\n", dram_time);
+    BETTER_PRINT(dram_time);
 #endif
 
     // 计算overlap并写回output数据
-    write_output_data(context, 12 * N, dram_time, overlap_time, data_size_out);
-    printf("swiglu_f: overlap_time: %ld\n", overlap_time);
+    write_output_data(context, 12 * N, 0, dram_time, overlap_time,
+                      data_size_out, out_global_addr);
+    BETTER_PRINT(overlap_time);
 
     return overlap_time;
 }

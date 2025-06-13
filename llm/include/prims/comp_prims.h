@@ -236,6 +236,7 @@ public:
     int sram_utilization(DATATYPE datatype);
 
     void parse_matmul(Matmul_f *p);
+    void initialize();
 
     Merge_matmul() { name = "Merge_matmul"; }
 };
@@ -360,6 +361,7 @@ public:
     int sram_utilization(DATATYPE datatype);
 
     void parse_matmul(Matmul_f *matmul);
+    void initialize();
 
     Split_matmul() { name = "Split_matmul"; }
 };

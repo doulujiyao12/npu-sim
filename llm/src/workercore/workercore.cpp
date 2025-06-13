@@ -36,7 +36,8 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
                         (int)cid % GRID_X, this->event_engine,
                         "../DRAMSys/configs/ddr4-example.json",
                         "../DRAMSys/configs");
-    cout << " MaxAddr " << dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
+    cout << " MaxAddr "
+         << dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
     ram_array = new DynamicBandwidthRamRow<sc_bv<SRAM_BITWIDTH>, SRAM_BANKS>(
         sc_gen_unique_name("ram_array"), 0, BANK_DEPTH, SIMU_READ_PORT,
         SIMU_WRITE_PORT, BANK_PORT_NUM + SRAM_BANKS, BANK_PORT_NUM,
@@ -48,8 +49,10 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
             BANK_PORT_NUM, BANK_HIGH_READ_PORT_NUM, event_engine);
     executor = new WorkerCoreExecutor(sc_gen_unique_name("workercore-exec"),
                                       cid, this->event_engine);
-    executor->MaxDramAddr =  dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
-    g_dram_kvtable = new DramKVTable(executor->MaxDramAddr, (uint64_t)50 * 1024 * 1024, 20);
+    executor->MaxDramAddr =
+        dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
+    g_dram_kvtable =
+        new DramKVTable(executor->MaxDramAddr, (uint64_t)50 * 1024 * 1024, 20);
     executor->systolic_config = systolic_config;
     executor->other_config = other_config;
     // dummy_dcache =  new DummyDCache("dcache");
@@ -306,7 +309,7 @@ void WorkerCoreExecutor::worker_core_execute() {
             event_engine->add_event("Core " + toHexString(cid), "Comp_prim",
                                     "E", Trace_event_util(p->name));
         }
-        
+
         // 将原语重新填充到队列中
         if (prim_refill) {
             bool flag = false;
@@ -391,20 +394,8 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     case BATCHNORM_F_TYPE:
         task = new Batchnorm_f();
         break;
-    case MATMUL_F_DECODE_TYPE:
-        task = new Matmul_f_decode();
-        break;
-    case ATTENTION_F_DECODE_TYPE:
-        task = new Attention_f_decode();
-        break;
-    case ATTENTION_F_PREFILL_TYPE:
-        task = new Attention_f_prefill();
-        break;
     case MAX_POOL_TYPE:
         task = new Max_pool();
-        break;
-    case MATMUL_F_PREFILL_TYPE:
-        task = new Matmul_f_prefill();
         break;
     case DUMMY_P_TYPE:
         task = new Dummy_p();
@@ -993,7 +984,7 @@ void WorkerCoreExecutor::recv_logic() {
 
                                 sram_pos_locator->findPair(input_label,
                                                            inp_key);
-                                inp_key.size = 0;//+= max_recv * M_D_DATA;
+                                inp_key.size = 0; //+= max_recv * M_D_DATA;
 
                                 u_int64_t temp;
                                 sram_pos_locator->addPair(input_label, inp_key);
@@ -1062,14 +1053,15 @@ void WorkerCoreExecutor::recv_logic() {
 
 void WorkerCoreExecutor::task_logic() {
     while (true) {
-        prim_base * p = prim_queue.front();
+        prim_base *p = prim_queue.front();
 
         int delay = 0;
         sc_bv<SRAM_BITWIDTH> msg_data_tmp;
 
         TaskCoreContext context = generate_context(this);
-        
-            // context.SetGlobalMemIF(nb_global_memif, start_global_event, end_global_event);
+
+        // context.SetGlobalMemIF(nb_global_memif, start_global_event,
+        // end_global_event);
 
         if (p->prim_type == COMP_PRIM) {
             comp_base *comp = (comp_base *)p;
@@ -1078,7 +1070,6 @@ void WorkerCoreExecutor::task_logic() {
 #if USE_L1L2_CACHE == 1
         else if (p->prim_type == GPU_PRIM) {
             context.gpunb_dcache_if = gpunb_dcache_if;
-            context.cid = &cid;
             context.event_engine = event_engine;
 
             gpu_base *gpu = (gpu_base *)p;

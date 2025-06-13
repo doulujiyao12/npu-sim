@@ -1,7 +1,6 @@
 #pragma once
 #include "defs/enums.h"
 #include "macros/macros.h"
-#include "link/instr/chip_instr.h"
 
 #include <cstdint>
 #include <iostream>
@@ -14,23 +13,18 @@ using namespace std;
 
 // 全局的原语数组
 class prim_base;
+class chip_instr_base;
 extern vector<prim_base *> global_prim_stash;
-extern vector<chip_instr_base*> global_chip_prim_stash;
-
-// 模拟KVcache（已过时）
-class KVCache;
-extern KVCache KVCache_g;
+extern vector<chip_instr_base *> global_chip_prim_stash;
 
 extern int MAX_SRAM_SIZE;
 
 class DramKVTable;
-
 extern DramKVTable* g_dram_kvtable;
 
 // one per system，用于config转msg的消息传递
 class AddrLabelTable;
 extern AddrLabelTable g_addr_label_table;
-
 
 // 记录所有在计算原语中的参数，见test文件夹下的config文件
 extern vector<pair<string, int>> vtable;
@@ -44,7 +38,7 @@ extern int GRID_SIZE;
 extern int CORE_PER_SM;
 // extern int BOARD_W;
 
-// 模拟模式（数据流/gpu）
+// 模拟模式（数据流/gpu/pd serving）
 extern SIM_MODE SYSTEM_MODE;
 
 // 模拟dram数组
@@ -73,15 +67,6 @@ extern u_int64_t *mc_latency;
 extern u_int64_t *mc_writebacks;
 extern u_int32_t ***frame_counters;
 
-
-// used for worker core and router
-enum worker_core_state {
-    CORE_IDLE = 0,
-    CORE_TASK = 1,
-    CORE_DATA = 2,
-    CORE_RECEIVE = 3
-};
-
 extern bool use_node;
 extern bool use_DramSys;
 extern float comp_util;
@@ -90,21 +75,8 @@ extern float comp_util;
 #define RED "\033[31m"   // 红色
 #define GREEN "\033[32m" // 绿色
 
-enum Etype { MAC_Array };
-
-typedef struct {
-    Etype type; // exu type
-    int x_dims; // exu x array
-    int y_dims; // exu y array
-} ExuConfig;
-
-extern ExuConfig tile_exu;
-
-enum Sftype { Linear };
-
-typedef struct {
-    Sftype type; // exu type
-    int x_dims;  // exu x array
-} SfuConfig;
-
-extern SfuConfig tile_sfu;
+class ExuConfig;
+class SfuConfig;
+extern vector<pair<int, ExuConfig *>> tile_exu;
+extern vector<pair<int, SfuConfig *>> tile_sfu;
+extern vector<pair<int, int>> mem_sram_bw;

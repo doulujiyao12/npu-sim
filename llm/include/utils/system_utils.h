@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <utility>
+#include "common/config.h"
 
 using namespace std;
 
@@ -9,6 +10,10 @@ bool rand_result(int threshold);
 
 // 在全局vtable中查找对应名字的参数
 int find_var(string var);
+
+ExuConfig *get_exu_config(int id);
+SfuConfig *get_sfu_config(int id);
+int get_sram_bitwidth(int id);
 
 int ceiling_division(int a, int b);
 

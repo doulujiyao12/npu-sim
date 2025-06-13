@@ -16,6 +16,10 @@ void Attention_f::print_self(string prefix) {
 }
 
 void Attention_f::initialize() {
+    out_size = B * T * C;
+    p_inp_size = B * T * 3 * C;
+    inp_size = B * T * 3 * C + 2 * B * NH * T * T;
+
     dram_inp_size = (B * T * 3 * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
     dram_out_size = (B * T * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
     dram_data_size = 0;
@@ -41,9 +45,7 @@ void Attention_f::parse_json(json j) {
     C = find_var(j["C"]);
     NH = find_var(j["NH"]);
 
-    out_size = B * T * C;
-    p_inp_size = B * T * 3 * C;
-    inp_size = B * T * 3 * C + 2 * B * NH * T * T;
+    initialize();
 
     if (j.contains("dram_address"))
         parse_address(j["dram_address"]);
@@ -121,6 +123,7 @@ int Attention_f::task_core(TaskCoreContext &context) {
     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
     u_int64_t prea_global_addr = dram_addr_tile + prea_offset * data_byte;
     u_int64_t a_global_addr = dram_addr_tile + a_offset * data_byte;
+    u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
 
     // 检查数据重利用
     bool input_reuse = false;
@@ -174,14 +177,15 @@ int Attention_f::task_core(TaskCoreContext &context) {
         if (!input_reuse)
             sram_pos_locator->deletePair(datapass_label.indata[0]);
 
-        printf("attention_forward: dram time 2: %ld\n", dram_time);
+        BETTER_PRINT(dram_time);
     }
 #endif
 
     // 计算overlap并写回output数据
-    write_output_data(context, B * NH * T * (T - 1) / 2 * (4 * C / NH + 5),
-                      dram_time, overlap_time, data_size_out);
-    printf("attention_forward: overlap_time: %ld\n", overlap_time);
+    write_output_data(context, B * NH * T * (T - 1) / 2 * (4 * C / NH + 5), 0,
+                      dram_time, overlap_time, data_size_out, out_global_addr);
+
+    BETTER_PRINT(overlap_time);
 
     return overlap_time;
 }

@@ -152,7 +152,7 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
     jfile >> j;
 
     // 收集相关参数
-    auto config_vars = j["v+ars"];
+    auto config_vars = j["vars"];
     for (auto var : config_vars.items()) {
         vtable.push_back(make_pair(var.key(), var.value()));
     }
@@ -182,6 +182,14 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
     }
 
     // 初步处理核信息
+    if (!j["chips"][config_chip_id].contains("core_config")) {
+        cout << "[ERROR] Missing field core_config in config_file.\n";
+        sc_stop();
+    } else {
+        string core_hw_config = j["chips"][config_chip_id]["core_config"];
+        set_hw_config(core_hw_config);
+    }
+
     auto config_cores = j["chips"][config_chip_id]["cores"];
     for (int i = 0; i < config_cores.size(); i++) {
         // 调用 config_helper_base中的from_json
@@ -268,9 +276,9 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
 
         // 组装要处理的req信息，在此根据B简单判断即可
         vector<Stage> batchInfo;
-        for (int i = 0; i < batch_size; i++) 
+        for (int i = 0; i < batch_size; i++)
             batchInfo.push_back(Stage(i + 1, PREFILL, seq_len));
-        
+
         prim_base *set_batch = new Set_batch(batchInfo);
 
         cout << "core " << config.id << ", loop: " << config.loop << endl;
