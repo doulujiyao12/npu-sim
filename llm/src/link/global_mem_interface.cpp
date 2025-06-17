@@ -30,7 +30,7 @@ GlobalMemInterface::GlobalMemInterface() {
 
 void GlobalMemInterface::init() {
 
-    chipGlobalMemory = new ChipGlobalMemory(sc_gen_unique_name("chip-global-memory"), "../DRAMSys/configs/ddr4-example.json", "../DRAMSys/configs");
+    chipGlobalMemory = new ChipGlobalMemory(sc_gen_unique_name("chip-global-memory"), "../DRAMSys/configs/ddr4-example-8bit.json", "../DRAMSys/configs");
     // // assert(0 && "task_logic's is not impl and sc_env is not implemented");
     SC_THREAD(switch_chip_prim_block);
     sensitive << ev_block;

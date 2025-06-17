@@ -51,7 +51,6 @@ int Dummy_p::task_core(TaskCoreContext &context) {
 #endif
     auto mau = context.mau;
     auto hmau = context.hmau;
-    auto &msg_data = context.msg_data;
     auto sram_addr = context.sram_addr;
     int data_byte = 0;
     if (datatype == INT8) {

@@ -50,17 +50,19 @@ int Clear_sram::task_core(TaskCoreContext &context) {
     }
     // for (const auto& item : temp_list) {
     //     std::cout << "Key: " << item.first << ", ";
-    //     std::cout << "AddrPosKey - pos: " << item.second.pos << ", size: " << item.second.size << std::endl;
+    //     std::cout << "AddrPosKey - pos: " << item.second.pos << ", size: " <<
+    //     item.second.size << std::endl;
     // }
 
     sram_pos_locator->clearAll();
     int pos = 0;
     for (auto record : temp_list) {
         auto size = record.second.size;
-        int dma_read_count = size * 8 / (int)(SRAM_BITWIDTH * SRAM_BANKS);
+        int dma_read_count = size * 8 / (get_sram_bitwidth(cid) * SRAM_BANKS);
         int byte_residue =
-            size * 8 - dma_read_count * (SRAM_BITWIDTH * SRAM_BANKS);
-        int single_read_count = ceiling_division(byte_residue, SRAM_BITWIDTH);
+            size * 8 - dma_read_count * (get_sram_bitwidth(cid) * SRAM_BANKS);
+        int single_read_count =
+            ceiling_division(byte_residue, get_sram_bitwidth(cid));
 
         AddrPosKey temp_key = AddrPosKey(pos, size);
         u_int64_t temp_addr = 0;
@@ -76,7 +78,6 @@ int Clear_sram::task_core(TaskCoreContext &context) {
 #endif
     *(loop_cnt) += 1;
 
-    
 
     // CTODO: GC time count
     return 0;

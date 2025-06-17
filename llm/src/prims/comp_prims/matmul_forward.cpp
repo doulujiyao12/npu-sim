@@ -29,7 +29,7 @@ void Matmul_f::initialize() {
     dram_out_size = (B * T * OC + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
     dram_data_size = (OC * C + OC + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
 
-   if (datatype == INT8)
+    if (datatype == INT8)
         data_byte = 1;
     else if (datatype == FP16)
         data_byte = 2;
@@ -106,10 +106,13 @@ int Matmul_f::sram_utilization(DATATYPE datatype) {
         data_byte = 2;
     }
 
-    int p_inp_sram = ceiling_division(B * T * C * data_byte * 8, SRAM_BITWIDTH);
-    int w1_inps_sram = ceiling_division(OC * C * data_byte * 8, SRAM_BITWIDTH);
-    int b_sram = ceiling_division(OC * data_byte * 8, SRAM_BITWIDTH);
-    int out_sram = ceiling_division(out_size * data_byte * 8, SRAM_BITWIDTH);
+    int p_inp_sram =
+        ceiling_division(B * T * C * data_byte * 8, get_sram_bitwidth(cid));
+    int w1_inps_sram =
+        ceiling_division(OC * C * data_byte * 8, get_sram_bitwidth(cid));
+    int b_sram = ceiling_division(OC * data_byte * 8, get_sram_bitwidth(cid));
+    int out_sram =
+        ceiling_division(out_size * data_byte * 8, get_sram_bitwidth(cid));
 
     // if (datatype == DATATYPE::FP16) {
     //     total_sram = 2 * (out_size + inp_size);

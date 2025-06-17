@@ -98,6 +98,7 @@ public:
     int exu_y;         // 执行单元的Y轴数量
     int sfu_x;         // SFU的X轴数量
     int sram_bitwidth; // SRAM的位宽
+    string dram_config; // DRAM配置文件名
 };
 
 void from_json(const json &j, CoreHWConfig &c);

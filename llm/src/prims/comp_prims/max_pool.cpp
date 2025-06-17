@@ -69,8 +69,9 @@ int Max_pool::sram_utilization(DATATYPE datatype) {
     int total_sram = 0;
 
     int p_inp_sram =
-        ceiling_division(B * C * H * W * data_byte * 8, SRAM_BITWIDTH);
-    int out_sram = ceiling_division(out_size * data_byte * 8, SRAM_BITWIDTH);
+        ceiling_division(B * C * H * W * data_byte * 8, get_sram_bitwidth(cid));
+    int out_sram =
+        ceiling_division(out_size * data_byte * 8, get_sram_bitwidth(cid));
 
 
     total_sram = p_inp_sram + out_sram;

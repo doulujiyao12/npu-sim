@@ -38,8 +38,8 @@ void silu_forward::parse_json(json j) {
 int silu_forward::sram_utilization(DATATYPE datatype) {
     int total_sram = 0;
 
-    int inp_sram = ceiling_division(N * data_byte * 8, SRAM_BITWIDTH);
-    int out_sram = ceiling_division(N * data_byte * 8, SRAM_BITWIDTH);
+    int inp_sram = ceiling_division(N * data_byte * 8, get_sram_bitwidth(cid));
+    int out_sram = ceiling_division(N * data_byte * 8, get_sram_bitwidth(cid));
 
     total_sram = inp_sram + out_sram;
 

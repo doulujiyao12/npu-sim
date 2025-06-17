@@ -266,7 +266,7 @@ void SramPosLocator::updateKVPair(TaskCoreContext &context, std::string &key, ui
         result.left_byte -= data_size_in_byte;
         return;
     }else{
-        int alignment = std::max(SRAM_BITWIDTH, SRAM_BLOCK_SIZE * 8);
+        int alignment = std::max(get_sram_bitwidth(cid), SRAM_BLOCK_SIZE * 8);
         int alignment_byte = alignment / 8;
 
         result.size += alignment_byte;
@@ -341,10 +341,10 @@ int SramPosLocator::rearrangeAll(TaskCoreContext &context) {
         auto size = record.second.size;
         auto spill_size = record.second.spill_size;
 
-        int dma_read_count = spill_size * 8 / (int)(SRAM_BITWIDTH * SRAM_BANKS);
+        int dma_read_count = spill_size * 8 / (int)(get_sram_bitwidth(cid) * SRAM_BANKS);
         int byte_residue =
-        spill_size * 8 - dma_read_count * (SRAM_BITWIDTH * SRAM_BANKS);
-        int single_read_count = ceiling_division(byte_residue, SRAM_BITWIDTH);
+        spill_size * 8 - dma_read_count * (get_sram_bitwidth(cid) * SRAM_BANKS);
+        int single_read_count = ceiling_division(byte_residue, get_sram_bitwidth(cid));
 
         int temp_pos = *(context.sram_addr);
         u_int64_t temp_addr = 0;

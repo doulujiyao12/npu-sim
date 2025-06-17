@@ -28,13 +28,12 @@ using namespace std;
 
 // workercore
 WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
-                       Event_engine *event_engine)
+                       Event_engine *event_engine, string dram_config_name)
     : sc_module(n), cid(s_cid), event_engine(event_engine) {
     systolic_config = new HardwareTaskConfig();
     other_config = new HardwareTaskConfig();
     dcache = new DCache(sc_gen_unique_name("dcache"), (int)cid / GRID_X,
-                        (int)cid % GRID_X, this->event_engine,
-                        "../DRAMSys/configs/ddr4-example.json",
+                        (int)cid % GRID_X, this->event_engine, dram_config_name,
                         "../DRAMSys/configs");
     cout << " MaxAddr "
          << dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
@@ -560,7 +559,7 @@ void WorkerCoreExecutor::send_logic() {
                     prim->data_packet_id == prim->max_packet, MSG_TYPE::DATA,
                     prim->data_packet_id, prim->des_id,
                     prim->des_offset + M_D_DATA * (prim->data_packet_id - 1),
-                    prim->tag_id, length, context.msg_data);
+                    prim->tag_id, length, sc_bv<128>(0x1));
 
                 send_helper_write = 3;
                 ev_send_helper.notify(0, SC_NS);
@@ -701,7 +700,7 @@ void WorkerCoreExecutor::send_para_logic() {
                                 s_prim->des_id,
                                 s_prim->des_offset +
                                     M_D_DATA * (s_prim->data_packet_id - 1),
-                                s_prim->tag_id, length, context.msg_data);
+                                s_prim->tag_id, length, sc_bv<128>(0x1));
 
                         atomic_helper_lock(sc_time_stamp(), 2);
                         ev_send_helper.notify(0, SC_NS);
@@ -1056,8 +1055,6 @@ void WorkerCoreExecutor::task_logic() {
         prim_base *p = prim_queue.front();
 
         int delay = 0;
-        sc_bv<SRAM_BITWIDTH> msg_data_tmp;
-
         TaskCoreContext context = generate_context(this);
 
         // context.SetGlobalMemIF(nb_global_memif, start_global_event,

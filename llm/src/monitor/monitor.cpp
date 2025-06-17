@@ -1,5 +1,6 @@
 #include "monitor/monitor.h"
 #include "monitor/config_helper_gpu.h"
+#include "utils/system_utils.h"
 
 Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine,
                  const char *config_name, const char *font_ttf)
@@ -65,7 +66,7 @@ void Monitor::init() {
     
     for (int i = 0; i < GRID_SIZE; i++) {
         workerCores[i] = new WorkerCore(sc_gen_unique_name("workercore"), i,
-                                        this->event_engine);
+                                        this->event_engine, get_dram_config(i));
     }
 
     // 根据Config的设置连接到Globalmem
@@ -97,7 +98,7 @@ void Monitor::init() {
 
     cacheSystem = new L1L2CacheSystem(
         "l1l2-cache_system", GRID_SIZE, l1caches, processors,
-        "../DRAMSys/configs/ddr4-example.json", "../DRAMSys/configs");
+        "../DRAMSys/configs/ddr4-example-8bit.json", "../DRAMSys/configs");
 
     if (SYSTEM_MODE == SIM_GPU) {
         gpu_pos_locator = new GpuPosLocator();

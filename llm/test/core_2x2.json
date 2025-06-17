@@ -5,28 +5,32 @@
             "exu_x": 128,
             "exu_y": 128,
             "sfu_x": 2048,
-            "sram_bitwidth": 128
+            "sram_bitwidth": 128,
+            "dram_config": "../DRAMSys/configs/ddr4-example-8bit.json"
         },
         {
             "id": 1,
             "exu_x": 128,
             "exu_y": 128,
             "sfu_x": 2048,
-            "sram_bitwidth": 128
+            "sram_bitwidth": 128,
+            "dram_config": "../DRAMSys/configs/ddr4-example-8bit.json"
         },
         {
             "id": 2,
             "exu_x": 128,
             "exu_y": 128,
             "sfu_x": 2048,
-            "sram_bitwidth": 128
+            "sram_bitwidth": 128,
+            "dram_config": "../DRAMSys/configs/ddr4-example-8bit.json"
         },
         {
             "id": 3,
             "exu_x": 128,
             "exu_y": 128,
             "sfu_x": 2048,
-            "sram_bitwidth": 128
+            "sram_bitwidth": 128,
+            "dram_config": "../DRAMSys/configs/ddr4-example-8bit.json"
         }
     ]
 }

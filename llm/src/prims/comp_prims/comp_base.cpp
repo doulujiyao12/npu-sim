@@ -70,7 +70,6 @@ void comp_base::check_input_data(TaskCoreContext &context, uint64_t &dram_time,
 #endif
     auto mau = context.mau;
     auto hmau = context.hmau;
-    auto &msg_data = context.msg_data;
     auto sram_addr = context.sram_addr;
 
     int inp_sram_offset = 0;

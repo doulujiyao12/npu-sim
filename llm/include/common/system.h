@@ -41,7 +41,6 @@ public:
     high_bw_mem_access_unit *hmau;
     mem_access_unit *temp_mau;
     high_bw_mem_access_unit *temp_hmau;
-    sc_bv<SRAM_BITWIDTH> msg_data;
     int *sram_addr;
     SramManager *sram_manager_;
     AllocationID alloc_id_;
@@ -81,8 +80,7 @@ public:
     // 构造函数
     TaskCoreContext(mem_access_unit *mau, high_bw_mem_access_unit *hmau,
                     mem_access_unit *temp_mau,
-                    high_bw_mem_access_unit *temp_hmau,
-                    const sc_bv<SRAM_BITWIDTH> &msg_data, int *sram_addr,
+                    high_bw_mem_access_unit *temp_hmau, int *sram_addr,
                     sc_event *s_nbdram, sc_event *e_nbdram,
                     NB_DcacheIF *nb_dcache, SramManager *sram_manager,
                     uint64_t MaxDramAddr)
@@ -90,7 +88,6 @@ public:
           hmau(hmau),
           temp_mau(temp_mau),
           temp_hmau(temp_hmau),
-          msg_data(msg_data),
           sram_addr(sram_addr),
           s_nbdram(s_nbdram),
           e_nbdram(e_nbdram),
@@ -99,8 +96,7 @@ public:
           MaxDramAddr(MaxDramAddr) {}
     TaskCoreContext(mem_access_unit *mau, high_bw_mem_access_unit *hmau,
                     mem_access_unit *temp_mau,
-                    high_bw_mem_access_unit *temp_hmau,
-                    const sc_bv<SRAM_BITWIDTH> &msg_data, int *sram_addr,
+                    high_bw_mem_access_unit *temp_hmau, int *sram_addr,
                     sc_event *s_nbdram, sc_event *e_nbdram,
                     NB_DcacheIF *nb_dcache, SramManager *sram_manager,
                     int loop_cnt, uint64_t MaxDramAddr)
@@ -108,7 +104,6 @@ public:
           hmau(hmau),
           temp_mau(temp_mau),
           temp_hmau(temp_hmau),
-          msg_data(msg_data),
           sram_addr(sram_addr),
           s_nbdram(s_nbdram),
           e_nbdram(e_nbdram),
@@ -120,8 +115,7 @@ public:
     // 构造函数
     TaskCoreContext(DcacheCore *wc, mem_access_unit *mau,
                     high_bw_mem_access_unit *hmau, mem_access_unit *temp_mau,
-                    high_bw_mem_access_unit *temp_hmau,
-                    const sc_bv<SRAM_BITWIDTH> &msg_data, int *sram_addr,
+                    high_bw_mem_access_unit *temp_hmau, int *sram_addr,
                     sc_event *s_nbdram, sc_event *e_nbdram,
                     SramManager *sram_manager, uint64_t MaxDramAddr)
         : wc(wc),
@@ -129,7 +123,6 @@ public:
           hmau(hmau),
           temp_mau(temp_mau),
           temp_hmau(temp_hmau),
-          msg_data(msg_data),
           sram_addr(sram_addr),
           s_nbdram(s_nbdram),
           e_nbdram(e_nbdram),
@@ -140,8 +133,7 @@ public:
 #if USE_L1L2_CACHE == 1
     TaskCoreContext(mem_access_unit *mau, high_bw_mem_access_unit *hmau,
                     mem_access_unit *temp_mau,
-                    high_bw_mem_access_unit *temp_hmau,
-                    const sc_bv<SRAM_BITWIDTH> &msg_data, int *sram_addr,
+                    high_bw_mem_access_unit *temp_hmau, int *sram_addr,
                     sc_event *s_nbdram, sc_event *e_nbdram,
                     NB_DcacheIF *nb_dcache, int loop_cnt,
                     SramManager *sram_manager,
@@ -151,7 +143,6 @@ public:
           hmau(hmau),
           temp_mau(temp_mau),
           temp_hmau(temp_hmau),
-          msg_data(msg_data),
           sram_addr(sram_addr),
           s_nbdram(s_nbdram),
           e_nbdram(e_nbdram),
