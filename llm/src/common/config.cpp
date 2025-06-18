@@ -231,4 +231,9 @@ void from_json(const json &j, CoreHWConfig &c) {
         j.at("sram_bitwidth").get_to(c.sram_bitwidth);
     else
         c.sram_bitwidth = 128;
+
+    if (j.contains("dram_config"))
+        j.at("dram_config").get_to(c.dram_config);
+    else
+        c.dram_config = DEFAULT_DRAM_CONFIG_PATH;
 }

@@ -62,9 +62,11 @@ void rmsnorm_forward::parse_json(json j) {
 int rmsnorm_forward::sram_utilization(DATATYPE datatype) {
     int total_sram = 0;
 
-    int p_inp_sram = ceiling_division(B * T * C * data_byte * 8, SRAM_BITWIDTH);
-    int w_sram = ceiling_division(C * data_byte * 8, SRAM_BITWIDTH);
-    int out_sram = ceiling_division(out_size * data_byte * 8, SRAM_BITWIDTH);
+    int p_inp_sram =
+        ceiling_division(B * T * C * data_byte * 8, get_sram_bitwidth(cid));
+    int w_sram = ceiling_division(C * data_byte * 8, get_sram_bitwidth(cid));
+    int out_sram =
+        ceiling_division(out_size * data_byte * 8, get_sram_bitwidth(cid));
 
     total_sram = p_inp_sram + w_sram + out_sram;
 

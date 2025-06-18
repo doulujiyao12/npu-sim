@@ -20,16 +20,17 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
                               bool use_manager,
                               SramPosLocator *sram_pos_locator,
                               bool dummy_alloc, bool add_dram_addr) {
-    int dma_read_count =
-        data_size_in_byte * 8 / (int)(SRAM_BITWIDTH * SRAM_BANKS);
+    int sram_bitw = get_sram_bitwidth(context.cid);
+
+    int dma_read_count = data_size_in_byte * 8 / (sram_bitw * SRAM_BANKS);
     int byte_residue =
-        data_size_in_byte * 8 - dma_read_count * (SRAM_BITWIDTH * SRAM_BANKS);
-    int single_read_count = ceiling_division(byte_residue, SRAM_BITWIDTH);
+        data_size_in_byte * 8 - dma_read_count * (sram_bitw * SRAM_BANKS);
+    int single_read_count = ceiling_division(byte_residue, sram_bitw);
 
     int data_bits = data_size_in_byte * 8;
-    assert((SRAM_BLOCK_SIZE * 8) % SRAM_BITWIDTH == 0 &&
+    assert((SRAM_BLOCK_SIZE * 8) % sram_bitw == 0 &&
            "SRAM_BLOCK_SIZE * 8 must be a multiple of SRAM_BITWIDTH");
-    int alignment = std::max(SRAM_BITWIDTH, SRAM_BLOCK_SIZE * 8);
+    int alignment = std::max(sram_bitw, SRAM_BLOCK_SIZE * 8);
 
     int aligned_data_bits = static_cast<int>(std::ceil(
                                 static_cast<double>(data_bits) / alignment)) *
@@ -45,7 +46,6 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
 #endif
     auto mau = context.mau;
     auto hmau = context.hmau;
-    auto &msg_data = context.msg_data;
     auto sram_addr = context.sram_addr;
     auto sram_addr_temp = *sram_addr;
     auto sram_manager_ = context.sram_manager_;
@@ -65,7 +65,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
     // std::string filename = "addr_time_data_" + thread_name + ".txt";
     u_int64_t in_dcacheline = 0;
     int cache_lines = 1 << (dcache_words_in_line_log2 + 2 + 3);
-    int cache_count = SRAM_BANKS * SRAM_BITWIDTH / cache_lines;
+    int cache_count = SRAM_BANKS * sram_bitw / cache_lines;
     int sram_time = 0;
 
 #if USE_NB_DRAMSYS == 1
@@ -142,9 +142,9 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
                 if (use_manager == true) {
                     sram_addr_temp =
                         sram_manager_->get_address_with_offset(
-                            alloc_id, sram_addr_temp * SRAM_BITWIDTH / 8,
-                            SRAM_BANKS * SRAM_BITWIDTH / 8) /
-                        (SRAM_BITWIDTH / 8);
+                            alloc_id, sram_addr_temp * sram_bitw / 8,
+                            SRAM_BANKS * sram_bitw / 8) /
+                        (sram_bitw / 8);
                 } else {
                     sram_addr_temp = sram_addr_temp + SRAM_BANKS;
                 }
@@ -236,9 +236,9 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
                     if (use_manager == true) {
                         sram_addr_temp =
                             sram_manager_->get_address_with_offset(
-                                alloc_id, sram_addr_temp * SRAM_BITWIDTH / 8,
-                                SRAM_BITWIDTH / 8) /
-                            (SRAM_BITWIDTH / 8);
+                                alloc_id, sram_addr_temp * sram_bitw / 8,
+                                sram_bitw / 8) /
+                            (sram_bitw / 8);
                     } else {
                         sram_addr_temp = sram_addr_temp + 1;
                     }
@@ -284,7 +284,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
                 inp_global_addr += cache_lines;
             }
 
-            sc_bv<SRAM_BITWIDTH> data_tmp2;
+            sc_bv<sram_bitw> data_tmp2;
             data_tmp2 = 0;
             sc_time elapsed_time;
             for (int i = 0; i < single_read_count; i++) {
@@ -318,12 +318,12 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
 
 void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
                              u_int64_t global_addr, u_int64_t &dram_time) {
+    int sram_bitw = get_sram_bitwidth(context.cid);
     // assert(false);
-    int dma_read_count =
-        data_size_in_byte * 8 / (int)(SRAM_BITWIDTH * SRAM_BANKS);
+    int dma_read_count = data_size_in_byte * 8 / (int)(sram_bitw * SRAM_BANKS);
     int byte_residue =
-        data_size_in_byte * 8 - dma_read_count * (SRAM_BITWIDTH * SRAM_BANKS);
-    int single_read_count = ceiling_division(byte_residue, SRAM_BITWIDTH);
+        data_size_in_byte * 8 - dma_read_count * (sram_bitw * SRAM_BANKS);
+    int single_read_count = ceiling_division(byte_residue, sram_bitw);
     u_int64_t inp_global_addr = global_addr;
 
 #if USE_NB_DRAMSYS == 0
@@ -331,7 +331,6 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
 #endif
     auto mau = context.mau;
     auto hmau = context.hmau;
-    auto &msg_data = context.msg_data;
     auto sram_addr = context.sram_addr;
     auto sram_addr_temp = *sram_addr;
 #if USE_NB_DRAMSYS == 1
@@ -347,7 +346,7 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
 
     u_int64_t in_dcacheline = 0;
     int cache_lines = 1 << (dcache_words_in_line_log2 + 2 + 3);
-    int cache_count = SRAM_BANKS * SRAM_BITWIDTH / cache_lines;
+    int cache_count = SRAM_BANKS * sram_bitw / cache_lines;
     int sram_time = 0;
 
 #if USE_NB_DRAMSYS == 1
@@ -425,11 +424,12 @@ void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
                        int sram_addr_offset, u_int64_t &dram_time,
                        AllocationID alloc_id, bool use_manager,
                        SramPosLocator *sram_pos_locator, int start_offset) {
-    int dma_read_count =
-        data_size_in_byte * 8 / (int)(SRAM_BITWIDTH * SRAM_BANKS);
+    int sram_bitw = get_sram_bitwidth(context.cid);
+
+    int dma_read_count = data_size_in_byte * 8 / (int)(sram_bitw * SRAM_BANKS);
     int bit_residue =
-        data_size_in_byte * 8 - dma_read_count * (SRAM_BITWIDTH * SRAM_BANKS);
-    int single_read_count = ceiling_division(bit_residue, SRAM_BITWIDTH);
+        data_size_in_byte * 8 - dma_read_count * (sram_bitw * SRAM_BANKS);
+    int single_read_count = ceiling_division(bit_residue, sram_bitw);
 
     cout << "[INFO] sram_read_generic: dma_read_count: " << dma_read_count
          << ", single_read_count: " << single_read_count << endl;
@@ -457,9 +457,9 @@ void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
         // sram_addr_offset: " << sram_addr_offset << endl;
         sram_addr_offset =
             sram_manager_->get_address_with_offset(
-                alloc_id, sram_addr_offset * SRAM_BITWIDTH / 8,
-                start_offset / (SRAM_BITWIDTH / 8) * (SRAM_BITWIDTH / 8)) /
-            (SRAM_BITWIDTH / 8);
+                alloc_id, sram_addr_offset * sram_bitw / 8,
+                start_offset / (sram_bitw / 8) * (sram_bitw / 8)) /
+            (sram_bitw / 8);
         // cout << "[INFO] sram_read_generic: alloc_id: " << alloc_id << ",
         // sram_addr_offset: " << sram_addr_offset << endl;
     }
@@ -480,9 +480,9 @@ void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
 
                 sram_addr_offset =
                     sram_manager_->get_address_with_offset(
-                        alloc_id, sram_addr_offset * SRAM_BITWIDTH / 8,
-                        SRAM_BANKS * SRAM_BITWIDTH / 8) /
-                    (SRAM_BITWIDTH / 8);
+                        alloc_id, sram_addr_offset * sram_bitw / 8,
+                        SRAM_BANKS * sram_bitw / 8) /
+                    (sram_bitw / 8);
             } else {
                 sram_addr_offset = sram_addr_offset + SRAM_BANKS;
             }
@@ -508,9 +508,9 @@ void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
             if (use_manager == true) {
                 sram_addr_offset =
                     sram_manager_->get_address_with_offset(
-                        alloc_id, sram_addr_offset * SRAM_BITWIDTH / 8,
-                        SRAM_BITWIDTH / 8) /
-                    (SRAM_BITWIDTH / 8);
+                        alloc_id, sram_addr_offset * sram_bitw / 8,
+                        sram_bitw / 8) /
+                    (sram_bitw / 8);
             } else {
                 sram_addr_offset = sram_addr_offset + 1;
             }
@@ -528,11 +528,12 @@ void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
 
 void sram_read_generic_temp(TaskCoreContext &context, int data_size_in_byte,
                             int sram_addr_offset, u_int64_t &dram_time) {
-    int dma_read_count =
-        data_size_in_byte * 8 / (int)(SRAM_BITWIDTH * SRAM_BANKS);
+    int sram_bitw = get_sram_bitwidth(context.cid);
+
+    int dma_read_count = data_size_in_byte * 8 / (int)(sram_bitw * SRAM_BANKS);
     int bit_residue =
-        data_size_in_byte * 8 - dma_read_count * (SRAM_BITWIDTH * SRAM_BANKS);
-    int single_read_count = ceiling_division(bit_residue, SRAM_BITWIDTH);
+        data_size_in_byte * 8 - dma_read_count * (sram_bitw * SRAM_BANKS);
+    int single_read_count = ceiling_division(bit_residue, sram_bitw);
 
     // cout << "[INFO] sram_read_generic: dma_read_count: " << dma_read_count <<
     // ", single_read_count: " << single_read_count << endl; cout << "[INFO]
@@ -606,16 +607,17 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
                                bool use_manager,
                                SramPosLocator *sram_pos_locator,
                                u_int64_t global_addr) {
-    int dma_read_count =
-        data_size_in_byte * 8 / (int)(SRAM_BITWIDTH * SRAM_BANKS);
+    int sram_bitw = get_sram_bitwidth(context.cid);
+
+    int dma_read_count = data_size_in_byte * 8 / (int)(sram_bitw * SRAM_BANKS);
     int byte_residue =
-        data_size_in_byte * 8 - dma_read_count * (SRAM_BITWIDTH * SRAM_BANKS);
-    int single_read_count = ceiling_division(byte_residue, SRAM_BITWIDTH);
+        data_size_in_byte * 8 - dma_read_count * (sram_bitw * SRAM_BANKS);
+    int single_read_count = ceiling_division(byte_residue, sram_bitw);
 
     int data_bits = data_size_in_byte * 8;
-    assert((SRAM_BLOCK_SIZE * 8) % SRAM_BITWIDTH == 0 &&
+    assert((SRAM_BLOCK_SIZE * 8) % sram_bitw == 0 &&
            "SRAM_BLOCK_SIZE * 8 must be a multiple of SRAM_BITWIDTH");
-    int alignment = std::max(SRAM_BITWIDTH, SRAM_BLOCK_SIZE * 8);
+    int alignment = std::max(sram_bitw, SRAM_BLOCK_SIZE * 8);
 
     int aligned_data_bits = static_cast<int>(std::ceil(
                                 static_cast<double>(data_bits) / alignment)) *
@@ -693,11 +695,10 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
         if (i != 0) {
 #if USE_SRAM_MANAGER == 1
             if (use_manager == true) {
-                sram_addr_temp =
-                    sram_manager_->get_address_with_offset(
-                        alloc_id, sram_addr_temp * SRAM_BITWIDTH / 8,
-                        SRAM_BANKS * SRAM_BITWIDTH / 8) /
-                    (SRAM_BITWIDTH / 8);
+                sram_addr_temp = sram_manager_->get_address_with_offset(
+                                     alloc_id, sram_addr_temp * sram_bitw / 8,
+                                     SRAM_BANKS * sram_bitw / 8) /
+                                 (sram_bitw / 8);
             } else {
                 sram_addr_temp = sram_addr_temp + SRAM_BANKS;
             }
@@ -718,11 +719,10 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
         if (i != 0) {
 #if USE_SRAM_MANAGER == 1
             if (use_manager == true) {
-                sram_addr_temp =
-                    sram_manager_->get_address_with_offset(
-                        alloc_id, sram_addr_temp * SRAM_BITWIDTH / 8,
-                        SRAM_BITWIDTH / 8) /
-                    (SRAM_BITWIDTH / 8);
+                sram_addr_temp = sram_manager_->get_address_with_offset(
+                                     alloc_id, sram_addr_temp * sram_bitw / 8,
+                                     sram_bitw / 8) /
+                                 (sram_bitw / 8);
             } else {
                 sram_addr_temp = sram_addr_temp + 1;
             }
@@ -757,11 +757,13 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
 // 不会修改 context.sram_addr 的数值
 void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
                           int &temp_sram_addr, u_int64_t &dram_time) {
+    int sram_bitw = get_sram_bitwidth(context.cid);
+
     int dma_read_count =
-        data_size_in_byte * 8 / (int)(SRAM_BITWIDTH * SRAM_BANKS);
+        data_size_in_byte * 8 / (int)(sram_bitw * SRAM_BANKS);
     int byte_residue =
-        data_size_in_byte * 8 - dma_read_count * (SRAM_BITWIDTH * SRAM_BANKS);
-    int single_read_count = ceiling_division(byte_residue, SRAM_BITWIDTH);
+        data_size_in_byte * 8 - dma_read_count * (sram_bitw * SRAM_BANKS);
+    int single_read_count = ceiling_division(byte_residue, sram_bitw);
 
 #if USE_NB_DRAMSYS == 0
     auto wc = context.wc;
@@ -1132,7 +1134,6 @@ void gpu_write_generic(TaskCoreContext &context, uint64_t global_addr,
 #endif
 
 TaskCoreContext generate_context(WorkerCoreExecutor *workercore) {
-    sc_bv<SRAM_BITWIDTH> msg_data;
     NB_GlobalMemIF *nb_global_memif = workercore->nb_global_mem_socket;
     sc_event *start_global_event = workercore->start_global_mem_event;
     sc_event *end_global_event = workercore->end_global_mem_event;
@@ -1142,31 +1143,28 @@ TaskCoreContext generate_context(WorkerCoreExecutor *workercore) {
     TaskCoreContext context(
         workercore->mem_access_port, workercore->high_bw_mem_access_port,
         workercore->temp_mem_access_port,
-        workercore->high_bw_temp_mem_access_port, msg_data,
-        workercore->sram_addr, workercore->start_nb_dram_event,
-        workercore->end_nb_dram_event, workercore->nb_dcache_socket,
-        workercore->loop_cnt, workercore->sram_manager_,
-        workercore->start_nb_gpu_dram_event, workercore->end_nb_gpu_dram_event,
-        workercore->MaxDramAddr);
+        workercore->high_bw_temp_mem_access_port, workercore->sram_addr,
+        workercore->start_nb_dram_event, workercore->end_nb_dram_event,
+        workercore->nb_dcache_socket, workercore->loop_cnt,
+        workercore->sram_manager_, workercore->start_nb_gpu_dram_event,
+        workercore->end_nb_gpu_dram_event, workercore->MaxDramAddr);
 #elif USE_NB_DRAMSYS == 1
     TaskCoreContext context(
         workercore->mem_access_port, workercore->high_bw_mem_access_port,
         workercore->temp_mem_access_port,
-        workercore->high_bw_temp_mem_access_port, msg_data,
-        workercore->sram_addr, workercore->start_nb_dram_event,
-        workercore->end_nb_dram_event, workercore->nb_dcache_socket,
-        workercore->sram_manager_, workercore->loop_cnt,
-        workercore->MaxDramAddr);
+        workercore->high_bw_temp_mem_access_port, workercore->sram_addr,
+        workercore->start_nb_dram_event, workercore->end_nb_dram_event,
+        workercore->nb_dcache_socket, workercore->sram_manager_,
+        workercore->loop_cnt, workercore->MaxDramAddr);
 #else
 
         TaskCoreContext context(
             this->dcache_socket, workercore->mem_access_port,
             workercore->high_bw_mem_access_port,
             workercore->temp_mem_access_port,
-            workercore->high_bw_temp_mem_access_port, msg_data,
-            workercore->sram_addr, workercore->start_nb_dram_event,
-            workercore->end_nb_dram_event, workercore->sram_manager_,
-            workercore->MaxDramAddr);
+            workercore->high_bw_temp_mem_access_port, workercore->sram_addr,
+            workercore->start_nb_dram_event, workercore->end_nb_dram_event,
+            workercore->sram_manager_, workercore->MaxDramAddr);
 #endif
     context.SetGlobalMemIF(nb_global_memif, start_global_event,
                            end_global_event);

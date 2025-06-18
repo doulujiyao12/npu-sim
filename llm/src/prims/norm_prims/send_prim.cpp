@@ -65,7 +65,7 @@ int Send_prim::task_core(TaskCoreContext &context) {
 #endif
     auto mau = context.mau;
     auto hmau = context.hmau;
-    auto &msg_data = context.msg_data;
+    sc_bv<128> msg_data;
     sc_time elapsed_time;
     mau->mem_read_port->read(local_offset + M_D_DATA * (data_packet_id - 1),
                              msg_data, elapsed_time);

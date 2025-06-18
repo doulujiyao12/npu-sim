@@ -34,24 +34,31 @@
  */
 
 #include "DRAMSysConfiguration.h"
+#include <unistd.h>
 #include "systemc.h"
+#include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <filesystem>
 namespace DRAMSys::Config
 {
 
 Configuration from_path(std::string_view path, std::string_view resourceDirectory)
 {
+    char buffer[256];
+    getcwd(buffer, sizeof(buffer));
+    std::cout << "Current working directory: " << buffer << std::endl;
+    std::cout << path << std::endl;
+
     std::ifstream file(path.data());
     // 检查文件是否成功打开
-    if (!file.is_open()) {
+    if (!file.is_open())
+    {
         SC_REPORT_FATAL("Configuration2", "Unsupported DRAM type");
         std::cerr << "Failed to open file: " << path << std::endl;
     }
-    //SC_REPORT_FATAL("Configuration3", "Unsupported DRAM type");
+    // SC_REPORT_FATAL("Configuration3", "Unsupported DRAM type");
     std::cout << "File opened successfully!" << std::endl;
-     // 获取当前文件夹路径
+    // 获取当前文件夹路径
     std::filesystem::path currentPath = std::filesystem::current_path();
 
     // 打印路径

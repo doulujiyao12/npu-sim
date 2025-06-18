@@ -64,6 +64,18 @@ int get_sram_bitwidth(int id) {
     return 128; // 默认返回128位
 }
 
+string get_dram_config(int id) {
+    for (auto pair : mem_dram_config_str) {
+        if (pair.first == id)
+            return pair.second;
+    }
+
+    cout << "[ERROR]: dram config for id " << id << " not found!" << endl;
+    sc_stop();
+
+    return DEFAULT_DRAM_CONFIG_PATH;
+}
+
 
 int ceiling_division(int a, int b) {
     if (b == 0) {

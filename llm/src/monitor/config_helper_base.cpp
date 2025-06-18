@@ -130,5 +130,6 @@ void config_helper_base::set_hw_config(string filename) {
             make_pair(c.id, new ExuConfig(MAC_Array, c.exu_x, c.exu_y)));
         tile_sfu.push_back(make_pair(c.id, new SfuConfig(Linear, c.sfu_x)));
         mem_sram_bw.push_back(make_pair(c.id, c.sram_bitwidth));
+        mem_dram_config_str.push_back(make_pair(c.id, c.dram_config));
     }
 }

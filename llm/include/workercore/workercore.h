@@ -3,17 +3,17 @@
 
 #include "common/memory.h"
 #include "common/msg.h"
-#include "common/system.h"
 #include "common/pd.h"
+#include "common/system.h"
 #include "defs/const.h"
 #include "hardware/systolic/systolic.h"
+#include "link/nb_global_memif_v2.h"
 #include "macros/macros.h"
 #include "memory/dram/Dcache.h"
 #include "memory/dram/DummyDcache.h"
 #include "memory/gpu/GPU_L1L2_Cache.h"
 #include "memory/sram/dynamic_bandwidth_ram_row.h"
 #include "trace/Event_engine.h"
-#include "link/nb_global_memif_v2.h"
 #include "unit_module/sram_manager/sram_manager.h"
 
 class WorkerCoreExecutor;
@@ -43,7 +43,8 @@ public:
     sc_signal<bool> systolic_start;
 
     SC_HAS_PROCESS(WorkerCore);
-    WorkerCore(const sc_module_name &n, int s_cid, Event_engine *event_engine);
+    WorkerCore(const sc_module_name &n, int s_cid, Event_engine *event_engine,
+               string dram_config_name);
     ~WorkerCore();
 };
 
@@ -51,8 +52,8 @@ class WorkerCoreExecutor : public sc_module {
 public:
     uint64_t MaxDramAddr; // 当前核最大的 dram 地址
     int cid;
-    bool prim_refill; // 是否通过原语重填的方式实现循环
-    int loop_cnt;     // 如果开启prim_refill，表明现在是第几个循环
+    bool prim_refill;    // 是否通过原语重填的方式实现循环
+    int loop_cnt;        // 如果开启prim_refill，表明现在是第几个循环
     int send_global_mem; // [yicheng] todo
 
     /* ------------------PRIM----------------------- */
@@ -85,11 +86,13 @@ public:
     sc_event ev_recv_prepare_data;
     sc_event ev_recv_config;
     sc_event ev_prim_recv_notice; // 当执行recv_data时触发
-    sc_event ev_next_write_clear; // 当write_helper写完一次之后在下一个时钟周期触发
+    sc_event
+        ev_next_write_clear; // 当write_helper写完一次之后在下一个时钟周期触发
 
     bool send_done; // 并行策略：send和recv并行
     bool send_last_packet;
-    sc_event ev_send_last_packet; // send和recv并行，只有在comp执行完毕之后，send才能发送最后一个数据包。
+    sc_event
+        ev_send_last_packet; // send和recv并行，只有在comp执行完毕之后，send才能发送最后一个数据包。
 
     bool comp_done;                     // 并行策略：comp和send并行
     deque<prim_base *> prim_queue;      // 用于存储所有需要依次执行的原语
@@ -133,10 +136,11 @@ public:
 
     // 通道未满的握手信号
     sc_in<bool> channel_avail_i;
-    sc_event ev_channel_avail_i; // 当channel_avail_i的电平由低改为高，则触发这个event
+    sc_event
+        ev_channel_avail_i; // 当channel_avail_i的电平由低改为高，则触发这个event
 
     Event_engine *event_engine;
-    
+
     NB_GlobalMemIF *nb_global_mem_socket;
 
 #if USE_NB_DRAMSYS == 1
@@ -156,7 +160,7 @@ public:
     mem_access_unit *temp_mem_access_port;
     high_bw_mem_access_unit *high_bw_temp_mem_access_port;
 
-    SramManager* sram_manager_;
+    SramManager *sram_manager_;
 
     // sram相关
     int *sram_addr;                    // 用于记录当前sram可分配的起始地址
@@ -178,9 +182,9 @@ public:
 
     void init_global_mem();
 
-    void catch_channel_avail_i(); 
-    void catch_data_sent_i(); 
-    void next_write_clear();      
+    void catch_channel_avail_i();
+    void catch_data_sent_i();
+    void next_write_clear();
 
     void worker_core_execute();
     void switch_prim_block();

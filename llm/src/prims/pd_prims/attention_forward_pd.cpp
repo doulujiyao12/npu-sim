@@ -38,7 +38,7 @@ void attention_forward_pd::parse_json(json j) {
     else if (job_str == "both")
         job_type = JOB_BOTH;
     else
-        job_type = JOB_NONE;
+        job_type = JOB_BOTH;
 
     initialize();
 
@@ -53,10 +53,11 @@ int attention_forward_pd::sram_utilization(DATATYPE datatype) {
     int total_sram = 0;
 
     int p_inp_sram =
-        ceiling_division(B * T * 3 * C * data_byte * 8, SRAM_BITWIDTH);
-    int a_sram =
-        ceiling_division(B * NH * T * T * data_byte * 8, SRAM_BITWIDTH);
-    int out_sram = ceiling_division(out_size * data_byte * 8, SRAM_BITWIDTH);
+        ceiling_division(B * T * 3 * C * data_byte * 8, get_sram_bitwidth(cid));
+    int a_sram = ceiling_division(B * NH * T * T * data_byte * 8,
+                                  get_sram_bitwidth(cid));
+    int out_sram =
+        ceiling_division(out_size * data_byte * 8, get_sram_bitwidth(cid));
 
     total_sram = p_inp_sram + a_sram + out_sram;
 

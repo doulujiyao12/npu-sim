@@ -47,7 +47,7 @@ int sc_main(int argc, char** argv)
         resourceDirectory = argv[2];
     }
 
-    std::filesystem::path baseConfig = resourceDirectory / "ddr4-example.json";
+    std::filesystem::path baseConfig = resourceDirectory / "ddr4-example-8bit.json";
     if (argc >= 2)
     {
         baseConfig = argv[1];

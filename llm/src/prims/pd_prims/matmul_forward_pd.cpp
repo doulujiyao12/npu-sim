@@ -176,7 +176,7 @@ void matmul_forward_pd::parse_json(json j) {
     else if (job_str == "both")
         job_type = JOB_BOTH;
     else
-        job_type = JOB_NONE;
+        job_type = JOB_BOTH;
 
     initialize();
 
@@ -190,10 +190,13 @@ void matmul_forward_pd::parse_json(json j) {
 int matmul_forward_pd::sram_utilization(DATATYPE datatype) {
     int total_sram = 0;
 
-    int p_inp_sram = ceiling_division(B * T * C * data_byte * 8, SRAM_BITWIDTH);
-    int w1_inps_sram = ceiling_division(OC * C * data_byte * 8, SRAM_BITWIDTH);
-    int b_sram = ceiling_division(OC * data_byte * 8, SRAM_BITWIDTH);
-    int out_sram = ceiling_division(out_size * data_byte * 8, SRAM_BITWIDTH);
+    int p_inp_sram =
+        ceiling_division(B * T * C * data_byte * 8, get_sram_bitwidth(cid));
+    int w1_inps_sram =
+        ceiling_division(OC * C * data_byte * 8, get_sram_bitwidth(cid));
+    int b_sram = ceiling_division(OC * data_byte * 8, get_sram_bitwidth(cid));
+    int out_sram =
+        ceiling_division(out_size * data_byte * 8, get_sram_bitwidth(cid));
 
     total_sram = p_inp_sram + w1_inps_sram + b_sram + out_sram;
 

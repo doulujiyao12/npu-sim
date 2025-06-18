@@ -54,6 +54,9 @@
 #define USE_SFML 0
 #define USE_CARIO 1
 
+// 默认计算核dram配置文件路径
+#define DEFAULT_DRAM_CONFIG_PATH "../DRAMSys/configs/ddr4-example-8bit.json"
+
 // sram配置相关
 #define SRAM_BITWIDTH 128
 #define SRAM_BANKS 16

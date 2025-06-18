@@ -47,6 +47,9 @@ int rope_f::task_core(TaskCoreContext &context) {
     int max_token_num = 0;
     for (auto stage : batchInfo)
         max_token_num = max(max_token_num, stage.token_num);
+    if (job_type == JOB_DECODE)
+        max_token_num = 1;
+
     data_size_sincos *= max_token_num;
 
     // 读入sincos数据
@@ -58,7 +61,20 @@ int rope_f::task_core(TaskCoreContext &context) {
     int total_tokens = 0;
 
     for (auto stage : batchInfo) {
-        int size = data_byte * C * stage.token_num;
+        int size = 0;
+        switch (job_type) {
+        case JOB_PREFILL:
+        case JOB_BOTH:
+            size = data_byte * B * C * stage.token_num;
+            break;
+        case JOB_DECODE:
+            size = data_byte * B * C * 1;
+            break;
+        default:
+            assert(false && "Unsupported job type");
+        }
+
+        total_tokens += stage.token_num;
 
         char format_label_k[100];
         sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
@@ -124,6 +140,7 @@ sc_bv<128> rope_f::serialize() {
     d.range(71, 56) = sc_bv<16>(T);
     d.range(87, 72) = sc_bv<16>(C);
     d.range(103, 88) = sc_bv<16>(NH);
+    d.range(107, 104) = sc_bv<4>(job_type);
     return d;
 }
 
@@ -134,6 +151,7 @@ void rope_f::deserialize(sc_bv<128> buffer) {
     T = buffer.range(71, 56).to_uint();
     C = buffer.range(87, 72).to_uint();
     NH = buffer.range(103, 88).to_uint();
+    job_type = PD_JOB(buffer.range(107, 104).to_uint());
 
     initialize();
 }
@@ -143,6 +161,16 @@ void rope_f::parse_json(json j) {
     T = find_var(j["T"]);
     C = find_var(j["C"]);
     NH = find_var(j["NH"]);
+
+    auto job_str = j["job_type"];
+    if (job_str == "prefill")
+        job_type = JOB_PREFILL;
+    else if (job_str == "decode")
+        job_type = JOB_DECODE;
+    else if (job_str == "both")
+        job_type = JOB_BOTH;
+    else
+        job_type = JOB_BOTH;
 
     initialize();
 

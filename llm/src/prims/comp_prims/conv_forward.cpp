@@ -69,12 +69,12 @@ int Conv_f::sram_utilization(DATATYPE datatype) {
     int total_sram = 0;
 
     int p_inp_sram_byte = B * C * H * W * data_byte * 8;
-    int p_inp_sram = ceiling_division(p_inp_sram_byte, (int)SRAM_BITWIDTH);
-    int w1_inps_sram =
-        ceiling_division(F * C * kX * kY * data_byte * 8, (int)SRAM_BITWIDTH);
-    int b_sram = ceiling_division(F * data_byte * 8, (int)SRAM_BITWIDTH);
+    int p_inp_sram = ceiling_division(p_inp_sram_byte, get_sram_bitwidth(cid));
+    int w1_inps_sram = ceiling_division(F * C * kX * kY * data_byte * 8,
+                                        get_sram_bitwidth(cid));
+    int b_sram = ceiling_division(F * data_byte * 8, get_sram_bitwidth(cid));
     int out_sram =
-        ceiling_division(out_size * data_byte * 8, (int)SRAM_BITWIDTH);
+        ceiling_division(out_size * data_byte * 8, get_sram_bitwidth(cid));
 
 
     total_sram = p_inp_sram + w1_inps_sram + b_sram + out_sram;
