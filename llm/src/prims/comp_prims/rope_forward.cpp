@@ -36,6 +36,7 @@ int rope_f::task_core(TaskCoreContext &context) {
         prefix = datapass_label.outdata;
 
     // 读入input数据
+    // cout << "rope data input size: " << data_size_input << endl;
     check_input_data(context, dram_time, inp_global_addr, data_size_input);
     BETTER_PRINT(dram_time);
 
@@ -55,9 +56,9 @@ int rope_f::task_core(TaskCoreContext &context) {
 
     // 在这里写回kvcache
     int total_tokens = 0;
+
     for (auto stage : batchInfo) {
         int size = data_byte * C * stage.token_num;
-        total_tokens += stage.token_num;
 
         char format_label_k[100];
         sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
@@ -68,13 +69,20 @@ int rope_f::task_core(TaskCoreContext &context) {
         sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
                 stage.req_id);
         string label_v = format_label_v;
+        // cout << "decode_k: " << label_k << endl;
+
+        // cout << "decode_v: " << label_v << endl;
+
 
         // 如果没有对应的kvcache，则创建一个标签；如果已经有了，则直接更新大小
         cout << "[rope_f] Core " << cid << " Ready to add label: " << label_k
              << ", size: " << size << endl;
 
 #if USE_SRAM_MANAGER == 1
-        sram_update_cache(context, label_k, sram_pos_locator, size, dram_time);
+        sram_update_cache(context, label_k, sram_pos_locator, size, dram_time, cid);
+        // cout << "[rope_f] Core " << cid << " already add to label: " << label_k
+        //      << ", size: " << sram_pos_locator->findKeySize(label_k) << endl;
+        
 #else
         sram_write_append_generic(context, size, dram_time);
         sram_pos_locator->updatePair(label_k, size, context, dram_time);
@@ -83,7 +91,9 @@ int rope_f::task_core(TaskCoreContext &context) {
              << ", size: " << size << endl;
 
 #if USE_SRAM_MANAGER == 1
-        sram_update_cache(context, label_v, sram_pos_locator, size, dram_time);
+        sram_update_cache(context, label_v, sram_pos_locator, size, dram_time, cid);
+        // cout << "[rope_f] Core " << cid << " already add to label: " << label_v
+        //      << ", size: " << sram_pos_locator->findKeySize(label_v) << endl;
 #else
         sram_write_append_generic(context, size, dram_time);
         sram_pos_locator->updatePair(label_v, size, context, dram_time);

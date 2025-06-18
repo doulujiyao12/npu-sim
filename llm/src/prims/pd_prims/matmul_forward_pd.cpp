@@ -87,7 +87,7 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
              << endl;
 
 #if USE_SRAM_MANAGER == 1
-        sram_update_cache(context, label_k, sram_pos_locator, size, dram_time);
+        sram_update_cache(context, label_k, sram_pos_locator, size, dram_time, cid);
 #else
         sram_write_append_generic(context, size, dram_time);
         sram_pos_locator->updatePair(label_k, size, context, dram_time);
@@ -97,7 +97,7 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
              << endl;
 
 #if USE_SRAM_MANAGER == 1
-        sram_update_cache(context, label_v, sram_pos_locator, size, dram_time);
+        sram_update_cache(context, label_v, sram_pos_locator, size, dram_time,cid);
 #else
         sram_write_append_generic(context, size, dram_time);
         sram_pos_locator->updatePair(label_v, size, context, dram_time);
@@ -120,9 +120,25 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
     BETTER_PRINT(dram_time);
 #endif
 
-    // 计算overlap并写回output数据
-    write_output_data(context, B * T * C * OC * 2, 0, dram_time, overlap_time,
-                      data_size_out, out_global_addr);
+
+    switch (job_type) {
+
+        case JOB_PREFILL:
+        case JOB_DECODE:
+            write_output_data(context, B * T * C * OC * 2, 0, dram_time, overlap_time,
+                      data_size_out / 3, out_global_addr);
+            break;
+        case JOB_BOTH:
+            write_output_data(context, B * T * C * OC * 2, 0, dram_time, overlap_time,
+                      data_size_out / 3, out_global_addr);
+            break;
+        default:
+            assert(false && "Unsupported job type");
+    }
+
+    // // 计算overlap并写回output数据
+    // write_output_data(context, B * T * C * OC * 2, 0, dram_time, overlap_time,
+    //                   data_size_out, out_global_addr);
     BETTER_PRINT(overlap_time);
 
     return overlap_time;

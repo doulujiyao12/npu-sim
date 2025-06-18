@@ -51,7 +51,7 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
                                       cid, this->event_engine);
     executor->MaxDramAddr =
         dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
-    g_dram_kvtable =
+    g_dram_kvtable[cid] =
         new DramKVTable(executor->MaxDramAddr, (uint64_t)50 * 1024 * 1024, 20);
     executor->systolic_config = systolic_config;
     executor->other_config = other_config;
@@ -981,10 +981,10 @@ void WorkerCoreExecutor::recv_logic() {
                                 sprintf(format_label, "%s#%d", INPUT_LABEL,
                                         loop_cnt);
                                 string input_label = format_label;
-
+                                inp_key.size = 0; //+= max_recv * M_D_DATA;
                                 sram_pos_locator->findPair(input_label,
                                                            inp_key);
-                                inp_key.size = 0; //+= max_recv * M_D_DATA;
+                                
 
                                 u_int64_t temp;
                                 sram_pos_locator->addPair(input_label, inp_key);
@@ -1082,7 +1082,8 @@ void WorkerCoreExecutor::task_logic() {
             pd->batchInfo = *batchInfo;
             pd->decode_done = &decode_done;
         }
-
+        p->cid = cid;
+        cout << "[PRIM] Core <\033[38;5;214m" << cid << "\033[0m>: PRIM NAME -----------------------: " << p->name << endl;
         delay = p->task_core(context);
         wait(sc_time(delay, SC_NS));
 
@@ -1331,4 +1332,5 @@ WorkerCoreExecutor::~WorkerCoreExecutor() {
     delete end_global_mem_event;
     delete sram_manager_;
     delete g_dram_kvtable;
+    delete g_dram_kvtable[cid];
 }

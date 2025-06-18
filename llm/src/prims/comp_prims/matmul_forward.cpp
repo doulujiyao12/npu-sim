@@ -179,7 +179,6 @@ int Matmul_f::task_core(TaskCoreContext &context) {
 
     // 数据维度
     int data_size_input = B * T * C;
-    cout << data_size_input << " wdwefwefwefw\n";
     int data_size_weight = OC * C;
     int data_size_bias = OC;
     int data_size_out = B * T * OC;
@@ -230,6 +229,7 @@ int Matmul_f::task_core(TaskCoreContext &context) {
 #endif
 
     // 计算overlap并写回output数据
+    // cout << "matmul output data size: " << data_size_out << endl;
     write_output_data(context, B * T * C * OC * 2, 0, dram_time, overlap_time,
                       data_size_out, out_global_addr);
     BETTER_PRINT(overlap_time);

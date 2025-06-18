@@ -36,6 +36,7 @@
       "chip_id": 0,
       "GridX": 4,
       "GridY": 4,
+      "core_config": "../llm/test/core_4x4.json",
       "cores": [
         {
           "id": 0,

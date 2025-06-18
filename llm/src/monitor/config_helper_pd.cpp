@@ -3,6 +3,7 @@
 #include "prims/pd_base.h"
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
+#include "defs/global.h"
 
 config_helper_pd::config_helper_pd(string filename, string font_ttf,
                                    sc_event *ev_sig, int config_chip_id) {
@@ -17,6 +18,7 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
         CoreStatus status = CoreStatus(i, JOB_BOTH);
         coreStatus.push_back(status);
     }
+    
 
     // 收集相关参数
     auto config_reqs = j["requests"];
@@ -155,14 +157,20 @@ void config_helper_pd::iter_done(vector<Msg> done_msg) {
                     sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX,
                             KVCACHE_PREFIX, stage.req_id);
                     string label_k = format_label_k;
-                    g_dram_kvtable->remove(label_k);
+                    for (int i = 0; i < GRID_SIZE; i++) {
+                        g_dram_kvtable[i]->remove(label_k);
+                    }
+                    
 
 
                     char format_label_v[100];
                     sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX,
                             KVCACHE_PREFIX, stage.req_id);
                     string label_v = format_label_v;
-                    g_dram_kvtable->remove(label_v);
+                    for (int i = 0; i < GRID_SIZE; i++) {
+                        g_dram_kvtable[i]->remove(label_v);
+                    }
+                    
 
                     if (++decode_done == requestRecords.size()) {
                         cout << "All reqs done.\n";

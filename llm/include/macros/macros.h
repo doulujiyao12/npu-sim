@@ -1,6 +1,6 @@
 #pragma once
 
-#define ASSERT
+#define ASSERT 0
 #define ASSERT_MODE 1
 
 #ifndef DCACHE

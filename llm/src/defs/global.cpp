@@ -19,7 +19,7 @@ vector<chip_instr_base*> global_chip_prim_stash;
 KVCache KVCache_g;
 AddrLabelTable g_addr_label_table;
 
-DramKVTable* g_dram_kvtable;
+DramKVTable** g_dram_kvtable;
 int MAX_SRAM_SIZE;
 
 // 记录所有在计算原语中的参数，见test文件夹下的config文件

@@ -20,7 +20,7 @@ extern vector<chip_instr_base *> global_chip_prim_stash;
 extern int MAX_SRAM_SIZE;
 
 class DramKVTable;
-extern DramKVTable* g_dram_kvtable;
+extern DramKVTable** g_dram_kvtable;
 
 // one per system，用于config转msg的消息传递
 class AddrLabelTable;
