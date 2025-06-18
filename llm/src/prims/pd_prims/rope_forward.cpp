@@ -159,7 +159,7 @@ void rope_f::parse_json(json j) {
     else if (job_str == "both")
         job_type = JOB_BOTH;
     else
-        job_type = JOB_NONE;
+        job_type = JOB_BOTH;
 
     initialize();
 
