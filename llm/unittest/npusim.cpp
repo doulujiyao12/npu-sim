@@ -17,6 +17,8 @@ Define_bool_opt("--help", g_flag_help, false, "show these help information");
 Define_bool_opt("--node-mode", g_flag_node, false, "whether to sim in a node");
 Define_string_opt("--config-file", g_flag_config_file,
                   "../llm/test/config_gpt2_small.json", "config file");
+Define_string_opt("--core-config-file", g_flag_core_config_file,
+                  "../llm/test/core_4x4.json", "core config file");
 Define_string_opt("--ttf-file", g_flag_ttf, "../font/NotoSansDisplay-Bold.ttf",
                   "font ttf file");
 Define_bool_opt("--use-dramsys", g_flag_dramsys, true,
@@ -25,7 +27,8 @@ Define_float_opt("--comp-util", g_flag_comp_util, 0.7,
                  "computation and memory overlap");
 Define_int64_opt("--MAC-SIZE", g_flag_mac_size, 128, "MAC size");
 Define_int64_opt("--trace-window", g_flag_trace_window, 2, "Trace window size");
-Define_int64_opt("--sram-max", g_flag_max_sram, 8388608, "Max SRAM size");  //3145728
+Define_int64_opt("--sram-max", g_flag_max_sram, 8388608,
+                 "Max SRAM size"); // 3145728
 
 // ----------------------------------------------------------------------------
 // all the individual layers' forward and backward passes
@@ -36,7 +39,6 @@ Define_int64_opt("--sram-max", g_flag_max_sram, 8388608, "Max SRAM size");  //31
 
 // https://www.bilibili.com/read/cv36513074/
 // https://zhuanlan.zhihu.com/p/108231904
-
 
 
 int sc_main(int argc, char *argv[]) {
@@ -56,7 +58,7 @@ int sc_main(int argc, char *argv[]) {
         }
         content.resize(content.size() - 2); // remove last ', '
         content.append(".");
-        cout << "unknown option(s): " << content.c_str();
+        cout << "unknown option(s): " << content.c_str() << endl;
         return -1;
     }
 
@@ -76,7 +78,7 @@ int sc_main(int argc, char *argv[]) {
     comp_util = g_flag_comp_util;
     MAX_SRAM_SIZE = g_flag_max_sram;
 
-    init_grid(g_flag_config_file.c_str());
+    init_grid(g_flag_config_file.c_str(), g_flag_core_config_file.c_str());
     init_global_members();
 
     init_dram_areas();
@@ -106,7 +108,7 @@ int sc_main(int argc, char *argv[]) {
     sc_close_vcd_trace_file(tf);
 
     system_cleanup();
-    
+
     clock_t end = clock();
     cout << "花费了" << (double)(end - start) / CLOCKS_PER_SEC << "秒" << endl;
 

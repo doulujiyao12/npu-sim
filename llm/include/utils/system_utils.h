@@ -21,7 +21,7 @@ int ceiling_division(int a, int b);
 string send_prim_type_to_string(int type);
 string recv_prim_type_to_string(int type);
 
-void init_grid(string config_path);
+void init_grid(string config_path, string core_config_path);
 void init_global_members();
 void system_cleanup();
 

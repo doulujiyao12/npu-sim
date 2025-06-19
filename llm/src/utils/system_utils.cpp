@@ -125,13 +125,18 @@ string recv_prim_type_to_string(int type) {
     }
 }
 
-void init_grid(string config_path) {
-    json j;
-    ifstream jfile(config_path);
-    jfile >> j;
+void init_grid(string config_path, string core_config_path) {
+    json j1;
+    ifstream jfile1(config_path);
+    if (!jfile1.is_open()) {
+        cout << "[ERROR] Failed to open file " << config_path << ".\n";
+        sc_stop();
+    }
 
-    if (j.contains("mode")) {
-        auto mode = j["mode"];
+    jfile1 >> j1;
+
+    if (j1.contains("mode")) {
+        auto mode = j1["mode"];
 
         if (mode == "dataflow") {
             SYSTEM_MODE = SIM_DATAFLOW;
@@ -149,14 +154,52 @@ void init_grid(string config_path) {
         SYSTEM_MODE = SIM_DATAFLOW;
     }
 
-    if (j.contains("chips")) {
-        GRID_X = j["chips"][0]["GridX"];
-        GRID_Y = GRID_X;
-        GRID_SIZE = GRID_X * GRID_Y;
+    if (j1.contains("chips") && SYSTEM_MODE == SIM_GPU)
+        CORE_PER_SM = j1["chips"][0]["core_per_sm"];
 
-        if (SYSTEM_MODE == SIM_GPU) {
-            CORE_PER_SM = j["chips"][0]["core_per_sm"];
-        }
+    // 第二个文件
+    json j2;
+    ifstream jfile2(core_config_path);
+    if (!jfile2.is_open()) {
+        cout << "[ERROR] Failed to open file " << core_config_path << ".\n";
+        sc_stop();
+    }
+
+    jfile2 >> j2;
+
+    if (j2.contains("x"))
+        GRID_X = j2["x"];
+    else
+        GRID_X = 4;
+
+    GRID_Y = GRID_X;
+    GRID_SIZE = GRID_X * GRID_Y;
+
+    auto config_cores = j2["cores"];
+    CoreHWConfig sample = config_cores[0];
+    bool has_config[GRID_SIZE];
+    for (auto &b : has_config)
+        b = false;
+
+    for (auto core : config_cores) {
+        CoreHWConfig c = core;
+        has_config[c.id] = true;
+        tile_exu.push_back(
+            make_pair(c.id, new ExuConfig(MAC_Array, c.exu_x, c.exu_y)));
+        tile_sfu.push_back(make_pair(c.id, new SfuConfig(Linear, c.sfu_x)));
+        mem_sram_bw.push_back(make_pair(c.id, c.sram_bitwidth));
+        mem_dram_config_str.push_back(make_pair(c.id, c.dram_config));
+    }
+
+    for (int i = 0; i < GRID_SIZE; i++) {
+        if (has_config[i])
+            continue;
+
+        tile_exu.push_back(
+            make_pair(i, new ExuConfig(MAC_Array, sample.exu_x, sample.exu_y)));
+        tile_sfu.push_back(make_pair(i, new SfuConfig(Linear, sample.sfu_x)));
+        mem_sram_bw.push_back(make_pair(i, sample.sram_bitwidth));
+        mem_dram_config_str.push_back(make_pair(i, sample.dram_config));
     }
 }
 

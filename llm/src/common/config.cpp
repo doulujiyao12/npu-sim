@@ -109,6 +109,12 @@ void from_json(const json &j, CoreJob &c) {
 void from_json(const json &j, CoreConfig &c) {
     j.at("id").get_to(c.id);
 
+    if (c.id >= GRID_SIZE) {
+        cout << "[ERROR] Core id " << c.id << " is out of range.\n";
+        sc_stop();
+        return;
+    }
+
     if (j.contains("prim_copy")) {
         j.at("prim_copy").get_to(c.prim_copy);
     } else {

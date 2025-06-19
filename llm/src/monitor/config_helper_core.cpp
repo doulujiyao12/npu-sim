@@ -145,27 +145,38 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
                                        int config_chip_id) {
     cout << "Loading config file " << filename << endl;
     json j;
-    // cout << "Loading config file3 " << filename << endl;
+    cout << "Loading config file3 " << filename << endl;
     plot_dataflow(filename, font_ttf);
-    // cout << "Loading config file2 " << filename << endl;
+    cout << "Loading config file2 " << filename << endl;
     ifstream jfile(filename);
+    if (!jfile.is_open()) {
+        cout << "[ERROR] Cannot open config file " << filename << endl;
+        sc_stop();
+    }
+
     jfile >> j;
+    cout << "1\n";
 
     // 收集相关参数
     auto config_vars = j["vars"];
     for (auto var : config_vars.items()) {
         vtable.push_back(make_pair(var.key(), var.value()));
     }
+    cout << "1\n";
 
     if (config_vars.contains("B"))
         batch_size = config_vars["B"];
     else
         batch_size = 1;
 
+    cout << "1\n";
+
     if (config_vars.contains("T"))
         seq_len = config_vars["T"];
     else
         seq_len = 128;
+
+    cout << "1\n";
 
     auto config_source = j["source"];
     for (auto source : config_source) {
@@ -181,14 +192,7 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
         }
     }
 
-    // 初步处理核信息
-    if (!j["chips"][config_chip_id].contains("core_config")) {
-        cout << "[ERROR] Missing field core_config in config_file.\n";
-        sc_stop();
-    } else {
-        string core_hw_config = j["chips"][config_chip_id]["core_config"];
-        set_hw_config(core_hw_config);
-    }
+    cout << "1\n";
 
     auto config_cores = j["chips"][config_chip_id]["cores"];
     for (int i = 0; i < config_cores.size(); i++) {
@@ -207,6 +211,8 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
         pipeline = 1;
     }
 
+    cout << "21\n";
+
     // 检查是否需要复制原语的核，config书写要求：需要重新写明所有work的cast、recv_cnt,数量等同于需要复制的那个核的work数量
     for (int i = 0; i < coreconfigs.size(); i++) {
         if (coreconfigs[i].prim_copy != -1) {
@@ -224,6 +230,8 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
             }
         }
     }
+
+    cout << "1\n";
 
     end_cores = 0;
     g_recv_ack_cnt = 0;

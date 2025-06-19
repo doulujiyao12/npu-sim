@@ -29,8 +29,8 @@ unordered_map<int, Display::Core> extract_core_data(const json &config) {
     unordered_map<int, Display::Core> cores;
 
     // 设定网格的行列数
-    int gridX = config["chips"][0]["GridX"];
-    int gridY = config["chips"][0]["GridY"];
+    int gridX = GRID_X;
+    int gridY = GRID_Y;
 
     // 计算每个 core 的位置
     int core_id = 0;

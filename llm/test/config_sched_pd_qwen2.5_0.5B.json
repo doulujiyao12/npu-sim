@@ -16,9 +16,6 @@
   "chips": [
     {
       "chip_id": 0,
-      "GridX": 2,
-      "GridY": 2,
-      "core_config": "../llm/test/core_2x2.json",
       "cores": [
         {
           "id": 0,

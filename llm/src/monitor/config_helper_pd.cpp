@@ -54,14 +54,6 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
         unfinished_prefill.push_back(q);
     }
 
-    if (!j["chips"][config_chip_id].contains("core_config")) {
-        cout << "[ERROR] Missing field core_config in config_file.\n";
-        sc_stop();
-    } else {
-        string core_hw_config = j["chips"][config_chip_id]["core_config"];
-        set_hw_config(core_hw_config);
-    }
-
     // 建立原语模板
     json_template = j["chips"][0]["cores"][0];
     busy = false;

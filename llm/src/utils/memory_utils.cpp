@@ -77,7 +77,8 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
     if (use_manager == true) {
         SizeWAddr swa(aligned_data_byte, inp_global_addr);
 #if ASSERT == 1
-        assert(sram_pos_locator->validateTotalSize() && "sram_pos_locator is not equal sram_manager");
+        assert(sram_pos_locator->validateTotalSize() &&
+               "sram_pos_locator is not equal sram_manager");
 #endif
         AddrPosKey inp_key = AddrPosKey(swa);
         u_int64_t dram_time_tmp = 0;
@@ -463,13 +464,16 @@ void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
         // cout << "[INFO] sram_read_generic: alloc_id: " << alloc_id << ",
         // sram_addr_offset: " << sram_addr_offset << endl;
     }
-#endif
-    int read_bytes = ceiling_division(data_size_in_byte * 8, SRAM_BITWIDTH) * (SRAM_BITWIDTH / 8);
+
+    int read_bytes = ceiling_division(data_size_in_byte * 8, SRAM_BITWIDTH) *
+                     (SRAM_BITWIDTH / 8);
     int sram_cap_bytes = sram_manager_->get_allocation_byte_capacity(alloc_id);
     // cout << "[INFO] sram_read_generic: alloc_id: " << alloc_id
-    //  << ", sram_cap_bytes: " << sram_cap_bytes << ", read_bytes: " << read_bytes << endl;
+    //  << ", sram_cap_bytes: " << sram_cap_bytes << ", read_bytes: " <<
+    //  read_bytes << endl;
     assert(read_bytes <= sram_cap_bytes);
-    
+#endif
+
 
     for (int i = 0; i < dma_read_count; i++) {
         if (i != 0) {
@@ -574,7 +578,7 @@ void sram_read_generic_temp(TaskCoreContext &context, int data_size_in_byte,
 
 void sram_update_cache(TaskCoreContext &context, string label_k,
                        SramPosLocator *sram_pos_locator, int data_size_in_byte,
-                       u_int64_t &dram_time,int cid) {
+                       u_int64_t &dram_time, int cid) {
 
     auto k_daddr_tmp = g_dram_kvtable[cid]->get(label_k);
     if (k_daddr_tmp.has_value()) {
@@ -759,8 +763,7 @@ void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
                           int &temp_sram_addr, u_int64_t &dram_time) {
     int sram_bitw = get_sram_bitwidth(context.cid);
 
-    int dma_read_count =
-        data_size_in_byte * 8 / (int)(sram_bitw * SRAM_BANKS);
+    int dma_read_count = data_size_in_byte * 8 / (int)(sram_bitw * SRAM_BANKS);
     int byte_residue =
         data_size_in_byte * 8 - dma_read_count * (sram_bitw * SRAM_BANKS);
     int single_read_count = ceiling_division(byte_residue, sram_bitw);
