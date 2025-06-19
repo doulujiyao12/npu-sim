@@ -76,7 +76,7 @@ int Relu_f::task_core(TaskCoreContext &context) {
     u_int64_t overlap_time = 0;
 
     // 数据维度
-    int data_size_input = N;
+    vector<int> data_size_input = {N};
     int data_size_out = N;
 
     // dram地址

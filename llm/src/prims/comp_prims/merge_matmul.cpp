@@ -96,7 +96,8 @@ int Merge_matmul::task_core(TaskCoreContext &context) {
     u_int64_t overlap_time = 0;
 
     // 数据维度
-    int data_size_input = slice * B * T * C;
+    vector<int> data_size_input;
+    int data_size_single_input = B * T * C;
     int data_size_out = 0;
 
     if (dim == 1)
@@ -105,7 +106,7 @@ int Merge_matmul::task_core(TaskCoreContext &context) {
         data_size_out = slice * B * T * C;
 
     // dram地址
-    u_int64_t dram_addr_tile = cid * dataset_words_per_tile;
+    u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
     u_int64_t out_global_addr = dram_addr_tile + out_offset * 4;
     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * 4;
 
@@ -134,9 +135,16 @@ int Merge_matmul::task_core(TaskCoreContext &context) {
         in_label_cnt++;
     }
 
+    for (int i = 0; i < slice; i++) {
+        if (i == 0)
+            data_size_input.push_back(data_size_single_input *
+                                      (slice - in_label_cnt + 1));
+        else
+            data_size_input.push_back(data_size_single_input);
+    }
+
     // 读入input数据
-    check_input_data(context, dram_time, inp_global_addr, data_size_input,
-                     in_label_cnt);
+    check_input_data(context, dram_time, inp_global_addr, data_size_input);
     BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
@@ -176,7 +184,7 @@ int Merge_matmul::task() {
     //     } else if (datatype == FP16) {
     //         data_byte = 2;
     //     }
-    //     u_int64_t dram_addr_tile = cid * dataset_words_per_tile;
+    //     u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
     //     u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
     //     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
 

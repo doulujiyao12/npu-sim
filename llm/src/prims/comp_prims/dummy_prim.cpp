@@ -76,7 +76,7 @@ int Dummy_p::task_core(TaskCoreContext &context) {
     // DAHU dram_time 不对
     u_int64_t dram_time = 0;
 
-    int data_size_input = 80;
+    vector<int> data_size_input = {80};
     int data_size_out = 80;
     u_int64_t overlap_time = 0;
 

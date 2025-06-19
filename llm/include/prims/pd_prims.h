@@ -47,6 +47,7 @@ public:
 class rope_f : public pd_base {
 public:
     int B, T, C, NH;
+    int sc_offset;
     PD_JOB job_type;
 
     int task();

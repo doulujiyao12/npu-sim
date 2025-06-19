@@ -100,7 +100,7 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
     u_int64_t overlap_time = 0;
 
     // 数据维度
-    int data_size_input = B * T * C;   // QKV input
+    vector<int> data_size_input = {B * T * C};   // QKV input
     int data_size_preatt = B * NH * T * T; // preatt
     int data_size_att = B * NH * T * T;    // att
     int data_size_out = B * T * C;         // output

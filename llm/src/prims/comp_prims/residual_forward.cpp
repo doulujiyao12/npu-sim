@@ -98,7 +98,7 @@ int Residual_f::task_core(TaskCoreContext &context) {
     u_int64_t overlap_time = 0;
 
     // 数据维度
-    int data_size_input = 2 * N;
+    vector<int> data_size_input;
     int data_size_single_input = N;
     int data_size_out = N;
 
@@ -132,9 +132,11 @@ int Residual_f::task_core(TaskCoreContext &context) {
         in_label_cnt++;
     }
 
+    for (int i = 0; i < in_label_cnt; i++)
+        data_size_input.push_back(data_size_single_input);
+
     // 读入input数据
-    check_input_data(context, dram_time, inp1_global_addr, data_size_input,
-                     in_label_cnt);
+    check_input_data(context, dram_time, inp1_global_addr, data_size_input);
     BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1

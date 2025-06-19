@@ -63,7 +63,7 @@ int switch_data::task_core(TaskCoreContext &context) {
     u_int64_t overlap_time = 0;
 
     // 数据维度
-    int data_size_input = IN;
+    vector<int> data_size_input = {IN};
     int data_size_out = OUT;
 
     // dram地址

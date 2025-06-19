@@ -114,10 +114,10 @@ int Attention_f::task_core(TaskCoreContext &context) {
     u_int64_t overlap_time = 0;
 
     // 数据维度
-    int data_size_input = B * T * 3 * C;   // QKV input
-    int data_size_preatt = B * NH * T * T; // preatt
-    int data_size_att = B * NH * T * T;    // att
-    int data_size_out = B * T * C;         // output
+    vector<int> data_size_input = {B * T * 3 * C}; // QKV input
+    int data_size_preatt = B * NH * T * T;         // preatt
+    int data_size_att = B * NH * T * T;            // att
+    int data_size_out = B * T * C;                 // output
 
     // dram地址
     u_int64_t dram_addr_tile = cid * dataset_words_per_tile;

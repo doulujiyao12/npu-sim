@@ -15,7 +15,7 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
     u_int64_t overlap_time = 0;
 
     // 数据维度
-    int data_size_input = B * T * C;
+    vector<int> data_size_input = {B * T * C};
     int data_size_weight = OC * C;
     int data_size_bias = OC;
     int data_size_out = B * T * OC;

@@ -28,8 +28,7 @@ public:
     void initialize() {}
 
     void check_input_data(TaskCoreContext &context, uint64_t &dram_time,
-                          uint64_t inp_global_addr, int data_size_input,
-                          int partition = 1);
+                          uint64_t inp_global_addr, vector<int> data_size_input);
     void check_static_data(TaskCoreContext &context, uint64_t &dram_time,
                            uint64_t label_global_addr, int data_size_label,
                            string label_name);

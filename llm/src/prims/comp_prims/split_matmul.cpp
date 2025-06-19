@@ -88,7 +88,7 @@ int Split_matmul::task_core(TaskCoreContext &context) {
     u_int64_t overlap_time = 0;
 
     // 数据维度
-    int data_size_input = B * T * C;
+    vector<int> data_size_input = {B * T * C};
     int data_size_out = B * T * C;
 
     // dram地址
@@ -104,12 +104,7 @@ int Split_matmul::task_core(TaskCoreContext &context) {
     }
 
     // 获取前缀label
-    std::size_t pos = datapass_label.outdata.find_last_of('_');
-    std::string prefix;
-    if (pos != std::string::npos)
-        prefix = datapass_label.outdata.substr(0, pos);
-    else
-        prefix = datapass_label.outdata;
+    // 此原语不支持获取前缀，也无需获取
 
     // 读入input数据
     check_input_data(context, dram_time, inp_global_addr, data_size_input);

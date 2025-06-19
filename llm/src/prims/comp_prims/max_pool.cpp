@@ -127,7 +127,7 @@ int Max_pool::task_core(TaskCoreContext &context) {
     u_int64_t overlap_time = 0;
 
     // 数据维度
-    int data_size_input = B * C * H * W;
+    vector<int> data_size_input = {B * C * H * W};
     int data_size_out = B * oC * oH * oW;
 
     // dram地址

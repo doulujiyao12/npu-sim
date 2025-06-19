@@ -9,7 +9,7 @@ int rope_f::task_core(TaskCoreContext &context) {
     u_int64_t overlap_time = 0;
 
     // 数据维度
-    int data_size_input = B * T * C * 3;
+    vector<int> data_size_input = {B * T * C * 3};
     int data_size_sincos = B * (C / NH) * 2;
     int data_size_out = B * T * C; // Q
 
@@ -17,7 +17,7 @@ int rope_f::task_core(TaskCoreContext &context) {
     u_int64_t dram_addr_tile = cid * dataset_words_per_tile;
     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
     u_int64_t sincos_global_addr =
-        inp_global_addr + data_size_input * data_byte;
+        inp_global_addr + sc_offset * data_byte;
     u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
 
     // 检查数据重利用
@@ -95,10 +95,12 @@ int rope_f::task_core(TaskCoreContext &context) {
              << ", size: " << size << endl;
 
 #if USE_SRAM_MANAGER == 1
-        sram_update_cache(context, label_k, sram_pos_locator, size, dram_time, cid);
-        // cout << "[rope_f] Core " << cid << " already add to label: " << label_k
+        sram_update_cache(context, label_k, sram_pos_locator, size, dram_time,
+                          cid);
+        // cout << "[rope_f] Core " << cid << " already add to label: " <<
+        // label_k
         //      << ", size: " << sram_pos_locator->findKeySize(label_k) << endl;
-        
+
 #else
         sram_write_append_generic(context, size, dram_time);
         sram_pos_locator->updatePair(label_k, size, context, dram_time);
@@ -107,8 +109,10 @@ int rope_f::task_core(TaskCoreContext &context) {
              << ", size: " << size << endl;
 
 #if USE_SRAM_MANAGER == 1
-        sram_update_cache(context, label_v, sram_pos_locator, size, dram_time, cid);
-        // cout << "[rope_f] Core " << cid << " already add to label: " << label_v
+        sram_update_cache(context, label_v, sram_pos_locator, size, dram_time,
+                          cid);
+        // cout << "[rope_f] Core " << cid << " already add to label: " <<
+        // label_v
         //      << ", size: " << sram_pos_locator->findKeySize(label_v) << endl;
 #else
         sram_write_append_generic(context, size, dram_time);
@@ -174,13 +178,11 @@ void rope_f::parse_json(json j) {
 
     initialize();
 
-    if (j.contains("dram_address")) {
+    if (j.contains("dram_address"))
         parse_address(j["dram_address"]);
-    }
 
-    if (j.contains("sram_address")) {
+    if (j.contains("sram_address"))
         parse_sram_label(j["sram_address"]);
-    }
 }
 
 void rope_f::print_self(string prefix) {
@@ -198,4 +200,6 @@ void rope_f::initialize() {
         data_byte = 1;
     else if (datatype == FP16)
         data_byte = 2;
+
+    sc_offset = inp_offset + B * T * C;
 }
