@@ -58,7 +58,7 @@ int Dummy_p::task_core(TaskCoreContext &context) {
     } else if (datatype == FP16) {
         data_byte = 2;
     }
-    u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
+    u_int64_t dram_addr_tile = cid * dataset_words_per_tile;
     u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
 

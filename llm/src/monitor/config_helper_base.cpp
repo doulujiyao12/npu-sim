@@ -118,18 +118,28 @@ void config_helper_base::set_hw_config(string filename) {
     jfile >> j;
 
     auto config_cores = j["cores"];
-    if (config_cores.size() != GRID_SIZE) {
-        cout << "[ERROR] Core number mismatch in core hw config and "
-                "GRID_SIZE.\n";
-        sc_stop();
-    }
+    CoreHWConfig sample = config_cores[0];
+    bool has_config[GRID_SIZE];
+    for (auto &b : has_config)
+        b = false;
 
     for (auto core : config_cores) {
         CoreHWConfig c = core;
+        has_config[c.id] = true;
         tile_exu.push_back(
             make_pair(c.id, new ExuConfig(MAC_Array, c.exu_x, c.exu_y)));
         tile_sfu.push_back(make_pair(c.id, new SfuConfig(Linear, c.sfu_x)));
         mem_sram_bw.push_back(make_pair(c.id, c.sram_bitwidth));
         mem_dram_config_str.push_back(make_pair(c.id, c.dram_config));
+    }
+
+    for (int i = 0; i < GRID_SIZE; i++) {
+        if (has_config[i]) continue;
+
+        tile_exu.push_back(
+            make_pair(i, new ExuConfig(MAC_Array, sample.exu_x, sample.exu_y)));
+        tile_sfu.push_back(make_pair(i, new SfuConfig(Linear, sample.sfu_x)));
+        mem_sram_bw.push_back(make_pair(i, sample.sram_bitwidth));
+        mem_dram_config_str.push_back(make_pair(i, sample.dram_config));
     }
 }

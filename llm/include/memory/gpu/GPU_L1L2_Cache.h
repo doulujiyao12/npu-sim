@@ -17,7 +17,7 @@ using namespace sc_core;
 using namespace tlm;
 using namespace std;
 
-#define NUML1Caches 64
+#define NUML1Caches 10240
 
 #ifndef CYCLE
 #define CYCLE 2

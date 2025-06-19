@@ -29,7 +29,7 @@
     "residual2_out": 7220,
     "TODO": 110
   },
-  "pipeline": 1,
+  "pipeline": 10,
   "source": [
     {
       "dest": 0,
@@ -39,14 +39,15 @@
   "chips": [
     {
       "chip_id": 0,
-      "GridX": 4,
-      "GridY": 4,
+      "GridX": 16,
+      "GridY": 16,
+      "core_config": "../llm/test/core_16x16.json",
       "cores": [
         {
           "id": 0,
           "cast": [
             {
-              "dest": 1,
+              "dest": 131,
               "critical": true
             }
           ],
@@ -189,10 +190,10 @@
           ]
         },
         {
-          "id": 1,
+          "id": 131,
           "cast": [
             {
-              "dest": 2,
+              "dest": 132,
               "critical": true
             }
           ],
@@ -200,10 +201,10 @@
           "prim_copy": 0
         },
         {
-          "id": 2,
+          "id": 132,
           "cast": [
             {
-              "dest": 3,
+              "dest": 233,
               "critical": true
             }
           ],
@@ -211,10 +212,10 @@
           "prim_copy": 0
         },
         {
-          "id": 3,
+          "id": 233,
           "cast": [
             {
-              "dest": 4,
+              "dest": 234,
               "critical": true
             }
           ],
@@ -222,10 +223,10 @@
           "prim_copy": 0
         },
         {
-          "id": 4,
+          "id": 234,
           "cast": [
             {
-              "dest": 5,
+              "dest": 235,
               "critical": true
             }
           ],
@@ -233,7 +234,7 @@
           "prim_copy": 0
         },
         {
-          "id": 5,
+          "id": 235,
           "cast": [
             {
               "dest": 6,

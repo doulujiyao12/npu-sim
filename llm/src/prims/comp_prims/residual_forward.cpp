@@ -103,7 +103,7 @@ int Residual_f::task_core(TaskCoreContext &context) {
     int data_size_out = N;
 
     // dram地址
-    u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
+    u_int64_t dram_addr_tile = cid * dataset_words_per_tile;
     u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
     u_int64_t inp1_global_addr = dram_addr_tile + inp_offset * data_byte;
 
@@ -174,7 +174,7 @@ int Residual_f::task() {
     //         data_byte = 2;
     //     }
 
-    //     u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
+    //     u_int64_t dram_addr_tile = cid * dataset_words_per_tile;
     //     u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
     //     u_int64_t inp1_global_addr = dram_addr_tile + inp_offset * data_byte;
     //     u_int64_t inp2_global_addr = dram_addr_tile + inp2_offset *

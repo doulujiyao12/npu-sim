@@ -92,7 +92,7 @@ int Split_matmul::task_core(TaskCoreContext &context) {
     int data_size_out = B * T * C;
 
     // dram地址
-    u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
+    u_int64_t dram_addr_tile = cid * dataset_words_per_tile;
     u_int64_t out_global_addr = dram_addr_tile + out_offset * 4;
     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * 4;
 
@@ -144,7 +144,7 @@ int Split_matmul::task() {
     //     }
     //     // cycle = (B*T*C)/(2*16*16);
 
-    //     u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
+    //     u_int64_t dram_addr_tile = cid * dataset_words_per_tile;
     //     u_int64_t out_global_addr = dram_addr_tile + out_offset * 4;
     //     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * 4;
 

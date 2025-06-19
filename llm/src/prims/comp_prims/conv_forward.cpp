@@ -170,7 +170,7 @@ int Conv_f::task_core(TaskCoreContext &context) {
     int data_size_out = B * oC * oH * oW;
 
     // dram地址
-    u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
+    u_int64_t dram_addr_tile = cid * dataset_words_per_tile;
     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
     u_int64_t weight_global_addr = dram_addr_tile + k_offset * data_byte;
     u_int64_t bias_global_addr = dram_addr_tile + b_offset * data_byte;
