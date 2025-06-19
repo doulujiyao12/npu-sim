@@ -342,12 +342,15 @@ int SramManager::get_address(AllocationID id) const {
 
 int SramManager::get_allocation_byte_capacity(AllocationID id) const {
     auto it = allocations_.find(id);
-    if (it == allocations_.end() || it->second.empty()) {
-        std::cerr << "Error: Invalid AllocationID or empty allocation." << std::endl;
-        assert(false);
-        return 0; // Invalid ID or empty allocation
+    if (it == allocations_.end()) {
+        std::cerr << "\033[1;31mError: Allocation ID " << id << " not found in allocations_.\033[0m" << std::endl;
+        assert(false && "Allocation ID not found");
+        return 0; // Invalid ID
+    } else if (it->second.empty()) {
+        std::cerr << "\033[1;31mError: Allocation for ID " << id << " is empty (no associated blocks).\033[0m" << std::endl;
+        assert(false && "Allocation is empty");
+        return 0; // Empty allocation
     }
-
     if (block_size_ == 0) {
         std::cerr << "Error: Block size is zero." << std::endl;
         assert(false);
@@ -444,7 +447,18 @@ int SramManager::get_address_with_offset(AllocationID id, int current_address, i
         // std::cout << "remaining_offset: " << remaining_offset << std::endl;
         if (remaining_offset < block_remaining) {
             return static_cast<int>(block_base + (current_address - block_base) + remaining_offset);
-        } else {
+        }else if (remaining_offset == block_remaining) {
+
+            if (i + 1 >= block_indices.size()) {
+                assert(false);
+            }
+
+            block_idx = block_indices[i + 1];
+            block_base = sram_start_address_ + block_idx * block_size_;
+            return static_cast<int>(block_base);
+        } 
+        
+        else {
             remaining_offset -= block_remaining;
             tmp =0;
         }

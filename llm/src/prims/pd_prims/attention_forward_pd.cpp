@@ -100,7 +100,7 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
     u_int64_t overlap_time = 0;
 
     // 数据维度
-    int data_size_input = B * T * 3 * C;   // QKV input
+    int data_size_input = B * T * C;   // QKV input
     int data_size_preatt = B * NH * T * T; // preatt
     int data_size_att = B * NH * T * T;    // att
     int data_size_out = B * T * C;         // output
@@ -144,6 +144,8 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
         sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
                 batch);
         string label_decode_k = format_label_k;
+        // cout << "decode_k: " << label_decode_k << endl;
+        
 
         int flag = sram_pos_locator->findPair(label_decode_k, kcache);
         if (flag == -1) {
@@ -152,12 +154,15 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
                    label_decode_k.c_str());
             sc_stop();
         }
+        assert(flag == 0 && "sram does not have enough space");
+
 
         AddrPosKey vcache;
         char format_label_v[100];
         sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
                 batch);
         string label_decode_v = format_label_v;
+        // cout << "decode_v: " << label_decode_v << endl;
 
         flag = sram_pos_locator->findPair(label_decode_v, vcache);
         if (flag == -1) {
@@ -167,9 +172,23 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
             sc_stop();
         }
 
+        assert(flag == 0 && "sram does not have enough space");
+    int sram_offset;
+#if USE_SRAM_MANAGER == 1
+    sram_pos_locator->printAllKeysWithAllocId();
+    // Print allocation IDs for debugging
+    std::cout << label_decode_k << " " << label_decode_v << " Key Allocation ID: " << kcache.alloc_id << " " << vcache.alloc_id
+              << std::endl;
+    
+    sram_read_generic(context, kcache.size, sram_offset,
+                      dram_time, kcache.alloc_id, true, sram_pos_locator);
+    sram_read_generic(context, vcache.size, sram_offset,
+                      dram_time, vcache.alloc_id, true, sram_pos_locator);
+#else
         // 读出k,v
         sram_read_generic(context, kcache.size, kcache.pos, dram_time);
         sram_read_generic(context, vcache.size, vcache.pos, dram_time);
+#endif
 
         cur_tokens = kcache.size / (B * C * data_byte);
     }

@@ -54,7 +54,8 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value, bool update_key
 bool SramPosLocator::validateTotalSize() const {
     int dataSizeSum = 0;
     for (const auto& pair : data_map) {
-        dataSizeSum += pair.second.size - pair.second.spill_size;
+        if (pair.second.valid)
+            dataSizeSum += pair.second.size - pair.second.spill_size;
     }
 
     int allocationSizeSum = 0;
@@ -76,6 +77,7 @@ bool SramPosLocator::validateTotalSize() const {
 void SramPosLocator::addPair(std::string &key, AddrPosKey value,
                              TaskCoreContext &context, u_int64_t &dram_time, bool update_key) {
     // 先放入sram
+
     visit += 1;
     value.record = visit;
     if (update_key) {
@@ -171,11 +173,13 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
         int spill_size = upper_spill_limit;
         used -= spill_size;
         data_map[min_label].spill_size += spill_size;
+        // data_map[min_label].size -= spill_size;
 #if USE_SRAM_MANAGER
         cout << "add pair " << key << endl;
         sram_manager_->deallocate(sram_id);
         cout <<  " Deallocate " << sram_id << " from sram manager." << key << endl;
-#endif      
+        
+#endif     
         // spill 耗时
         // spill in nb_dcache utils
         sram_spill_back_generic(context, spill_size, data_map[min_label].dram_addr, dram_time);
@@ -196,6 +200,7 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
 }
 
 int SramPosLocator::findPair(std::string &key, int &result) {
+
     visit += 1;
     auto it = data_map.find(key);
     if (it != data_map.end()) {
@@ -220,12 +225,22 @@ void SramPosLocator::printAllKeysWithAllocId() {
 }
 int SramPosLocator::findPair(std::string &key, AddrPosKey &result) {
     visit += 1;
-    
+
     auto it = data_map.find(key);
     if (it != data_map.end()) {
         it->second.record = visit;
         result = it->second;
         return it->second.spill_size;
+    }
+    return -1;
+}
+
+int SramPosLocator::findKeySize(std::string &key) {
+
+    
+    auto it = data_map.find(key);
+    if (it != data_map.end()) {
+        return it->second.size;
     }
     return -1;
 }
@@ -243,6 +258,7 @@ void SramPosLocator::updateKVPair(TaskCoreContext &context, std::string &key, ui
         // 还未建立 KV sram block
         sram_write_append_generic(context, data_size_in_byte, dram_time_tmp,
         key, true, this, kv_daddr);
+        // cout << "还未建立" << endl;
 
         return;
 
@@ -251,6 +267,7 @@ void SramPosLocator::updateKVPair(TaskCoreContext &context, std::string &key, ui
         sram_first_write_generic(context, spill_size, kv_daddr, dram_time_tmp,
             nullptr, key, true, this);
         // KV sram block 之前被建立，但是被放回dram
+        // cout << "被spill了" << endl;
 
 
     } else {
@@ -261,6 +278,8 @@ void SramPosLocator::updateKVPair(TaskCoreContext &context, std::string &key, ui
 
     assert(spill_size >= 0);
 
+    // cout << "left_byte" << result.left_byte << endl;
+    // cout << " data_size_in_byte" << data_size_in_byte << endl;
     if (result.left_byte > data_size_in_byte){
         result.spill_size = 0;
         result.left_byte -= data_size_in_byte;
@@ -268,14 +287,24 @@ void SramPosLocator::updateKVPair(TaskCoreContext &context, std::string &key, ui
     }else{
         int alignment = std::max(get_sram_bitwidth(cid), SRAM_BLOCK_SIZE * 8);
         int alignment_byte = alignment / 8;
+        int tmp = 1;
 
         result.size += alignment_byte;
-        result.left_byte = result.left_byte - data_size_in_byte + alignment_byte;
+        while (tmp * alignment_byte < data_size_in_byte){
+            tmp = tmp + 1;
+            result.size += alignment_byte;
+        } 
+        
+        result.left_byte = result.left_byte - data_size_in_byte + alignment_byte * tmp;
          
         addPair(key, result, context, dram_time_tmp, false);
 
         auto sram_manager_ = context.sram_manager_;
-        sram_manager_->allocate_append(alignment_byte, result.alloc_id);
+        // cout << "alignment_byte" << alignment_byte << endl;
+        sram_manager_->allocate_append(alignment_byte * tmp, result.alloc_id);
+#if ASSERT == 1
+        assert(validateTotalSize());
+#endif
         return;
     }
 
@@ -317,6 +346,8 @@ void SramPosLocator::updatePair(std::string &key, int size,
 }
 
 void SramPosLocator::deletePair(std::string &key) { 
+    cout << " deletePair Pair 1 "<< endl;
+
     // data_map.erase(key); 
     cout << "delete label " << key << endl;
     auto it = data_map.find(key);

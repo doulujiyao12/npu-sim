@@ -1,6 +1,7 @@
 #include "monitor/monitor.h"
 #include "monitor/config_helper_gpu.h"
 #include "utils/system_utils.h"
+#include "defs/global.h"
 
 Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine,
                  const char *config_name, const char *font_ttf)
@@ -48,6 +49,7 @@ Monitor::~Monitor() {
 void Monitor::init() {
     routerMonitor = new RouterMonitor("router-monitor", this->event_engine);
     workerCores = new WorkerCore *[GRID_SIZE];
+    g_dram_kvtable = new DramKVTable*[GRID_SIZE];
 
     // globalMemInterface = new GlobalMemInterface();
 

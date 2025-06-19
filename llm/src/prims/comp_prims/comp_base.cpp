@@ -111,6 +111,8 @@ void comp_base::check_input_data(TaskCoreContext &context, uint64_t &dram_time,
                                       context, dram_time);
 #endif
         } else {
+
+            
             AddrPosKey inp_key;
             printf("[INFO] comp_base: read from sram, label: %s\n",
                    datapass_label.indata[p].c_str());
@@ -156,6 +158,39 @@ void comp_base::check_input_data(TaskCoreContext &context, uint64_t &dram_time,
                 }
 #endif
             }
+#if USE_SRAM_MANAGER == 1  
+
+            
+
+                AddrPosKey sc_key;
+                sram_pos_locator->findPair(datapass_label.indata[p], sc_key);
+
+
+                int data_bits = data_byte * data_size_input / partition * 8;
+                assert((SRAM_BLOCK_SIZE * 8) % SRAM_BITWIDTH == 0 &&
+                    "SRAM_BLOCK_SIZE * 8 must be a multiple of SRAM_BITWIDTH");
+                int alignment = std::max(SRAM_BITWIDTH, SRAM_BLOCK_SIZE * 8);
+
+                int aligned_data_bits = static_cast<int>(std::ceil(
+                                            static_cast<double>(data_bits) / alignment)) *
+                                        alignment;
+                int aligned_data_byte = aligned_data_bits / 8;
+                if (sram_pos_locator->data_map[datapass_label.indata[p]].size < aligned_data_byte){
+                    std::cout << "\033[1;33m" << "warning!! input output not mapping" << "\033[0m" << std::endl;
+                    auto sram_manager_ = context.sram_manager_;
+#if ASSERT == 1
+                    assert(sram_pos_locator->validateTotalSize());
+#endif
+                    
+                    // cout << "[INFO] comp_base: sram_pos_locator update the size of " << aligned_data_byte - sram_pos_locator->data_map[datapass_label.indata[p]].size << std::endl;
+                    sram_manager_->allocate_append(aligned_data_byte - sram_pos_locator->data_map[datapass_label.indata[p]].size, sc_key.alloc_id);  
+                    sc_key.size += aligned_data_byte - sram_pos_locator->data_map[datapass_label.indata[p]].size;
+                    sram_pos_locator->addPair(datapass_label.indata[p], sc_key, false);
+#if ASSERT == 1
+                    assert(sram_pos_locator->validateTotalSize());
+#endif
+                }
+#endif
         }
 
 #if USE_SRAM_MANAGER == 1
@@ -198,9 +233,9 @@ void comp_base::check_static_data(TaskCoreContext &context, uint64_t &dram_time,
     int flag = sram_pos_locator->findPair(label_name, sc_key);
     if (flag == -1) {
 #if USE_SRAM_MANAGER == 1
-        sram_first_write_generic(context, data_byte * data_size_weight,
-                                 weight_global_addr, dram_time, dram_start,
-                                 label_weight, true, sram_pos_locator);
+        sram_first_write_generic(context, data_byte * data_size_label,
+                                 label_global_addr, dram_time, dram_start,
+                                 label_name, true, sram_pos_locator);
 #else
         sram_first_write_generic(context, data_byte * data_size_label,
                                  label_global_addr, dram_time, dram_start);
@@ -210,8 +245,8 @@ void comp_base::check_static_data(TaskCoreContext &context, uint64_t &dram_time,
 #endif
     } else if (flag > 0) {
 #if USE_SRAM_MANAGER == 1
-        sram_first_write_generic(context, flag, weight_global_addr, dram_time,
-                                 dram_start, label_weight, true,
+        sram_first_write_generic(context, flag, label_global_addr, dram_time,
+                                 dram_start, label_name, true,
                                  sram_pos_locator);
 
 #else

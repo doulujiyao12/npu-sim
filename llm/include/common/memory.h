@@ -126,6 +126,7 @@ public:
     int findPair(std::string &key, int &result);
     int findPair(std::string &key, AddrPosKey &result);
     void printAllKeys();
+    int findKeySize(std::string &key);
     void updatePair(std::string &key, int size, TaskCoreContext &context,
                     u_int64_t &dram_time);
     void updateKVPair(TaskCoreContext &context, std::string &key, uint64_t kv_daddr, int data_size_in_byte);
