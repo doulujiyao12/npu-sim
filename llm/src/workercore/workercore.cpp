@@ -361,7 +361,7 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
         task = new Residual_f();
         break;
     case SEND_PRIM_TYPE:
-        task = new Send_prim();
+        task = new Send_prim(this->sram_pos_locator);
         break;
     case RECV_PRIM_TYPE:
         task = new Recv_prim();
@@ -555,11 +555,10 @@ void WorkerCoreExecutor::send_logic() {
                 if (!channel_avail_i.read())
                     wait(ev_channel_avail_i);
 
-                send_buffer = Msg(
-                    prim->data_packet_id == prim->max_packet, MSG_TYPE::DATA,
-                    prim->data_packet_id, prim->des_id,
-                    prim->des_offset + M_D_DATA * (prim->data_packet_id - 1),
-                    prim->tag_id, length, sc_bv<128>(0x1));
+                send_buffer =
+                    Msg(prim->data_packet_id == prim->max_packet,
+                        MSG_TYPE::DATA, prim->data_packet_id, prim->des_id, 0,
+                        prim->tag_id, length, sc_bv<128>(0x1));
 
                 send_helper_write = 3;
                 ev_send_helper.notify(0, SC_NS);
@@ -697,9 +696,7 @@ void WorkerCoreExecutor::send_para_logic() {
                         send_buffer =
                             Msg(s_prim->data_packet_id == s_prim->max_packet,
                                 MSG_TYPE::DATA, s_prim->data_packet_id,
-                                s_prim->des_id,
-                                s_prim->des_offset +
-                                    M_D_DATA * (s_prim->data_packet_id - 1),
+                                s_prim->des_id, 0,
                                 s_prim->tag_id, length, sc_bv<128>(0x1));
 
                         atomic_helper_lock(sc_time_stamp(), 2);
@@ -983,7 +980,7 @@ void WorkerCoreExecutor::recv_logic() {
                                 inp_key.size = 0; //+= max_recv * M_D_DATA;
                                 sram_pos_locator->findPair(input_label,
                                                            inp_key);
-                                
+
 
                                 u_int64_t temp;
                                 sram_pos_locator->addPair(input_label, inp_key);
@@ -1080,7 +1077,9 @@ void WorkerCoreExecutor::task_logic() {
             pd->decode_done = &decode_done;
         }
         p->cid = cid;
-        cout << "[PRIM] Core <\033[38;5;214m" << cid << "\033[0m>: PRIM NAME -----------------------: " << p->name << endl;
+        cout << "[PRIM] Core <\033[38;5;214m" << cid
+             << "\033[0m>: PRIM NAME -----------------------: " << p->name
+             << endl;
         delay = p->task_core(context);
         wait(sc_time(delay, SC_NS));
 

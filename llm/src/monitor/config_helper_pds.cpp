@@ -410,6 +410,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
 
     int index = i / GRID_X;
     int prim_seq = 0;
+    string output_label = "";
 
     prim_base *recv_data_1 = new Recv_prim(work.recv_cnt ? RECV_TYPE::RECV_START
                                                          : RECV_TYPE::RECV_DATA,
@@ -421,9 +422,11 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
         Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, set_batch->serialize()));
 
     if (status.batchInfo.size()) {
-        for (auto prim : work.prims) {
+        for (int p = 0; p < work.prims.size(); p++) {
+            auto prim = work.prims[p];
             prim_base *set_addr = new_prim("Set_addr");
             auto label = ((Set_addr *)set_addr)->datapass_label;
+
             for (int i = 0; i < MAX_SPLIT_NUM; i++) {
                 if (prim->prim_type == PD_PRIM) {
                     label->indata[i] =
@@ -443,6 +446,9 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
                                       set_addr->serialize()));
             temp_buffer.push_back(
                 Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, prim->serialize()));
+
+            if (p == work.prims.size() - 1)
+                output_label = label->outdata;
         }
     }
 
@@ -460,6 +466,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
     prim_base *recv_ack = new Recv_prim(RECV_TYPE::RECV_ACK);
     Send_prim *send_data =
         new Send_prim(SEND_TYPE::SEND_DATA, send_dest, send_tag);
+    send_data->output_label = output_label;
 
     int output_size = max(int(C * T * B * sizeof(float)), 1);
     int pkg_nums = (output_size % M_D_DATA) ? (output_size / M_D_DATA + 1)

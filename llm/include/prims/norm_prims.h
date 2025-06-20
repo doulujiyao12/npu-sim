@@ -77,14 +77,17 @@ public:
 class Send_prim : public prim_base {
 public:
     SEND_TYPE type;
-    int des_id;       // 目标id
-    int des_offset;   // 目标的地址偏移
-    int local_offset; // 本地的地址偏移
-    int max_packet;   // 需要发送的包裹数量
-    int tag_id;       // send_tag，用于与recv原语对应
-    int end_length;   // 尾包长度，避免覆盖
+    int des_id; // 目标id
+    // int des_offset;   // 目标的地址偏移
+    // int local_offset; // 本地的地址偏移
+    string output_label = UNSET_LABEL; // 需要从哪一个数据块标签获取结果，并发送
+    int max_packet;                    // 需要发送的包裹数量
+    int tag_id;                        // send_tag，用于与recv原语对应
+    int end_length;                    // 尾包长度，避免覆盖
 
     int data_packet_id; // 已经发送的包裹数量
+
+    SramPosLocator *sram_pos_locator;
 
     int task();
     int task_core(TaskCoreContext &context);
@@ -98,19 +101,17 @@ public:
     void initialize() {};
 
     Send_prim() { name = "Send_prim"; }
+    Send_prim(SramPosLocator *sram_pos_locator)
+        : sram_pos_locator(sram_pos_locator) {
+        name = "Send_prim";
+    }
     Send_prim(SEND_TYPE type) : type(type) { name = "Send_prim"; }
     Send_prim(SEND_TYPE type, int des, int tag)
         : type(type), des_id(des), tag_id(tag) {
         name = "Send_prim";
     } // 用于SEND_ACK
-    Send_prim(SEND_TYPE type, int des, int des_offset, int local_offset,
-              int max_packet, int tag)
-        : des_id(des),
-          des_offset(des_offset),
-          local_offset(local_offset),
-          type(type),
-          max_packet(max_packet),
-          tag_id(tag) {
+    Send_prim(SEND_TYPE type, int des, int max_packet, int tag)
+        : des_id(des), type(type), max_packet(max_packet), tag_id(tag) {
         name = "Send_prim";
     }
 };

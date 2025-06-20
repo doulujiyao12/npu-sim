@@ -1,5 +1,6 @@
 #include "nlohmann/json.hpp"
 #include <SFML/Graphics.hpp>
+#include <sstream>
 
 #include "monitor/config_helper_core.h"
 #include "utils/display_utils.h"
@@ -465,10 +466,10 @@ void config_helper_core::calculate_address(bool do_loop) {
             else
                 v = &(work.prims_last_loop);
 
-            // CTODO: 假设平均分配输出
             int output_size = 0;
             int output_offset = 0;
             int index = 0;
+            string output_label = "";
 
             if (!do_loop && judge_is_end_work(work))
                 continue; // 汇节点
@@ -479,12 +480,19 @@ void config_helper_core::calculate_address(bool do_loop) {
                 if (p->prim_type == COMP_PRIM) {
                     comp_base *cp = (comp_base *)p;
                     output_size = cp->out_size;
-                    output_offset = cp->out_offset;
+                    // output_offset = cp->out_offset;
+                    output_label = cp->datapass_label.outdata;
                     break;
                 }
             }
 
-            // cast send 原语每一个有不同的 des_offset
+            vector<string> output_label_split;
+            stringstream ss(output_label);
+            string word;
+
+            while (ss >> word)
+                output_label_split.push_back(word);
+
             for (auto &prim : (*v)) {
                 if (typeid(*prim) == typeid(Send_prim)) {
                     Send_prim *temp = (Send_prim *)prim;
@@ -502,26 +510,23 @@ void config_helper_core::calculate_address(bool do_loop) {
                     int end_length =
                         slice_size_in_bit - (pkg_nums - 1) * M_D_DATA;
 
-                    // local offset
-                    temp->local_offset = output_offset;
-                    if (weight > 1)
-                        output_offset += slice_size; // CTODO: fix this
-
                     // max pkg nums
                     temp->max_packet = pkg_nums;
+                    temp->output_label = output_label_split.size() == 1
+                                             ? output_label_split[0]
+                                             : output_label_split[index];
+                    temp->end_length = end_length;
 
                     // des offset
-                    if (work.cast[index].addr != -1) {
-                        temp->des_offset = work.cast[index].addr;
-                        cout << "Core " << i << ": work gets actual dram des: "
-                             << temp->des_offset << endl;
-                    } else {
-                        temp->des_offset = delta_offset[temp->des_id];
-                        delta_offset[temp->des_id] += slice_size;
-                    }
-
-                    // end length
-                    temp->end_length = end_length;
+                    // if (work.cast[index].addr != -1) {
+                    //     temp->des_offset = work.cast[index].addr;
+                    //     cout << "Core " << i << ": work gets actual dram des:
+                    //     "
+                    //          << temp->des_offset << endl;
+                    // } else {
+                    //     temp->des_offset = delta_offset[temp->des_id];
+                    //     delta_offset[temp->des_id] += slice_size;
+                    // }
 
                     index++;
                 } else if (typeid(*prim) == typeid(Send_global_memory)) {

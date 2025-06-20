@@ -19,9 +19,7 @@ void Send_prim::print_self(string prefix) {
     if (type == SEND_DONE)
         type_s = "SEND_DONE";
 
-    cout << prefix << "\t[" << type_s << "] > send to " << des_id
-         << ", des_offset: " << des_offset << ", local_offset: " << local_offset
-         << endl;
+    cout << prefix << "\t[" << type_s << "] > send to " << des_id << endl;
     cout << prefix << "\tmax_packet: " << max_packet << ", tag_id: " << tag_id
          << ", end_length: " << end_length << endl;
 }
@@ -36,8 +34,12 @@ int Send_prim::sram_utilization(DATATYPE datatype) {
 
 void Send_prim::deserialize(sc_bv<128> buffer) {
     des_id = buffer.range(23, 8).to_uint64();
-    des_offset = buffer.range(39, 24).to_uint64();
-    local_offset = buffer.range(55, 40).to_uint64();
+
+    if (type == SEND_DATA)
+        output_label =
+            g_addr_label_table.findRecord(buffer.range(31, 24).to_uint64());
+
+    // local_offset = buffer.range(55, 40).to_uint64();
     type = SEND_TYPE(buffer.range(59, 56).to_uint64());
     max_packet = buffer.range(75, 60).to_uint64();
     tag_id = buffer.range(83, 76).to_uint64();
@@ -49,8 +51,16 @@ sc_bv<128> Send_prim::serialize() {
     sc_bv<128> d;
     d.range(7, 0) = sc_bv<8>(SEND_PRIM_TYPE);
     d.range(23, 8) = sc_bv<16>(des_id);
-    d.range(39, 24) = sc_bv<16>(des_offset);
-    d.range(55, 40) = sc_bv<16>(local_offset);
+
+    if (type == SEND_DATA) {
+        if (output_label == UNSET_LABEL) {
+            cout << "[ERROR] SEND_DATA must have a set output_label\n";
+            sc_stop();
+        }
+        d.range(31, 24) = sc_bv<8>(g_addr_label_table.addRecord(output_label));
+    }
+
+    // d.range(55, 40) = sc_bv<16>(local_offset);
     d.range(59, 56) = sc_bv<4>(type);
     d.range(75, 60) = sc_bv<16>(max_packet);
     d.range(83, 76) = sc_bv<8>(tag_id);
@@ -67,8 +77,15 @@ int Send_prim::task_core(TaskCoreContext &context) {
     auto hmau = context.hmau;
     sc_bv<128> msg_data;
     sc_time elapsed_time;
-    mau->mem_read_port->read(local_offset + M_D_DATA * (data_packet_id - 1),
-                             msg_data, elapsed_time);
+
+    // 找到output_label对应的数据块
+    if (type == SEND_DATA) {
+        AddrPosKey sc_key;
+        int flag = sram_pos_locator->findPair(output_label, sc_key);
+        mau->mem_read_port->read(sc_key.pos + M_D_DATA * (data_packet_id - 1),
+                                 msg_data, elapsed_time);
+    }
+
     msg_data = 0b1;
     // std::cout << "msg_data (hex) after send" << msg_data.to_string(SC_HEX) <<
     // std::endl;

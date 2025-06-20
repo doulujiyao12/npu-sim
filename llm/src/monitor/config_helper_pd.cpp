@@ -1,9 +1,9 @@
 #include "monitor/config_helper_pd.h"
+#include "defs/global.h"
 #include "prims/norm_prims.h"
 #include "prims/pd_base.h"
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
-#include "defs/global.h"
 
 config_helper_pd::config_helper_pd(string filename, string font_ttf,
                                    sc_event *ev_sig, int config_chip_id) {
@@ -18,7 +18,7 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
         CoreStatus status = CoreStatus(i, JOB_BOTH);
         coreStatus.push_back(status);
     }
-    
+
 
     // 收集相关参数
     auto config_reqs = j["requests"];
@@ -152,7 +152,6 @@ void config_helper_pd::iter_done(vector<Msg> done_msg) {
                     for (int i = 0; i < GRID_SIZE; i++) {
                         g_dram_kvtable[i]->remove(label_k);
                     }
-                    
 
 
                     char format_label_v[100];
@@ -162,7 +161,7 @@ void config_helper_pd::iter_done(vector<Msg> done_msg) {
                     for (int i = 0; i < GRID_SIZE; i++) {
                         g_dram_kvtable[i]->remove(label_v);
                     }
-                    
+
 
                     if (++decode_done == requestRecords.size()) {
                         cout << "All reqs done.\n";
@@ -373,6 +372,7 @@ void config_helper_pd::generate_prims(int i) {
 
     int index = i / GRID_X;
     int prim_seq = 0;
+    string output_label = "";
 
     prim_base *recv_data_1 = new Recv_prim(work.recv_cnt ? RECV_TYPE::RECV_START
                                                          : RECV_TYPE::RECV_DATA,
@@ -385,9 +385,11 @@ void config_helper_pd::generate_prims(int i) {
 
     if (status.batchInfo.size()) {
         for (int loop = 0; loop < core.loop; loop++) {
-            for (auto prim : work.prims) {
+            for (int p = 0; p < work.prims.size(); p++) {
+                auto prim = work.prims[p];
                 prim_base *set_addr = new_prim("Set_addr");
                 auto label = ((Set_addr *)set_addr)->datapass_label;
+
                 for (int i = 0; i < MAX_SPLIT_NUM; i++) {
                     if (prim->prim_type == PD_PRIM) {
                         label->indata[i] =
@@ -408,6 +410,9 @@ void config_helper_pd::generate_prims(int i) {
                                           i, set_addr->serialize()));
                 temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
                                           i, prim->serialize()));
+
+                if (loop == core.loop - 1 && p == work.prims.size() - 1)
+                    output_label = label->outdata;
             }
         }
     }
@@ -425,6 +430,7 @@ void config_helper_pd::generate_prims(int i) {
     prim_base *recv_ack = new Recv_prim(RECV_TYPE::RECV_ACK);
     Send_prim *send_data =
         new Send_prim(SEND_TYPE::SEND_DATA, send_dest, send_tag);
+    send_data->output_label = output_label;
 
     int output_size = max(int(C * T * B * sizeof(float)), 1);
     int pkg_nums = (output_size % M_D_DATA) ? (output_size / M_D_DATA + 1)
