@@ -26,7 +26,7 @@ void Send_prim::print_self(string prefix) {
 
 void Send_prim::parse_json(json j, vector<pair<string, int>> vtable) {}
 
-int Send_prim::sram_utilization(DATATYPE datatype) {
+int Send_prim::sram_utilization(DATATYPE datatype, int cid) {
     int total_sram = 0;
 
     return total_sram;

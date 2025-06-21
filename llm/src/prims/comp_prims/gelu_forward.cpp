@@ -58,7 +58,7 @@ void Gelu_f::parse_json(json j) {
         parse_sram_label(j["sram_address"]);
 }
 
-int Gelu_f::sram_utilization(DATATYPE datatype) {
+int Gelu_f::sram_utilization(DATATYPE datatype, int cid) {
     int total_sram = 0;
     int data_byte = 0;
 

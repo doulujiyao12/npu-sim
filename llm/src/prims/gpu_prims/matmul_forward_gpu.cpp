@@ -77,7 +77,7 @@ int Matmul_f_gpu::task_core(TaskCoreContext &context) {
 
 int Matmul_f_gpu::task() { return 0; }
 
-int Matmul_f_gpu::sram_utilization(DATATYPE datatype) { return 0; }
+int Matmul_f_gpu::sram_utilization(DATATYPE datatype, int cid) { return 0; }
 
 sc_bv<128> Matmul_f_gpu::serialize() {
     sc_bv<128> d;

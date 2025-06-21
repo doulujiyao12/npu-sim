@@ -30,7 +30,7 @@ public:
     virtual void deserialize(sc_bv<128> buffer) = 0;
     virtual void initialize() = 0;
     virtual void print_self(string prefix) = 0;
-    virtual int sram_utilization(DATATYPE datatype) = 0;
+    virtual int sram_utilization(DATATYPE datatype, int cid = 0) = 0;
 
     prim_base() {
         name = "prim_base";

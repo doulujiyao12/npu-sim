@@ -16,7 +16,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     matmul_forward_pd() { name = "matmul_forward_pd"; }
 };
@@ -38,7 +38,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     attention_forward_pd() { name = "attention_forward_pd"; }
 };
@@ -58,7 +58,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize();
 
     rope_f() { name = "rope_f"; }

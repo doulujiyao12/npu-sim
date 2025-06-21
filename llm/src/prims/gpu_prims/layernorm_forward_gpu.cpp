@@ -73,7 +73,7 @@ int Layernorm_f_gpu::task_core(TaskCoreContext &context) {
 
 int Layernorm_f_gpu::task() { return 0; }
 
-int Layernorm_f_gpu::sram_utilization(DATATYPE datatype) { return 0; }
+int Layernorm_f_gpu::sram_utilization(DATATYPE datatype, int cid) { return 0; }
 
 void Layernorm_f_gpu::deserialize(sc_bv<128> buffer) {
     B = buffer.range(55, 40).to_uint64();

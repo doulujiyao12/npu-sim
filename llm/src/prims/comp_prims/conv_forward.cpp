@@ -65,7 +65,7 @@ void Conv_f::parse_json(json j) {
     if (j.contains("sram_address"))
         parse_sram_label(j["sram_address"]);
 }
-int Conv_f::sram_utilization(DATATYPE datatype) {
+int Conv_f::sram_utilization(DATATYPE datatype, int cid) {
     int total_sram = 0;
 
     int p_inp_sram_byte = B * C * H * W * data_byte * 8;

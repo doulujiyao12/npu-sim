@@ -17,7 +17,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize();
 
     Attention_f() { name = "Attention_f"; }
@@ -37,7 +37,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     Batchnorm_f() { name = "Batchnorm_f"; }
 };
@@ -63,7 +63,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     void initialize();
     Conv_f() { name = "Conv_f"; }
@@ -80,7 +80,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
 
     Dummy_p() { name = "Dummy_p"; }
@@ -98,7 +98,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize();
 
     Gelu_f() { name = "Gelu_f"; }
@@ -118,7 +118,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize();
 
     Layernorm_f() { name = "Layernorm_f"; }
@@ -139,7 +139,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     void initialize();
     HardwareTaskConfig *generate_hw_config();
@@ -161,7 +161,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     void initialize();
     switch_data() { name = "switch_data"; }
@@ -188,7 +188,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     void initialize();
     Max_pool() { name = "Max_pool"; }
@@ -210,7 +210,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     void parse_matmul(Matmul_f *p);
 
@@ -233,7 +233,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     void parse_matmul(Matmul_f *p);
     void initialize();
@@ -254,7 +254,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     void initialize();
     Relu_f() { name = "Relu_f"; }
@@ -274,7 +274,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     void initialize();
     Residual_f() { name = "Residual_f"; }
@@ -294,7 +294,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     void initialize();
     rmsnorm_forward() { name = "rmsnorm_forward"; }
@@ -313,7 +313,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     void initialize();
     silu_forward() { name = "silu_forward"; }
@@ -336,7 +336,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     void parse_conv(Conv_f *p);
 
@@ -358,7 +358,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     void parse_matmul(Matmul_f *matmul);
     void initialize();
@@ -380,7 +380,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     void initialize();
     swiglu_forward() { name = "swiglu_forward"; }
@@ -408,7 +408,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     Send_global_memory() { name = "Send_global_memory"; }
 };
@@ -427,7 +427,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     Recv_global_memory() { name = "Recv_global_memory"; }
 };

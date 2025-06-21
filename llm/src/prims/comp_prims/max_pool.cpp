@@ -64,7 +64,7 @@ void Max_pool::parse_json(json j) {
 }
 
 
-int Max_pool::sram_utilization(DATATYPE datatype) {
+int Max_pool::sram_utilization(DATATYPE datatype, int cid) {
 
     int total_sram = 0;
 

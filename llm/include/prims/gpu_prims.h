@@ -9,7 +9,7 @@ public:
 
     int task_core(TaskCoreContext &context);
     int task();
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
@@ -28,7 +28,7 @@ public:
 
     int task_core(TaskCoreContext &context);
     int task();
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
@@ -47,7 +47,7 @@ public:
 
     int task_core(TaskCoreContext &context);
     int task();
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
@@ -66,7 +66,7 @@ public:
 
     int task_core(TaskCoreContext &context);
     int task();
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
@@ -86,7 +86,7 @@ public:
 
     int task_core(TaskCoreContext &context);
     int task();
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);

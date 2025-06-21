@@ -35,7 +35,7 @@ void Recv_global_memory::print_self(string prefix) {
     std::cout << prefix << "\trecv_cnt: " << recv_cnt << std::endl;
 }
 
-int Recv_global_memory::sram_utilization(DATATYPE datatype) {
+int Recv_global_memory::sram_utilization(DATATYPE datatype, int cid) {
     return 0;
 }
 

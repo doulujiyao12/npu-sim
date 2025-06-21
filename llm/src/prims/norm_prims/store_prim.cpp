@@ -25,7 +25,7 @@ sc_bv<128> Store_prim::serialize() {
     return d;
 }
 int Store_prim::task_core(TaskCoreContext &context) { return 0; }
-int Store_prim::sram_utilization(DATATYPE datatype) {
+int Store_prim::sram_utilization(DATATYPE datatype, int cid) {
     int total_sram = 0;
 
     return total_sram;

@@ -28,4 +28,4 @@ sc_bv<128> Merge_conv::serialize() {
 int Merge_conv::task_core(TaskCoreContext &context) { return 0; }
 int Merge_conv::task() { return 1; }
 
-int Merge_conv::sram_utilization(DATATYPE datatype) { return 0; }
+int Merge_conv::sram_utilization(DATATYPE datatype, int cid) { return 0; }

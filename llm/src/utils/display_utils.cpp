@@ -665,7 +665,6 @@ void visualize_data_flow(cairo_surface_t *surface,
                             reverse = true;
                             swap(end_x, start_x);
                             swap(end_y, start_y);
-                            cout << end_y << " " << start_y << endl;
                         }
 
                         dx = end_x - start_x;

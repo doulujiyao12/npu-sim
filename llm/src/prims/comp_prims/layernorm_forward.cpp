@@ -70,7 +70,7 @@ void Layernorm_f::parse_json(json j) {
         parse_sram_label(j["sram_address"]);
 }
 
-int Layernorm_f::sram_utilization(DATATYPE datatype) {
+int Layernorm_f::sram_utilization(DATATYPE datatype, int cid) {
     int total_sram = 0;
 
     int p_inp_sram =

@@ -98,7 +98,7 @@ void Send_global_memory::print_self(string prefix) {
     cout << prefix << "\tend_length: " << end_length << endl;
 }
 
-int Send_global_memory::sram_utilization(DATATYPE datatype) {
+int Send_global_memory::sram_utilization(DATATYPE datatype, int cid) {
     return 0;
 }
 

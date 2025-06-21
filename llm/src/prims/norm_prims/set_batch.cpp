@@ -13,7 +13,7 @@ int Set_batch::task_core(TaskCoreContext &context) {
 
 void Set_batch::print_self(string prefix) { cout << prefix << "<Set_batch>\n"; }
 
-int Set_batch::sram_utilization(DATATYPE datatype) { return 0; }
+int Set_batch::sram_utilization(DATATYPE datatype, int cid) { return 0; }
 
 void Set_batch::parse_json(json j) {}
 

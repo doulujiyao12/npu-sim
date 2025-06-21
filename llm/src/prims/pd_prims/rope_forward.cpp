@@ -189,7 +189,7 @@ void rope_f::print_self(string prefix) {
     cout << prefix << "Rope_f: B=" << B << ", T=" << T << ", C=" << C << endl;
 }
 
-int rope_f::sram_utilization(DATATYPE datatype) { return 0; }
+int rope_f::sram_utilization(DATATYPE datatype, int cid) { return 0; }
 
 void rope_f::initialize() {
     inp_size = B * T * C;

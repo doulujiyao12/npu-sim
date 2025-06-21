@@ -38,7 +38,7 @@ void Relu_f::parse_json(json j) {
         parse_sram_label(j["sram_address"]);
 }
 
-int Relu_f::sram_utilization(DATATYPE datatype) {
+int Relu_f::sram_utilization(DATATYPE datatype, int cid) {
     int total_sram = 0;
 
     int inp_sram = ceiling_division(N * data_byte * 8, get_sram_bitwidth(cid));

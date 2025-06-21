@@ -262,4 +262,4 @@ int Split_matmul::task() {
     return 0;
 }
 
-int Split_matmul::sram_utilization(DATATYPE datatype) { return 0; }
+int Split_matmul::sram_utilization(DATATYPE datatype, int cid) { return 0; }

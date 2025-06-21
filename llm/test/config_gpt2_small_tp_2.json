@@ -29,7 +29,8 @@
     "matmul4_out": 2405,
     "layernorm2_data": 4000,
     "split_matmul2_out": 5000,
-    "residual2_out": 6500
+    "residual2_out": 6500,
+    "TODO": 110
   },
   "pipeline": 1,
   "source": [
@@ -114,7 +115,8 @@
                     "outdata": "attention1_out"
                   },
                   "dram_address": {
-                    "data": "attention1_data"
+                    "data": "attention1_data",
+                    "out": "TODO"
                   }
                 },
                 {
@@ -165,7 +167,8 @@
                     "outdata": "residual1_out"
                   },
                   "dram_address": {
-                    "data": -1
+                    "data": -1,
+                    "out": "TODO"
                   }
                 },
                 {
@@ -224,7 +227,8 @@
                     "outdata": "gelu1_out"
                   },
                   "dram_address": {
-                    "data": -1
+                    "data": -1,
+                    "out": "TODO"
                   }
                 },
                 {
@@ -321,7 +325,8 @@
                     "outdata": "attention1_out"
                   },
                   "dram_address": {
-                    "data": "attention1_data"
+                    "data": "attention1_data",
+                    "out": "TODO"
                   }
                 },
                 {

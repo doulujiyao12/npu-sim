@@ -135,7 +135,7 @@ int Merge_matmul::task_core(TaskCoreContext &context) {
         in_label_cnt++;
     }
 
-    for (int i = 0; i < slice; i++) {
+    for (int i = 0; i < in_label_cnt; i++) {
         if (i == 0)
             data_size_input.push_back(data_size_single_input *
                                       (slice - in_label_cnt + 1));
@@ -307,4 +307,4 @@ int Merge_matmul::task() {
     return 0;
 }
 
-int Merge_matmul::sram_utilization(DATATYPE datatype) { return 0; }
+int Merge_matmul::sram_utilization(DATATYPE datatype, int cid) { return 0; }

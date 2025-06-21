@@ -12,7 +12,7 @@ public:
 
     int task_core(TaskCoreContext &context);
     int task();
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
@@ -40,7 +40,7 @@ public:
 
     void parse_json(json j, vector<pair<string, int>> vtable);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize() {};
 
     Load_prim() { name = "Load_prim"; }
@@ -62,7 +62,7 @@ public:
 
     void parse_json(json j, vector<pair<string, int>> vtable);
     void print_self(string prefix) override;
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     Recv_prim() { name = "Recv_prim"; }
     Recv_prim(RECV_TYPE type);
@@ -97,7 +97,7 @@ public:
 
     void parse_json(json j, vector<pair<string, int>> vtable);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize() {};
 
     Send_prim() { name = "Send_prim"; }
@@ -130,7 +130,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize() {};
 
     Set_addr() {
@@ -158,7 +158,7 @@ public:
 
     void parse_json(json j);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize() {};
 
     Set_batch() {}
@@ -182,7 +182,7 @@ public:
 
     void parse_json(json j, vector<pair<string, int>> vtable);
     void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize() {};
     Store_prim() { name = "Store_prim"; }
     Store_prim(int da, int sa, int s) : dram_addr(da), sram_addr(sa), size(s) {

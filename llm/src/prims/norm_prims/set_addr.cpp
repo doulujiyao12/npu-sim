@@ -11,7 +11,7 @@ void Set_addr::print_self(string prefix) {
     cout << prefix << "\tSram_addr: " << sram_addr << endl;
 }
 
-int Set_addr::sram_utilization(DATATYPE datatype) { return 0; }
+int Set_addr::sram_utilization(DATATYPE datatype, int cid) { return 0; }
 
 void Set_addr::parse_json(json j) { sram_addr = find_var(j["sram_addr"]); }
 

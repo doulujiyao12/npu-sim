@@ -7,7 +7,7 @@ void Load_prim::print_self(string prefix) {}
 
 void Load_prim::parse_json(json j, vector<pair<string, int>> vtable) {}
 
-int Load_prim::sram_utilization(DATATYPE datatype) {
+int Load_prim::sram_utilization(DATATYPE datatype, int cid) {
     int total_sram = 0;
 
     return total_sram;

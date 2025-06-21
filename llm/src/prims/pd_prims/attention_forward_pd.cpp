@@ -49,7 +49,7 @@ void attention_forward_pd::parse_json(json j) {
         parse_sram_label(j["sram_address"]);
 }
 
-int attention_forward_pd::sram_utilization(DATATYPE datatype) {
+int attention_forward_pd::sram_utilization(DATATYPE datatype, int cid) {
     int total_sram = 0;
 
     int p_inp_sram =

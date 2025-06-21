@@ -135,7 +135,7 @@ void MemInterface::end_of_simulation() {
         for (auto work : c->worklist) {
             for (auto prim : work.prims_in_loop) {
                 if (prim) { // 确保指针非空
-                    total_utilization += prim->sram_utilization(prim->datatype);
+                    total_utilization += prim->sram_utilization(prim->datatype, c->id);
                 }
             }
         }

@@ -146,9 +146,7 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
                                        int config_chip_id) {
     cout << "Loading config file " << filename << endl;
     json j;
-    cout << "Loading config file3 " << filename << endl;
     plot_dataflow(filename, font_ttf);
-    cout << "Loading config file2 " << filename << endl;
     ifstream jfile(filename);
     if (!jfile.is_open()) {
         cout << "[ERROR] Cannot open config file " << filename << endl;
@@ -156,7 +154,6 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
     }
 
     jfile >> j;
-    cout << "1\n";
 
     // 收集相关参数
     auto config_vars = j["vars"];

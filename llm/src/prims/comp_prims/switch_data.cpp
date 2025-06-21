@@ -31,7 +31,7 @@ void switch_data::parse_json(json j) {
     initialize();
 }
 
-int switch_data::sram_utilization(DATATYPE datatype) { return 0; }
+int switch_data::sram_utilization(DATATYPE datatype, int cid) { return 0; }
 
 void switch_data::deserialize(sc_bv<128> buffer) {
     inp_offset = buffer.range(23, 8).to_uint64();

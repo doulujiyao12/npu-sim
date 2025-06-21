@@ -23,7 +23,7 @@ void Dummy_p::parse_json(json j) {
         parse_sram_label(j["sram_address"]);
     }
 }
-int Dummy_p::sram_utilization(DATATYPE datatype) {
+int Dummy_p::sram_utilization(DATATYPE datatype, int cid) {
     int total_sram = 0;
 
     if (datatype == DATATYPE::FP16) {

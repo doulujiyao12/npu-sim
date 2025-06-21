@@ -33,7 +33,7 @@ void Gelu_f_gpu::deserialize(sc_bv<128> buffer) {
     datatype = DATATYPE(buffer.range(73, 72).to_uint64());
 }
 
-int Gelu_f_gpu::sram_utilization(DATATYPE datatype) { return 0; }
+int Gelu_f_gpu::sram_utilization(DATATYPE datatype, int cid) { return 0; }
 
 int Gelu_f_gpu::task_core(TaskCoreContext &context) {
     int data_byte = 0;

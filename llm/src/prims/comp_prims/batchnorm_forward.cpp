@@ -47,7 +47,7 @@ void Batchnorm_f::parse_json(json j) {
     }
 }
 
-int Batchnorm_f::sram_utilization(DATATYPE datatype) {
+int Batchnorm_f::sram_utilization(DATATYPE datatype, int cid) {
     int total_sram = 0;
 
     if (datatype == DATATYPE::FP16) {
