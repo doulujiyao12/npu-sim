@@ -645,6 +645,7 @@ void config_helper_core::parse_done_msg(Event_engine *event_engine,
              << ", recv_cnt: " << g_recv_done_cnt << endl;
 
         g_recv_done_cnt = 0;
+        cout << "[CATCH TEST] " << sc_time_stamp() << endl;
         sc_stop();
     }
 }

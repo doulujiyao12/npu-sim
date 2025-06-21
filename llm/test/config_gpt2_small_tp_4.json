@@ -44,8 +44,6 @@
   "chips": [
     {
       "chip_id": 0,
-      "GridX": 6,
-      "GridY": 6,
       "cores": [
         {
           "id": 0,

@@ -379,7 +379,8 @@
                     "outdata": "gelu1_out"
                   },
                   "dram_address": {
-                    "data": -1
+                    "data": -1,
+                    "out": "TODO"
                   }
                 },
                 {
