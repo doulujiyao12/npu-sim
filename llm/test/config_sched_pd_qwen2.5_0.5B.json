@@ -54,7 +54,7 @@
                   }
                 },
                 {
-                  "type": "rope_forward",
+                  "type": "rope_forward_pd",
                   "B": "B",
                   "T": "T",
                   "C": "3CR",

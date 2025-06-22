@@ -301,6 +301,26 @@ public:
 };
 
 
+class rope_forward : public comp_base {
+public:
+    int B, T, C, NH;
+    int sc_offset;
+
+    int task();
+    int task_core(TaskCoreContext &context);
+
+    sc_bv<128> serialize();
+    void deserialize(sc_bv<128> buffer);
+
+    void parse_json(json j);
+    void print_self(string prefix);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
+    void initialize();
+
+    rope_forward() { name = "rope_forward"; }
+};
+
+
 class silu_forward : public comp_base {
 public:
     int N;

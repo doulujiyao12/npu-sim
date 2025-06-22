@@ -44,7 +44,7 @@ public:
 };
 
 
-class rope_f : public pd_base {
+class rope_forward_pd : public pd_base {
 public:
     int B, T, C, NH;
     int sc_offset;
@@ -61,5 +61,5 @@ public:
     int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize();
 
-    rope_f() { name = "rope_f"; }
+    rope_forward_pd() { name = "rope_forward_pd"; }
 };

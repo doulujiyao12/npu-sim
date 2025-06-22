@@ -74,8 +74,10 @@ prim_base *new_prim(string type) {
         prim = new switch_data();
     else if (type == "rmsnorm_forward")
         prim = new rmsnorm_forward();
+    else if (type == "rope_forward_pd")
+        prim = new rope_forward_pd();
     else if (type == "rope_forward")
-        prim = new rope_f();
+        prim = new rope_forward();
     else if (type == "silu_forward")
         prim = new silu_forward();
     else if (type == "swiglu_forward")

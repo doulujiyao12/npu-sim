@@ -441,8 +441,11 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     case RMSNORM_F_TYPE:
         task = new rmsnorm_forward();
         break;
+    case ROPE_FORWARD_PD_TYPE:
+        task = new rope_forward_pd();
+        break;
     case ROPE_F_TYPE:
-        task = new rope_f();
+        task = new rope_forward();
         break;
     case SILU_F_TYPE:
         task = new silu_forward();
@@ -696,8 +699,8 @@ void WorkerCoreExecutor::send_para_logic() {
                         send_buffer =
                             Msg(s_prim->data_packet_id == s_prim->max_packet,
                                 MSG_TYPE::DATA, s_prim->data_packet_id,
-                                s_prim->des_id, 0,
-                                s_prim->tag_id, length, sc_bv<128>(0x1));
+                                s_prim->des_id, 0, s_prim->tag_id, length,
+                                sc_bv<128>(0x1));
 
                         atomic_helper_lock(sc_time_stamp(), 2);
                         ev_send_helper.notify(0, SC_NS);
@@ -1234,6 +1237,9 @@ bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status) {
     }
 
     if (try_time > present_time) {
+        if (try_time - present_time < sc_time(CYCLE, SC_NS))
+            return false;
+
         present_time = try_time;
         // status 1 不会进入到这里，因为status 1 之前肯定会有 status 0
         // 修改了 present_time

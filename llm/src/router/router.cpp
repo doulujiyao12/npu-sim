@@ -87,13 +87,13 @@ void RouterUnit::router_execute() {
             data_sent_o[i].write(false);
         }
 
-        // [input] 4方向+core
+        // [input] 4方向+cores
         for (int i = 0; i < DIRECTIONS; i++) {
             if (data_sent_i[i].read()) {
                 // move the data into the buffer
-                // if (rid == 1)
-                //     cout << sc_time_stamp() << ": Router " << rid << "getdata
-                //     at " << i << "\n";
+                // cout << sc_time_stamp() << ": Router " << rid << "getdata at
+                // "
+                //      << i << "\n";
                 sc_bv<256> temp = channel_i[i].read();
 
                 buffer_i[i].emplace(temp);
@@ -183,8 +183,8 @@ void RouterUnit::router_execute() {
 
                 channel_o[CENTER].write(temp);
                 data_sent_o[CENTER].write(true);
-                // cout << sc_time_stamp() << ": Router " << rid << ": send " <<
-                // tt.seq_id << " to core.\n";
+                cout << sc_time_stamp() << ": Router " << rid << ": send "
+                     << tt.seq_id << " to core.\n";
             }
 
             // need trigger again
@@ -265,8 +265,8 @@ void RouterUnit::router_execute() {
                     MAX_BUFFER_PACKET_SIZE) // 如果不发往host，但通道已满：continue
                 continue;
 
-            // if (rid >= 20) cout << sc_time_stamp() << ": Router " << rid <<
-            // ": " << " put into " << out << " id " << m.seq_id << endl;
+            // cout << sc_time_stamp() << ": Router " << rid << ": "
+            //      << " put into " << out << " id " << m.seq_id << endl;
 
             // [ACK] 非发往host的ACK包，需要上锁或者增加refcnt
             // FIX 上锁应该在第一个DATA 包

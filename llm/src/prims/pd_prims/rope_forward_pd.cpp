@@ -1,23 +1,22 @@
 #include "prims/pd_prims.h"
 #include "utils/memory_utils.h"
 
-int rope_f::task() { return 0; }
+int rope_forward_pd::task() { return 0; }
 
-int rope_f::task_core(TaskCoreContext &context) {
+int rope_forward_pd::task_core(TaskCoreContext &context) {
     // 所用时间
     u_int64_t dram_time = 0;
     u_int64_t overlap_time = 0;
 
     // 数据维度
-    vector<int> data_size_input = {B * T * C * 3};
+    vector<int> data_size_input = {B * T * C};
     int data_size_sincos = B * (C / NH) * 2;
-    int data_size_out = B * T * C; // Q
+    int data_size_out = B * T * C * 1 / 3; // Q
 
     // dram地址
     u_int64_t dram_addr_tile = cid * dataset_words_per_tile;
     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
-    u_int64_t sincos_global_addr =
-        inp_global_addr + sc_offset * data_byte;
+    u_int64_t sincos_global_addr = inp_global_addr + sc_offset * data_byte;
     u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
 
     // 检查数据重利用
@@ -135,9 +134,9 @@ int rope_f::task_core(TaskCoreContext &context) {
     return overlap_time;
 }
 
-sc_bv<128> rope_f::serialize() {
+sc_bv<128> rope_forward_pd::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(ROPE_F_TYPE);
+    d.range(7, 0) = sc_bv<8>(ROPE_FORWARD_PD_TYPE);
     d.range(23, 8) = sc_bv<16>(inp_offset);
     d.range(39, 24) = sc_bv<16>(out_offset);
     d.range(55, 40) = sc_bv<16>(B);
@@ -148,7 +147,7 @@ sc_bv<128> rope_f::serialize() {
     return d;
 }
 
-void rope_f::deserialize(sc_bv<128> buffer) {
+void rope_forward_pd::deserialize(sc_bv<128> buffer) {
     inp_offset = buffer.range(23, 8).to_uint();
     out_offset = buffer.range(39, 24).to_uint();
     B = buffer.range(55, 40).to_uint();
@@ -160,7 +159,7 @@ void rope_f::deserialize(sc_bv<128> buffer) {
     initialize();
 }
 
-void rope_f::parse_json(json j) {
+void rope_forward_pd::parse_json(json j) {
     B = find_var(j["B"]);
     T = find_var(j["T"]);
     C = find_var(j["C"]);
@@ -185,13 +184,13 @@ void rope_f::parse_json(json j) {
         parse_sram_label(j["sram_address"]);
 }
 
-void rope_f::print_self(string prefix) {
-    cout << prefix << "Rope_f: B=" << B << ", T=" << T << ", C=" << C << endl;
+void rope_forward_pd::print_self(string prefix) {
+    cout << prefix << "rope_forward_pd: B=" << B << ", T=" << T << ", C=" << C << endl;
 }
 
-int rope_f::sram_utilization(DATATYPE datatype, int cid) { return 0; }
+int rope_forward_pd::sram_utilization(DATATYPE datatype, int cid) { return 0; }
 
-void rope_f::initialize() {
+void rope_forward_pd::initialize() {
     inp_size = B * T * C;
     p_inp_size = inp_size;
     out_size = B * T * C * 1 / 3;

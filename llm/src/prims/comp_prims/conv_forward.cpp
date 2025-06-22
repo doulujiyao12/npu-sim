@@ -193,7 +193,7 @@ int Conv_f::task_core(TaskCoreContext &context) {
 
     // 读入input数据
     check_input_data(context, dram_time, inp_global_addr, data_size_input);
-    printf("rope_f: dram time 1: %ld\n", dram_time);
+    BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
     auto label_weight = ETERNAL_PREFIX + prefix + "_w";
@@ -204,13 +204,13 @@ int Conv_f::task_core(TaskCoreContext &context) {
     check_static_data(context, dram_time, bias_global_addr, data_size_bias,
                       label_bias);
 
-    printf("Conv_f: dram time 1: %ld\n", dram_time);
+    BETTER_PRINT(dram_time);
 
     // 删除标签
     if (!input_reuse)
         sram_pos_locator->deletePair(datapass_label.indata[0]);
 
-    printf("Conv_f: dram time 2: %ld\n", dram_time);
+    BETTER_PRINT(dram_time);
 #else
     assert(false && "Unsupported USE_SRAM == 0");
 #endif

@@ -121,6 +121,7 @@ EOF
     fi
 
     echo -e "${line}\t${RESULT_STRING}" >>"${OUTPUT_BATCH_FILE}"
+    echo -e "${line}\t${RESULT_STRING}"
     cd "${ORIGINAL_PWD}"
 done <"${TEST_BATCH_FILE}"
 
