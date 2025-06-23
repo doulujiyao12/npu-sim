@@ -128,6 +128,7 @@ public:
 class Matmul_f : public comp_base {
 public:
     int B, T, C, OC;
+    int NH, DH, R;
     int w_offset, b_offset;
 
     int task();

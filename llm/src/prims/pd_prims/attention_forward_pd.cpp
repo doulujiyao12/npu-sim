@@ -11,7 +11,7 @@ void attention_forward_pd::print_self(string prefix) {
 }
 
 void attention_forward_pd::initialize() {
-    out_size = B * T * C;
+    out_size = B * T * NH * DH;
     p_inp_size = B * T * 3 * C;
     inp_size = B * T * 3 * C;
 
@@ -75,6 +75,8 @@ void attention_forward_pd::deserialize(sc_bv<128> buffer) {
     NH = buffer.range(103, 88).to_uint64();
     datatype = DATATYPE(buffer.range(105, 104).to_uint64());
     job_type = PD_JOB(buffer.range(111, 108).to_uint64());
+    DH = buffer.range(119, 112).to_uint64();
+    R = buffer.range(127, 120).to_uint64();
 
     initialize();
 }
@@ -90,6 +92,8 @@ sc_bv<128> attention_forward_pd::serialize() {
     d.range(103, 88) = sc_bv<16>(NH);
     d.range(105, 104) = sc_bv<2>(datatype);
     d.range(111, 108) = sc_bv<4>(job_type);
+    d.range(119, 112) = sc_bv<8>(DH);
+    d.range(127, 120) = sc_bv<8>(R);
 
     return d;
 }
@@ -103,7 +107,7 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
     vector<int> data_size_input = {B * T * C};   // QKV input
     int data_size_preatt = B * NH * T * T; // preatt
     int data_size_att = B * NH * T * T;    // att
-    int data_size_out = B * T * C;         // output
+    int data_size_out = B * T * NH * DH;         // output
 
     // dram地址
     u_int64_t dram_addr_tile = cid * dataset_words_per_tile;

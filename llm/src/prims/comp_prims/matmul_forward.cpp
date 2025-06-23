@@ -33,6 +33,9 @@ void Matmul_f::initialize() {
         data_byte = 1;
     else if (datatype == FP16)
         data_byte = 2;
+
+    w_offset = B * T * C + inp_offset;
+    b_offset = OC * C + w_offset;
 }
 
 HardwareTaskConfig *Matmul_f::generate_hw_config() {
@@ -71,7 +74,10 @@ void Matmul_f::parse_json(json j) {
     B = find_var(j["B"]);
     T = find_var(j["T"]);
     C = find_var(j["C"]);
-    OC = find_var(j["OC"]);
+    // OC = find_var(j["OC"]);
+    NH = find_var(j["NH"]);
+    DH = find_var(j["DH"]);
+    R = find_var(j["R"]);
 
     initialize();
 
@@ -130,15 +136,16 @@ void Matmul_f::deserialize(sc_bv<128> buffer) {
     inp_offset *= 1024;
     out_offset = buffer.range(39, 24).to_uint64();
     out_offset *= 1024;
-    B = buffer.range(55, 40).to_uint64();
-    T = buffer.range(71, 56).to_uint64();
-    C = buffer.range(87, 72).to_uint64();
-    OC = buffer.range(103, 88).to_uint64();
-    datatype = DATATYPE(buffer.range(105, 104).to_uint64());
-    use_hw = buffer.range(107, 106).to_uint64();
-
-    w_offset = B * T * C + inp_offset;
-    b_offset = OC * C + w_offset;
+    B = buffer.range(47, 40).to_uint64();
+    T = buffer.range(63, 48).to_uint64();
+    C = buffer.range(79, 64).to_uint64();
+    // OC = buffer.range(95, 80).to_uint64();
+    datatype = DATATYPE(buffer.range(97, 96).to_uint64());
+    use_hw = buffer.range(99, 98).to_uint64();
+    // job_type = PD_JOB(buffer.range(103, 100).to_uint64());
+    NH = buffer.range(111, 104).to_uint64();
+    DH = buffer.range(119, 112).to_uint64();
+    R = buffer.range(127, 120).to_uint64();
 
     initialize();
 }
@@ -146,14 +153,16 @@ void Matmul_f::deserialize(sc_bv<128> buffer) {
 sc_bv<128> Matmul_f::serialize() {
     sc_bv<128> d;
     d.range(7, 0) = sc_bv<8>(MATMUL_F_TYPE);
-    d.range(23, 8) = sc_bv<16>(inp_offset);
-    d.range(39, 24) = sc_bv<16>(out_offset);
-    d.range(55, 40) = sc_bv<16>(B);
-    d.range(71, 56) = sc_bv<16>(T);
-    d.range(87, 72) = sc_bv<16>(C);
-    d.range(103, 88) = sc_bv<16>(OC);
-    d.range(105, 104) = sc_bv<2>(datatype);
-    d.range(107, 106) = sc_bv<2>(use_hw);
+    d.range(47, 40) = sc_bv<8>(B);
+    d.range(63, 48) = sc_bv<16>(T);
+    d.range(79, 64) = sc_bv<16>(C);
+    // d.range(95, 80) = sc_bv<16>(OC);
+    d.range(97, 96) = sc_bv<2>(datatype);
+    d.range(99, 98) = sc_bv<2>(use_hw);
+    // d.range(103, 100) = sc_bv<4>(job_type);
+    d.range(111, 104) = sc_bv<8>(NH);
+    d.range(119, 112) = sc_bv<8>(DH);
+    d.range(127, 120) = sc_bv<8>(R);
 
     return d;
 }

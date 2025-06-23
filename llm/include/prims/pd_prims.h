@@ -3,6 +3,7 @@
 class matmul_forward_pd : public pd_base {
 public:
     int B, T, C, OC;
+    int NH, DH, R;
     int w_offset, b_offset;
     PD_JOB job_type;
 
@@ -25,6 +26,7 @@ public:
 class attention_forward_pd : public pd_base {
 public:
     int B, T, C, NH;
+    int DH, R;
     int prea_offset, a_offset;
     PD_JOB job_type;
 

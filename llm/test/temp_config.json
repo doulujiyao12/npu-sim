@@ -3,10 +3,10 @@
     "cores": [
         {
             "id": 0,
-            "exu_x": 512,
-            "exu_y": 512,
-            "sfu_x": 8192,
-            "sram_bitwidth": 512
+            "exu_x": 96,
+            "exu_y": 96,
+            "sfu_x": 1536,
+            "sram_bitwidth": 256
         }
     ]
 }

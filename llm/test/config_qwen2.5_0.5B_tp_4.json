@@ -3,22 +3,28 @@
   "vars": {
     "B": 1,
     "T": 128,
-    "C": 1024,
-    "NH": 16,
-    "NH/2": 8,
+    "C": 896,
+    "C/2": 448,
+    "NH": 14,
+    "NH/2": 7,
     "NH/4": 4,
     "L": 24,
-    "3C": 3072,
-    "4C": 4096,
-    "BTC": 131072,
-    "2BTC": 262144,
-    "3BTC": 393216,
-    "4BTC": 524288,
-    "3C/2": 1536,
-    "3C/4": 768,
-    "C/2": 512,
-    "C/4": 256,
-    "2C": 2048,
+    "3C": 2688,
+    "4C": 3584,
+    "BTC": 114688,
+    "2BTC": 229376,
+    "3BTC": 344064,
+    "4BTC": 458752,
+    "3C/2": 1344,
+    "3C/4": 672,
+    "C/4": 224,
+    "2C": 1792,
+    "3CR": 384,
+    "3CR/2": 192,
+    "3CR/4": 96,
+    "3C-R/4": 288,
+    "CR/2": 64,
+    "CR/4": 32,
     "layernorm1_data": 96,
     "split_matmul1_out": 97,
     "matmul1_data": 96,
@@ -102,7 +108,7 @@
                   "B": "B",
                   "T": "T",
                   "C": "C",
-                  "OC": "3CR/4",
+                  "OC": "3C-R/4",
                   "sram_address": {
                     "indata": "split_matmul1_out",
                     "outdata": "matmul1_out"
@@ -115,7 +121,7 @@
                   "type": "rope_forward",
                   "B": "B",
                   "T": "T",
-                  "C": "3CR/4",
+                  "C": "3C-R/4",
                   "NH": "NH",
                   "sram_address": {
                     "indata": "matmul1_out",
@@ -158,7 +164,7 @@
               ]
             },
             {
-              "recv_cnt": 1,
+              "recv_cnt": 3,
               "recv_tag": 120,
               "cast": [
                 {
@@ -203,7 +209,7 @@
                   "T": "T",
                   "C": "C",
                   "sram_address": {
-                    "indata": "residual1_out",
+                    "indata": "_residual1_out",
                     "outdata": "rmsnorm2_out"
                   },
                   "dram_address": {
@@ -238,7 +244,7 @@
                   "C": "C",
                   "OC": "C",
                   "sram_address": {
-                    "indata": "split_matmul2_out",
+                    "indata": "_split_matmul2_out",
                     "outdata": "matmul3_out"
                   },
                   "dram_address": {
@@ -253,7 +259,7 @@
                   "C": "C",
                   "OC": "C",
                   "sram_address": {
-                    "indata": "rmsnorm2_out",
+                    "indata": "split_matmul2_out",
                     "outdata": "matmul4_out"
                   },
                   "dram_address": {
@@ -279,48 +285,11 @@
                   "C": "C",
                   "OC": "C",
                   "sram_address": {
-                    "indata": "gelu1_out",
+                    "indata": "swiglu1_out",
                     "outdata": "matmul4_out"
                   },
                   "dram_address": {
                     "data": "matmul4_data"
-                  }
-                }
-              ]
-            },
-            {
-              "recv_cnt": 1,
-              "recv_tag": 121,
-              "cast": [
-                {
-                  "dest": 4,
-                  "critical": true
-                }
-              ],
-              "prims": [
-                {
-                  "type": "Merge_matmul",
-                  "B": "B",
-                  "T": "T",
-                  "C": "C",
-                  "dim": 2,
-                  "slice": 4,
-                  "sram_address": {
-                    "indata": "input_label matmul4_out",
-                    "outdata": "merge_matmul2_out"
-                  },
-                  "dram_address": {}
-                },
-                {
-                  "type": "Residual_f",
-                  "N": "BTC",
-                  "sram_address": {
-                    "indata": "residual1_out merge_matmul2_out",
-                    "outdata": "residual2_out"
-                  },
-                  "dram_address": {
-                    "data": -1,
-                    "out": "residual2_out"
                   }
                 }
               ]
@@ -413,7 +382,7 @@
                   "C": "CR/4",
                   "NH": "NH/4",
                   "sram_address": {
-                    "indata": "matmul1_out",
+                    "indata": "rope1_out",
                     "outdata": "attention1_out"
                   },
                   "dram_address": {
@@ -456,7 +425,7 @@
                   "C": "C",
                   "OC": "C",
                   "sram_address": {
-                    "indata": "input_label",
+                    "indata": "_input_label",
                     "outdata": "matmul3_out"
                   },
                   "dram_address": {
@@ -471,7 +440,7 @@
                   "C": "C",
                   "OC": "C",
                   "sram_address": {
-                    "indata": "rmsnorm2_out",
+                    "indata": "input_label",
                     "outdata": "matmul4_out"
                   },
                   "dram_address": {
@@ -497,7 +466,7 @@
                   "C": "C",
                   "OC": "C",
                   "sram_address": {
-                    "indata": "gelu1_out",
+                    "indata": "swiglu1_out",
                     "outdata": "matmul4_out"
                   },
                   "dram_address": {

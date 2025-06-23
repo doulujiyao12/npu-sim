@@ -183,8 +183,8 @@ void RouterUnit::router_execute() {
 
                 channel_o[CENTER].write(temp);
                 data_sent_o[CENTER].write(true);
-                cout << sc_time_stamp() << ": Router " << rid << ": send "
-                     << tt.seq_id << " to core.\n";
+                // cout << sc_time_stamp() << ": Router " << rid << ": send "
+                //      << tt.seq_id << " to core.\n";
             }
 
             // need trigger again
