@@ -17,8 +17,8 @@ void Attention_f::print_self(string prefix) {
 
 void Attention_f::initialize() {
     out_size = B * T * C;
-    p_inp_size = B * T * 3 * C;
-    inp_size = B * T * 3 * C + 2 * B * NH * T * T;
+    p_inp_size = B * T * C;
+    inp_size = B * T * C + 2 * B * NH * T * T;
 
     dram_inp_size = (B * T * 3 * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
     dram_out_size = (B * T * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
@@ -29,7 +29,7 @@ void Attention_f::initialize() {
     else if (datatype == FP16)
         data_byte = 2;
 
-    prea_offset = B * T * 3 * C + inp_offset;
+    prea_offset = B * T * C + inp_offset;
     a_offset = B * NH * T * T + prea_offset;
 }
 
@@ -44,6 +44,7 @@ void Attention_f::parse_json(json j) {
     T = find_var(j["T"]);
     C = find_var(j["C"]);
     NH = find_var(j["NH"]);
+    R = find_var(j["R"]); // R默认为1
 
     initialize();
 
@@ -51,7 +52,7 @@ void Attention_f::parse_json(json j) {
         parse_address(j["dram_address"]);
 
     if (inp_offset == -1)
-        inp_offset = (out_offset * 1024 - B * T * 3 * C) / 1024;
+        inp_offset = (out_offset * 1024 - B * T * C) / 1024;
 
     if (out_offset == -1)
         assert(0 && "attention_forward: out_offset not set");
@@ -90,6 +91,7 @@ void Attention_f::deserialize(sc_bv<128> buffer) {
     C = buffer.range(87, 72).to_uint64();
     NH = buffer.range(103, 88).to_uint64();
     datatype = DATATYPE(buffer.range(105, 104).to_uint64());
+    R = buffer.range(113, 106).to_uint64();
 
     initialize();
 }
@@ -104,6 +106,7 @@ sc_bv<128> Attention_f::serialize() {
     d.range(87, 72) = sc_bv<16>(C);
     d.range(103, 88) = sc_bv<16>(NH);
     d.range(105, 104) = sc_bv<2>(datatype);
+    d.range(113, 106) = sc_bv<8>(R);
 
     return d;
 }
@@ -114,10 +117,12 @@ int Attention_f::task_core(TaskCoreContext &context) {
     u_int64_t overlap_time = 0;
 
     // 数据维度
-    vector<int> data_size_input = {B * T * 3 * C}; // QKV input
-    int data_size_preatt = B * NH * T * T;         // preatt
-    int data_size_att = B * NH * T * T;            // att
-    int data_size_out = B * T * C;                 // output
+    vector<int> data_size_input = {B * T * C}; // QKV input
+    int data_size_preatt = B * NH * T * T;     // preatt
+    int data_size_att = B * NH * T * T;        // att
+
+    // 真实输出 A(1 + 2/R) = C
+    int data_size_out = B * T * C / (1 + 2 / R);
 
     // dram地址
     u_int64_t dram_addr_tile = cid * dataset_words_per_tile;

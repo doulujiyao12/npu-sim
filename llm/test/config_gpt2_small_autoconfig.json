@@ -88,7 +88,7 @@
               "type": "Attention_f",
               "B": "B",
               "T": "T",
-              "C": "C",
+              "C": "3C",
               "NH": "NH",
               "sram_address": {
                 "indata": "matmul1_out",

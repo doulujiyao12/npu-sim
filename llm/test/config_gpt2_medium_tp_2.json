@@ -111,7 +111,7 @@
                   "type": "Attention_f",
                   "B": "B",
                   "T": "T",
-                  "C": "C/2",
+                  "C": "3C/2",
                   "NH": "NH/2",
                   "sram_address": {
                     "indata": "matmul1_out",
@@ -321,7 +321,7 @@
                   "type": "Attention_f",
                   "B": "B",
                   "T": "T",
-                  "C": "C/2",
+                  "C": "3C/2",
                   "NH": "NH/2",
                   "sram_address": {
                     "indata": "matmul1_out",

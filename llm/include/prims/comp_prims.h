@@ -7,6 +7,7 @@
 class Attention_f : public comp_base {
 public:
     int B, T, C, NH;
+    int R;
     int prea_offset, a_offset;
 
     int task();

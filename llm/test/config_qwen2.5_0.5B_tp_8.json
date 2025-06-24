@@ -24,6 +24,7 @@
     "2C": 2048,
     "C/8": 128,
     "3C-R/8": 144,
+    "R": 7,
     "layernorm1_data": 96,
     "split_matmul1_out": 97,
     "matmul1_data": 96,
@@ -146,7 +147,8 @@
                   "type": "Attention_f",
                   "B": "B",
                   "T": "T",
-                  "C": "C/8",
+                  "C": "3C-R/8",
+                  "R": "R",
                   "NH": "NH/8",
                   "sram_address": {
                     "indata": "rope1_out",
@@ -359,7 +361,7 @@
                   "B": "B",
                   "T": "T",
                   "C": "C",
-                  "OC": "3C/4",
+                  "OC": "3C-R/8",
                   "sram_address": {
                     "indata": "input_label",
                     "outdata": "matmul1_out"
@@ -372,8 +374,9 @@
                   "type": "Attention_f",
                   "B": "B",
                   "T": "T",
-                  "C": "C/4",
-                  "NH": "NH/4",
+                  "C": "3C-R/8",
+                  "R": "R",
+                  "NH": "NH/8",
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "attention1_out"
@@ -388,7 +391,7 @@
                   "use_hw": false,
                   "B": "B",
                   "T": "T",
-                  "C": "C/4",
+                  "C": "C/8",
                   "OC": "C",
                   "sram_address": {
                     "indata": "attention1_out",
@@ -415,7 +418,7 @@
                   "B": "B",
                   "T": "T",
                   "C": "C",
-                  "OC": "C",
+                  "OC": "C/2",
                   "sram_address": {
                     "indata": "input_label",
                     "outdata": "matmul3_out"
@@ -426,7 +429,7 @@
                 },
                 {
                   "type": "Gelu_f",
-                  "N": "BTC",
+                  "N": "BTC/2",
                   "sram_address": {
                     "indata": "matmul3_out",
                     "outdata": "gelu1_out"
@@ -440,7 +443,7 @@
                   "type": "Matmul_f",
                   "B": "B",
                   "T": "T",
-                  "C": "C",
+                  "C": "C/2",
                   "OC": "C",
                   "sram_address": {
                     "indata": "gelu1_out",

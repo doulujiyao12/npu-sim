@@ -129,7 +129,8 @@
                   "type": "Attention_f",
                   "B": "B",
                   "T": "T",
-                  "C": "C/2",
+                  "C": "3C-R/2",
+                  "R": "R",
                   "NH": "NH/2",
                   "sram_address": {
                     "indata": "rope1_out",
@@ -341,7 +342,7 @@
                   "B": "B",
                   "T": "T",
                   "C": "C",
-                  "OC": "3CR/2",
+                  "OC": "3C-R/2",
                   "sram_address": {
                     "indata": "input_label",
                     "outdata": "matmul1_out"
@@ -354,7 +355,7 @@
                   "type": "rope_forward",
                   "B": "B",
                   "T": "T",
-                  "C": "3CR/2",
+                  "C": "3C-R/2",
                   "NH": "NH",
                   "sram_address": {
                     "indata": "matmul1_out",
@@ -368,7 +369,8 @@
                   "type": "Attention_f",
                   "B": "B",
                   "T": "T",
-                  "C": "CR/2",
+                  "C": "3C-R/2",
+                  "R": "R",
                   "NH": "NH/2",
                   "sram_address": {
                     "indata": "rope1_out",

@@ -3,24 +3,26 @@
   "vars": {
     "B": 1,
     "T": 128,
-    "C": 896,
-    "C/2": 448,
-    "NH": 14,
-    "NH/2": 7,
-    "L": 24,
-    "3C": 2688,
-    "4C": 3584,
-    "BTC": 114688,
-    "2BTC": 229376,
-    "3BTC": 344064,
-    "4BTC": 458752,
-    "3C/2": 1344,
-    "3C/4": 672,
-    "C/4": 224,
-    "2C": 1792,
-    "3CR": 384,
-    "3CR/2": 192,
-    "CR/2": 64,
+    "C": 1024,
+    "C/2": 512,
+    "NH": 16,
+    "NH/2": 8,
+    "L": 28,
+    "3C": 3072,
+    "4C": 4096,
+    "BTC": 131072,
+    "2BTC": 262144,
+    "3BTC": 393216,
+    "3BTC/2": 196608,
+    "4BTC": 524288,
+    "3C/2": 1536,
+    "3C/4": 768,
+    "C/4": 256,
+    "2C": 2048,
+    "3CR": 1536,
+    "3CR/2": 768,
+    "3C-R/2": 1024,
+    "R": 2,
     "layernorm1_data": 96,
     "split_matmul1_out": 97,
     "matmul1_data": 96,
@@ -100,7 +102,7 @@
                   "B": "B",
                   "T": "T",
                   "C": "C",
-                  "OC": "3CR/2",
+                  "OC": "3C-R/2",
                   "sram_address": {
                     "indata": "split_matmul1_out",
                     "outdata": "matmul1_out"
@@ -113,7 +115,7 @@
                   "type": "rope_forward",
                   "B": "B",
                   "T": "T",
-                  "C": "3CR/2",
+                  "C": "3C-R/2",
                   "NH": "NH",
                   "sram_address": {
                     "indata": "matmul1_out",
@@ -127,7 +129,8 @@
                   "type": "Attention_f",
                   "B": "B",
                   "T": "T",
-                  "C": "CR/2",
+                  "C": "3C-R/2",
+                  "R": "R",
                   "NH": "NH/2",
                   "sram_address": {
                     "indata": "rope1_out",
@@ -143,7 +146,7 @@
                   "use_hw": false,
                   "B": "B",
                   "T": "T",
-                  "C": "C/2",
+                  "C": "C",
                   "OC": "C",
                   "sram_address": {
                     "indata": "attention1_out",
@@ -229,7 +232,7 @@
                   "B": "B",
                   "T": "T",
                   "C": "C",
-                  "OC": "2C",
+                  "OC": "3C/2",
                   "sram_address": {
                     "indata": "_split_matmul2_out",
                     "outdata": "matmul3_out"
@@ -244,7 +247,7 @@
                   "B": "B",
                   "T": "T",
                   "C": "C",
-                  "OC": "2C",
+                  "OC": "3C/2",
                   "sram_address": {
                     "indata": "split_matmul2_out",
                     "outdata": "matmul4_out"
@@ -255,7 +258,7 @@
                 },
                 {
                   "type": "swiglu_forward",
-                  "N": "2BTC",
+                  "N": "3BTC/2",
                   "sram_address": {
                     "indata": "matmul3_out matmul4_out",
                     "outdata": "swiglu1_out"
@@ -269,7 +272,7 @@
                   "type": "Matmul_f",
                   "B": "B",
                   "T": "T",
-                  "C": "2C",
+                  "C": "3C/2",
                   "OC": "C",
                   "sram_address": {
                     "indata": "swiglu1_out",
@@ -339,7 +342,7 @@
                   "B": "B",
                   "T": "T",
                   "C": "C",
-                  "OC": "3CR/2",
+                  "OC": "3C-R/2",
                   "sram_address": {
                     "indata": "input_label",
                     "outdata": "matmul1_out"
@@ -352,7 +355,7 @@
                   "type": "rope_forward",
                   "B": "B",
                   "T": "T",
-                  "C": "3CR/2",
+                  "C": "3C-R/2",
                   "NH": "NH",
                   "sram_address": {
                     "indata": "matmul1_out",
@@ -366,7 +369,8 @@
                   "type": "Attention_f",
                   "B": "B",
                   "T": "T",
-                  "C": "CR/2",
+                  "C": "3C-R/2",
+                  "R": "R",
                   "NH": "NH/2",
                   "sram_address": {
                     "indata": "rope1_out",
@@ -410,7 +414,7 @@
                   "B": "B",
                   "T": "T",
                   "C": "C",
-                  "OC": "2C",
+                  "OC": "3C/2",
                   "sram_address": {
                     "indata": "_input_label",
                     "outdata": "matmul3_out"
@@ -425,7 +429,7 @@
                   "B": "B",
                   "T": "T",
                   "C": "C",
-                  "OC": "2C",
+                  "OC": "3C/2",
                   "sram_address": {
                     "indata": "input_label",
                     "outdata": "matmul4_out"
@@ -436,7 +440,7 @@
                 },
                 {
                   "type": "swiglu_forward",
-                  "N": "2BTC",
+                  "N": "3BTC/2",
                   "sram_address": {
                     "indata": "matmul3_out matmul4_out",
                     "outdata": "swiglu1_out"
@@ -450,7 +454,7 @@
                   "type": "Matmul_f",
                   "B": "B",
                   "T": "T",
-                  "C": "2C",
+                  "C": "3C/2",
                   "OC": "C",
                   "sram_address": {
                     "indata": "swiglu1_out",
@@ -2045,6 +2049,282 @@
                 {
                   "dest": 46,
                   "tag": 167,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 48,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 49,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 168,
+              "cast": [
+                {
+                  "dest": 49,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 169,
+              "cast": [
+                {
+                  "dest": 50,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 49,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 48,
+                  "tag": 168,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 48,
+                  "tag": 169,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 50,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 51,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 170,
+              "cast": [
+                {
+                  "dest": 51,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 171,
+              "cast": [
+                {
+                  "dest": 52,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 51,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 50,
+                  "tag": 170,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 50,
+                  "tag": 171,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 52,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 53,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 172,
+              "cast": [
+                {
+                  "dest": 53,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 173,
+              "cast": [
+                {
+                  "dest": 54,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 53,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 52,
+                  "tag": 172,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 52,
+                  "tag": 173,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 54,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 55,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 174,
+              "cast": [
+                {
+                  "dest": 55,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 175,
+              "cast": [
+                {
+                  "dest": -1,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 55,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 54,
+                  "tag": 174,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 54,
+                  "tag": 175,
                   "addr": 2000000
                 }
               ]
