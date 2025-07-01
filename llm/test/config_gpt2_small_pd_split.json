@@ -1,9 +1,11 @@
 {
   "mode": "sched_pds",
   "requests": {
-    "count": 10,
+    "count": 20,
     "seq_len": 128,
-    "arrival": [1, 10, 20, 30, 40, 10000000, 10010000, 10500000, 10510000, 10600000],
+    "arrival": [
+      1
+    ],
     "heads": 12,
     "eof_chance": 0.1,
     "prefill_stage": 4,
@@ -59,6 +61,7 @@
                   "T": "T",
                   "C": "3C",
                   "NH": "NH",
+                  "R": "R",
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "attention1_out"
@@ -136,6 +139,7 @@
                   "T": "T",
                   "C": "3C",
                   "NH": "NH",
+                  "R": "R",
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "attention1_out"

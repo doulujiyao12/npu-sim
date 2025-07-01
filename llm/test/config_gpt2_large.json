@@ -86,6 +86,7 @@
               "T": "T",
               "C": "C",
               "NH": "NH",
+              "R": "R",
               "sram_address": {
                 "indata": "matmul1_out",
                 "outdata": "attention1_out"

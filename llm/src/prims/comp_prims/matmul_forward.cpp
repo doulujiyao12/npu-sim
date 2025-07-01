@@ -74,10 +74,10 @@ void Matmul_f::parse_json(json j) {
     B = find_var(j["B"]);
     T = find_var(j["T"]);
     C = find_var(j["C"]);
-    // OC = find_var(j["OC"]);
-    NH = find_var(j["NH"]);
-    DH = find_var(j["DH"]);
-    R = find_var(j["R"]);
+    OC = find_var(j["OC"]);
+    // NH = find_var(j["NH"]);
+    // DH = find_var(j["DH"]);
+    // R = find_var(j["R"]);
 
     initialize();
 
@@ -139,13 +139,13 @@ void Matmul_f::deserialize(sc_bv<128> buffer) {
     B = buffer.range(47, 40).to_uint64();
     T = buffer.range(63, 48).to_uint64();
     C = buffer.range(79, 64).to_uint64();
-    // OC = buffer.range(95, 80).to_uint64();
+    OC = buffer.range(95, 80).to_uint64();
     datatype = DATATYPE(buffer.range(97, 96).to_uint64());
     use_hw = buffer.range(99, 98).to_uint64();
     // job_type = PD_JOB(buffer.range(103, 100).to_uint64());
-    NH = buffer.range(111, 104).to_uint64();
-    DH = buffer.range(119, 112).to_uint64();
-    R = buffer.range(127, 120).to_uint64();
+    // NH = buffer.range(111, 104).to_uint64();
+    // DH = buffer.range(119, 112).to_uint64();
+    // R = buffer.range(127, 120).to_uint64();
 
     initialize();
 }
@@ -156,13 +156,13 @@ sc_bv<128> Matmul_f::serialize() {
     d.range(47, 40) = sc_bv<8>(B);
     d.range(63, 48) = sc_bv<16>(T);
     d.range(79, 64) = sc_bv<16>(C);
-    // d.range(95, 80) = sc_bv<16>(OC);
+    d.range(95, 80) = sc_bv<16>(OC);
     d.range(97, 96) = sc_bv<2>(datatype);
     d.range(99, 98) = sc_bv<2>(use_hw);
     // d.range(103, 100) = sc_bv<4>(job_type);
-    d.range(111, 104) = sc_bv<8>(NH);
-    d.range(119, 112) = sc_bv<8>(DH);
-    d.range(127, 120) = sc_bv<8>(R);
+    // d.range(111, 104) = sc_bv<8>(NH);
+    // d.range(119, 112) = sc_bv<8>(DH);
+    // d.range(127, 120) = sc_bv<8>(R);
 
     return d;
 }

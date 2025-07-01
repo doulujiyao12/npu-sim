@@ -23,7 +23,8 @@
     "d_matmul1_data": 900,
     "d_matmul1_out": 1000,
     "d_attention1_data": 1100,
-    "d_attention1_out": 1200
+    "d_attention1_out": 1200,
+    "TODO": 110
   },
   "source": [
     {
@@ -60,12 +61,13 @@
                   }
                 },
                 {
-                  "type": "Matmul_f_prefill",
+                  "type": "Matmul_f_pd",
                   "use_hw": false,
                   "B": "B",
                   "T": "T",
                   "C": "C",
                   "OC": "3C",
+                  "job_type": "prefill",
                   "sram_address": {
                     "indata": "layernorm1_out",
                     "outdata": "matmul1_out"
@@ -75,14 +77,18 @@
                   }
                 },
                 {
-                  "type": "Attention_f_prefill",
+                  "type": "Attention_f_pd",
                   "B": "B",
                   "T": "T",
                   "C": "C",
                   "NH": "NH",
+                  "job_type": "prefill",
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "attention1_out"
+                  },
+                  "dram_address": {
+                    "data": "attention1_data"
                   }
                 },
                 {
@@ -108,7 +114,8 @@
                     "outdata": "residual1_out"
                   },
                   "dram_address": {
-                    "data": -1
+                    "data": -1,
+                    "out": "TODO"
                   }
                 },
                 {
@@ -146,7 +153,8 @@
                     "outdata": "gelu1_out"
                   },
                   "dram_address": {
-                    "data": -1
+                    "data": -1,
+                    "out": "TODO"
                   }
                 },
                 {
@@ -189,12 +197,13 @@
                   }
                 },
                 {
-                  "type": "Matmul_f_prefill",
+                  "type": "Matmul_f_pd",
                   "use_hw": false,
                   "B": "B",
                   "T": "T",
                   "C": "C",
                   "OC": "3C",
+                  "job_type": "prefill",
                   "sram_address": {
                     "indata": "layernorm1_out",
                     "outdata": "matmul1_out"
@@ -204,14 +213,18 @@
                   }
                 },
                 {
-                  "type": "Attention_f_prefill",
+                  "type": "Attention_f_pd",
                   "B": "B",
                   "T": "T",
                   "C": "C",
                   "NH": "NH",
+                  "job_type": "prefill",
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "attention1_out"
+                  },
+                  "dram_address": {
+                    "data": "attention2_data"
                   }
                 },
                 {
@@ -237,7 +250,8 @@
                     "outdata": "residual3_out"
                   },
                   "dram_address": {
-                    "data": -1
+                    "data": -1,
+                    "out": "TODO"
                   }
                 },
                 {
@@ -275,7 +289,8 @@
                     "outdata": "gelu1_out"
                   },
                   "dram_address": {
-                    "data": -1
+                    "data": -1,
+                    "out": "TODO"
                   }
                 },
                 {
@@ -318,12 +333,13 @@
                   }
                 },
                 {
-                  "type": "Matmul_f_prefill",
+                  "type": "Matmul_f_pd",
                   "use_hw": false,
                   "B": "B",
                   "T": "T",
                   "C": "C",
                   "OC": "3C",
+                  "job_type": "prefill",
                   "sram_address": {
                     "indata": "layernorm1_out",
                     "outdata": "matmul1_out"
@@ -333,14 +349,18 @@
                   }
                 },
                 {
-                  "type": "Attention_f_prefill",
+                  "type": "Attention_f_pd",
                   "B": "B",
                   "T": "T",
                   "C": "C",
                   "NH": "NH",
+                  "job_type": "prefill",
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "attention1_out"
+                  },
+                  "dram_address": {
+                    "data": "attention3_data"
                   }
                 },
                 {
@@ -366,7 +386,8 @@
                     "outdata": "residual5_out"
                   },
                   "dram_address": {
-                    "data": -1
+                    "data": -1,
+                    "out": "TODO"
                   }
                 },
                 {
@@ -404,7 +425,8 @@
                     "outdata": "gelu1_out"
                   },
                   "dram_address": {
-                    "data": -1
+                    "data": -1,
+                    "out": "TODO"
                   }
                 },
                 {
@@ -451,14 +473,14 @@
           "id": 2,
           "cast": [
             {
-              "dest": 10
+              "dest": 20
             }
           ],
           "recv_cnt": 1,
           "prim_copy": 0
         },
         {
-          "id": 10,
+          "id": 20,
           "cast": [
             {
               "dest": 3
@@ -516,12 +538,13 @@
                   }
                 },
                 {
-                  "type": "Matmul_f_decode",
+                  "type": "Matmul_f_pd",
                   "use_hw": false,
                   "B": "B",
                   "T": "1",
                   "C": "C",
                   "OC": "3C",
+                  "job_type": "decode",
                   "sram_address": {
                     "indata": "layernorm1_out",
                     "outdata": "matmul1_out"
@@ -531,11 +554,12 @@
                   }
                 },
                 {
-                  "type": "Attention_f_decode",
+                  "type": "Attention_f_pd",
                   "B": "B",
                   "T": "1",
                   "C": "C",
                   "NH": "NH",
+                  "job_type": "decode",
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "attention1_out"
@@ -568,7 +592,8 @@
                     "outdata": "residual1_out"
                   },
                   "dram_address": {
-                    "data": -1
+                    "data": -1,
+                    "out": "TODO"
                   }
                 },
                 {
@@ -606,7 +631,8 @@
                     "outdata": "gelu1_out"
                   },
                   "dram_address": {
-                    "data": -1
+                    "data": -1,
+                    "out": "TODO"
                   }
                 },
                 {
@@ -652,6 +678,105 @@
         },
         {
           "id": 5,
+          "loop": "L",
+          "cast": [
+            {
+              "dest": 6
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 3
+        },
+        {
+          "id": 6,
+          "loop": "L",
+          "cast": [
+            {
+              "dest": 7
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 3
+        },
+        {
+          "id": 7,
+          "loop": "L",
+          "cast": [
+            {
+              "dest": 8
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 3
+        },
+        {
+          "id": 8,
+          "loop": "L",
+          "cast": [
+            {
+              "dest": 9
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 3
+        },
+        {
+          "id": 9,
+          "loop": "L",
+          "cast": [
+            {
+              "dest": 10
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 3
+        },
+        {
+          "id": 10,
+          "loop": "L",
+          "cast": [
+            {
+              "dest": 11
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 3
+        },
+        {
+          "id": 11,
+          "loop": "L",
+          "cast": [
+            {
+              "dest": 12
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 3
+        },
+        {
+          "id": 12,
+          "loop": "L",
+          "cast": [
+            {
+              "dest": 13
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 3
+        },
+        {
+          "id": 13,
+          "loop": "L",
+          "cast": [
+            {
+              "dest": 14
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 3
+        },
+        {
+          "id": 14,
           "loop": "L",
           "cast": [
             {

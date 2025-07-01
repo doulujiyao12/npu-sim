@@ -93,6 +93,7 @@
               "T": "T",
               "C": "3C",
               "NH": "NH",
+              "R": "R",
               "sram_address": {
                 "indata": "matmul1_out",
                 "outdata": "attention1_out"
@@ -310,6 +311,7 @@
               "T": "T",
               "C": "3C",
               "NH": "NH",
+              "R": "R",
               "sram_address": {
                 "indata": "matmul1_out",
                 "outdata": "attention1_out"
@@ -486,6 +488,7 @@
               "T": "T",
               "C": "3C",
               "NH": "NH",
+              "R": "R",
               "sram_address": {
                 "indata": "matmul1_out",
                 "outdata": "attention1_out"
@@ -702,6 +705,7 @@
               "T": "T",
               "C": "3C",
               "NH": "NH",
+              "R": "R",
               "sram_address": {
                 "indata": "matmul1_out",
                 "outdata": "attention1_out"

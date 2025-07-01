@@ -33,14 +33,22 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
     kv_heads = config_model["kv_heads"];
 
     // 收集req的arrive时间
-    if (config_reqs["arrival"].size() != req_cnt) {
-        cout << "[ERROR] In config helper pd: arrival time length "
-                "incompatible.\n";
-        sc_stop();
-    }
+    // if (config_reqs["arrival"].size() != req_cnt) {
+    //     cout << "[ERROR] In config helper pd: arrival time length "
+    //             "incompatible.\n";
+    //     sc_stop();
+    // }
+    int arr_size = config_reqs["arrival"].size();
+    if (arr_size < req_cnt) {
+        for (int i = 0; i < arr_size; i++)
+            arrival_time.push_back(config_reqs["arrival"][i]);
 
-    for (int i = 0; i < req_cnt; i++)
-        arrival_time.push_back(config_reqs["arrival"][i]);
+        for (int i = arr_size; i < req_cnt; i++)
+            arrival_time.push_back(config_reqs["arrival"][arr_size - 1]);
+    } else {
+        for (int i = 0; i < req_cnt; i++)
+            arrival_time.push_back(config_reqs["arrival"][i]);
+    }
 
     for (int i = 0; i < req_cnt; i++) {
         RequestRecord record =

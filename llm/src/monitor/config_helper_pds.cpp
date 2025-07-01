@@ -37,18 +37,24 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
         }
     }
 
-    if (config_reqs["arrival"].size() != req_cnt) {
-        cout << "[ERROR] In config helper pd: arrival time length "
-                "incompatible.\n";
-        sc_stop();
+    // if (config_reqs["arrival"].size() != req_cnt) {
+    //     cout << "[ERROR] In config helper pd: arrival time length "
+    //             "incompatible.\n";
+    //     sc_stop();
+    // }
+    int arr_size = config_reqs["arrival"].size();
+    if (arr_size < req_cnt) {
+        for (int i = 0; i < arr_size; i++)
+            arrival_time.push_back(config_reqs["arrival"][i]);
+
+        for (int i = arr_size; i < req_cnt; i++)
+            arrival_time.push_back(config_reqs["arrival"][arr_size - 1]);
+    } else {
+        for (int i = 0; i < req_cnt; i++)
+            arrival_time.push_back(config_reqs["arrival"][i]);
     }
 
     // 检查batch_size参数的合理性，同时依此修改arrive时间
-    for (int i = 0; i < req_cnt; i++) {
-        int interv = config_reqs["arrival"][i];
-        arrival_time.push_back(interv);
-    }
-
     if (batch_size * PD_RATIO > CORE_CREDIT) {
         cout << "[ERROR] In config helper pd: batch size too large.\n";
         sc_stop();

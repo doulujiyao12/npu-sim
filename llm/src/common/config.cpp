@@ -102,6 +102,7 @@ void from_json(const json &j, CoreJob &c) {
             }
 
             c.prims.push_back((prim_base *)p);
+            cout << "Prim type: " << type << endl;
         }
     }
 }
