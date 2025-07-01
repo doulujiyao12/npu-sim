@@ -160,21 +160,16 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
     for (auto var : config_vars.items()) {
         vtable.push_back(make_pair(var.key(), var.value()));
     }
-    cout << "1\n";
 
     if (config_vars.contains("B"))
         batch_size = config_vars["B"];
     else
         batch_size = 1;
 
-    cout << "1\n";
-
     if (config_vars.contains("T"))
         seq_len = config_vars["T"];
     else
         seq_len = 128;
-
-    cout << "1\n";
 
     auto config_source = j["source"];
     for (auto source : config_source) {
@@ -189,8 +184,6 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
                 make_pair(source["dest"], find_var(source["size"])));
         }
     }
-
-    cout << "1\n";
 
     auto config_cores = j["chips"][config_chip_id]["cores"];
     for (int i = 0; i < config_cores.size(); i++) {

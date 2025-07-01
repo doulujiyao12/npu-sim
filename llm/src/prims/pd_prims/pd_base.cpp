@@ -1,6 +1,8 @@
 #include "prims/pd_base.h"
 #include "utils/system_utils.h"
 
+#include <sstream>
+
 void pd_base::parse_address(json j) {
     if (j.contains("input")) {
         const auto &inputVal = j["input"];

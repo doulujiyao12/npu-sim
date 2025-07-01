@@ -117,6 +117,7 @@
                   "T": "T",
                   "C": "3C/4",
                   "NH": "NH/4",
+                  "R": "R",
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "attention1_out"
@@ -331,6 +332,7 @@
                   "T": "T",
                   "C": "3C/4",
                   "NH": "NH/4",
+                  "R": "R",
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "attention1_out"

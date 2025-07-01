@@ -104,10 +104,10 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
     u_int64_t overlap_time = 0;
 
     // 数据维度
-    vector<int> data_size_input = {B * T * C};   // QKV input
-    int data_size_preatt = B * NH * T * T; // preatt
-    int data_size_att = B * NH * T * T;    // att
-    int data_size_out = B * T * NH * DH;         // output
+    vector<int> data_size_input = {B * T * C}; // QKV input
+    int data_size_preatt = B * NH * T * T;     // preatt
+    int data_size_att = B * NH * T * T;        // att
+    int data_size_out = B * T * NH * DH;       // output
 
     // dram地址
     u_int64_t dram_addr_tile = cid * dataset_words_per_tile;
@@ -149,7 +149,7 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
                 batch);
         string label_decode_k = format_label_k;
         // cout << "decode_k: " << label_decode_k << endl;
-        
+
 
         int flag = sram_pos_locator->findPair(label_decode_k, kcache);
         if (flag == -1) {
@@ -157,8 +157,25 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
                    "exit.\n",
                    label_decode_k.c_str());
             sc_stop();
+        } else if (flag > 0) {
+#if USE_SRAM_MANAGER == 1
+            std::cout << "[INFO] comp_base: sram_pos_locator find the "
+                         "label: "
+                      << datapass_label.indata[p] << " with flag: " << flag
+                      << std::endl;
+            sram_first_write_generic(context, flag, kcache.dram_addr, dram_time,
+                                     nullptr, label_decode_k, true,
+                                     sram_pos_locator);
+
+#else
+            // TODO: DUMMY dram addr
+            sram_first_write_generic(context, flag, inp_global_addr, dram_time,
+                                     nullptr);
+            kcache.spill_size = 0;
+            sram_pos_locator->addPair(label_decode_k, kcache, context,
+                                      dram_time);
+#endif
         }
-        assert(flag == 0 && "sram does not have enough space");
 
 
         AddrPosKey vcache;
@@ -174,20 +191,39 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
                    "exit.\n",
                    label_decode_v.c_str());
             sc_stop();
+        } else if (flag > 0) {
+#if USE_SRAM_MANAGER == 1
+            std::cout << "[INFO] comp_base: sram_pos_locator find the "
+                         "label: "
+                      << datapass_label.indata[p] << " with flag: " << flag
+                      << std::endl;
+            sram_first_write_generic(context, flag, vcache.dram_addr, dram_time,
+                                     nullptr, label_decode_v, true,
+                                     sram_pos_locator);
+
+#else
+            // TODO: DUMMY dram addr
+            sram_first_write_generic(context, flag, inp_global_addr, dram_time,
+                                     nullptr);
+            vcache.spill_size = 0;
+            sram_pos_locator->addPair(label_decode_v, vcache, context,
+                                      dram_time);
+#endif
         }
 
-        assert(flag == 0 && "sram does not have enough space");
-    int sram_offset;
+        // assert(flag == 0 && "sram does not have enough space");
+        int sram_offset;
 #if USE_SRAM_MANAGER == 1
-    sram_pos_locator->printAllKeysWithAllocId();
-    // Print allocation IDs for debugging
-    std::cout << label_decode_k << " " << label_decode_v << " Key Allocation ID: " << kcache.alloc_id << " " << vcache.alloc_id
-              << std::endl;
-    
-    sram_read_generic(context, kcache.size, sram_offset,
-                      dram_time, kcache.alloc_id, true, sram_pos_locator);
-    sram_read_generic(context, vcache.size, sram_offset,
-                      dram_time, vcache.alloc_id, true, sram_pos_locator);
+        sram_pos_locator->printAllKeysWithAllocId();
+        // Print allocation IDs for debugging
+        std::cout << label_decode_k << " " << label_decode_v
+                  << " Key Allocation ID: " << kcache.alloc_id << " "
+                  << vcache.alloc_id << std::endl;
+
+        sram_read_generic(context, kcache.size, sram_offset, dram_time,
+                          kcache.alloc_id, true, sram_pos_locator);
+        sram_read_generic(context, vcache.size, sram_offset, dram_time,
+                          vcache.alloc_id, true, sram_pos_locator);
 #else
         // 读出k,v
         sram_read_generic(context, kcache.size, kcache.pos, dram_time);

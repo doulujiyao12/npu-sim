@@ -91,8 +91,9 @@
               "type": "Attention_f",
               "B": "B",
               "T": "T",
-              "C": "C",
+              "C": "3C",
               "NH": "NH",
+              "R": "R",
               "sram_address": {
                 "indata": "matmul1_out",
                 "outdata": "attention1_out"
@@ -272,8 +273,9 @@
               "type": "Attention_f",
               "B": "B",
               "T": "T",
-              "C": "C",
+              "C": "3C",
               "NH": "NH",
+              "R": "R",
               "sram_address": {
                 "indata": "matmul1_out",
                 "outdata": "attention1_out"
@@ -435,8 +437,9 @@
               "type": "Attention_f",
               "B": "B",
               "T": "T",
-              "C": "C",
+              "C": "3C",
               "NH": "NH",
+              "R": "R",
               "sram_address": {
                 "indata": "matmul1_out",
                 "outdata": "attention1_out"
@@ -615,8 +618,9 @@
               "type": "Attention_f",
               "B": "B",
               "T": "T",
-              "C": "C",
+              "C": "3C",
               "NH": "NH",
+              "R": "R",
               "sram_address": {
                 "indata": "matmul1_out",
                 "outdata": "attention1_out"
