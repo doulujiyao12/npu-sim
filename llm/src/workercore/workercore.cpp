@@ -37,13 +37,14 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
                         "../DRAMSys/configs");
     cout << " MaxAddr "
          << dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
+    auto sram_bitw = get_sram_bitwidth(s_cid);
     ram_array = new DynamicBandwidthRamRow<sc_bv<SRAM_BITWIDTH>, SRAM_BANKS>(
-        sc_gen_unique_name("ram_array"), 0, BANK_DEPTH, SIMU_READ_PORT,
+        sc_gen_unique_name("ram_array"), 0, MAX_SRAM_SIZE * 8 / sram_bitw / SRAM_BANKS, SIMU_READ_PORT,
         SIMU_WRITE_PORT, BANK_PORT_NUM + SRAM_BANKS, BANK_PORT_NUM,
         BANK_HIGH_READ_PORT_NUM, event_engine);
     temp_ram_array =
         new DynamicBandwidthRamRow<sc_bv<SRAM_BITWIDTH>, SRAM_BANKS>(
-            sc_gen_unique_name("temp_ram_array"), 0, BANK_DEPTH_TMP,
+            sc_gen_unique_name("temp_ram_array"), 0, MAX_SRAM_SIZE * 8 / sram_bitw / SRAM_BANKS,
             SIMU_READ_PORT, SIMU_WRITE_PORT, BANK_PORT_NUM + SRAM_BANKS,
             BANK_PORT_NUM, BANK_HIGH_READ_PORT_NUM, event_engine);
     executor = new WorkerCoreExecutor(sc_gen_unique_name("workercore-exec"),

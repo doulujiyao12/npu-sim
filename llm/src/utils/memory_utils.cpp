@@ -285,7 +285,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
                 inp_global_addr += cache_lines;
             }
 
-            sc_bv<sram_bitw> data_tmp2;
+            sc_bv<SRAM_BITWIDTH> data_tmp2;
             data_tmp2 = 0;
             sc_time elapsed_time;
             for (int i = 0; i < single_read_count; i++) {
