@@ -114,12 +114,12 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
         return;
     }
 
-    cout << "[SRAM CHECK] Sram fail to allocate enough space! Need to spill & "
+    cout << "[SRAM CHECK] Core " << cid << " Sram fail to allocate enough space! Need to spill & "
             "rearrange.\n";
 
     // 放不下，需要spill，查找里面record最小的成员（除了key）
     while (used > max_sram_size) {
-        std::cout << "\033[1;31m" << ": Sram check: used: " << used
+        std::cout << "\033[1;31m" << ": Core " << cid << " Sram check: used: " << used
                   << ", max sram size: " << max_sram_size << "\033[0m" << endl;
         int min_record = 1e9 + 3;
         string min_label = "";
@@ -346,9 +346,6 @@ void SramPosLocator::updatePair(std::string &key, int size,
 }
 
 void SramPosLocator::deletePair(std::string &key) { 
-    cout << " deletePair Pair 1 "<< endl;
-
-    // data_map.erase(key); 
     cout << "delete label " << key << endl;
     auto it = data_map.find(key);
     if (it != data_map.end()) {
@@ -392,6 +389,7 @@ int SramPosLocator::rearrangeAll(TaskCoreContext &context) {
         pos += dma_read_count * SRAM_BANKS + single_read_count;
     }
 
+    cout << "[SRAM] Core " << cid << " Rearranged.\n";
     return pos;
 }
 

@@ -1,0 +1,2611 @@
+{
+  "random": false,
+  "vars": {
+    "B": 1,
+    "T": 128,
+    "C": 4096,
+    "C/2": 2048,
+    "NH": 32,
+    "NH/2": 16,
+    "L": 32,
+    "3C": 12288,
+    "4C": 16384,
+    "BTC": 524288,
+    "2BTC": 1048576,
+    "3BTC": 1572864,
+    "3BTC/2": 786432,
+    "4BTC": 2097152,
+    "3C/2": 6144,
+    "3C/4": 3072,
+    "C/4": 1024,
+    "2C": 8192,
+    "3C-R/2": 3072,
+    "R": 4,
+    "layernorm1_data": 96,
+    "split_matmul1_out": 97,
+    "matmul1_data": 96,
+    "attention1_data": 962,
+    "matmul2_data": 1155,
+    "matmul2_out": 1443,
+    "merge_matmul1_in": 96,
+    "residual1_out": 288,
+    "matmul3_data": 96,
+    "matmul4_data": 1250,
+    "matmul4_out": 2405,
+    "layernorm2_data": 4000,
+    "split_matmul2_out": 5000,
+    "residual2_out": 6500,
+    "TODO": 110
+  },
+  "pipeline": 1,
+  "source": [
+    {
+      "dest": 0,
+      "size": "BTC"
+    }
+  ],
+  "chips": [
+    {
+      "chip_id": 0,
+      "cores": [
+        {
+          "id": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 1,
+                  "addr": 1000000
+                }
+              ],
+              "prims": [
+                {
+                  "type": "rmsnorm_forward",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "sram_address": {
+                    "indata": "input_label",
+                    "outdata": "rmsnorm1_out"
+                  },
+                  "dram_address": {
+                    "data": "rmsnorm1_data"
+                  }
+                },
+                {
+                  "type": "Split_matmul",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "dim": 2,
+                  "slice": 2,
+                  "sram_address": {
+                    "indata": "rmsnorm1_out",
+                    "outdata": "split_matmul1_out"
+                  },
+                  "dram_address": {
+                    "out": "split_matmul1_out"
+                  }
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": [],
+              "prims": [
+                {
+                  "type": "Matmul_f",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "3C-R/2",
+                  "sram_address": {
+                    "indata": "split_matmul1_out",
+                    "outdata": "matmul1_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul1_data"
+                  }
+                },
+                {
+                  "type": "rope_forward",
+                  "B": "B",
+                  "T": "T",
+                  "C": "3C-R/2",
+                  "NH": "NH",
+                  "sram_address": {
+                    "indata": "matmul1_out",
+                    "outdata": "rope1_out"
+                  },
+                  "dram_address": {
+                    "data": "rope1_data"
+                  }
+                },
+                {
+                  "type": "Attention_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "3C-R/2",
+                  "R": "R",
+                  "NH": "NH/2",
+                  "sram_address": {
+                    "indata": "rope1_out",
+                    "outdata": "attention1_out"
+                  },
+                  "dram_address": {
+                    "data": "attention1_data",
+                    "out": "TODO"
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "C",
+                  "sram_address": {
+                    "indata": "attention1_out",
+                    "outdata": "matmul2_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul2_data"
+                  }
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 120,
+              "cast": [
+                {
+                  "dest": 1,
+                  "addr": 2000000
+                }
+              ],
+              "prims": [
+                {
+                  "type": "Merge_matmul",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "dim": 2,
+                  "slice": 2,
+                  "sram_address": {
+                    "indata": "_input_label matmul2_out",
+                    "outdata": "merge_matmul1_out"
+                  },
+                  "dram_address": {}
+                },
+                {
+                  "type": "Residual_f",
+                  "N": "BTC",
+                  "sram_address": {
+                    "indata": "input_label merge_matmul1_out",
+                    "outdata": "residual1_out"
+                  },
+                  "dram_address": {
+                    "data": -1,
+                    "out": "TODO"
+                  }
+                },
+                {
+                  "type": "rmsnorm_forward",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "sram_address": {
+                    "indata": "_residual1_out",
+                    "outdata": "rmsnorm2_out"
+                  },
+                  "dram_address": {
+                    "data": "rmsnorm2_data"
+                  }
+                },
+                {
+                  "type": "Split_matmul",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "dim": 2,
+                  "slice": 2,
+                  "sram_address": {
+                    "indata": "rmsnorm2_out",
+                    "outdata": "split_matmul2_out"
+                  },
+                  "dram_address": {
+                    "out": "split_matmul2_out"
+                  }
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": [],
+              "prims": [
+                {
+                  "type": "Matmul_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "3C/2",
+                  "sram_address": {
+                    "indata": "_split_matmul2_out",
+                    "outdata": "matmul3_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul3_data"
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "3C/2",
+                  "sram_address": {
+                    "indata": "split_matmul2_out",
+                    "outdata": "matmul4_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul4_data"
+                  }
+                },
+                {
+                  "type": "swiglu_forward",
+                  "N": "3BTC/2",
+                  "sram_address": {
+                    "indata": "matmul3_out matmul4_out",
+                    "outdata": "swiglu1_out"
+                  },
+                  "dram_address": {
+                      "input": 0,
+                      "data": -1
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "3C/2",
+                  "OC": "C",
+                  "sram_address": {
+                    "indata": "swiglu1_out",
+                    "outdata": "matmul4_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul4_data"
+                  }
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 121,
+              "cast": [
+                {
+                  "dest": 2,
+                  "critical": true
+                }
+              ],
+              "prims": [
+                {
+                  "type": "Merge_matmul",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "dim": 2,
+                  "slice": 2,
+                  "sram_address": {
+                    "indata": "input_label matmul4_out",
+                    "outdata": "merge_matmul2_out"
+                  },
+                  "dram_address": {}
+                },
+                {
+                  "type": "Residual_f",
+                  "N": "BTC",
+                  "sram_address": {
+                    "indata": "residual1_out merge_matmul2_out",
+                    "outdata": "residual2_out"
+                  },
+                  "dram_address": {
+                    "data": -1,
+                    "out": "residual2_out"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 0,
+                  "tag": 120,
+                  "addr": 1000000
+                }
+              ],
+              "prims": [
+                {
+                  "type": "Matmul_f",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "3C-R/2",
+                  "sram_address": {
+                    "indata": "input_label",
+                    "outdata": "matmul1_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul1_data"
+                  }
+                },
+                {
+                  "type": "rope_forward",
+                  "B": "B",
+                  "T": "T",
+                  "C": "3C-R/2",
+                  "NH": "NH",
+                  "sram_address": {
+                    "indata": "matmul1_out",
+                    "outdata": "rope1_out"
+                  },
+                  "dram_address": {
+                    "data": "rope1_data"
+                  }
+                },
+                {
+                  "type": "Attention_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "3C-R/2",
+                  "R": "R",
+                  "NH": "NH/2",
+                  "sram_address": {
+                    "indata": "rope1_out",
+                    "outdata": "attention1_out"
+                  },
+                  "dram_address": {
+                    "data": "attention1_data",
+                    "out": "TODO"
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "T",
+                  "C": "C/2",
+                  "OC": "C",
+                  "sram_address": {
+                    "indata": "attention1_out",
+                    "outdata": "matmul2_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul2_data",
+                    "out": "matmul2_out"
+                  }
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 0,
+                  "tag": 121,
+                  "addr": 2000000
+                }
+              ],
+              "prims": [
+                {
+                  "type": "Matmul_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "3C/2",
+                  "sram_address": {
+                    "indata": "_input_label",
+                    "outdata": "matmul3_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul3_data"
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "3C/2",
+                  "sram_address": {
+                    "indata": "input_label",
+                    "outdata": "matmul4_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul4_data"
+                  }
+                },
+                {
+                  "type": "swiglu_forward",
+                  "N": "3BTC/2",
+                  "sram_address": {
+                    "indata": "matmul3_out matmul4_out",
+                    "outdata": "swiglu1_out"
+                  },
+                  "dram_address": {
+                      "input": 0,
+                      "data": -1
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "3C/2",
+                  "OC": "C",
+                  "sram_address": {
+                    "indata": "swiglu1_out",
+                    "outdata": "matmul4_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul4_data",
+                    "out": "matmul4_out"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 3,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 122,
+              "cast": [
+                {
+                  "dest": 3,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 123,
+              "cast": [
+                {
+                  "dest": 4,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 2,
+                  "tag": 122,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 2,
+                  "tag": 123,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 5,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 124,
+              "cast": [
+                {
+                  "dest": 5,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 125,
+              "cast": [
+                {
+                  "dest": 6,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 4,
+                  "tag": 124,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 4,
+                  "tag": 125,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 7,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 126,
+              "cast": [
+                {
+                  "dest": 7,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 127,
+              "cast": [
+                {
+                  "dest": 8,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 6,
+                  "tag": 126,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 6,
+                  "tag": 127,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 9,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 128,
+              "cast": [
+                {
+                  "dest": 9,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 129,
+              "cast": [
+                {
+                  "dest": 10,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 8,
+                  "tag": 128,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 8,
+                  "tag": 129,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 11,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 130,
+              "cast": [
+                {
+                  "dest": 11,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 131,
+              "cast": [
+                {
+                  "dest": 12,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 10,
+                  "tag": 130,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 10,
+                  "tag": 131,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 13,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 132,
+              "cast": [
+                {
+                  "dest": 13,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 133,
+              "cast": [
+                {
+                  "dest": 14,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 13,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 12,
+                  "tag": 132,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 12,
+                  "tag": 133,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 14,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 15,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 134,
+              "cast": [
+                {
+                  "dest": 15,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 135,
+              "cast": [
+                {
+                  "dest": 16,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 15,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 14,
+                  "tag": 134,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 14,
+                  "tag": 135,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 16,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 17,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 136,
+              "cast": [
+                {
+                  "dest": 17,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 137,
+              "cast": [
+                {
+                  "dest": 18,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 17,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 16,
+                  "tag": 136,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 16,
+                  "tag": 137,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 18,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 19,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 138,
+              "cast": [
+                {
+                  "dest": 19,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 139,
+              "cast": [
+                {
+                  "dest": 20,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 19,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 18,
+                  "tag": 138,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 18,
+                  "tag": 139,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 20,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 21,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 140,
+              "cast": [
+                {
+                  "dest": 21,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 141,
+              "cast": [
+                {
+                  "dest": 22,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 21,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 20,
+                  "tag": 140,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 20,
+                  "tag": 141,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 22,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 23,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 142,
+              "cast": [
+                {
+                  "dest": 23,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 143,
+              "cast": [
+                {
+                  "dest":24
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 23,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 22,
+                  "tag": 142,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 22,
+                  "tag": 143,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 24,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 25,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 144,
+              "cast": [
+                {
+                  "dest": 25,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 145,
+              "cast": [
+                {
+                  "dest": 26,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 25,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 24,
+                  "tag": 144,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 24,
+                  "tag": 145,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 26,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 27,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 146,
+              "cast": [
+                {
+                  "dest": 27,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 147,
+              "cast": [
+                {
+                  "dest": 28,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 27,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 26,
+                  "tag": 146,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 26,
+                  "tag": 147,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 28,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 29,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 148,
+              "cast": [
+                {
+                  "dest": 29,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 149,
+              "cast": [
+                {
+                  "dest": 30,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 29,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 28,
+                  "tag": 148,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 28,
+                  "tag": 149,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 30,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 31,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 150,
+              "cast": [
+                {
+                  "dest": 31,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 151,
+              "cast": [
+                {
+                  "dest": 32,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 31,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 30,
+                  "tag": 150,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 30,
+                  "tag": 151,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 32,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 33,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 152,
+              "cast": [
+                {
+                  "dest": 33,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 153,
+              "cast": [
+                {
+                  "dest": 34,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 33,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 32,
+                  "tag": 152,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 32,
+                  "tag": 153,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 34,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 35,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 154,
+              "cast": [
+                {
+                  "dest": 35,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 155,
+              "cast": [
+                {
+                  "dest": 36,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 35,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 34,
+                  "tag": 154,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 34,
+                  "tag": 155,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 36,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 37,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 156,
+              "cast": [
+                {
+                  "dest": 37,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 157,
+              "cast": [
+                {
+                  "dest": 38,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 37,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 36,
+                  "tag": 156,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 36,
+                  "tag": 157,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 38,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 39,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 158,
+              "cast": [
+                {
+                  "dest": 39,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 159,
+              "cast": [
+                {
+                  "dest": 40,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 39,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 38,
+                  "tag": 158,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 38,
+                  "tag": 159,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 40,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 41,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 160,
+              "cast": [
+                {
+                  "dest": 41,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 161,
+              "cast": [
+                {
+                  "dest": 42,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 41,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 40,
+                  "tag": 160,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 40,
+                  "tag": 161,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 42,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 43,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 162,
+              "cast": [
+                {
+                  "dest": 43,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 163,
+              "cast": [
+                {
+                  "dest": 44,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 43,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 42,
+                  "tag": 162,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 42,
+                  "tag": 163,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 44,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 45,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 164,
+              "cast": [
+                {
+                  "dest": 45,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 165,
+              "cast": [
+                {
+                  "dest": 46,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 45,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 44,
+                  "tag": 164,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 44,
+                  "tag": 165,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 46,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 47,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 166,
+              "cast": [
+                {
+                  "dest": 47,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 167,
+              "cast": [
+                {
+                  "dest": 48,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 47,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 46,
+                  "tag": 166,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 46,
+                  "tag": 167,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 48,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 49,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 168,
+              "cast": [
+                {
+                  "dest": 49,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 169,
+              "cast": [
+                {
+                  "dest": 50,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 49,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 48,
+                  "tag": 168,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 48,
+                  "tag": 169,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 50,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 51,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 170,
+              "cast": [
+                {
+                  "dest": 51,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 171,
+              "cast": [
+                {
+                  "dest": 52,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 51,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 50,
+                  "tag": 170,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 50,
+                  "tag": 171,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 52,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 53,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 172,
+              "cast": [
+                {
+                  "dest": 53,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 173,
+              "cast": [
+                {
+                  "dest": 54,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 53,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 52,
+                  "tag": 172,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 52,
+                  "tag": 173,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 54,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 55,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 174,
+              "cast": [
+                {
+                  "dest": 55,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 175,
+              "cast": [
+                {
+                  "dest": 56,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 55,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 54,
+                  "tag": 174,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 54,
+                  "tag": 175,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 56,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 57,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 176,
+              "cast": [
+                {
+                  "dest": 57,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 177,
+              "cast": [
+                {
+                  "dest": 58,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 57,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 56,
+                  "tag": 176,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 56,
+                  "tag": 177,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 58,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 59,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 178,
+              "cast": [
+                {
+                  "dest": 59,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 179,
+              "cast": [
+                {
+                  "dest": 60,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 59,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 58,
+                  "tag": 178,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 58,
+                  "tag": 179,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 60,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 61,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 180,
+              "cast": [
+                {
+                  "dest": 61,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 181,
+              "cast": [
+                {
+                  "dest": 62,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 61,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 60,
+                  "tag": 180,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 60,
+                  "tag": 181,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 62,
+          "prim_copy": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 63,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 182,
+              "cast": [
+                {
+                  "dest": 63,
+                  "addr": 2000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 0,
+              "cast": []
+            },
+            {
+              "recv_cnt": 1,
+              "recv_tag": 183,
+              "cast": [
+                {
+                  "dest": -1,
+                  "critical": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 63,
+          "prim_copy": 1,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 62,
+                  "tag": 182,
+                  "addr": 1000000
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 62,
+                  "tag": 183,
+                  "addr": 2000000
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

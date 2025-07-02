@@ -1144,6 +1144,8 @@ void WorkerCoreExecutor::task_logic() {
         //     cout << endl;
         // }
 
+        cout << "Core " << cid << ": task " << p->name << " done.\n";
+
         ev_block.notify(CYCLE, SC_NS);
         wait();
     }

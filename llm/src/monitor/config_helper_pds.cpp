@@ -184,6 +184,7 @@ void config_helper_pds::iter_done(PD_JOB type) {
 
                     if (++decode_done == requestRecords.size()) {
                         cout << "All reqs done.\n";
+                        cout << "[CATCH TEST] " << sc_time_stamp() << endl;
                         sc_stop();
                     }
                 }
