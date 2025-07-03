@@ -29,6 +29,8 @@ void attention_forward_pd::parse_json(json j) {
     T = find_var(j["T"]);
     C = find_var(j["C"]);
     NH = find_var(j["NH"]);
+    DH = find_var(j["DH"]);
+    R = find_var(j["R"]);
 
     auto job_str = j["job_type"];
     if (job_str == "prefill")

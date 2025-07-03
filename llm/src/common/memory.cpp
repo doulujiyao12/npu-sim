@@ -31,7 +31,8 @@ string AddrLabelTable::findRecord(int index) const {
 
 void AddrLabelTable::clearAll() { table.clear(); }
 
-void SramPosLocator::addPair(std::string &key, AddrPosKey value, bool update_key) {
+void SramPosLocator::addPair(std::string &key, AddrPosKey value,
+                             bool update_key) {
     visit += 1;
     value.record = visit;
     if (update_key) {
@@ -45,7 +46,7 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value, bool update_key
 
         data_map[key] = value;
     }
-    
+
     // cout << "[SRAM pos locator] id " << cid << " add pair.\n";
     // cout << "[Add pair]: label -> " << key << endl;
 }
@@ -53,13 +54,13 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value, bool update_key
 
 bool SramPosLocator::validateTotalSize() const {
     int dataSizeSum = 0;
-    for (const auto& pair : data_map) {
+    for (const auto &pair : data_map) {
         if (pair.second.valid)
             dataSizeSum += pair.second.size - pair.second.spill_size;
     }
 
     int allocationSizeSum = 0;
-    for (const auto& alloc : sram_manager_->allocations_) {
+    for (const auto &alloc : sram_manager_->allocations_) {
         AllocationID id = alloc.first;
         allocationSizeSum += sram_manager_->get_allocation_byte_capacity(id);
     }
@@ -71,11 +72,13 @@ bool SramPosLocator::validateTotalSize() const {
         return false;
     }
 
-    std::cout << "[INFO] Total size validation passed: " << dataSizeSum << " bytes." << std::endl;
+    std::cout << "[INFO] Total size validation passed: " << dataSizeSum
+              << " bytes." << std::endl;
     return true;
 }
 void SramPosLocator::addPair(std::string &key, AddrPosKey value,
-                             TaskCoreContext &context, u_int64_t &dram_time, bool update_key) {
+                             TaskCoreContext &context, u_int64_t &dram_time,
+                             bool update_key) {
     // 先放入sram
 
     visit += 1;
@@ -94,7 +97,8 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
 
 
     // cout << "[SRAM pos locator] id " << cid << " add pair.\n";
-    // cout << "[Add pair]: label -> " << key << ", size: " << value.size << endl;
+    // cout << "[Add pair]: label -> " << key << ", size: " << value.size <<
+    // endl;
 
     // 检查所有的大小是否超过能够容纳的上限
     int used = 0;
@@ -107,24 +111,27 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
             used += pair.second.size - pair.second.spill_size;
     }
 
-    // cout << "[SRAM CHECK] used: " << used << ", max: " << max_sram_size << endl;
+    // cout << "[SRAM CHECK] used: " << used << ", max: " << max_sram_size <<
+    // endl;
 
     // 放得下
     if (used <= max_sram_size) {
         return;
     }
 
-    cout << "[SRAM CHECK] Core " << cid << " Sram fail to allocate enough space! Need to spill & "
+    cout << "[SRAM CHECK] Core " << cid
+         << " Sram fail to allocate enough space! Need to spill & "
             "rearrange.\n";
 
     // 放不下，需要spill，查找里面record最小的成员（除了key）
     while (used > max_sram_size) {
-        std::cout << "\033[1;31m" << ": Core " << cid << " Sram check: used: " << used
+        std::cout << "\033[1;31m" << ": Core " << cid
+                  << " Sram check: used: " << used
                   << ", max sram size: " << max_sram_size << "\033[0m" << endl;
         int min_record = 1e9 + 3;
         string min_label = "";
         int min_pos = 0;
-        AllocationID sram_id  = 0;
+        AllocationID sram_id = 0;
         for (auto pair : data_map) {
             if (pair.first == key)
                 continue; // 不能spill自己
@@ -177,14 +184,22 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
 #if USE_SRAM_MANAGER
         cout << "add pair " << key << endl;
         sram_manager_->deallocate(sram_id);
-        cout <<  " Deallocate " << sram_id << " from sram manager." << key << endl;
-        
-#endif     
+        cout << " Deallocate " << sram_id << " from sram manager." << key
+             << endl;
+
+
         // spill 耗时
         // spill in nb_dcache utils
-        sram_spill_back_generic(context, spill_size, data_map[min_label].dram_addr, dram_time);
+        cout << "[SRAM] Core " << cid << " spill to "
+             << data_map[min_label].dram_addr << endl;
+        sram_spill_back_generic(context, spill_size,
+                                data_map[min_label].dram_addr, dram_time);
+#else
+        sram_spill_back_generic(context, spill_size, 1024, dram_time);
+#endif
 
-        // cout << "[SRAM SPILL] Core " << cid << ": After spill: used: " << used
+        // cout << "[SRAM SPILL] Core " << cid << ": After spill: used: " <<
+        // used
         //      << ", max sram size: " << max_sram_size << endl;
         // cout << "[SRAM SPILL] Core " << cid
         //      << ": label size: " << data_map[min_label].size
@@ -212,14 +227,14 @@ int SramPosLocator::findPair(std::string &key, int &result) {
 }
 
 void SramPosLocator::printAllKeys() {
-    for (const auto& pair : data_map) {
+    for (const auto &pair : data_map) {
         std::cout << "Key: " << pair.first << std::endl;
     }
 }
 void SramPosLocator::printAllKeysWithAllocId() {
     std::cout << "[SRAM Pos Locator] All keys and their Allocation IDs:\n";
-    for (const auto& pair : data_map) {
-        std::cout << "Key: " << pair.first 
+    for (const auto &pair : data_map) {
+        std::cout << "Key: " << pair.first
                   << ", Alloc ID: " << pair.second.alloc_id << std::endl;
     }
 }
@@ -237,7 +252,7 @@ int SramPosLocator::findPair(std::string &key, AddrPosKey &result) {
 
 int SramPosLocator::findKeySize(std::string &key) {
 
-    
+
     auto it = data_map.find(key);
     if (it != data_map.end()) {
         return it->second.size;
@@ -246,7 +261,8 @@ int SramPosLocator::findKeySize(std::string &key) {
 }
 
 
-void SramPosLocator::updateKVPair(TaskCoreContext &context, std::string &key, uint64_t kv_daddr, int data_size_in_byte) {
+void SramPosLocator::updateKVPair(TaskCoreContext &context, std::string &key,
+                                  uint64_t kv_daddr, int data_size_in_byte) {
 #if USE_SRAM_MANAGER == 1
     visit += 1;
 
@@ -257,21 +273,20 @@ void SramPosLocator::updateKVPair(TaskCoreContext &context, std::string &key, ui
     if (spill_size == -1) {
         // 还未建立 KV sram block
         sram_write_append_generic(context, data_size_in_byte, dram_time_tmp,
-        key, true, this, kv_daddr);
+                                  key, true, this, kv_daddr);
         // cout << "还未建立" << endl;
 
         return;
 
-        
+
     } else if (spill_size > 0) {
         sram_first_write_generic(context, spill_size, kv_daddr, dram_time_tmp,
-            nullptr, key, true, this);
+                                 nullptr, key, true, this);
         // KV sram block 之前被建立，但是被放回dram
         // cout << "被spill了" << endl;
 
 
     } else {
-
     }
 
     spill_size = findPair(key, result);
@@ -280,23 +295,24 @@ void SramPosLocator::updateKVPair(TaskCoreContext &context, std::string &key, ui
 
     // cout << "left_byte" << result.left_byte << endl;
     // cout << " data_size_in_byte" << data_size_in_byte << endl;
-    if (result.left_byte > data_size_in_byte){
+    if (result.left_byte > data_size_in_byte) {
         result.spill_size = 0;
         result.left_byte -= data_size_in_byte;
         return;
-    }else{
+    } else {
         int alignment = std::max(get_sram_bitwidth(cid), SRAM_BLOCK_SIZE * 8);
         int alignment_byte = alignment / 8;
         int tmp = 1;
 
         result.size += alignment_byte;
-        while (tmp * alignment_byte < data_size_in_byte){
+        while (tmp * alignment_byte < data_size_in_byte) {
             tmp = tmp + 1;
             result.size += alignment_byte;
-        } 
-        
-        result.left_byte = result.left_byte - data_size_in_byte + alignment_byte * tmp;
-         
+        }
+
+        result.left_byte =
+            result.left_byte - data_size_in_byte + alignment_byte * tmp;
+
         addPair(key, result, context, dram_time_tmp, false);
 
         auto sram_manager_ = context.sram_manager_;
@@ -309,13 +325,9 @@ void SramPosLocator::updateKVPair(TaskCoreContext &context, std::string &key, ui
     }
 
 
-
-
 #else
     assert(0);
 #endif
-
-
 }
 // 为sram中标签为key的数据块增加size的大小。如果该数据块还不存在，则创建一个。
 void SramPosLocator::updatePair(std::string &key, int size,
@@ -345,7 +357,7 @@ void SramPosLocator::updatePair(std::string &key, int size,
     //      << ", new size: " << data_map[key].size << endl;
 }
 
-void SramPosLocator::deletePair(std::string &key) { 
+void SramPosLocator::deletePair(std::string &key) {
     cout << "delete label " << key << endl;
     auto it = data_map.find(key);
     if (it != data_map.end()) {
@@ -369,10 +381,13 @@ int SramPosLocator::rearrangeAll(TaskCoreContext &context) {
         auto size = record.second.size;
         auto spill_size = record.second.spill_size;
 
-        int dma_read_count = spill_size * 8 / (int)(get_sram_bitwidth(cid) * SRAM_BANKS);
+        int dma_read_count =
+            spill_size * 8 / (int)(get_sram_bitwidth(cid) * SRAM_BANKS);
         int byte_residue =
-        spill_size * 8 - dma_read_count * (get_sram_bitwidth(cid) * SRAM_BANKS);
-        int single_read_count = ceiling_division(byte_residue, get_sram_bitwidth(cid));
+            spill_size * 8 -
+            dma_read_count * (get_sram_bitwidth(cid) * SRAM_BANKS);
+        int single_read_count =
+            ceiling_division(byte_residue, get_sram_bitwidth(cid));
 
         int temp_pos = *(context.sram_addr);
         u_int64_t temp_addr = 0;

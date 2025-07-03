@@ -54,7 +54,7 @@ while IFS= read -r line || [[ -n "$line" ]]; do
     IFS=$'\t'
 
     unset IFS
-    read -r NPUSIM_MAIN_CONFIG_FILE JSON_X JSON_CORE_ID JSON_EXU_X JSON_EXU_Y JSON_SFU_X JSON_SRAM_BITWIDTH <<<"$line"
+    read -r NPUSIM_MAIN_CONFIG_FILE JSON_X JSON_CORE_ID JSON_EXU_X JSON_EXU_Y JSON_SFU_X JSON_SRAM_BITWIDTH JSON_SRAM_MAX_SIZE <<<"$line"
     IFS="$IFS_ORIG"
 
     if [ -z "${NPUSIM_MAIN_CONFIG_FILE}" ] ||
@@ -63,8 +63,9 @@ while IFS= read -r line || [[ -n "$line" ]]; do
         [ -z "${JSON_EXU_X}" ] ||
         [ -z "${JSON_EXU_Y}" ] ||
         [ -z "${JSON_SFU_X}" ] ||
-        [ -z "${JSON_SRAM_BITWIDTH}" ]; then
-        echo "ERROR: Line ${LINE_NUM} does not contain 7 parameters. Content: '${line}'"
+        [ -z "${JSON_SRAM_BITWIDTH}" ] || 
+        [ -z "${JSON_SRAM_MAX_SIZE}" ]; then
+        echo "ERROR: Line ${LINE_NUM} does not contain 8 parameters. Content: '${line}'"
         echo -e "${line}\tERROR: Invalid parameter count" >>"${OUTPUT_BATCH_FILE}"
         continue
     fi
@@ -98,6 +99,7 @@ EOF
     echo "INFO: Running npusim for line ${LINE_NUM}..."
     ./npusim --config-file="${NPUSIM_MAIN_CONFIG_PATH_ARG}" \
         --core-config-file="${NPUSIM_CORE_CONFIG_PATH_ARG}" \
+        --sram-max="${JSON_SRAM_MAX_SIZE}" \
         >"${NPUSIM_STDOUT_TMP_BASENAME}"
 
     RESULT_STRING=""
