@@ -31,7 +31,6 @@ trap cleanup EXIT INT TERM
 
 if [ "$#" -ne 1 ]; then
     echo "Usage: ./${SCRIPT_NAME} <test_batch_file>"
-    echo "Example: ./${SCRIPT_NAME} ./test_batch.txt"
     exit 1
 fi
 
@@ -44,34 +43,22 @@ if [ ! -f "${TEST_BATCH_FILE}" ]; then
 fi
 
 LINE_NUM=0
-# 逐行读取
 while IFS= read -r line || [[ -n "$line" ]]; do
     LINE_NUM=$((LINE_NUM + 1))
     echo ""
     echo "INFO: Processing line ${LINE_NUM}: ${line}"
 
-    IFS_ORIG="$IFS"
-    IFS=$'\t'
+    FIELD_COUNT=$(echo "$line" | awk -F'\t' '{print NF}')
 
-    unset IFS
-    read -r NPUSIM_MAIN_CONFIG_FILE JSON_X JSON_CORE_ID JSON_EXU_X JSON_EXU_Y JSON_SFU_X JSON_SRAM_BITWIDTH JSON_SRAM_MAX_SIZE <<<"$line"
-    IFS="$IFS_ORIG"
+    ORIGINAL_PWD=$(pwd)
+    cd "${BUILD_DIR_ABS}"
 
-    if [ -z "${NPUSIM_MAIN_CONFIG_FILE}" ] ||
-        [ -z "${JSON_X}" ] ||
-        [ -z "${JSON_CORE_ID}" ] ||
-        [ -z "${JSON_EXU_X}" ] ||
-        [ -z "${JSON_EXU_Y}" ] ||
-        [ -z "${JSON_SFU_X}" ] ||
-        [ -z "${JSON_SRAM_BITWIDTH}" ] || 
-        [ -z "${JSON_SRAM_MAX_SIZE}" ]; then
-        echo "ERROR: Line ${LINE_NUM} does not contain 8 parameters. Content: '${line}'"
-        echo -e "${line}\tERROR: Invalid parameter count" >>"${OUTPUT_BATCH_FILE}"
-        continue
-    fi
+    if [ "$FIELD_COUNT" -eq 8 ]; then
+        echo "INFO: Detected 8 fields, using legacy mode."
+        IFS=$'\t' read -r NPUSIM_MAIN_CONFIG_FILE JSON_X JSON_CORE_ID JSON_EXU_X JSON_EXU_Y JSON_SFU_X JSON_SRAM_BITWIDTH JSON_SRAM_MAX_SIZE <<<"$line"
 
-    CONFIG_CONTENT=$(
-        cat <<EOF
+        CONFIG_CONTENT=$(
+            cat <<EOF
 {
     "x": ${JSON_X},
     "cores": [
@@ -85,46 +72,50 @@ while IFS= read -r line || [[ -n "$line" ]]; do
     ]
 }
 EOF
-    )
+        )
 
-    echo "$CONFIG_CONTENT" >"${TEMP_JSON_CONFIG_FULL_PATH}"
-    echo "INFO: ${TEMP_JSON_CONFIG_FULL_PATH} created successfully for line ${LINE_NUM}."
+        echo "$CONFIG_CONTENT" >"${TEMP_JSON_CONFIG_FULL_PATH}"
+        echo "INFO: Created temp JSON config: ${TEMP_JSON_CONFIG_FULL_PATH}"
 
-    NPUSIM_MAIN_CONFIG_PATH_ARG="../llm/test/${NPUSIM_MAIN_CONFIG_FILE}"
-    NPUSIM_CORE_CONFIG_PATH_ARG="../llm/test/${TEMP_JSON_CONFIG_BASENAME}"
+        ./npusim --config-file="../llm/test/${NPUSIM_MAIN_CONFIG_FILE}" \
+                 --core-config-file="../llm/test/${TEMP_JSON_CONFIG_BASENAME}" \
+                 --sram-max="${JSON_SRAM_MAX_SIZE}" \
+                 >"${NPUSIM_STDOUT_TMP_BASENAME}"
 
-    ORIGINAL_PWD=$(pwd)
-    cd "${BUILD_DIR_ABS}"
+    elif [ "$FIELD_COUNT" -eq 2 ]; then
+        echo "INFO: Detected 2 fields, using new direct mode."
+        IFS=$'\t' read -r CONFIG_NAME CORE_CONFIG_NAME <<<"$line"
 
-    echo "INFO: Running npusim for line ${LINE_NUM}..."
-    ./npusim --config-file="${NPUSIM_MAIN_CONFIG_PATH_ARG}" \
-        --core-config-file="${NPUSIM_CORE_CONFIG_PATH_ARG}" \
-        --sram-max="${JSON_SRAM_MAX_SIZE}" \
-        >"${NPUSIM_STDOUT_TMP_BASENAME}"
+        ./npusim --config-name="${CONFIG_NAME}" \
+                 --core-config-name="${CORE_CONFIG_NAME}" \
+                 >"${NPUSIM_STDOUT_TMP_BASENAME}"
+    else
+        echo "ERROR: Line ${LINE_NUM} has invalid number of fields (expected 2 or 8)."
+        echo -e "${line}\tERROR: Invalid parameter count" >>"${OUTPUT_BATCH_FILE}"
+        cd "${ORIGINAL_PWD}"
+        continue
+    fi
 
     RESULT_STRING=""
-    echo "INFO: npusim ran successfully for line ${LINE_NUM}."
-
     RECORD_FOUND=0
     while IFS= read -r line_catch; do
         if [[ "$line_catch" == "[CATCH TEST]"* ]]; then
-            # 提取 "[CATCH TEST]" 後面的剩余內容，去除空格
             remaining_content="${line_catch#"[CATCH TEST]"}"
             remaining_content="${remaining_content##+([ \t])}"
-
-            RESULT_STRING="${RESULT_STRING}${RESULT_STRING:+, }${remaining_content}"
+            RESULT_STRING="${remaining_content}"
             RECORD_FOUND=1
             break
         fi
     done < <(tac "${NPUSIM_STDOUT_TMP_BASENAME}")
 
     if [ $RECORD_FOUND -eq 0 ]; then
-        echo "WARNING: No [CATCH TEST] string found in npusim output for line ${LINE_NUM}."
+        echo "WARNING: No [CATCH TEST] string found for line ${LINE_NUM}."
     fi
 
     echo -e "${line}\t${RESULT_STRING}" >>"${OUTPUT_BATCH_FILE}"
     echo -e "${line}\t${RESULT_STRING}"
     cd "${ORIGINAL_PWD}"
+
 done <"${TEST_BATCH_FILE}"
 
 echo ""

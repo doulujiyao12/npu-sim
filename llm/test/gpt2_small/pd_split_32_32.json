@@ -7,6 +7,7 @@
       1
     ],
     "heads": 12,
+    "kv_heads": 12,
     "eof_chance": 0.1,
     "prefill_stage": 4,
     "decode_stage": 4,

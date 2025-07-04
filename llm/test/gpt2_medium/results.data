@@ -1,0 +1,299 @@
+config_gpt2_medium_tp_4.json 15 0 64 64 1024 64	 17114482184 ps
+config_gpt2_medium_tp_4.json 15 0 64 64 1024 128	 16782643088 ps
+config_gpt2_medium_tp_4.json 15 0 64 64 1024 256		 16622927560 ps
+config_gpt2_medium_tp_4.json 15 0 64 64 1024 512	 16543023704 ps
+config_gpt2_medium_tp_4.json 15 0 96 96 1536 64	 11792902624 ps
+config_gpt2_medium_tp_4.json 15 0 96 96 1536 128	 10702209152 ps
+config_gpt2_medium_tp_4.json 15 0 96 96 1536 256	 10209326848 ps
+config_gpt2_medium_tp_4.json 15 0 96 96 1536 512	 9961475472 ps
+config_gpt2_medium_tp_4.json 15 0 128 128 2048 64	 11792902624 ps
+config_gpt2_medium_tp_4.json 15 0 128 128 2048 128		 10659553408 ps
+config_gpt2_medium_tp_4.json 15 0 128 128 2048 256	 10150138512 ps
+config_gpt2_medium_tp_4.json 15 0 128 128 2048 512	 9896421088 ps
+config_gpt2_medium_tp_4.json 15 0 192 192 3072 64	 11792902624 ps
+config_gpt2_medium_tp_4.json 15 0 192 192 3072 128	 10659553408 ps
+config_gpt2_medium_tp_4.json 15 0 192 192 3072 256	 10105069552 ps
+config_gpt2_medium_tp_4.json 15 0 192 192 3072 512		 9849916656 ps
+config_gpt2_medium_tp_4.json 15 0 256 256 4096 64	 11792902624 ps
+config_gpt2_medium_tp_4.json 15 0 256 256 4096 128	 10659553408 ps
+config_gpt2_medium_tp_4.json 15 0 256 256 4096 256	 10099063072 ps
+config_gpt2_medium_tp_4.json 15 0 256 256 4096 512	 9826232960 ps
+config_gpt2_medium_tp_4.json 15 0 512 512 8192 64	 11792902624 ps
+config_gpt2_medium_tp_4.json 15 0 512 512 8192 128	 10659553408 ps
+config_gpt2_medium_tp_4.json 15 0 512 512 8192 256	 10099063072 ps
+config_gpt2_medium_tp_4.json 15 0 512 512 8192 512		 9813017200 ps
+
+config_gpt2_medium_tp_2.json 15 0 64 64 1024 64	 29008406880 ps
+config_gpt2_medium_tp_2.json 15 0 64 64 1024 128	 28750593896 ps
+config_gpt2_medium_tp_2.json 15 0 64 64 1024 256		 28627729488 ps
+config_gpt2_medium_tp_2.json 15 0 64 64 1024 512	 28566284896 ps
+config_gpt2_medium_tp_2.json 15 0 96 96 1536 64	 18261811120 ps
+config_gpt2_medium_tp_2.json 15 0 96 96 1536 128	 16603305392 ps
+config_gpt2_medium_tp_2.json 15 0 96 96 1536 256	 15831653008 ps
+config_gpt2_medium_tp_2.json 15 0 96 96 1536 512	 15450621232 ps
+config_gpt2_medium_tp_2.json 15 0 128 128 2048 64	 18261811120 ps
+config_gpt2_medium_tp_2.json 15 0 128 128 2048 128		 16539101376 ps
+config_gpt2_medium_tp_2.json 15 0 128 128 2048 256	 15745841552 ps
+config_gpt2_medium_tp_2.json 15 0 128 128 2048 512	 15362925200 ps
+config_gpt2_medium_tp_2.json 15 0 192 192 3072 64	 18261811120 ps
+config_gpt2_medium_tp_2.json 15 0 192 192 3072 128	 16539101376 ps
+config_gpt2_medium_tp_2.json 15 0 192 192 3072 256	 15686450608 ps
+config_gpt2_medium_tp_2.json 15 0 192 192 3072 512		 15291429232 ps
+config_gpt2_medium_tp_2.json 15 0 256 256 4096 64	 18261811120 ps
+config_gpt2_medium_tp_2.json 15 0 256 256 4096 128	 16539101376 ps
+config_gpt2_medium_tp_2.json 15 0 256 256 4096 256	 15677871392 ps
+config_gpt2_medium_tp_2.json 15 0 256 256 4096 512	 15263861680 ps
+config_gpt2_medium_tp_2.json 15 0 512 512 8192 64	 18261811120 ps
+config_gpt2_medium_tp_2.json 15 0 512 512 8192 128	 16539101376 ps
+config_gpt2_medium_tp_2.json 15 0 512 512 8192 256	 15677871392 ps
+config_gpt2_medium_tp_2.json 15 0 512 512 8192 512		 15249690912 ps
+
+config_gpt2_medium_tp_8.json 15 0 64 64 1024 64	 13982984568 ps
+config_gpt2_medium_tp_8.json 15 0 64 64 1024 128	 13467398720 ps
+config_gpt2_medium_tp_8.json 15 0 64 64 1024 256		 13215514800 ps
+config_gpt2_medium_tp_8.json 15 0 64 64 1024 512	 13089565640 ps
+config_gpt2_medium_tp_8.json 15 0 96 96 1536 64	 11289805184 ps
+config_gpt2_medium_tp_8.json 15 0 96 96 1536 128	 10348135040 ps
+config_gpt2_medium_tp_8.json 15 0 96 96 1536 256	 9914453584 ps
+config_gpt2_medium_tp_8.json 15 0 96 96 1536 512	 9700408656 ps
+config_gpt2_medium_tp_8.json 15 0 128 128 2048 64	 11274705072 ps
+config_gpt2_medium_tp_8.json 15 0 128 128 2048 128		 10286843440 ps
+config_gpt2_medium_tp_8.json 15 0 128 128 2048 256	 9840680640 ps
+config_gpt2_medium_tp_8.json 15 0 128 128 2048 512	 9623033632 ps
+config_gpt2_medium_tp_8.json 15 0 192 192 3072 64	 11274705072 ps
+config_gpt2_medium_tp_8.json 15 0 192 192 3072 128	 10270858928 ps
+config_gpt2_medium_tp_8.json 15 0 192 192 3072 256	 9788670976 ps
+config_gpt2_medium_tp_8.json 15 0 192 192 3072 512		 9566350560 ps
+config_gpt2_medium_tp_8.json 15 0 256 256 4096 64	 11274705072 ps
+config_gpt2_medium_tp_8.json 15 0 256 256 4096 128	 10270858928 ps
+config_gpt2_medium_tp_8.json 15 0 256 256 4096 256	 9773505616 ps
+config_gpt2_medium_tp_8.json 15 0 256 256 4096 512	 9540671008 ps
+config_gpt2_medium_tp_8.json 15 0 512 512 8192 64	 11274705072 ps
+config_gpt2_medium_tp_8.json 15 0 512 512 8192 128	 10270858928 ps
+config_gpt2_medium_tp_8.json 15 0 512 512 8192 256	 9773505616 ps
+config_gpt2_medium_tp_8.json 15 0 512 512 8192 512		 9521558896 ps
+
+config_gpt2_medium_tp_2.json 15 0 64 64 1024 64 6291456  	 29607856736 ps
+config_gpt2_medium_tp_2.json 15 0 64 64 1024 128	 6291456  	 29307973608 ps
+config_gpt2_medium_tp_2.json 15 0 64 64 1024 256	 6291456  	 29185076104 ps
+config_gpt2_medium_tp_2.json 15 0 64 64 1024 512	 6291456  	 29123648200 ps
+config_gpt2_medium_tp_2.json 15 0 96 96 1536 64	 6291456  	 20117597280 ps
+config_gpt2_medium_tp_2.json 15 0 96 96 1536 128	 6291456  	 18224634848 ps
+config_gpt2_medium_tp_2.json 15 0 96 96 1536 256	 6291456  	 17193418688 ps
+config_gpt2_medium_tp_2.json 15 0 96 96 1536 512	 6291456  	 16545976896 ps
+config_gpt2_medium_tp_2.json 15 0 128 128 2048 64	6291456   	 19953142832 ps
+config_gpt2_medium_tp_2.json 15 0 128 128 2048 128	6291456   	 17646437504 ps
+config_gpt2_medium_tp_2.json 15 0 128 128 2048 256	6291456   	 16721979888 ps
+config_gpt2_medium_tp_2.json 15 0 128 128 2048 512	6291456   	 16767989168 ps
+config_gpt2_medium_tp_2.json 15 0 192 192 3072 64	6291456   	 20033939472 ps
+config_gpt2_medium_tp_2.json 15 0 192 192 3072 128	6291456   	 17658886640 ps
+config_gpt2_medium_tp_2.json 15 0 192 192 3072 256	6291456   	 16852899168 ps
+config_gpt2_medium_tp_2.json 15 0 192 192 3072 512	6291456   	 16619084944 ps
+config_gpt2_medium_tp_2.json 15 0 256 256 4096 64	6291456   	 20033939472 ps
+config_gpt2_medium_tp_2.json 15 0 256 256 4096 128	6291456   	 17651072832 ps
+config_gpt2_medium_tp_2.json 15 0 256 256 4096 256	6291456   	 16252737616 ps
+config_gpt2_medium_tp_2.json 15 0 256 256 4096 512	6291456   	 15863177008 ps
+config_gpt2_medium_tp_2.json 15 0 512 512 8192 64	6291456   	 20033939472 ps
+config_gpt2_medium_tp_2.json 15 0 512 512 8192 128	6291456   	 17651072832 ps
+config_gpt2_medium_tp_2.json 15 0 512 512 8192 256	6291456   	 16384243072 ps
+config_gpt2_medium_tp_2.json 15 0 512 512 8192 512	6291456   	 15818865024 ps
+
+config_gpt2_medium_tp_2.json 15 0 64 64 1024 64 10485760  	 29566165736 ps
+config_gpt2_medium_tp_2.json 15 0 64 64 1024 128	 10485760  	 29307950456 ps
+config_gpt2_medium_tp_2.json 15 0 64 64 1024 256	 10485760  	 29185079784 ps
+config_gpt2_medium_tp_2.json 15 0 64 64 1024 512	 10485760  	 29123636784 ps
+config_gpt2_medium_tp_2.json 15 0 96 96 1536 64	 10485760  	 18460807552 ps
+config_gpt2_medium_tp_2.json 15 0 96 96 1536 128	 10485760  	 16852310624 ps
+config_gpt2_medium_tp_2.json 15 0 96 96 1536 256	 10485760  	 16077233200 ps
+config_gpt2_medium_tp_2.json 15 0 96 96 1536 512	 10485760  	 15698369008 ps
+config_gpt2_medium_tp_2.json 15 0 128 128 2048 64	10485760   	 18299069344 ps
+config_gpt2_medium_tp_2.json 15 0 128 128 2048 128	10485760   	 16662997568 ps
+config_gpt2_medium_tp_2.json 15 0 128 128 2048 256	10485760   	 15881713264 ps
+config_gpt2_medium_tp_2.json 15 0 128 128 2048 512	10485760   	 15502897312 ps
+config_gpt2_medium_tp_2.json 15 0 192 192 3072 64	10485760   	 18260089280 ps
+config_gpt2_medium_tp_2.json 15 0 192 192 3072 128	10485760   	 16540561232 ps
+config_gpt2_medium_tp_2.json 15 0 192 192 3072 256	10485760   	 15735572864 ps
+config_gpt2_medium_tp_2.json 15 0 192 192 3072 512	10485760   	 15352283456 ps
+config_gpt2_medium_tp_2.json 15 0 256 256 4096 64	10485760   	 18260089280 ps
+config_gpt2_medium_tp_2.json 15 0 256 256 4096 128	10485760   	 16538749552 ps
+config_gpt2_medium_tp_2.json 15 0 256 256 4096 256	10485760   	 15688120784 ps
+config_gpt2_medium_tp_2.json 15 0 256 256 4096 512	10485760   	 15294134960 ps
+config_gpt2_medium_tp_2.json 15 0 512 512 8192 64	10485760   	 18260089280 ps
+config_gpt2_medium_tp_2.json 15 0 512 512 8192 128	10485760   	 16538749552 ps
+config_gpt2_medium_tp_2.json 15 0 512 512 8192 256	10485760   	 15674195296 ps
+config_gpt2_medium_tp_2.json 15 0 512 512 8192 512	10485760   	 15249246896 ps
+
+config_gpt2_medium_tp_2.json 15 0 64 64 1024 64 12582912  	 29566165736 ps
+config_gpt2_medium_tp_2.json 15 0 64 64 1024 128	 12582912  	 29307950456 ps
+config_gpt2_medium_tp_2.json 15 0 64 64 1024 256	 12582912  	 29185079784 ps
+config_gpt2_medium_tp_2.json 15 0 64 64 1024 512	 12582912  	 29123636784 ps
+config_gpt2_medium_tp_2.json 15 0 96 96 1536 64	 12582912  	 18460807552 ps
+config_gpt2_medium_tp_2.json 15 0 96 96 1536 128	 12582912  	 16852310624 ps
+config_gpt2_medium_tp_2.json 15 0 96 96 1536 256	 12582912  	 16077233200 ps
+config_gpt2_medium_tp_2.json 15 0 96 96 1536 512	 12582912  	 15698369008 ps
+config_gpt2_medium_tp_2.json 15 0 128 128 2048 64	12582912   	 18299069344 ps
+config_gpt2_medium_tp_2.json 15 0 128 128 2048 128	12582912   	 16662997568 ps
+config_gpt2_medium_tp_2.json 15 0 128 128 2048 256	12582912   	 15881713264 ps
+config_gpt2_medium_tp_2.json 15 0 128 128 2048 512	12582912   	 15502897312 ps
+config_gpt2_medium_tp_2.json 15 0 192 192 3072 64	12582912   	 18260089280 ps
+config_gpt2_medium_tp_2.json 15 0 192 192 3072 128	12582912   	 16540561232 ps
+config_gpt2_medium_tp_2.json 15 0 192 192 3072 256	12582912   	 15735572864 ps
+config_gpt2_medium_tp_2.json 15 0 192 192 3072 512	12582912   	 15352283456 ps
+config_gpt2_medium_tp_2.json 15 0 256 256 4096 64	12582912   	 18260089280 ps
+config_gpt2_medium_tp_2.json 15 0 256 256 4096 128	12582912   	 16538749552 ps
+config_gpt2_medium_tp_2.json 15 0 256 256 4096 256	12582912   	 15688120784 ps
+config_gpt2_medium_tp_2.json 15 0 256 256 4096 512	12582912   	 15294134960 ps
+config_gpt2_medium_tp_2.json 15 0 512 512 8192 64	12582912   	 18260089280 ps
+config_gpt2_medium_tp_2.json 15 0 512 512 8192 128	12582912   	 16538749552 ps
+config_gpt2_medium_tp_2.json 15 0 512 512 8192 256	12582912   	 15674195296 ps
+config_gpt2_medium_tp_2.json 15 0 512 512 8192 512	12582912   	 15249246896 ps
+
+config_gpt2_medium_tp_4.json 15 0 64 64 1024 64 6291456  	 17393211656 ps
+config_gpt2_medium_tp_4.json 15 0 64 64 1024 128	 6291456  	 17061312472 ps
+config_gpt2_medium_tp_4.json 15 0 64 64 1024 256	 6291456  	 16901596168 ps
+config_gpt2_medium_tp_4.json 15 0 64 64 1024 512	 6291456  	 16821705408 ps
+config_gpt2_medium_tp_4.json 15 0 96 96 1536 64	 6291456  	 11895608864 ps
+config_gpt2_medium_tp_4.json 15 0 96 96 1536 128	 6291456  	 10826531344 ps
+config_gpt2_medium_tp_4.json 15 0 96 96 1536 256	 6291456  	 10338059104 ps
+config_gpt2_medium_tp_4.json 15 0 96 96 1536 512	 6291456  	 10083536608 ps
+config_gpt2_medium_tp_4.json 15 0 128 128 2048 64	6291456   	 11814136864 ps
+config_gpt2_medium_tp_4.json 15 0 128 128 2048 128	6291456   	 10728640592 ps
+config_gpt2_medium_tp_4.json 15 0 128 128 2048 256	6291456   	 10219519488 ps
+config_gpt2_medium_tp_4.json 15 0 128 128 2048 512	6291456   	 9984794688 ps
+config_gpt2_medium_tp_4.json 15 0 192 192 3072 64	6291456   	 11795516800 ps
+config_gpt2_medium_tp_4.json 15 0 192 192 3072 128	6291456   	 10666213376 ps
+config_gpt2_medium_tp_4.json 15 0 192 192 3072 256	6291456   	 10130564928 ps
+config_gpt2_medium_tp_4.json 15 0 192 192 3072 512	6291456   	 9891077232 ps
+config_gpt2_medium_tp_4.json 15 0 256 256 4096 64	6291456   	 11795516800 ps
+config_gpt2_medium_tp_4.json 15 0 256 256 4096 128	6291456   	 10660630768 ps
+config_gpt2_medium_tp_4.json 15 0 256 256 4096 256	6291456   	 10104183008 ps
+config_gpt2_medium_tp_4.json 15 0 256 256 4096 512	6291456   	 9843522672 ps
+config_gpt2_medium_tp_4.json 15 0 512 512 8192 64	6291456   	 11795516800 ps
+config_gpt2_medium_tp_4.json 15 0 512 512 8192 128	6291456   	 10660630768 ps
+config_gpt2_medium_tp_4.json 15 0 512 512 8192 256	6291456   	 10097383312 ps
+config_gpt2_medium_tp_4.json 15 0 512 512 8192 512	6291456   	 9815529408 ps
+
+config_gpt2_medium_tp_4.json 15 0 64 64 1024 64 10485760  	 17393211656 ps
+config_gpt2_medium_tp_4.json 15 0 64 64 1024 128	 10485760  	 17061312472 ps
+config_gpt2_medium_tp_4.json 15 0 64 64 1024 256	 10485760  	 16901596168 ps
+config_gpt2_medium_tp_4.json 15 0 64 64 1024 512	 10485760  	 16821705408 ps
+config_gpt2_medium_tp_4.json 15 0 96 96 1536 64	 10485760  	 11895608864 ps
+config_gpt2_medium_tp_4.json 15 0 96 96 1536 128	 10485760  	 10826531344 ps
+config_gpt2_medium_tp_4.json 15 0 96 96 1536 256	 10485760  	 10338059104 ps
+config_gpt2_medium_tp_4.json 15 0 96 96 1536 512	 10485760  	 10083536608 ps
+config_gpt2_medium_tp_4.json 15 0 128 128 2048 64	10485760   	 11814136864 ps
+config_gpt2_medium_tp_4.json 15 0 128 128 2048 128	10485760   	 10728640592 ps
+config_gpt2_medium_tp_4.json 15 0 128 128 2048 256	10485760   	 10219519488 ps
+config_gpt2_medium_tp_4.json 15 0 128 128 2048 512	10485760   	 9984794688 ps
+config_gpt2_medium_tp_4.json 15 0 192 192 3072 64	10485760   	 11795516800 ps
+config_gpt2_medium_tp_4.json 15 0 192 192 3072 128	10485760   	 10666213376 ps
+config_gpt2_medium_tp_4.json 15 0 192 192 3072 256	10485760   	 10130564928 ps
+config_gpt2_medium_tp_4.json 15 0 192 192 3072 512	10485760   	 9891077232 ps
+config_gpt2_medium_tp_4.json 15 0 256 256 4096 64	10485760   	 11795516800 ps
+config_gpt2_medium_tp_4.json 15 0 256 256 4096 128	10485760   	 10660630768 ps
+config_gpt2_medium_tp_4.json 15 0 256 256 4096 256	10485760   	 10104183008 ps
+config_gpt2_medium_tp_4.json 15 0 256 256 4096 512	10485760   	 9843522672 ps
+config_gpt2_medium_tp_4.json 15 0 512 512 8192 64	10485760   	 11795516800 ps
+config_gpt2_medium_tp_4.json 15 0 512 512 8192 128	10485760   	 10660630768 ps
+config_gpt2_medium_tp_4.json 15 0 512 512 8192 256	10485760   	 10097383312 ps
+config_gpt2_medium_tp_4.json 15 0 512 512 8192 512	10485760   	 9815529408 ps
+
+config_gpt2_medium_tp_4.json 15 0 64 64 1024 64 12582912  	 17393211656 ps
+config_gpt2_medium_tp_4.json 15 0 64 64 1024 128	 12582912  	 17061312472 ps
+config_gpt2_medium_tp_4.json 15 0 64 64 1024 256	 12582912  	 16901596168 ps
+config_gpt2_medium_tp_4.json 15 0 64 64 1024 512	 12582912  	 16821705408 ps
+config_gpt2_medium_tp_4.json 15 0 96 96 1536 64	 12582912  	 11895608864 ps
+config_gpt2_medium_tp_4.json 15 0 96 96 1536 128	 12582912  	 10826531344 ps
+config_gpt2_medium_tp_4.json 15 0 96 96 1536 256	 12582912  	 10338059104 ps
+config_gpt2_medium_tp_4.json 15 0 96 96 1536 512	 12582912  	 10083536608 ps
+config_gpt2_medium_tp_4.json 15 0 128 128 2048 64	12582912   	 11814136864 ps
+config_gpt2_medium_tp_4.json 15 0 128 128 2048 128	12582912   	 10728640592 ps
+config_gpt2_medium_tp_4.json 15 0 128 128 2048 256	12582912   	 10219519488 ps
+config_gpt2_medium_tp_4.json 15 0 128 128 2048 512	12582912   	 9984794688 ps
+config_gpt2_medium_tp_4.json 15 0 192 192 3072 64	12582912   	 11795516800 ps
+config_gpt2_medium_tp_4.json 15 0 192 192 3072 128	12582912   	 10666213376 ps
+config_gpt2_medium_tp_4.json 15 0 192 192 3072 256	12582912   	 10130564928 ps
+config_gpt2_medium_tp_4.json 15 0 192 192 3072 512	12582912   	 9891077232 ps
+config_gpt2_medium_tp_4.json 15 0 256 256 4096 64	12582912   	 11795516800 ps
+config_gpt2_medium_tp_4.json 15 0 256 256 4096 128	12582912   	 10660630768 ps
+config_gpt2_medium_tp_4.json 15 0 256 256 4096 256	12582912   	 10104183008 ps
+config_gpt2_medium_tp_4.json 15 0 256 256 4096 512	12582912   	 9843522672 ps
+config_gpt2_medium_tp_4.json 15 0 512 512 8192 64	12582912   	 11795516800 ps
+config_gpt2_medium_tp_4.json 15 0 512 512 8192 128	12582912   	 10660630768 ps
+config_gpt2_medium_tp_4.json 15 0 512 512 8192 256	12582912   	 10097383312 ps
+config_gpt2_medium_tp_4.json 15 0 512 512 8192 512	12582912   	 9815529408 ps
+
+config_gpt2_medium_tp_8.json 15 0 64 64 1024 64 6291456  	 13982914376 ps
+config_gpt2_medium_tp_8.json 15 0 64 64 1024 128	 6291456  	 13467333688 ps
+config_gpt2_medium_tp_8.json 15 0 64 64 1024 256	 6291456  	 13215424216 ps
+config_gpt2_medium_tp_8.json 15 0 64 64 1024 512	 6291456  	 13089540992 ps
+config_gpt2_medium_tp_8.json 15 0 96 96 1536 64	 6291456  	 11293533376 ps
+config_gpt2_medium_tp_8.json 15 0 96 96 1536 128	 6291456  	 10349257136 ps
+config_gpt2_medium_tp_8.json 15 0 96 96 1536 256	 6291456  	 9916305440 ps
+config_gpt2_medium_tp_8.json 15 0 96 96 1536 512	 6291456  	 9703916592 ps
+config_gpt2_medium_tp_8.json 15 0 128 128 2048 64	6291456   	 11248934960 ps
+config_gpt2_medium_tp_8.json 15 0 128 128 2048 128	6291456   	 10286871312 ps
+config_gpt2_medium_tp_8.json 15 0 128 128 2048 256	6291456   	 9844003328 ps
+config_gpt2_medium_tp_8.json 15 0 128 128 2048 512	6291456   	 9626321248 ps
+config_gpt2_medium_tp_8.json 15 0 192 192 3072 64	6291456   	 11238339312 ps
+config_gpt2_medium_tp_8.json 15 0 192 192 3072 128	6291456   	 10256771408 ps
+config_gpt2_medium_tp_8.json 15 0 192 192 3072 256	6291456   	 9793190528 ps
+config_gpt2_medium_tp_8.json 15 0 192 192 3072 512	6291456   	 9566410704 ps
+config_gpt2_medium_tp_8.json 15 0 256 256 4096 64	6291456   	 11238339312 ps
+config_gpt2_medium_tp_8.json 15 0 256 256 4096 128	6291456   	 10254345472 ps
+config_gpt2_medium_tp_8.json 15 0 256 256 4096 256	6291456   	 9765794496 ps
+config_gpt2_medium_tp_8.json 15 0 256 256 4096 512	6291456   	 9544300944 ps
+config_gpt2_medium_tp_8.json 15 0 512 512 8192 64	6291456   	 11238339312 ps
+config_gpt2_medium_tp_8.json 15 0 512 512 8192 128	6291456   	 10254345472 ps
+config_gpt2_medium_tp_8.json 15 0 512 512 8192 256	6291456   	 9763954720 ps
+config_gpt2_medium_tp_8.json 15 0 512 512 8192 512	6291456   	 9519588960 ps
+
+config_gpt2_medium_tp_8.json 15 0 64 64 1024 64 10485760  	 13982914376 ps
+config_gpt2_medium_tp_8.json 15 0 64 64 1024 128	 10485760  	 13467333688 ps
+config_gpt2_medium_tp_8.json 15 0 64 64 1024 256	 10485760  	 13215424216 ps
+config_gpt2_medium_tp_8.json 15 0 64 64 1024 512	 10485760  	 13089540992 ps
+config_gpt2_medium_tp_8.json 15 0 96 96 1536 64	 10485760  	 11293533376 ps
+config_gpt2_medium_tp_8.json 15 0 96 96 1536 128	 10485760  	 10349257136 ps
+config_gpt2_medium_tp_8.json 15 0 96 96 1536 256	 10485760  	 9916305440 ps
+config_gpt2_medium_tp_8.json 15 0 96 96 1536 512	 10485760  	 9703916592 ps
+config_gpt2_medium_tp_8.json 15 0 128 128 2048 64	10485760   	 11248934960 ps
+config_gpt2_medium_tp_8.json 15 0 128 128 2048 128	10485760   	 10286871312 ps
+config_gpt2_medium_tp_8.json 15 0 128 128 2048 256	10485760   	 9844003328 ps
+config_gpt2_medium_tp_8.json 15 0 128 128 2048 512	10485760   	 9626321248 ps
+config_gpt2_medium_tp_8.json 15 0 192 192 3072 64	10485760   	 11238339312 ps
+config_gpt2_medium_tp_8.json 15 0 192 192 3072 128	10485760   	 10256771408 ps
+config_gpt2_medium_tp_8.json 15 0 192 192 3072 256	10485760   	 9793190528 ps
+config_gpt2_medium_tp_8.json 15 0 192 192 3072 512	10485760   	 9566410704 ps
+config_gpt2_medium_tp_8.json 15 0 256 256 4096 64	10485760   	 11238339312 ps
+config_gpt2_medium_tp_8.json 15 0 256 256 4096 128	10485760   	 10254345472 ps
+config_gpt2_medium_tp_8.json 15 0 256 256 4096 256	10485760   	 9765794496 ps
+config_gpt2_medium_tp_8.json 15 0 256 256 4096 512	10485760   	 9544300944 ps
+config_gpt2_medium_tp_8.json 15 0 512 512 8192 64	10485760   	 11238339312 ps
+config_gpt2_medium_tp_8.json 15 0 512 512 8192 128	10485760   	 10254345472 ps
+config_gpt2_medium_tp_8.json 15 0 512 512 8192 256	10485760   	 9763954720 ps
+config_gpt2_medium_tp_8.json 15 0 512 512 8192 512	10485760   	 9519588960 ps
+
+config_gpt2_medium_tp_8.json 15 0 64 64 1024 64 12582912  	 13982914376 ps
+config_gpt2_medium_tp_8.json 15 0 64 64 1024 128	 12582912  	 13467333688 ps
+config_gpt2_medium_tp_8.json 15 0 64 64 1024 256	 12582912  	 13215424216 ps
+config_gpt2_medium_tp_8.json 15 0 64 64 1024 512	 12582912  	 13089540992 ps
+config_gpt2_medium_tp_8.json 15 0 96 96 1536 64	 12582912  	 11293533376 ps
+config_gpt2_medium_tp_8.json 15 0 96 96 1536 128	 12582912  	 10349257136 ps
+config_gpt2_medium_tp_8.json 15 0 96 96 1536 256	 12582912  	 9916305440 ps
+config_gpt2_medium_tp_8.json 15 0 96 96 1536 512	 12582912  	 9703916592 ps
+config_gpt2_medium_tp_8.json 15 0 128 128 2048 64	12582912   	 11248934960 ps
+config_gpt2_medium_tp_8.json 15 0 128 128 2048 128	12582912   	 10286871312 ps
+config_gpt2_medium_tp_8.json 15 0 128 128 2048 256	12582912   	 9844003328 ps
+config_gpt2_medium_tp_8.json 15 0 128 128 2048 512	12582912   	 9626321248 ps
+config_gpt2_medium_tp_8.json 15 0 192 192 3072 64	12582912   	 11238339312 ps
+config_gpt2_medium_tp_8.json 15 0 192 192 3072 128	12582912   	 10256771408 ps
+config_gpt2_medium_tp_8.json 15 0 192 192 3072 256	12582912   	 9793190528 ps
+config_gpt2_medium_tp_8.json 15 0 192 192 3072 512	12582912   	 9566410704 ps
+config_gpt2_medium_tp_8.json 15 0 256 256 4096 64	12582912   	 11238339312 ps
+config_gpt2_medium_tp_8.json 15 0 256 256 4096 128	12582912   	 10254345472 ps
+config_gpt2_medium_tp_8.json 15 0 256 256 4096 256	12582912   	 9765794496 ps
+config_gpt2_medium_tp_8.json 15 0 256 256 4096 512	12582912   	 9544300944 ps
+config_gpt2_medium_tp_8.json 15 0 512 512 8192 64	12582912   	 11238339312 ps
+config_gpt2_medium_tp_8.json 15 0 512 512 8192 128	12582912   	 10254345472 ps
+config_gpt2_medium_tp_8.json 15 0 512 512 8192 256	12582912   	 9763954720 ps
+config_gpt2_medium_tp_8.json 15 0 512 512 8192 512	12582912   	 9519588960 ps
