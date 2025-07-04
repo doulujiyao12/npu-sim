@@ -230,14 +230,10 @@ void initialize_cache_structures() {
     printf("dataset_words_per_tile %ld \n", dataset_words_per_tile);
     printf("data_footprint_in_words %ld \n", data_footprint_in_words);
     printf("total_lines %ld \n", total_lines);
-
-    // printf("WARNING dataset_words_per_tile can not be set larger than host
-    // memeory");
-
     // dcache_freq = (u_int16_t *)calloc(total_lines, sizeof(u_int16_t));
     dcache_dirty = (bool *)calloc(total_lines, sizeof(bool));
 
-    // dcache 是在片上的给到硬件dcache的大小
+    // dcache_size dcache size of each tile
     u_int64_t lines_per_tile = dcache_size >> dcache_words_in_line_log2;
     for (int i = 0; i < GRID_SIZE; i++) {
         u_int64_t *array_uint =

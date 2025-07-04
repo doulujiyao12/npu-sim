@@ -47,10 +47,12 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
             sc_gen_unique_name("temp_ram_array"), 0, MAX_SRAM_SIZE * 8 / sram_bitw / SRAM_BANKS,
             SIMU_READ_PORT, SIMU_WRITE_PORT, BANK_PORT_NUM + SRAM_BANKS,
             BANK_PORT_NUM, BANK_HIGH_READ_PORT_NUM, event_engine);
+
     executor = new WorkerCoreExecutor(sc_gen_unique_name("workercore-exec"),
                                       cid, this->event_engine);
     executor->MaxDramAddr =
         dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
+    // dataset_words_per_tile = dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
     g_dram_kvtable[cid] =
         new DramKVTable(executor->MaxDramAddr, (uint64_t)50 * 1024 * 1024, 20);
     executor->systolic_config = systolic_config;

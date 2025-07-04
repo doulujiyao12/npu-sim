@@ -45,10 +45,12 @@ public:
 #else
         mem = new T[end_address_ - start_address_];
 #endif
+#if DUMMY_SRAMV == 0
         valid = new bool[end_address_ - start_address_];
         for (auto i = start_address_; i < end_address_; i++) {
             valid[i - start_address_] = 0;
         }
+#endif
         e_engine = _e_engine;
 
         auto bits = (end_address_ - start_address_) * sizeof(T) * 8;
@@ -60,9 +62,11 @@ public:
         if (mem) {
             delete[] mem;
         }
+#if DUMMY_SRAMV == 0
         if (valid) {
             delete[] valid;
         }
+#endif
     }
 
     virtual void register_port(sc_port_base &port, const char *if_typename) {}
@@ -114,7 +118,7 @@ public:
 #else
         mem[address - start_address_] = data;
 #endif
-
+#if DUMMY_SRAMV == 0
         if (force_write == 1) {
             valid[address - start_address_] = 1;
         } else {
@@ -125,6 +129,7 @@ public:
                 valid[address - start_address_] = 1;
             }
         }
+#endif
         // std::cout << this->name << __func__;
 #if VERBOSE_TRACE == 1
         e_engine->add_event(this->name, __func__, "B",
@@ -150,11 +155,13 @@ public:
         energy_consumption += RAM_WRITE_ENERGY;
         int valid_tmp = 0;
         float valid_perc = 0;
+#if DUMMY_SRAMV == 0
         for (auto i = start_address_; i < end_address_; i++) {
             if (valid[i - start_address_] == 1) {
                 valid_tmp++;
             };
         }
+#endif
         valid_perc = (float)valid_tmp / (end_address_ - start_address_);
         string color;
         if (valid_perc > Men_usage_thre) {
@@ -178,7 +185,9 @@ public:
         if (address < start_address_ || address > end_address_) {
             return TRANSFER_ERROR;
         }
+#if DUMMY_SRAMV == 0
         valid[address - start_address_] = 0;
+#endif
         return TRANSFER_OK;
     }
     bool reset() {

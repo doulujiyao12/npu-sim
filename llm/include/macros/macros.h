@@ -12,6 +12,7 @@
 // 自定义宏
 #define DUMMY 1
 #define DUMMY_SRAM 1
+#define DUMMY_SRAMV 1
 #define USE_SRAM 1            // otherwise use Dcache
 // #define MAX_SRAM_SIZE 8388608 //33554432  // byte
 #define SRAM_BLOCK_SIZE 128   // byte

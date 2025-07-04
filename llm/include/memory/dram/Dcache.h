@@ -28,10 +28,9 @@ public:
 
     gem5::memory::DRAMSysWrapper *dramSysWrapper;
 
-    // 模拟的配置
+
     ::DRAMSys::Config::Configuration testConfig;
     tlm_utils::simple_initiator_socket<DCache> initiatorSocket;
-    // tlm_utils::peq_with_cb_and_phase<NB_DcacheIF> payloadEventQueue;
 
     u_int64_t time_fetched = 0;
     u_int64_t time_prefetched = 0;
@@ -47,7 +46,6 @@ public:
         : initiatorSocket("initiatorSocket"),
           testConfig(
               ::DRAMSys::Config::from_path(configuration, resource_directory)) {
-        // 初始化
         dramSysWrapper = new gem5::memory::DRAMSysWrapper("DRAMSysWrapper",
                                                           testConfig, false);
         initiatorSocket.bind(dramSysWrapper->tSocket);
@@ -146,10 +144,7 @@ public:
         tlm_command cmd = trans.get_command();
         u_int64_t array = trans.get_address();
 
-        // 获取当前仿真时间
         sc_time current_time = sc_time_stamp();
-
-        // 将当前时间转换为纳秒并存储在u_int64_t变量中
         u_int64_t timer = current_time.to_seconds() * 1e9;
 
         int pu_penalty = sram_read_latency;
