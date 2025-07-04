@@ -49,6 +49,7 @@ public:
 class rope_forward_pd : public pd_base {
 public:
     int B, T, C, NH;
+    int R;
     int sc_offset;
     PD_JOB job_type;
 

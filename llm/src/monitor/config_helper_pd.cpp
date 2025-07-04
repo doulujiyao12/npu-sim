@@ -173,6 +173,7 @@ void config_helper_pd::iter_done(vector<Msg> done_msg) {
 
                     if (++decode_done == requestRecords.size()) {
                         cout << "All reqs done.\n";
+                        cout << "[CATCH TEST] " << sc_time_stamp() << endl;
                         sc_stop();
                     }
                 }
@@ -537,6 +538,8 @@ void config_helper_pd::set_global_vars(int T) {
     vtable.push_back(make_pair("T", T));
     vtable.push_back(make_pair("C", heads * head_size));
     vtable.push_back(make_pair("NH", heads));
+    vtable.push_back(make_pair("DH", head_size));
+    vtable.push_back(make_pair("R", heads / kv_heads));
     vtable.push_back(make_pair("3C", 3 * heads * head_size));
     vtable.push_back(make_pair("4C", 4 * heads * head_size));
     vtable.push_back(make_pair("BTC", T * heads * head_size));

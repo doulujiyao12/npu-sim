@@ -1,51 +1,32 @@
 {
-  "vars": {
-    "B": 1,
-    "T": 128,
-    "C": 768,
-    "NH": 12,
-    "NH/2": 6,
-    "L": 15,
-    "3C": 2304,
-    "4C": 3072,
-    "BTC": 98304,
-    "2BTC": 196608,
-    "3BTC": 294912,
-    "4BTC": 393216,
-    "p_layernorm1_data": 100,
-    "p_layernorm1_out": 200,
-    "p_matmul1_data": 300,
-    "p_matmul1_out": 400,
-    "p_attention1_data": 500,
-    "p_attention1_out": 600,
-    "d_layernorm1_data": 700,
-    "d_layernorm1_out": 800,
-    "d_matmul1_data": 900,
-    "d_matmul1_out": 1000,
-    "d_attention1_data": 1100,
-    "d_attention1_out": 1200,
-    "TODO": 110
+  "mode": "sched_pds",
+  "requests": {
+    "count": 20,
+    "seq_len": 128,
+    "arrival": [
+      1
+    ],
+    "heads": 16,
+    "kv_heads": 16,
+    "eof_chance": 0.1,
+    "prefill_stage": 8,
+    "decode_stage": 8,
+    "prefill_cores": 32,
+    "decode_cores": 32,
+    "batch_size": 2
   },
-  "source": [
-    {
-      "dest": 0,
-      "size": "BTC"
-    }
-  ],
   "chips": [
     {
       "chip_id": 0,
+      "GridX": 4,
+      "GridY": 4,
       "cores": [
         {
           "id": 0,
+          "prim_refill": false,
           "worklist": [
             {
               "recv_cnt": 1,
-              "cast": [
-                {
-                  "dest": 1
-                }
-              ],
               "prims": [
                 {
                   "type": "Layernorm_f",
@@ -80,15 +61,14 @@
                   "type": "Attention_f_pd",
                   "B": "B",
                   "T": "T",
-                  "C": "C",
+                  "C": "3C",
                   "NH": "NH",
+                  "R": "R",
+                  "DH": "DH",
                   "job_type": "prefill",
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "attention1_out"
-                  },
-                  "dram_address": {
-                    "data": "attention1_data"
                   }
                 },
                 {
@@ -114,8 +94,7 @@
                     "outdata": "residual1_out"
                   },
                   "dram_address": {
-                    "data": -1,
-                    "out": "TODO"
+                    "data": -1
                   }
                 },
                 {
@@ -153,8 +132,8 @@
                     "outdata": "gelu1_out"
                   },
                   "dram_address": {
-                    "data": -1,
-                    "out": "TODO"
+                    "out": "TODO",
+                    "data": -1
                   }
                 },
                 {
@@ -216,15 +195,14 @@
                   "type": "Attention_f_pd",
                   "B": "B",
                   "T": "T",
-                  "C": "C",
+                  "C": "3C",
                   "NH": "NH",
+                  "R": "R",
+                  "DH": "DH",
                   "job_type": "prefill",
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "attention1_out"
-                  },
-                  "dram_address": {
-                    "data": "attention2_data"
                   }
                 },
                 {
@@ -247,353 +225,10 @@
                   "N": "BTC",
                   "sram_address": {
                     "indata": "residual2_out matmul2_out",
-                    "outdata": "residual3_out"
-                  },
-                  "dram_address": {
-                    "data": -1,
-                    "out": "TODO"
-                  }
-                },
-                {
-                  "type": "Layernorm_f",
-                  "B": "B",
-                  "T": "T",
-                  "C": "C",
-                  "sram_address": {
-                    "indata": "_residual3_out",
-                    "outdata": "layernorm2_out"
-                  },
-                  "dram_address": {
-                    "data": "layernorm2_data"
-                  }
-                },
-                {
-                  "type": "Matmul_f",
-                  "B": "B",
-                  "T": "T",
-                  "C": "C",
-                  "OC": "4C",
-                  "sram_address": {
-                    "indata": "layernorm2_out",
-                    "outdata": "matmul3_out"
-                  },
-                  "dram_address": {
-                    "data": "matmul3_data"
-                  }
-                },
-                {
-                  "type": "Gelu_f",
-                  "N": "4BTC",
-                  "sram_address": {
-                    "indata": "matmul3_out",
-                    "outdata": "gelu1_out"
-                  },
-                  "dram_address": {
-                    "data": -1,
-                    "out": "TODO"
-                  }
-                },
-                {
-                  "type": "Matmul_f",
-                  "B": "B",
-                  "T": "T",
-                  "C": "4C",
-                  "OC": "C",
-                  "sram_address": {
-                    "indata": "gelu1_out",
-                    "outdata": "matmul4_out"
-                  },
-                  "dram_address": {
-                    "data": "matmul4_data"
-                  }
-                },
-                {
-                  "type": "Residual_f",
-                  "N": "BTC",
-                  "sram_address": {
-                    "indata": "residual3_out matmul4_out",
-                    "outdata": "residual4_out"
-                  },
-                  "dram_address": {
-                    "data": -1,
-                    "out": "residual2_out"
-                  }
-                },
-                {
-                  "type": "Layernorm_f",
-                  "B": "B",
-                  "T": "T",
-                  "C": "C",
-                  "sram_address": {
-                    "indata": "_residual4_out",
-                    "outdata": "layernorm1_out"
-                  },
-                  "dram_address": {
-                    "data": "layernorm1_data"
-                  }
-                },
-                {
-                  "type": "Matmul_f_pd",
-                  "use_hw": false,
-                  "B": "B",
-                  "T": "T",
-                  "C": "C",
-                  "OC": "3C",
-                  "job_type": "prefill",
-                  "sram_address": {
-                    "indata": "layernorm1_out",
-                    "outdata": "matmul1_out"
-                  },
-                  "dram_address": {
-                    "data": "matmul1_data"
-                  }
-                },
-                {
-                  "type": "Attention_f_pd",
-                  "B": "B",
-                  "T": "T",
-                  "C": "C",
-                  "NH": "NH",
-                  "job_type": "prefill",
-                  "sram_address": {
-                    "indata": "matmul1_out",
-                    "outdata": "attention1_out"
-                  },
-                  "dram_address": {
-                    "data": "attention3_data"
-                  }
-                },
-                {
-                  "type": "Matmul_f",
-                  "use_hw": false,
-                  "B": "B",
-                  "T": "T",
-                  "C": "C",
-                  "OC": "C",
-                  "sram_address": {
-                    "indata": "attention1_out",
-                    "outdata": "matmul2_out"
-                  },
-                  "dram_address": {
-                    "data": "matmul2_data"
-                  }
-                },
-                {
-                  "type": "Residual_f",
-                  "N": "BTC",
-                  "sram_address": {
-                    "indata": "residual4_out matmul2_out",
-                    "outdata": "residual5_out"
-                  },
-                  "dram_address": {
-                    "data": -1,
-                    "out": "TODO"
-                  }
-                },
-                {
-                  "type": "Layernorm_f",
-                  "B": "B",
-                  "T": "T",
-                  "C": "C",
-                  "sram_address": {
-                    "indata": "_residual5_out",
-                    "outdata": "layernorm2_out"
-                  },
-                  "dram_address": {
-                    "data": "layernorm2_data"
-                  }
-                },
-                {
-                  "type": "Matmul_f",
-                  "B": "B",
-                  "T": "T",
-                  "C": "C",
-                  "OC": "4C",
-                  "sram_address": {
-                    "indata": "layernorm2_out",
-                    "outdata": "matmul3_out"
-                  },
-                  "dram_address": {
-                    "data": "matmul3_data"
-                  }
-                },
-                {
-                  "type": "Gelu_f",
-                  "N": "4BTC",
-                  "sram_address": {
-                    "indata": "matmul3_out",
-                    "outdata": "gelu1_out"
-                  },
-                  "dram_address": {
-                    "data": -1,
-                    "out": "TODO"
-                  }
-                },
-                {
-                  "type": "Matmul_f",
-                  "B": "B",
-                  "T": "T",
-                  "C": "4C",
-                  "OC": "C",
-                  "sram_address": {
-                    "indata": "gelu1_out",
-                    "outdata": "matmul4_out"
-                  },
-                  "dram_address": {
-                    "data": "matmul4_data"
-                  }
-                },
-                {
-                  "type": "Residual_f",
-                  "N": "BTC",
-                  "sram_address": {
-                    "indata": "residual5_out matmul4_out",
-                    "outdata": "residual6_out"
-                  },
-                  "dram_address": {
-                    "data": -1,
-                    "out": "residual2_out"
-                  }
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": 1,
-          "cast": [
-            {
-              "dest": 2
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 2,
-          "cast": [
-            {
-              "dest": 20
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 20,
-          "cast": [
-            {
-              "dest": 3
-            }
-          ],
-          "worklist": [
-            {
-              "recv_cnt": 1,
-              "cast": [
-                {
-                  "dest": 3
-                }
-              ],
-              "prims": [
-                {
-                  "type": "switch_data",
-                  "IN": "BTC",
-                  "OUT": "C",
-                  "sram_address": {
-                    "indata": "input_label",
-                    "outdata": "switch_out"
-                  },
-                  "dram_address": {
-                    "data": -1,
-                    "out": "switch_out"
-                  }
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": 3,
-          "loop": "L",
-          "worklist": [
-            {
-              "recv_cnt": 1,
-              "cast": [
-                {
-                  "dest": 4
-                }
-              ],
-              "prims": [
-                {
-                  "type": "Layernorm_f",
-                  "B": "B",
-                  "T": "1",
-                  "C": "C",
-                  "sram_address": {
-                    "indata": "_input_label",
-                    "outdata": "layernorm1_out"
-                  },
-                  "dram_address": {
-                    "data": "layernorm1_data"
-                  }
-                },
-                {
-                  "type": "Matmul_f_pd",
-                  "use_hw": false,
-                  "B": "B",
-                  "T": "1",
-                  "C": "C",
-                  "OC": "3C",
-                  "job_type": "decode",
-                  "sram_address": {
-                    "indata": "layernorm1_out",
-                    "outdata": "matmul1_out"
-                  },
-                  "dram_address": {
-                    "data": "matmul1_data"
-                  }
-                },
-                {
-                  "type": "Attention_f_pd",
-                  "B": "B",
-                  "T": "1",
-                  "C": "C",
-                  "NH": "NH",
-                  "job_type": "decode",
-                  "sram_address": {
-                    "indata": "matmul1_out",
-                    "outdata": "attention1_out"
-                  },
-                  "dram_address": {
-                    "data": "attention_data",
-                    "output": "attention1_out"
-                  }
-                },
-                {
-                  "type": "Matmul_f",
-                  "use_hw": false,
-                  "B": "B",
-                  "T": "T",
-                  "C": "C",
-                  "OC": "C",
-                  "sram_address": {
-                    "indata": "attention1_out",
-                    "outdata": "matmul2_out"
-                  },
-                  "dram_address": {
-                    "data": "matmul2_data"
-                  }
-                },
-                {
-                  "type": "Residual_f",
-                  "N": "BTC",
-                  "sram_address": {
-                    "indata": "input_label matmul2_out",
                     "outdata": "residual1_out"
                   },
                   "dram_address": {
-                    "data": -1,
-                    "out": "TODO"
+                    "data": -1
                   }
                 },
                 {
@@ -631,8 +266,142 @@
                     "outdata": "gelu1_out"
                   },
                   "dram_address": {
+                    "out": "TODO",
+                    "data": -1
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "4C",
+                  "OC": "C",
+                  "sram_address": {
+                    "indata": "gelu1_out",
+                    "outdata": "matmul4_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul4_data"
+                  }
+                },
+                {
+                  "type": "Residual_f",
+                  "N": "BTC",
+                  "sram_address": {
+                    "indata": "residual1_out matmul4_out",
+                    "outdata": "residual2_out"
+                  },
+                  "dram_address": {
                     "data": -1,
-                    "out": "TODO"
+                    "out": "residual2_out"
+                  }
+                },
+                {
+                  "type": "Layernorm_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "sram_address": {
+                    "indata": "_residual2_out",
+                    "outdata": "layernorm1_out"
+                  },
+                  "dram_address": {
+                    "data": "layernorm1_data"
+                  }
+                },
+                {
+                  "type": "Matmul_f_pd",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "3C",
+                  "job_type": "prefill",
+                  "sram_address": {
+                    "indata": "layernorm1_out",
+                    "outdata": "matmul1_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul1_data"
+                  }
+                },
+                {
+                  "type": "Attention_f_pd",
+                  "B": "B",
+                  "T": "T",
+                  "C": "3C",
+                  "NH": "NH",
+                  "R": "R",
+                  "DH": "DH",
+                  "job_type": "prefill",
+                  "sram_address": {
+                    "indata": "matmul1_out",
+                    "outdata": "attention1_out"
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "C",
+                  "sram_address": {
+                    "indata": "attention1_out",
+                    "outdata": "matmul2_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul2_data"
+                  }
+                },
+                {
+                  "type": "Residual_f",
+                  "N": "BTC",
+                  "sram_address": {
+                    "indata": "residual2_out matmul2_out",
+                    "outdata": "residual1_out"
+                  },
+                  "dram_address": {
+                    "data": -1
+                  }
+                },
+                {
+                  "type": "Layernorm_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "sram_address": {
+                    "indata": "_residual1_out",
+                    "outdata": "layernorm2_out"
+                  },
+                  "dram_address": {
+                    "data": "layernorm2_data"
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "4C",
+                  "sram_address": {
+                    "indata": "layernorm2_out",
+                    "outdata": "matmul3_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul3_data"
+                  }
+                },
+                {
+                  "type": "Gelu_f",
+                  "N": "4BTC",
+                  "sram_address": {
+                    "indata": "matmul3_out",
+                    "outdata": "gelu1_out"
+                  },
+                  "dram_address": {
+                    "out": "TODO",
+                    "data": -1
                   }
                 },
                 {
@@ -666,130 +435,423 @@
           ]
         },
         {
-          "id": 4,
-          "loop": "L",
-          "cast": [
+          "id": 1,
+          "prim_refill": false,
+          "worklist": [
             {
-              "dest": 5
+              "recv_cnt": 1,
+              "prims": [
+                {
+                  "type": "Layernorm_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "sram_address": {
+                    "indata": "_dram_label input_label",
+                    "outdata": "layernorm1_out"
+                  },
+                  "dram_address": {
+                    "input": "layernorm1_in",
+                    "data": "layernorm1_data"
+                  }
+                },
+                {
+                  "type": "Matmul_f_pd",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "3C",
+                  "job_type": "decode",
+                  "sram_address": {
+                    "indata": "layernorm1_out",
+                    "outdata": "matmul1_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul1_data"
+                  }
+                },
+                {
+                  "type": "Attention_f_pd",
+                  "B": "B",
+                  "T": "T",
+                  "C": "3C",
+                  "NH": "NH",
+                  "R": "R",
+                  "DH": "DH",
+                  "job_type": "decode",
+                  "sram_address": {
+                    "indata": "matmul1_out",
+                    "outdata": "attention1_out"
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "C",
+                  "sram_address": {
+                    "indata": "attention1_out",
+                    "outdata": "matmul2_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul2_data"
+                  }
+                },
+                {
+                  "type": "Residual_f",
+                  "N": "BTC",
+                  "sram_address": {
+                    "indata": "input_label matmul2_out",
+                    "outdata": "residual1_out"
+                  },
+                  "dram_address": {
+                    "out": "TODO",
+                    "data": -1
+                  }
+                },
+                {
+                  "type": "Layernorm_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "sram_address": {
+                    "indata": "_residual1_out",
+                    "outdata": "layernorm2_out"
+                  },
+                  "dram_address": {
+                    "data": "layernorm2_data"
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "4C",
+                  "sram_address": {
+                    "indata": "layernorm2_out",
+                    "outdata": "matmul3_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul3_data"
+                  }
+                },
+                {
+                  "type": "Gelu_f",
+                  "N": "4BTC",
+                  "sram_address": {
+                    "indata": "matmul3_out",
+                    "outdata": "gelu1_out"
+                  },
+                  "dram_address": {
+                    "out": "TODO",
+                    "data": -1
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "4C",
+                  "OC": "C",
+                  "sram_address": {
+                    "indata": "gelu1_out",
+                    "outdata": "matmul4_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul4_data"
+                  }
+                },
+                {
+                  "type": "Residual_f",
+                  "N": "BTC",
+                  "sram_address": {
+                    "indata": "residual1_out matmul4_out",
+                    "outdata": "residual2_out"
+                  },
+                  "dram_address": {
+                    "data": -1,
+                    "out": "residual2_out"
+                  }
+                },
+                {
+                  "type": "Layernorm_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "sram_address": {
+                    "indata": "_residual2_out",
+                    "outdata": "layernorm1_out"
+                  },
+                  "dram_address": {
+                    "input": "layernorm1_in",
+                    "data": "layernorm1_data"
+                  }
+                },
+                {
+                  "type": "Matmul_f_pd",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "3C",
+                  "job_type": "decode",
+                  "sram_address": {
+                    "indata": "layernorm1_out",
+                    "outdata": "matmul1_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul1_data"
+                  }
+                },
+                {
+                  "type": "Attention_f_pd",
+                  "B": "B",
+                  "T": "T",
+                  "C": "3C",
+                  "NH": "NH",
+                  "R": "R",
+                  "DH": "DH",
+                  "job_type": "decode",
+                  "sram_address": {
+                    "indata": "matmul1_out",
+                    "outdata": "attention1_out"
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "C",
+                  "sram_address": {
+                    "indata": "attention1_out",
+                    "outdata": "matmul2_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul2_data"
+                  }
+                },
+                {
+                  "type": "Residual_f",
+                  "N": "BTC",
+                  "sram_address": {
+                    "indata": "residual2_out matmul2_out",
+                    "outdata": "residual1_out"
+                  },
+                  "dram_address": {
+                    "out": "TODO",
+                    "data": -1
+                  }
+                },
+                {
+                  "type": "Layernorm_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "sram_address": {
+                    "indata": "_residual1_out",
+                    "outdata": "layernorm2_out"
+                  },
+                  "dram_address": {
+                    "data": "layernorm2_data"
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "4C",
+                  "sram_address": {
+                    "indata": "layernorm2_out",
+                    "outdata": "matmul3_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul3_data"
+                  }
+                },
+                {
+                  "type": "Gelu_f",
+                  "N": "4BTC",
+                  "sram_address": {
+                    "indata": "matmul3_out",
+                    "outdata": "gelu1_out"
+                  },
+                  "dram_address": {
+                    "out": "TODO",
+                    "data": -1
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "4C",
+                  "OC": "C",
+                  "sram_address": {
+                    "indata": "gelu1_out",
+                    "outdata": "matmul4_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul4_data"
+                  }
+                },
+                {
+                  "type": "Residual_f",
+                  "N": "BTC",
+                  "sram_address": {
+                    "indata": "residual1_out matmul4_out",
+                    "outdata": "residual2_out"
+                  },
+                  "dram_address": {
+                    "data": -1,
+                    "out": "residual2_out"
+                  }
+                },
+                {
+                  "type": "Layernorm_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "sram_address": {
+                    "indata": "_residual2_out",
+                    "outdata": "layernorm1_out"
+                  },
+                  "dram_address": {
+                    "input": "layernorm1_in",
+                    "data": "layernorm1_data"
+                  }
+                },
+                {
+                  "type": "Matmul_f_pd",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "3C",
+                  "job_type": "decode",
+                  "sram_address": {
+                    "indata": "layernorm1_out",
+                    "outdata": "matmul1_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul1_data"
+                  }
+                },
+                {
+                  "type": "Attention_f_pd",
+                  "B": "B",
+                  "T": "T",
+                  "C": "3C",
+                  "NH": "NH",
+                  "R": "R",
+                  "DH": "DH",
+                  "job_type": "decode",
+                  "sram_address": {
+                    "indata": "matmul1_out",
+                    "outdata": "attention1_out"
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "C",
+                  "sram_address": {
+                    "indata": "attention1_out",
+                    "outdata": "matmul2_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul2_data"
+                  }
+                },
+                {
+                  "type": "Residual_f",
+                  "N": "BTC",
+                  "sram_address": {
+                    "indata": "residual2_out matmul2_out",
+                    "outdata": "residual1_out"
+                  },
+                  "dram_address": {
+                    "out": "TODO",
+                    "data": -1
+                  }
+                },
+                {
+                  "type": "Layernorm_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "sram_address": {
+                    "indata": "_residual1_out",
+                    "outdata": "layernorm2_out"
+                  },
+                  "dram_address": {
+                    "data": "layernorm2_data"
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "4C",
+                  "sram_address": {
+                    "indata": "layernorm2_out",
+                    "outdata": "matmul3_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul3_data"
+                  }
+                },
+                {
+                  "type": "Gelu_f",
+                  "N": "4BTC",
+                  "sram_address": {
+                    "indata": "matmul3_out",
+                    "outdata": "gelu1_out"
+                  },
+                  "dram_address": {
+                    "out": "TODO",
+                    "data": -1
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "4C",
+                  "OC": "C",
+                  "sram_address": {
+                    "indata": "gelu1_out",
+                    "outdata": "matmul4_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul4_data"
+                  }
+                },
+                {
+                  "type": "Residual_f",
+                  "N": "BTC",
+                  "sram_address": {
+                    "indata": "residual1_out matmul4_out",
+                    "outdata": "residual2_out"
+                  },
+                  "dram_address": {
+                    "data": -1,
+                    "out": "residual2_out"
+                  }
+                }
+              ]
             }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 3
-        },
-        {
-          "id": 5,
-          "loop": "L",
-          "cast": [
-            {
-              "dest": 6
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 3
-        },
-        {
-          "id": 6,
-          "loop": "L",
-          "cast": [
-            {
-              "dest": 7
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 3
-        },
-        {
-          "id": 7,
-          "loop": "L",
-          "cast": [
-            {
-              "dest": 8
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 3
-        },
-        {
-          "id": 8,
-          "loop": "L",
-          "cast": [
-            {
-              "dest": 9
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 3
-        },
-        {
-          "id": 9,
-          "loop": "L",
-          "cast": [
-            {
-              "dest": 10
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 3
-        },
-        {
-          "id": 10,
-          "loop": "L",
-          "cast": [
-            {
-              "dest": 11
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 3
-        },
-        {
-          "id": 11,
-          "loop": "L",
-          "cast": [
-            {
-              "dest": 12
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 3
-        },
-        {
-          "id": 12,
-          "loop": "L",
-          "cast": [
-            {
-              "dest": 13
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 3
-        },
-        {
-          "id": 13,
-          "loop": "L",
-          "cast": [
-            {
-              "dest": 14
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 3
-        },
-        {
-          "id": 14,
-          "loop": "L",
-          "cast": [
-            {
-              "dest": -1,
-              "loopout": "true"
-            },
-            {
-              "dest": 3,
-              "loopout": "false"
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 3
+          ]
         }
       ]
     }

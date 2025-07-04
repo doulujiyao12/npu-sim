@@ -16,12 +16,12 @@ void Attention_f::print_self(string prefix) {
 }
 
 void Attention_f::initialize() {
-    out_size = B * T * C;
+    out_size = B * T * C / (1 + 2 / R);
     p_inp_size = B * T * C;
     inp_size = B * T * C + 2 * B * NH * T * T;
 
     dram_inp_size = (B * T * 3 * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
-    dram_out_size = (B * T * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
+    dram_out_size = (B * T * C / (1 + 2 / R) + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
     dram_data_size = 0;
 
     if (datatype == INT8)

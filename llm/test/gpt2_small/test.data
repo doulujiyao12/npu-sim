@@ -1,0 +1,6 @@
+gpt2_small/pd_fuse_6*2.json 6 0 128 128 2048 128 8388608
+gpt2_small/pd_fuse_4*3.json 6 0 128 128 2048 128 8388608
+gpt2_small/pd_split_32_32.json 6 0 128 128 2048 128 8388608
+gpt2_small/pd_split_48_16.json 6 0 128 128 2048 128 8388608
+gpt2_small/pd_split_32_32.json core_configs/8*8_32_32.json
+gpt2_small/pd_split_48_16.json core_configs/8*8_48_16.json

@@ -1,0 +1,766 @@
+{
+  "vars": {
+    "B": 1,
+    "T": 128,
+    "C": 2048,
+    "C/2": 1024,
+    "NH": 32,
+    "NH/2": 16,
+    "NH/4": 8,
+    "NH/8": 4,
+    "L": 16,
+    "SEQ": 15,
+    "3C": 6144,
+    "4C": 8192,
+    "BTC": 262144,
+    "BTC/2": 131072,
+    "2BTC": 524288,
+    "3BTC": 786432,
+    "3BTC/2": 393216,
+    "3BTC/4": 196608,
+    "3BTC/8": 98304,
+    "4BTC": 1048576,
+    "3C/2": 3072,
+    "3C/4": 1536,
+    "3C/8": 768,
+    "C/4": 512,
+    "C/8": 256,
+    "2C": 4096,
+    "3C-R/2": 1536,
+    "3C-R/4": 768,
+    "3C-R/8": 384,
+    "3C-R": 3072,
+    "R": 4,
+    "1": 1,
+    "DH": 64,
+    "p_layernorm1_data": 100,
+    "p_layernorm1_out": 200,
+    "p_matmul1_data": 300,
+    "p_matmul1_out": 400,
+    "p_attention1_data": 500,
+    "p_attention1_out": 600,
+    "d_layernorm1_data": 700,
+    "d_layernorm1_out": 800,
+    "d_matmul1_data": 900,
+    "d_matmul1_out": 1000,
+    "d_attention1_data": 1100,
+    "d_attention1_out": 1200,
+    "TODO": 110
+  },
+  "source": [
+    {
+      "dest": 0,
+      "size": "BTC"
+    }
+  ],
+  "chips": [
+    {
+      "chip_id": 0,
+      "cores": [
+        {
+          "id": 0,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 1
+                }
+              ],
+              "prims": [
+                {
+                  "type": "rmsnorm_forward",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "sram_address": {
+                    "indata": "input_label",
+                    "outdata": "rmsnorm1_out"
+                  },
+                  "dram_address": {
+                    "data": "rmsnorm1_data"
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "3C-R",
+                  "sram_address": {
+                    "indata": "rmsnorm1_out",
+                    "outdata": "matmul1_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul1_data"
+                  }
+                },
+                {
+                  "type": "rope_forward_pd",
+                  "B": "B",
+                  "T": "T",
+                  "C": "3C-R",
+                  "R": "R",
+                  "NH": "NH",
+                  "job_type": "prefill",
+                  "sram_address": {
+                    "indata": "matmul1_out",
+                    "outdata": "rope1_out"
+                  },
+                  "dram_address": {
+                    "data": "rope1_data"
+                  }
+                },
+                {
+                  "type": "Attention_f_pd",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "R": "R",
+                  "NH": "NH",
+                  "DH": "DH",
+                  "job_type": "prefill",
+                  "sram_address": {
+                    "indata": "rope1_out",
+                    "outdata": "attention1_out"
+                  },
+                  "dram_address": {
+                    "data": "attention1_data",
+                    "out": "TODO"
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "C",
+                  "sram_address": {
+                    "indata": "attention1_out",
+                    "outdata": "matmul2_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul2_data"
+                  }
+                },
+                {
+                  "type": "Residual_f",
+                  "N": "BTC",
+                  "sram_address": {
+                    "indata": "input_label matmul2_out",
+                    "outdata": "residual1_out"
+                  },
+                  "dram_address": {
+                    "data": -1,
+                    "out": "TODO"
+                  }
+                },
+                {
+                  "type": "rmsnorm_forward",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "sram_address": {
+                    "indata": "_residual1_out",
+                    "outdata": "rmsnorm2_out"
+                  },
+                  "dram_address": {
+                    "data": "rmsnorm2_data"
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "4C",
+                  "sram_address": {
+                    "indata": "_split_matmul2_out",
+                    "outdata": "matmul3_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul3_data"
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "4C",
+                  "sram_address": {
+                    "indata": "split_matmul2_out",
+                    "outdata": "matmul4_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul4_data"
+                  }
+                },
+                {
+                  "type": "swiglu_forward",
+                  "N": "4BTC",
+                  "sram_address": {
+                    "indata": "matmul3_out matmul4_out",
+                    "outdata": "swiglu1_out"
+                  },
+                  "dram_address": {
+                    "input": 0,
+                    "data": -1
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "B": "B",
+                  "T": "T",
+                  "C": "4C",
+                  "OC": "C",
+                  "sram_address": {
+                    "indata": "swiglu1_out",
+                    "outdata": "matmul4_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul4_data"
+                  }
+                },
+                {
+                  "type": "Residual_f",
+                  "N": "BTC",
+                  "sram_address": {
+                    "indata": "residual1_out matmul4_out",
+                    "outdata": "residual2_out"
+                  },
+                  "dram_address": {
+                    "data": -1,
+                    "out": "residual2_out"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "cast": [
+            {
+              "dest": 2
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 2,
+          "cast": [
+            {
+              "dest": 3,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 3,
+          "cast": [
+            {
+              "dest": 4,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 4,
+          "cast": [
+            {
+              "dest": 5,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 5,
+          "cast": [
+            {
+              "dest": 6,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 6,
+          "cast": [
+            {
+              "dest": 7,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 7,
+          "cast": [
+            {
+              "dest": 8,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 8,
+          "cast": [
+            {
+              "dest": 9,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 9,
+          "cast": [
+            {
+              "dest": 10,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 10,
+          "cast": [
+            {
+              "dest": 11,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 11,
+          "cast": [
+            {
+              "dest": 12,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 12,
+          "cast": [
+            {
+              "dest": 13,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 13,
+          "cast": [
+            {
+              "dest": 14,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 14,
+          "cast": [
+            {
+              "dest": 15,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 15,
+          "cast": [
+            {
+              "dest": 33,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 33,
+          "loop": "SEQ",
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 34
+                }
+              ],
+              "prims": [
+                {
+                  "type": "rmsnorm_forward",
+                  "B": "B",
+                  "T": "1",
+                  "C": "C",
+                  "sram_address": {
+                    "indata": "input_label",
+                    "outdata": "rmsnorm1_out"
+                  },
+                  "dram_address": {
+                    "data": "rmsnorm1_data"
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "1",
+                  "C": "C",
+                  "OC": "3C-R",
+                  "sram_address": {
+                    "indata": "rmsnorm1_out",
+                    "outdata": "matmul1_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul1_data"
+                  }
+                },
+                {
+                  "type": "rope_forward_pd",
+                  "B": "B",
+                  "T": "1",
+                  "C": "3C-R",
+                  "R": "R",
+                  "NH": "NH",
+                  "job_type": "decode",
+                  "sram_address": {
+                    "indata": "matmul1_out",
+                    "outdata": "rope1_out"
+                  },
+                  "dram_address": {
+                    "data": "rope1_data"
+                  }
+                },
+                {
+                  "type": "Attention_f_pd",
+                  "B": "B",
+                  "T": "1",
+                  "C": "C",
+                  "R": "R",
+                  "NH": "NH",
+                  "DH": "DH",
+                  "job_type": "decode",
+                  "sram_address": {
+                    "indata": "rope1_out",
+                    "outdata": "attention1_out"
+                  },
+                  "dram_address": {
+                    "data": "attention1_data",
+                    "out": "TODO"
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "1",
+                  "C": "C",
+                  "OC": "C",
+                  "sram_address": {
+                    "indata": "attention1_out",
+                    "outdata": "matmul2_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul2_data"
+                  }
+                },
+                {
+                  "type": "Residual_f",
+                  "N": "C",
+                  "sram_address": {
+                    "indata": "input_label matmul2_out",
+                    "outdata": "residual1_out"
+                  },
+                  "dram_address": {
+                    "data": -1,
+                    "out": "TODO"
+                  }
+                },
+                {
+                  "type": "rmsnorm_forward",
+                  "B": "B",
+                  "T": "1",
+                  "C": "C",
+                  "sram_address": {
+                    "indata": "_residual1_out",
+                    "outdata": "rmsnorm2_out"
+                  },
+                  "dram_address": {
+                    "data": "rmsnorm2_data"
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "B": "B",
+                  "T": "1",
+                  "C": "C",
+                  "OC": "4C",
+                  "sram_address": {
+                    "indata": "_split_matmul2_out",
+                    "outdata": "matmul3_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul3_data"
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "1",
+                  "C": "C",
+                  "OC": "4C",
+                  "sram_address": {
+                    "indata": "split_matmul2_out",
+                    "outdata": "matmul4_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul4_data"
+                  }
+                },
+                {
+                  "type": "swiglu_forward",
+                  "N": "4C",
+                  "sram_address": {
+                    "indata": "matmul3_out matmul4_out",
+                    "outdata": "swiglu1_out"
+                  },
+                  "dram_address": {
+                    "input": 0,
+                    "data": -1
+                  }
+                },
+                {
+                  "type": "Matmul_f",
+                  "B": "B",
+                  "T": "1",
+                  "C": "4C",
+                  "OC": "C",
+                  "sram_address": {
+                    "indata": "swiglu1_out",
+                    "outdata": "matmul4_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul4_data"
+                  }
+                },
+                {
+                  "type": "Residual_f",
+                  "N": "C",
+                  "sram_address": {
+                    "indata": "residual1_out matmul4_out",
+                    "outdata": "residual2_out"
+                  },
+                  "dram_address": {
+                    "data": -1,
+                    "out": "residual2_out"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 34,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 35
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 35,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 36
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 36,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 37
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 37,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 38
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 38,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 39
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 39,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 40
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 40,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 41
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 41,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 42
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 42,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 43
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 43,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 44
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 44,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 45
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 45,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 46
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 46,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 47
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 47,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 48
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 48,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 33,
+              "loopout": false
+            },
+            {
+              "dest": -1,
+              "loopout": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        }
+      ]
+    }
+  ]
+}

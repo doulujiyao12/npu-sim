@@ -131,10 +131,10 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
         nb_dcache->reconfigure(inp_global_addr, dma_read_count, cache_count,
                                cache_lines, 0);
         sc_time start_nbdram = sc_time_stamp();
-        cout << "start nbdram: " << sc_time_stamp().to_string() << endl;
+        cout << "Core " << context.cid << " start nbdram: " << sc_time_stamp().to_string() << endl;
         wait(*e_nbdram);
         sc_time end_nbdram = sc_time_stamp();
-        cout << "end nbdram: " << sc_time_stamp().to_string() << endl;
+        cout << "Core " << context.cid << " end nbdram: " << sc_time_stamp().to_string() << endl;
         u_int64_t nbdram_time = (end_nbdram - start_nbdram).to_seconds() * 1e9;
 
         for (int i = 0; i < dma_read_count; i++) {
@@ -359,10 +359,10 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
     nb_dcache->reconfigure(inp_global_addr, dma_read_count, cache_count,
                            cache_lines, 0);
     sc_time start_nbdram = sc_time_stamp();
-    cout << "start spill back nbdram: " << sc_time_stamp().to_string() << endl;
+    cout << "Core " << context.cid << " start spill back nbdram: " << sc_time_stamp().to_string() << endl;
     wait(*e_nbdram);
     sc_time end_nbdram = sc_time_stamp();
-    cout << "spill back end nbdram: " << sc_time_stamp().to_string() << endl;
+    cout << "Core " << context.cid << " spill back end nbdram: " << sc_time_stamp().to_string() << endl;
     u_int64_t nbdram_time = (end_nbdram - start_nbdram).to_seconds() * 1e9;
 
     for (int i = 0; i < dma_read_count; i++) {
@@ -389,10 +389,10 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
         start_nbdram = sc_time_stamp();
         cout << inp_global_addr + cache_lines * cache_count * dma_read_count
              << " " << 1 << " " << cache_count << " " << cache_lines << endl;
-        cout << "start padding nbdram: " << sc_time_stamp().to_string() << endl;
+        cout << "Core " << context.cid << " start padding nbdram: " << sc_time_stamp().to_string() << endl;
         wait(*e_nbdram);
         end_nbdram = sc_time_stamp();
-        cout << "end padding nbdram: " << sc_time_stamp().to_string() << endl;
+        cout << "Core " << context.cid << " end padding nbdram: " << sc_time_stamp().to_string() << endl;
         nbdram_time = (end_nbdram - start_nbdram).to_seconds() * 1e9;
         sram_time = 0;
         sc_bv<SRAM_BITWIDTH> data_tmp2;

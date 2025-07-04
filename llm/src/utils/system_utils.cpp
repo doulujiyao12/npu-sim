@@ -1,6 +1,7 @@
 #include "systemc.h"
 #include <cstdlib>
 #include <fstream>
+#include <sstream>
 
 #include "defs/const.h"
 #include "defs/enums.h"
@@ -172,34 +173,44 @@ void init_grid(string config_path, string core_config_path) {
     else
         GRID_X = 4;
 
+    if (j2.contains("sram_size"))
+        MAX_SRAM_SIZE = j2["sram_size"];
+
     GRID_Y = GRID_X;
     GRID_SIZE = GRID_X * GRID_Y;
 
     auto config_cores = j2["cores"];
     CoreHWConfig sample = config_cores[0];
-    bool has_config[GRID_SIZE];
-    for (auto &b : has_config)
-        b = false;
 
     for (auto core : config_cores) {
         CoreHWConfig c = core;
-        has_config[c.id] = true;
+        for (int i = sample.id + 1; i < c.id; i++) {
+            tile_exu.push_back(
+                make_pair(sample.id, new ExuConfig(MAC_Array, sample.exu_x,
+                                                   sample.exu_y)));
+            tile_sfu.push_back(
+                make_pair(sample.id, new SfuConfig(Linear, sample.sfu_x)));
+            mem_sram_bw.push_back(make_pair(sample.id, sample.sram_bitwidth));
+            mem_dram_config_str.push_back(
+                make_pair(sample.id, sample.dram_config));
+        }
+
         tile_exu.push_back(
             make_pair(c.id, new ExuConfig(MAC_Array, c.exu_x, c.exu_y)));
         tile_sfu.push_back(make_pair(c.id, new SfuConfig(Linear, c.sfu_x)));
         mem_sram_bw.push_back(make_pair(c.id, c.sram_bitwidth));
         mem_dram_config_str.push_back(make_pair(c.id, c.dram_config));
+
+        sample = c;
     }
 
-    for (int i = 0; i < GRID_SIZE; i++) {
-        if (has_config[i])
-            continue;
-
-        tile_exu.push_back(
-            make_pair(i, new ExuConfig(MAC_Array, sample.exu_x, sample.exu_y)));
-        tile_sfu.push_back(make_pair(i, new SfuConfig(Linear, sample.sfu_x)));
-        mem_sram_bw.push_back(make_pair(i, sample.sram_bitwidth));
-        mem_dram_config_str.push_back(make_pair(i, sample.dram_config));
+    for (int i = sample.id + 1; i < GRID_SIZE; i++) {
+        tile_exu.push_back(make_pair(
+            sample.id, new ExuConfig(MAC_Array, sample.exu_x, sample.exu_y)));
+        tile_sfu.push_back(
+            make_pair(sample.id, new SfuConfig(Linear, sample.sfu_x)));
+        mem_sram_bw.push_back(make_pair(sample.id, sample.sram_bitwidth));
+        mem_dram_config_str.push_back(make_pair(sample.id, sample.dram_config));
     }
 }
 
@@ -334,9 +345,9 @@ void system_cleanup() {
         delete p;
     }
 
-    for (auto p : global_chip_prim_stash) {
-        delete p;
-    }
+    // for (auto p : global_chip_prim_stash) {
+    //     delete p;
+    // }
 
     delete[] dram_array;
     delete[] dcache_tags;

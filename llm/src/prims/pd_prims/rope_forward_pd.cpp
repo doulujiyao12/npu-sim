@@ -11,7 +11,9 @@ int rope_forward_pd::task_core(TaskCoreContext &context) {
     // 数据维度
     vector<int> data_size_input = {B * T * C};
     int data_size_sincos = B * (C / NH) * 2;
-    int data_size_out = B * T * C * 1 / 3; // Q
+
+    // 只有Q输出，则B * T * C = 2Q / R + Q
+    int data_size_out = B * T * C / (1 + 2 / R); // Q
 
     // dram地址
     u_int64_t dram_addr_tile = cid * dataset_words_per_tile;
@@ -144,6 +146,7 @@ sc_bv<128> rope_forward_pd::serialize() {
     d.range(87, 72) = sc_bv<16>(C);
     d.range(103, 88) = sc_bv<16>(NH);
     d.range(107, 104) = sc_bv<4>(job_type);
+    d.range(111, 108) = sc_bv<4>(R);
     return d;
 }
 
@@ -155,6 +158,7 @@ void rope_forward_pd::deserialize(sc_bv<128> buffer) {
     C = buffer.range(87, 72).to_uint();
     NH = buffer.range(103, 88).to_uint();
     job_type = PD_JOB(buffer.range(107, 104).to_uint());
+    R = buffer.range(111, 108).to_uint();
 
     initialize();
 }
@@ -164,6 +168,7 @@ void rope_forward_pd::parse_json(json j) {
     T = find_var(j["T"]);
     C = find_var(j["C"]);
     NH = find_var(j["NH"]);
+    R = find_var(j["R"]);
 
     auto job_str = j["job_type"];
     if (job_str == "prefill")
@@ -193,7 +198,7 @@ int rope_forward_pd::sram_utilization(DATATYPE datatype, int cid) { return 0; }
 void rope_forward_pd::initialize() {
     inp_size = B * T * C;
     p_inp_size = inp_size;
-    out_size = B * T * C * 1 / 3;
+    out_size = B * T * C / (1 + 2 / R);
 
     if (datatype == INT8)
         data_byte = 1;
