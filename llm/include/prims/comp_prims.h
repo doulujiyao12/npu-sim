@@ -87,6 +87,25 @@ public:
     Dummy_p() { name = "Dummy_p"; }
 };
 
+class gate_forward : public comp_base {
+public:
+    int B, T, C, E_N; // 专家个数
+    int K; // 选中的专家个数
+
+    int task();
+    int task_core(TaskCoreContext &context);
+
+    sc_bv<128> serialize();
+    void deserialize(sc_bv<128> buffer);
+
+    void parse_json(json j);
+    void print_self(string prefix);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
+    void initialize();
+
+    gate_forward() { name = "gate_forward";}
+};
+
 class Gelu_f : public comp_base {
 public:
     int N;
