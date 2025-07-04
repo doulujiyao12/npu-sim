@@ -417,6 +417,9 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     case ATTENTION_F_GPU_TYPE:
         task = new Attention_f_gpu();
         break;
+    case GATE_FORWARD_TYPE:
+        task = new gate_forward();
+        break;
     case GELU_F_GPU_TYPE:
         task = new Gelu_f_gpu();
         break;

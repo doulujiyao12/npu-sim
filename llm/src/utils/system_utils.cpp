@@ -206,11 +206,11 @@ void init_grid(string config_path, string core_config_path) {
 
     for (int i = sample.id + 1; i < GRID_SIZE; i++) {
         tile_exu.push_back(make_pair(
-            sample.id, new ExuConfig(MAC_Array, sample.exu_x, sample.exu_y)));
+            i, new ExuConfig(MAC_Array, sample.exu_x, sample.exu_y)));
         tile_sfu.push_back(
-            make_pair(sample.id, new SfuConfig(Linear, sample.sfu_x)));
-        mem_sram_bw.push_back(make_pair(sample.id, sample.sram_bitwidth));
-        mem_dram_config_str.push_back(make_pair(sample.id, sample.dram_config));
+            make_pair(i, new SfuConfig(Linear, sample.sfu_x)));
+        mem_sram_bw.push_back(make_pair(i, sample.sram_bitwidth));
+        mem_dram_config_str.push_back(make_pair(i, sample.dram_config));
     }
 }
 
