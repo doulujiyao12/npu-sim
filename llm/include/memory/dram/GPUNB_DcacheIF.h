@@ -210,6 +210,7 @@ private:
         while (true) {
             wait(*start_nb_dram_event);
             if (total_requests > 0) {
+                transactionsSent = total_requests; // Set transactionsSent to total_requests
                 while (current_request < total_requests) {
 
                     Request request;
@@ -232,7 +233,7 @@ private:
                     else if (request.command == Request::Command::Write)
                         pendingWriteRequests++;
 
-                    transactionsSent++;
+                    // transactionsSent++;
                     finished = true;
 
                     // 打印事件通知信息

@@ -161,7 +161,7 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
     batchInfo = new vector<Stage>;
 #if USE_NB_DRAMSYS == 1
     nb_dcache_socket =
-        new NB_DcacheIF(sc_gen_unique_name("nb_dcache"), start_nb_dram_event,
+        new NB_DcacheIF(cid, sc_gen_unique_name("nb_dcache"), start_nb_dram_event,
                         end_nb_dram_event, event_engine);
     // nb_global_mem_socket =
     //     new NB_GlobalMemIF(sc_gen_unique_name("nb_global_mem"),
@@ -1018,6 +1018,7 @@ void WorkerCoreExecutor::recv_logic() {
 
                     job_done = true;
                 } else {
+                    // cout << "[RECV] Core " << cid << ": received all CONFIG.\n";
                     if (!buffer_i.size())
                         wait(ev_recv_config);
 

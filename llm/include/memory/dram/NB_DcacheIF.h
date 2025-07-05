@@ -29,6 +29,7 @@ public:
 
     bool transactionPostponed = false;
     bool finished = false;
+    int c_id = 0;
 
     uint64_t transactionsSent = 0;
     uint64_t transactionsReceived = 0;
@@ -41,9 +42,10 @@ public:
 
 
     // Constructor
-    NB_DcacheIF(sc_core::sc_module_name name, sc_event *start_nb_dram_event,
+    NB_DcacheIF(int c_id, sc_core::sc_module_name name, sc_event *start_nb_dram_event,
                 sc_event *end_nb_dram_event, Event_engine *event_engine)
-        : sc_module(name),
+        : c_id(c_id),
+          sc_module(name),
           start_nb_dram_event(start_nb_dram_event),
           end_nb_dram_event(end_nb_dram_event),
           payloadEventQueue(this, &NB_DcacheIF::peqCallback),
@@ -164,6 +166,9 @@ private:
                 finished = false;
                 transactionsSent = 0;
                 transactionsReceived = 0;
+#if NB_CACHE_DEBUG == 1
+                std::cout << "Core " << c_id << "BEGIN RESP DRAM EVENT" << std::endl;
+#endif
                 end_nb_dram_event->notify();
             }
         } else if (phase == tlm::END_RESP) {
@@ -196,6 +201,9 @@ private:
                 finished = false;
                 transactionsSent = 0;
                 transactionsReceived = 0;
+#if NB_CACHE_DEBUG == 1
+                std::cout << "Core " << c_id << "END RESP DRAM EVENT" << std::endl;
+#endif
                 end_nb_dram_event->notify();
             }
         } else {
@@ -207,12 +215,18 @@ private:
     // Main process to generate requests
     void generateRequests() {
         while (true) {
+#if NB_CACHE_DEBUG == 1
+            cout << "Core " << c_id << "start generateRequests " << std::endl;
+#endif
             wait(*start_nb_dram_event);
 #if NB_CACHE_DEBUG == 1
             std::cout << "Event: start_nb_dram_event notified at time "
                       << sc_core::sc_time_stamp() << " total request " << total_requests << std::endl;
+
+            cout << "Core " << c_id << "total_requests  " << total_requests << std::endl;
 #endif
             if (total_requests > 0) {
+                transactionsSent = total_requests;
                 while (current_request < total_requests) {
                     // Wait for configuration to be set
                     // if (current_request >= total_requests || config_updated)
@@ -249,7 +263,7 @@ private:
                     else if (request.command == Request::Command::Write)
                         pendingWriteRequests++;
 
-                    transactionsSent++;
+                    // transactionsSent++;
 #if NB_CACHE_DEBUG == 1
                     // 打印事件通知信息
                     std::cout << "Event: next_dram_event notified at time "
@@ -264,6 +278,8 @@ private:
                 }
                 // finished = true;
             } else {
+                std::cout << "total_requests is 0, waiting for reconfiguration."
+                          << std::endl;
                 end_nb_dram_event->notify();
             }
         }
