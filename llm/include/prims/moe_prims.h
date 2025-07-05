@@ -1,0 +1,25 @@
+#include "prims/moe_base.h"
+
+class matmul_forward_moe : public moe_base {
+public: 
+    int B, T, C, OC;
+    int K; // 选取的专家个数
+    int E_N; // 专家个数
+
+    int w_offset, b_offset;
+    bool is_merge; // true: FFN升维，否则为降维
+
+    int task();
+    int task_core(TaskCoreContext &context);
+
+    sc_bv<128> serialize();
+    void deserialize(sc_bv<128> buffer);
+
+    void parse_json(json j);
+    void print_self(string prefix);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
+
+    void initialize();
+    HardwareTaskConfig *generate_hw_config();
+    matmul_forward_moe() { name = "matmul_forward_moe"; }
+};

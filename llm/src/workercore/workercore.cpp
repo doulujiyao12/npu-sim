@@ -14,6 +14,7 @@
 #include "prims/comp_prims.h"
 #include "prims/norm_prims.h"
 #include "prims/pd_prims.h"
+#include "prims/moe_prims.h"
 #include "prims/prim_base.h"
 #include "trace/Event_engine.h"
 #include "utils/file_utils.h"
@@ -1086,6 +1087,12 @@ void WorkerCoreExecutor::task_logic() {
             pd->batchInfo = *batchInfo;
             pd->decode_done = &decode_done;
         }
+        else if (p->prim_type == MOE_PRIM) {
+            moe_base *moe = (moe_base *)p;
+            moe->datapass_label = *next_datapass_label;
+            moe->selected_experts = &selected_experts;
+        }
+        
         p->cid = cid;
         cout << "[PRIM] Core <\033[38;5;214m" << cid
              << "\033[0m>: PRIM NAME -----------------------: " << p->name

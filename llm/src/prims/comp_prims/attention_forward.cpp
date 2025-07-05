@@ -39,17 +39,16 @@ void Attention_f::parse_json(json j) {
     data_offset（无效） attention 操作不需要额外的权重
     out_offset（选填）: 可以根据inp_offset 计算，也可以手动设置 out_offset
     */
-cout <<  "1" << endl;
     B = find_var(j["B"]);
     T = find_var(j["T"]);
     C = find_var(j["C"]);
     NH = find_var(j["NH"]);
     R = find_var(j["R"]); // R默认为1
+
     initialize();
-cout <<  "1" << endl;
+    
     if (j.contains("dram_address"))
         parse_address(j["dram_address"]);
-cout <<  "1" << endl;
     if (inp_offset == -1)
         inp_offset = (out_offset * 1024 - B * T * C) / 1024;
 

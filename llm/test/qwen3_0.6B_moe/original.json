@@ -176,67 +176,22 @@
                   "dram_address": {
                     "data": -1
                   }
-                },
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
                 {
-                  "type": "Matmul_f",
-                  "B": "B",
-                  "T": "T",
-                  "C": "C",
-                  "OC": "3C",
-                  "sram_address": {
-                    "indata": "_rmsnorm2_out",
-                    "outdata": "matmul3_out"
-                  },
-                  "dram_address": {
-                    "data": "matmul3_data"
-                  }
-                },
-                {
-                  "type": "Matmul_f",
-                  "use_hw": false,
-                  "B": "B",
-                  "T": "T",
-                  "C": "C",
-                  "OC": "3C",
-                  "sram_address": {
-                    "indata": "rmsnorm2_out",
-                    "outdata": "matmul4_out"
-                  },
-                  "dram_address": {
-                    "data": "matmul4_data"
-                  }
-                },
-                {
-                  "type": "swiglu_forward",
-                  "N": "3BTC",
-                  "sram_address": {
-                    "indata": "matmul3_out matmul4_out",
-                    "outdata": "swiglu1_out"
-                  },
-                  "dram_address": {
-                    "input": 0,
-                    "data": -1
-                  }
-                },
-                {
-                  "type": "Matmul_f",
-                  "B": "B",
-                  "T": "T",
-                  "C": "3C",
-                  "OC": "C",
-                  "sram_address": {
-                    "indata": "swiglu1_out",
-                    "outdata": "matmul4_out"
-                  },
-                  "dram_address": {
-                    "data": "matmul4_data"
-                  }
-                },
+                  "dest": 2
+                }
+              ],
+              "prims": [
                 {
                   "type": "Residual_f",
                   "N": "BTC",
                   "sram_address": {
-                    "indata": "residual1_out matmul4_out",
+                    "indata": "_input_label residual1_out",
                     "outdata": "residual2_out"
                   },
                   "dram_address": {
@@ -247,305 +202,369 @@
               ]
             }
           ]
-        },
-        {
-          "id": 1,
-          "cast": [
-            {
-              "dest": 2,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 2,
-          "cast": [
-            {
-              "dest": 3,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 3,
-          "cast": [
-            {
-              "dest": 4,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 4,
-          "cast": [
-            {
-              "dest": 5,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 5,
-          "cast": [
-            {
-              "dest": 6,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 6,
-          "cast": [
-            {
-              "dest": 7,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 7,
-          "cast": [
-            {
-              "dest": 8,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 8,
-          "cast": [
-            {
-              "dest": 9,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 9,
-          "cast": [
-            {
-              "dest": 10,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 10,
-          "cast": [
-            {
-              "dest": 11,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 11,
-          "cast": [
-            {
-              "dest": 12,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 12,
-          "cast": [
-            {
-              "dest": 13,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 13,
-          "cast": [
-            {
-              "dest": 14,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 14,
-          "cast": [
-            {
-              "dest": 15,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 15,
-          "cast": [
-            {
-              "dest": 16,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 16,
-          "cast": [
-            {
-              "dest": 17,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 17,
-          "cast": [
-            {
-              "dest": 18,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 18,
-          "cast": [
-            {
-              "dest": 19,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 19,
-          "cast": [
-            {
-              "dest": 20,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 20,
-          "cast": [
-            {
-              "dest": 21,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 21,
-          "cast": [
-            {
-              "dest": 22,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 22,
-          "cast": [
-            {
-              "dest": 23,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 23,
-          "cast": [
-            {
-              "dest": 24,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 24,
-          "cast": [
-            {
-              "dest": 25,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 25,
-          "cast": [
-            {
-              "dest": 26,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 26,
-          "cast": [
-            {
-              "dest": 27,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
-        },
-        {
-          "id": 27,
-          "cast": [
-            {
-              "dest": -1,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prim_copy": 0
         }
       ]
+    },
+    {
+      "id": 1,
+      "cast": [
+        {
+          "dest": 0,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prims": [
+        {
+          "type": "matmul_forward_moe",
+          "B": "B",
+          "T": "T",
+          "C": "C",
+          "OC": "3C",
+          "K": "K",
+          "E_N": "E_N",
+          "choose": true,
+          "sram_address": {
+            "indata": "_input_label",
+            "outdata": "matmul_moe1_out"
+          },
+          "dram_address": {
+            "data": "matmul_moe1_data"
+          }
+        },
+        {
+          "type": "matmul_forward_moe",
+          "use_hw": false,
+          "B": "B",
+          "T": "T",
+          "C": "C",
+          "OC": "3C",
+          "K": "K",
+          "E_N": "E_N",
+          "sram_address": {
+            "indata": "input_label",
+            "outdata": "matmul_moe2_out"
+          },
+          "dram_address": {
+            "data": "matmul_moe2_data"
+          }
+        },
+        {
+          "type": "swiglu_forward",
+          "N": "3BTCK",
+          "sram_address": {
+            "indata": "matmul_moe1_out matmul_moe2_out",
+            "outdata": "swiglu1_out"
+          },
+          "dram_address": {
+            "input": 0,
+            "data": -1
+          }
+        },
+        {
+          "type": "matmul_forward_moe",
+          "B": "B",
+          "T": "T",
+          "C": "3C",
+          "OC": "C",
+          "K": "K",
+          "E_N": "E_N",
+          "is_merge": true,
+          "sram_address": {
+            "indata": "swiglu1_out",
+            "outdata": "matmul4_out"
+          },
+          "dram_address": {
+            "data": "matmul4_data"
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "cast": [
+        {
+          "dest": 3,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 3,
+      "cast": [
+        {
+          "dest": 4,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 4,
+      "cast": [
+        {
+          "dest": 5,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 5,
+      "cast": [
+        {
+          "dest": 6,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 6,
+      "cast": [
+        {
+          "dest": 7,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 7,
+      "cast": [
+        {
+          "dest": 8,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 8,
+      "cast": [
+        {
+          "dest": 9,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 9,
+      "cast": [
+        {
+          "dest": 10,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 10,
+      "cast": [
+        {
+          "dest": 11,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 11,
+      "cast": [
+        {
+          "dest": 12,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 12,
+      "cast": [
+        {
+          "dest": 13,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 13,
+      "cast": [
+        {
+          "dest": 14,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 14,
+      "cast": [
+        {
+          "dest": 15,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 15,
+      "cast": [
+        {
+          "dest": 16,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 16,
+      "cast": [
+        {
+          "dest": 17,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 17,
+      "cast": [
+        {
+          "dest": 18,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 18,
+      "cast": [
+        {
+          "dest": 19,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 19,
+      "cast": [
+        {
+          "dest": 20,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 20,
+      "cast": [
+        {
+          "dest": 21,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 21,
+      "cast": [
+        {
+          "dest": 22,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 22,
+      "cast": [
+        {
+          "dest": 23,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 23,
+      "cast": [
+        {
+          "dest": 24,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 24,
+      "cast": [
+        {
+          "dest": 25,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 25,
+      "cast": [
+        {
+          "dest": 26,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 26,
+      "cast": [
+        {
+          "dest": 27,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
+    },
+    {
+      "id": 27,
+      "cast": [
+        {
+          "dest": -1,
+          "critical": true
+        }
+      ],
+      "recv_cnt": 1,
+      "prim_copy": 0
     }
   ]
 }

@@ -121,6 +121,7 @@ enum PRIM_TYPE {
     COMP_PRIM,
     GPU_PRIM,
     PD_PRIM,
+    MOE_PRIM,
 };
 
 // 原语序列化后的类型编号
@@ -151,6 +152,7 @@ enum PRIM_TYPE_CODE {
     RMSNORM_F_TYPE = 0x18,
     SWIGLU_F_TYPE = 0x19,
     GATE_FORWARD_TYPE = 0x1a,
+    MATMUL_FORWARD_MOE_TYPE = 0x1b,
 
     SEND_GLOBAL_MEMORY_TYPE = 0x40,
     RECV_GLOBAL_MEMORY_TYPE = 0x41,
