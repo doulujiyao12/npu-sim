@@ -460,6 +460,9 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     case SWIGLU_F_TYPE:
         task = new swiglu_forward();
         break;
+    case MATMUL_FORWARD_MOE_TYPE:
+        task = new matmul_forward_moe();
+        break;
     default:
         assert(0 && "Unknown prim");
         cout << "Unknown prim: " << type << ".\n";

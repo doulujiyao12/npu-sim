@@ -1,11 +1,11 @@
 {
-    "x": 8,
+    "x": 16,
     "cores": [
         {
             "id": 0,
-            "exu_x": 128,
-            "exu_y": 128,
-            "sfu_x": 2048,
+            "exu_x": 64,
+            "exu_y": 64,
+            "sfu_x": 1024,
             "sram_bitwidth": 128
         }
     ]
