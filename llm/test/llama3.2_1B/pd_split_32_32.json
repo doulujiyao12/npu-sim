@@ -10,8 +10,8 @@
     "eof_chance": 0.1,
     "prefill_stage": 16,
     "decode_stage": 8,
-    "prefill_cores": 48,
-    "decode_cores": 16,
+    "prefill_cores": 32,
+    "decode_cores": 32,
     "batch_size": 2
   },
   "chips": [
@@ -20,7 +20,6 @@
       "cores": [
         {
           "id": 0,
-          "prim_refill": false,
           "worklist": [
             {
               "recv_cnt": 1,
@@ -200,7 +199,6 @@
         },
         {
           "id": 1,
-          "prim_refill": false,
           "worklist": [
             {
               "recv_cnt": 1,

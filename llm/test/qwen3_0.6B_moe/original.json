@@ -25,6 +25,7 @@
     "3C-R/2": 1024,
     "R": 2,
     "K": 2,
+    "E_N": 4,
     "layernorm1_data": 96,
     "split_matmul1_out": 97,
     "matmul1_data": 96,
@@ -282,289 +283,975 @@
     },
     {
       "id": 2,
-      "cast": [
+      "prim_copy": 0,
+      "worklist": [
         {
-          "dest": 3,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 3
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 4
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 3,
-      "cast": [
+      "prim_copy": 1,
+      "worklist": [
         {
-          "dest": 4,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 2
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 4,
-      "cast": [
+      "prim_copy": 0,
+      "worklist": [
         {
-          "dest": 5,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 5
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 6
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 5,
-      "cast": [
+      "prim_copy": 1,
+      "worklist": [
         {
-          "dest": 6,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 4
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 6,
-      "cast": [
+      "prim_copy": 0,
+      "worklist": [
         {
-          "dest": 7,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 7
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 8
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 7,
-      "cast": [
+      "prim_copy": 1,
+      "worklist": [
         {
-          "dest": 8,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 6
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 8,
-      "cast": [
+      "prim_copy": 0,
+      "worklist": [
         {
-          "dest": 9,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 9
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 10
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 9,
-      "cast": [
+      "prim_copy": 1,
+      "worklist": [
         {
-          "dest": 10,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 8
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 10,
-      "cast": [
+      "prim_copy": 0,
+      "worklist": [
         {
-          "dest": 11,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 11
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 12
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 11,
-      "cast": [
+      "prim_copy": 1,
+      "worklist": [
         {
-          "dest": 12,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 10
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 12,
-      "cast": [
+      "prim_copy": 0,
+      "worklist": [
         {
-          "dest": 13,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 13
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 14
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 13,
-      "cast": [
+      "prim_copy": 1,
+      "worklist": [
         {
-          "dest": 14,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 12
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 14,
-      "cast": [
+      "prim_copy": 0,
+      "worklist": [
         {
-          "dest": 15,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 15
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 16
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 15,
-      "cast": [
+      "prim_copy": 1,
+      "worklist": [
         {
-          "dest": 16,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 14
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 16,
-      "cast": [
+      "prim_copy": 0,
+      "worklist": [
         {
-          "dest": 17,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 17
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 18
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 17,
-      "cast": [
+      "prim_copy": 1,
+      "worklist": [
         {
-          "dest": 18,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 16
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 18,
-      "cast": [
+      "prim_copy": 0,
+      "worklist": [
         {
-          "dest": 19,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 19
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 20
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 19,
-      "cast": [
+      "prim_copy": 1,
+      "worklist": [
         {
-          "dest": 20,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 18
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 20,
-      "cast": [
+      "prim_copy": 0,
+      "worklist": [
         {
-          "dest": 21,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 21
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 22
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 21,
-      "cast": [
+      "prim_copy": 1,
+      "worklist": [
         {
-          "dest": 22,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 20
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 22,
-      "cast": [
+      "prim_copy": 0,
+      "worklist": [
         {
-          "dest": 23,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 23
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 24
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 23,
-      "cast": [
+      "prim_copy": 1,
+      "worklist": [
         {
-          "dest": 24,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 22
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 24,
-      "cast": [
+      "prim_copy": 0,
+      "worklist": [
         {
-          "dest": 25,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 25
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 26
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 25,
-      "cast": [
+      "prim_copy": 1,
+      "worklist": [
         {
-          "dest": 26,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 24
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 26,
-      "cast": [
+      "prim_copy": 0,
+      "worklist": [
         {
-          "dest": 27,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 27
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 28
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
     },
     {
       "id": 27,
-      "cast": [
+      "prim_copy": 1,
+      "worklist": [
         {
-          "dest": -1,
-          "critical": true
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 26
+            }
+          ]
         }
-      ],
-      "recv_cnt": 1,
-      "prim_copy": 0
+      ]
+    },
+    {
+      "id": 28,
+      "prim_copy": 0,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 29
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 30
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "prim_copy": 1,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 28
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "prim_copy": 0,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 31
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 32
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "prim_copy": 1,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 30
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "prim_copy": 0,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 33
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 34
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "prim_copy": 1,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 32
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 34,
+      "prim_copy": 0,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 35
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 36
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 35,
+      "prim_copy": 1,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 34
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 36,
+      "prim_copy": 0,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 37
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 38
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 37,
+      "prim_copy": 1,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 36
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 38,
+      "prim_copy": 0,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 39
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 40
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 39,
+      "prim_copy": 1,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 38
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 40,
+      "prim_copy": 0,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 41
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 42
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 41,
+      "prim_copy": 1,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 40
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 42,
+      "prim_copy": 0,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 43
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 44
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 43,
+      "prim_copy": 1,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 42
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 44,
+      "prim_copy": 0,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 45
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 46
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 45,
+      "prim_copy": 1,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 44
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 46,
+      "prim_copy": 0,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 47
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 48
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 47,
+      "prim_copy": 1,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 46
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 48,
+      "prim_copy": 0,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 49
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 50
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 49,
+      "prim_copy": 1,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 48
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 50,
+      "prim_copy": 0,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 51
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 52
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 51,
+      "prim_copy": 1,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 50
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 52,
+      "prim_copy": 0,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 53
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 54
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 53,
+      "prim_copy": 1,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 52
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 54,
+      "prim_copy": 0,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 55
+            }
+          ]
+        },
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": -1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 55,
+      "prim_copy": 1,
+      "worklist": [
+        {
+          "recv_cnt": 1,
+          "cast": [
+            {
+              "dest": 54
+            }
+          ]
+        }
+      ]
     }
   ]
 }

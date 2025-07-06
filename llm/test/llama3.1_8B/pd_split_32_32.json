@@ -12,7 +12,8 @@
     "decode_stage": 8,
     "prefill_cores": 32,
     "decode_cores": 32,
-    "batch_size": 2
+    "batch_size": 2,
+    "kv_heads": 8
   },
   "chips": [
     {
@@ -20,7 +21,6 @@
       "cores": [
         {
           "id": 0,
-          "prim_refill": false,
           "worklist": [
             {
               "recv_cnt": 1,
@@ -369,7 +369,6 @@
         },
         {
           "id": 1,
-          "prim_refill": false,
           "worklist": [
             {
               "recv_cnt": 1,

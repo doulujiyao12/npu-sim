@@ -21,7 +21,6 @@
       "cores": [
         {
           "id": 0,
-          "prim_refill": false,
           "worklist": [
             {
               "recv_cnt": 1,
@@ -708,7 +707,6 @@
         },
         {
           "id": 1,
-          "prim_refill": false,
           "worklist": [
             {
               "recv_cnt": 1,

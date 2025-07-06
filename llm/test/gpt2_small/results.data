@@ -219,3 +219,5 @@ config_gpt2_small_tp_8.json 15 0 512 512 8192 512	12582912   	 3275289200 ps
 
 config_gpt2_small_pd_naive.json 15 0 128 128 2048 128            56703117136 ps
 config_gpt2_small_pd_fuse_12*1.json 6 0 128 128 2048 128	 26167090 ns
+gpt2_small/pd_fuse_6*2.json 6 0 128 128 2048 128 8388608	 36045010 ns
+gpt2_small/pd_fuse_4*3.json 6 0 128 128 2048 128 8388608	 50877476 ns

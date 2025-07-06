@@ -248,6 +248,10 @@ void config_helper_pds::iter_start(PD_JOB type) {
                                 Stage(req.id, PREFILL,
                                       req.seq_len / req.prefill_iters));
 
+                            cout << "[PD SCHEDULE] Core " << id
+                                 << " push in old request PREFILL " << req.id
+                                 << endl;
+
                             if (++done == batch_size)
                                 break;
                         } else if (req.phase == UNTOUCHED &&
@@ -532,7 +536,7 @@ void config_helper_pds::parse_ack_msg(Event_engine *event_engine, int flow_id,
     for (auto m : g_temp_ack_msg) {
         int cid = m.source;
         cout << sc_time_stamp()
-             << ": Config helper PD: received ack packet from " << cid
+             << ": Config helper PDS: received ack packet from " << cid
              << ", type: " << coreStatus[cid].job_type;
 
         if (coreStatus[cid].job_type == JOB_PREFILL) {
@@ -548,15 +552,13 @@ void config_helper_pds::parse_ack_msg(Event_engine *event_engine, int flow_id,
     event_engine->add_event(this->name(), "Waiting Recv Ack", "E",
                             Trace_event_util());
 
-    if (g_recv_ack_cnt_p >=
-        coreStatus.size() / (prefill_stage + decode_stage) * prefill_stage) {
+    if (g_recv_ack_cnt_p >= prefill_core) {
         g_recv_ack_cnt_p = 0;
         wait_send_start = true;
         notify_event->notify(CYCLE, SC_NS);
     }
 
-    if (g_recv_ack_cnt_d >=
-        coreStatus.size() / (prefill_stage + decode_stage) * decode_stage) {
+    if (g_recv_ack_cnt_d >= decode_core) {
         g_recv_ack_cnt_d = 0;
         // notify_event->notify(CYCLE, SC_NS);
     }
@@ -587,17 +589,14 @@ void config_helper_pds::parse_done_msg(Event_engine *event_engine,
     event_engine->add_event(this->name(), "Waiting Core busy", "E",
                             Trace_event_util());
 
-    if (g_recv_done_cnt_p >=
-        coreStatus.size() / (prefill_stage + decode_stage) * prefill_stage) {
+    if (g_recv_done_cnt_p >= prefill_core) {
         iter_done(JOB_PREFILL);
 
         g_done_msg_p.clear();
         g_recv_done_cnt_p = 0;
         wait_schedule_p = true;
         notify_event->notify(CYCLE, SC_NS);
-    } else if (g_recv_done_cnt_d >= coreStatus.size() /
-                                        (prefill_stage + decode_stage) *
-                                        decode_stage) {
+    } else if (g_recv_done_cnt_d >= decode_core) {
         iter_done(JOB_DECODE);
 
         g_done_msg_d.clear();
@@ -613,6 +612,8 @@ void config_helper_pds::set_global_vars(int T) {
     vtable.push_back(make_pair("T", T));
     vtable.push_back(make_pair("C", heads * head_size));
     vtable.push_back(make_pair("NH", heads));
+    vtable.push_back(make_pair("DH", head_size));
+    vtable.push_back(make_pair("R", heads / kv_heads));
     vtable.push_back(make_pair("3C", 3 * heads * head_size));
     vtable.push_back(make_pair("4C", 4 * heads * head_size));
     vtable.push_back(make_pair("BTC", T * heads * head_size));

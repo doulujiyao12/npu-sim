@@ -13,7 +13,8 @@
     "decode_stage": 4,
     "prefill_cores": 48,
     "decode_cores": 16,
-    "batch_size": 2
+    "batch_size": 2,
+    "head_size": 64
   },
   "chips": [
     {
@@ -23,7 +24,6 @@
       "cores": [
         {
           "id": 0,
-          "prim_refill": false,
           "worklist": [
             {
               "recv_cnt": 1,
@@ -94,7 +94,8 @@
                     "outdata": "residual1_out"
                   },
                   "dram_address": {
-                    "data": -1
+                    "data": -1,
+                    "out": "TODO"
                   }
                 },
                 {
@@ -228,7 +229,8 @@
                     "outdata": "residual1_out"
                   },
                   "dram_address": {
-                    "data": -1
+                    "data": -1,
+                    "out": "TODO"
                   }
                 },
                 {
@@ -362,7 +364,8 @@
                     "outdata": "residual1_out"
                   },
                   "dram_address": {
-                    "data": -1
+                    "data": -1,
+                    "out": "TODO"
                   }
                 },
                 {
@@ -436,7 +439,6 @@
         },
         {
           "id": 1,
-          "prim_refill": false,
           "worklist": [
             {
               "recv_cnt": 1,
