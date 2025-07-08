@@ -21,7 +21,6 @@
       "cores": [
         {
           "id": 0,
-          ,
           "worklist": [
             {
               "recv_cnt": 1,
