@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <vector>
 #include "../unit_module/dram_kvtable/dram_kvtable.h"
+#include <unordered_set>
 
 using namespace std;
 
@@ -53,7 +54,9 @@ extern uint32_t *dram_array;
 #if DCACHE == 1
 // u_int16_t * dcache_freq;
 extern std::unordered_map<u_int64_t, u_int16_t> dcache_freq_v2;
-extern bool *dcache_dirty;
+
+extern std::unordered_set<uint64_t> *dcache_dirty;
+// extern bool **dcache_dirty;
 extern uint64_t **dcache_tags;
 extern uint32_t *dcache_occupancy;
 extern uint32_t *dcache_last_evicted;

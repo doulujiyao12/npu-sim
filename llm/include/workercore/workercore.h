@@ -51,6 +51,7 @@ public:
 class WorkerCoreExecutor : public sc_module {
 public:
     uint64_t MaxDramAddr; // 当前核最大的 dram 地址
+    unsigned int defaultDataLength;
     int cid;
     bool prim_refill;    // 是否通过原语重填的方式实现循环
     int loop_cnt;        // 如果开启prim_refill，表明现在是第几个循环

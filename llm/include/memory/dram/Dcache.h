@@ -38,9 +38,10 @@ public:
     bool prefetch = false;
     int tX;
     int tY;
+    int cid;
 
     SC_HAS_PROCESS(DCache);
-    DCache(const sc_module_name &n, int idX, int idY,
+    DCache(const sc_module_name &n, int cid, int idX, int idY,
            Event_engine *event_engine, std::string_view configuration,
            std::string_view resource_directory)
         : initiatorSocket("initiatorSocket"),
@@ -49,6 +50,7 @@ public:
         dramSysWrapper = new gem5::memory::DRAMSysWrapper("DRAMSysWrapper",
                                                           testConfig, false);
         initiatorSocket.bind(dramSysWrapper->tSocket);
+        cid = cid;
         tX = idX;
         tY = idY;
         socket.register_b_transport(this, &DCache::b_transport);
@@ -80,30 +82,28 @@ public:
 
         // Set base is the index of the first cache line in a set
         // Set_id hashes the cache line tag to a set
-        // 这里感觉set在way之前，也不是不可以，低地址位先是set，然后才是对应的way
-        // bit
+        // haddr << way << set << laddr
         u_int32_t set = set_id_dcache(new_tag);
         u_int64_t set_base = set << CACHE_WAY_BITS;
 
         // REPLACEMENT POLICY IN HW
-        // 但是对tag进行索引的时候，还是先way 然后set
+        // index of tag haddr << set << way << laddr
         for (u_int32_t i = 0; i < CACHE_WAYS; i++) {
             dcache_idx = i + set_base;
             u_int64_t tag = tags[dcache_idx];
-            // DAHU 没有evict
             // if (tag<UINT64_MAX) line_freq = dcache_freq[tag]; //
-            // 这里表示这个dcache被是用的频率多不多
             if (tag < UINT64_MAX)
                 line_freq = dcache_freq_v2[tag];
             else {
                 line_freq = 0;
+                // one way in this set is empty. do not evict
                 set_empty_lines++;
-            } // 原本的set中有一个way是空的，所以就用它，并且告诉外面原本set有空的，不用dirty
+            } 
 
             if (line_freq < min_freq) {
                 // Best candidate for eviction
                 evict_dcache_idx = dcache_idx;
-                min_freq = line_freq; // 找最小被是用的dcache去替换
+                min_freq = line_freq; 
             }
         }
         // // DAHU 这个==好像有问题？？
@@ -112,20 +112,31 @@ public:
         // cout << "\nDCACHE_DAHU " <<  set << "\n";
         return evict_dcache_idx;
     }
-#endif
+
 
     u_int64_t cache_tag(u_int64_t addr) {
         u_int64_t word_index = (u_int64_t)addr >> 2; // 4bytes in a word
-        // 全局的darray加起来，所有的tile
-        // dataset_words_per_tile dram 大小在一个tile中
-        data_footprint_in_words =
-            GRID_SIZE * dataset_words_per_tile; // global variable
+        // dataset_words_per_tile per tile dram size in words
+        data_footprint_in_words = dataset_words_per_tile;
+            // GRID_SIZE * dataset_words_per_tile; // global variable
         word_index = word_index % data_footprint_in_words;
         // 在全局darray中的索引
         return word_index >> dcache_words_in_line_log2;
     }
 
-    bool is_dirty(u_int64_t tag) { return dcache_dirty[tag]; }
+    // bool is_dirty(u_int64_t tag) { return dcache_dirty[cid][tag]; }
+    void mark_line_dirty(int tile_id, u_int64_t tag) {
+        dcache_dirty[cid].insert(tag);
+    }
+
+    void clear_line_dirty(int tile_id, u_int64_t tag) {
+        dcache_dirty[cid].erase(tag);
+    }
+
+    bool is_dirty(u_int64_t tag) {
+        return dcache_dirty[cid].find(tag) != dcache_dirty[cid].end();
+    }
+#endif
     void peqCallback(tlm::tlm_generic_payload &payload,
                      const tlm::tlm_phase &phase) {}
 
@@ -147,13 +158,17 @@ public:
         sc_time current_time = sc_time_stamp();
         u_int64_t timer = current_time.to_seconds() * 1e9;
 
-        int pu_penalty = sram_read_latency;
-#if DCACHE >= 1
+        int pu_penalty = 0;
+#if DCACHE == 0
+        int hbm_lat = (int)hbm_read_latency;
+        int read_latency = hbm_lat;
+
+        trans.set_response_status(tlm::TLM_OK_RESPONSE);
+        pu_penalty += read_latency;
+#endif
+
 #if DCACHE == 1
         if (dataset_cached) {
-#elif DCACHE >= 2
-        {
-#endif
             // freq is the number of hits of a per-neighbour element
             // // globalid 表示的是全局中tile的编号
 
@@ -167,37 +182,11 @@ public:
             // elem_tag 就是 全体dram地址除以dcache中一行的word数
             u_int64_t elem_tag = cache_tag(array);
 
-#if DCACHE <= 4
-            // If the data I'm fetching was prefetched, then update the
-            // time_fetched, and we issue next prefetch now
-            // 如果提前一轮去拿数据，这一轮的数据上一轮拿
-            // 所以prefetch的时间是上一轮time的时间
-            // 当前的fetch时间是prefetch的时间就是上一轮的timer的时间
-            if (elem_tag == prefetch_tag && prefetch == true) {
-                time_fetched = time_prefetched;
-                time_prefetched = timer;
-                prefetch_tag++;
-            }
-#else
-            // 如果当前轮拿的话，就是当前的时间
-            time_fetched = timer;
-#endif
-
-#if DCACHE <= 5 // If we allow some type of data hits
-                // dcache_freq is a global array (not per tile)
-
             if (dcache_freq_v2.find(elem_tag) != dcache_freq_v2.end() &&
                 dcache_freq_v2[elem_tag] > 0) {
                 dcache_hits++;
             } else {
-                // if (dcache_freq[elem_tag] > 0){
-                //         // ==== CACHE HIT ====
-                //     dcache_hits++;
-                //         //printf("dcache hits ++ \n");
-                // } else{
-#else
-            {
-#endif
+
                 // ==== CACHE MISS ====
                 // printf("dcache misses ++ \n");
                 dcache_misses++;
@@ -205,37 +194,13 @@ public:
                 u_int16_t mc_queue_id = die_id(tX, tY) * hbm_channels +
                                         (tY * DIE_W + tX) % hbm_channels;
                 if (use_DramSys == false) {
-                    // memory channel
 
-                    // Number of transactions that have been fetched from the
-                    // HBM channel since the beggining of the program Assume
-                    // that the Mem. controller channel can take one request per
-                    // HBM cycle 该通道历史上所有的交易总和
-                    int64_t trans_count = (int64_t)mc_transactions[mc_queue_id];
-                    mc_transactions[mc_queue_id] = trans_count + 1;
-                    // 历史上所有的交易的总和，所以后面time_fetch的时间不能超过他
-                    int64_t pu_cy_last_mc_trans =
-                        ceil_macro(trans_count * pu_mem_ratio * CYCLE);
-
-                    // Fetched when the last request has satisfieda
-                    // time fetched 是拿到数据的时间
-                    if (pu_cy_last_mc_trans > time_fetched)
-                        time_fetched = pu_cy_last_mc_trans;
-
-                    // May be a negative number!
-                    // time 是当前运行的时间
-                    int fetch_cycles_ahead =
-                        (int64_t)timer - (int64_t)time_fetched;
-
-                    // If cycles ahead is smaller than HBM latency, then we
-                    // calculate the real latency
 
                     int hbm_lat = (int)hbm_read_latency;
-                    // fetch后还会有hbm的延迟
-                    if (fetch_cycles_ahead < hbm_lat)
-                        read_latency = (hbm_lat - fetch_cycles_ahead);
+                    read_latency = hbm_lat;
 
                     trans.set_response_status(tlm::TLM_OK_RESPONSE);
+                    
                 } else {
                     // Use DramSys
                     // SC_REPORT_INFO("DRAMSYS", "USE DRAMSYS");
@@ -256,7 +221,7 @@ public:
                     // std::endl;
                 }
                 // DAHU TODO Accuracy latency ??? // Use DramSys
-
+                // anno
                 mc_latency[mc_queue_id] += read_latency;
                 pu_penalty += read_latency;
 
@@ -268,14 +233,6 @@ public:
                 assert(evict_dcache_idx < dcache_size);
 #endif
                 u_int64_t evict_tag = tags[evict_dcache_idx];
-
-                // An eviction occurs when dcache_freq (valid bit) is 0, but a
-                // tag is already in the dcache
-                // FIXME: A local DCache can have evictions by collision of tags
-                // since the address space is not aligned locally (e.g. a dcache
-                // with 100 lines may get evictions even if its footprint is
-                // only 10 vertices and 40 edges, since we don't consider the
-                // local address space)
 
                 if (set_empty_lines == 0) { // IF CACHE SET FULL
                     // Evict Line
@@ -310,7 +267,8 @@ public:
                 tags[evict_dcache_idx] = elem_tag;
                 // dcache_freq[elem_tag]++;
                 if (dcache_freq_v2.find(elem_tag) == dcache_freq_v2.end()) {
-                    dcache_freq_v2[elem_tag] = 1; // 如果不存在，则初始化为 1
+                    dcache_freq_v2[elem_tag] =
+                        1; // 如果不存在，则初始化为 1
                 } else {
                     dcache_freq_v2[elem_tag]++; // 如果存在，则自增
                 }
@@ -368,13 +326,15 @@ public:
             // 将当前时间转换为纳秒并存储在u_int64_t变量中
             u_int64_t timer = current_time.to_seconds() * 1e9;
 
-            int pu_penalty = sram_read_latency;
-#if DCACHE >= 1
+            int pu_penalty = 0;
+#if DCACHE == 0
+            tlm_phase tPhase = END_RESP;
+            sc_time tDelay = sc_time(CYCLE, SC_NS);
+            return socket->nb_transport_bw(trans, tPhase, tDelay);
+#endif
+
 #if DCACHE == 1
             if (dataset_cached) {
-#elif DCACHE >= 2
-            {
-#endif
                 // freq is the number of hits of a per-neighbour element
                 // // globalid 表示的是全局中tile的编号
 
@@ -388,24 +348,6 @@ public:
                 // elem_tag 就是 全体dram地址除以dcache中一行的word数
                 u_int64_t elem_tag = cache_tag(array);
 
-#if DCACHE <= 4
-                // If the data I'm fetching was prefetched, then update the
-                // time_fetched, and we issue next prefetch now
-                // 如果提前一轮去拿数据，这一轮的数据上一轮拿
-                // 所以prefetch的时间是上一轮time的时间
-                // 当前的fetch时间是prefetch的时间就是上一轮的timer的时间
-                if (elem_tag == prefetch_tag && prefetch == true) {
-                    time_fetched = time_prefetched;
-                    time_prefetched = timer;
-                    prefetch_tag++;
-                }
-#else
-                // 如果当前轮拿的话，就是当前的时间
-                time_fetched = timer;
-#endif
-
-#if DCACHE <= 5 // If we allow some type of data hits
-                // dcache_freq is a global array (not per tile)
 
                 if (dcache_freq_v2.find(elem_tag) != dcache_freq_v2.end() &&
                     dcache_freq_v2[elem_tag] > 0) {
@@ -436,14 +378,6 @@ public:
                         return socket->nb_transport_bw(trans, tPhase, tDelay);
                     }
                 } else {
-                    // if (dcache_freq[elem_tag] > 0){
-                    //         // ==== CACHE HIT ====
-                    //     dcache_hits++;
-                    //         //printf("dcache hits ++ \n");
-                    // } else{
-#else
-                {
-#endif
                     // ==== CACHE MISS ====
                     // printf("dcache misses ++ \n");
                     dcache_misses++;
@@ -452,7 +386,7 @@ public:
                                             (tY * DIE_W + tX) % hbm_channels;
 
                     // DAHU TODO Accuracy latency ??? // Use DramSys
-
+                    // anno
                     mc_latency[mc_queue_id] += read_latency;
                     pu_penalty += read_latency;
 
@@ -512,48 +446,7 @@ public:
                     } else {
                         dcache_freq_v2[elem_tag]++; // 如果存在，则自增
                     }
-                    if (use_DramSys == false) {
-                        // memory channel
 
-                        // Number of transactions that have been fetched from
-                        // the HBM channel since the beggining of the program
-                        // Assume that the Mem. controller channel can take one
-                        // request per HBM cycle 该通道历史上所有的交易总和
-                        int64_t trans_count =
-                            (int64_t)mc_transactions[mc_queue_id];
-                        mc_transactions[mc_queue_id] = trans_count + 1;
-                        // 历史上所有的交易的总和，所以后面time_fetch的时间不能超过他
-                        int64_t pu_cy_last_mc_trans =
-                            ceil_macro(trans_count * pu_mem_ratio * CYCLE);
-
-                        // Fetched when the last request has satisfieda
-                        // time fetched 是拿到数据的时间
-                        if (pu_cy_last_mc_trans > time_fetched)
-                            time_fetched = pu_cy_last_mc_trans;
-
-                        // May be a negative number!
-                        // time 是当前运行的时间
-                        int fetch_cycles_ahead =
-                            (int64_t)timer - (int64_t)time_fetched;
-
-                        // If cycles ahead is smaller than HBM latency, then we
-                        // calculate the real latency
-
-                        int hbm_lat = (int)hbm_read_latency;
-                        // fetch后还会有hbm的延迟
-                        if (fetch_cycles_ahead < hbm_lat)
-                            read_latency = (hbm_lat - fetch_cycles_ahead);
-
-                        trans.set_response_status(tlm::TLM_OK_RESPONSE);
-                    } else {
-                        // Use DramSys
-                        // SC_REPORT_INFO("DRAMSYS", "USE DRAMSYS");
-                        // sc_core::sc_time delay_dramsys =
-                        // sc_core::SC_ZERO_TIME;
-                        // // DAHU CACHELINE 256b
-                        // return initiatorSocket->nb_transport_fw(trans, phase,
-                        // delay);
-                    }
                     if (use_DramSys == false) {
                         delay = sc_time(pu_penalty, SC_NS); // 模拟延迟
                         assert(false &&
@@ -562,14 +455,9 @@ public:
                         sc_core::sc_time delay_dramsys = sc_core::SC_ZERO_TIME;
                         // DAHU CACHELINE 256b
 #if DIRECT_MAPPED == 0
-                        // If the elem was not in the dcache, it's 1 now. If it
-                        // was in the dcache, freq is incremented by 1.
-                        // dcache_freq[elem_tag]++; cout
-                        // << sc_time_stamp() << ": Start DIRECT MAPPING \n" ;
                         if (dcache_freq_v2.find(elem_tag) ==
                             dcache_freq_v2.end()) {
-                            dcache_freq_v2[elem_tag] =
-                                1; // 如果不存在，则初始化为 1
+                            dcache_freq_v2[elem_tag] = 1; // 如果不存在，则初始化为 1
                         } else {
                             dcache_freq_v2[elem_tag]++; // 如果存在，则自增
                         }
@@ -577,24 +465,12 @@ public:
                         check_freq(dcache_freq_v2, tags, set, elem_tag);
 
 #endif
-                        // cout << "DCache: nb_transport_fw " << sc_time_stamp()
-                        // << " " << trans.get_command() << " " <<
-                        // trans.get_address() << endl;
                         return initiatorSocket->nb_transport_fw(trans, phase,
                                                                 delay);
                     }
                 }
             }
 #endif
-            // //load(1);
-            // #if ASSERT_MODE
-            //     assert(pu_penalty > 0);
-            // #endif
-            // //mem_wait_add(pu_penalty);
-
-            // // 响应传输
-
-            // trans.set_response_status(TLM_OK_RESPONSE);
         }
     }
 

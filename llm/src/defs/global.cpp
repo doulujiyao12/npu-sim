@@ -38,7 +38,7 @@ uint32_t *dram_array;
 #if DCACHE == 1
 // u_int16_t * dcache_freq;
 std::unordered_map<u_int64_t, u_int16_t> dcache_freq_v2;
-bool *dcache_dirty;
+std::unordered_set<uint64_t> *dcache_dirty;
 uint64_t **dcache_tags;
 uint32_t *dcache_occupancy;
 uint32_t *dcache_last_evicted;
