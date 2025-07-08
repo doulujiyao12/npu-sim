@@ -27,7 +27,7 @@ cleanup() {
     rm -f "${BUILD_LOG_FULL_PATH}"
 }
 
-trap cleanup EXIT INT TERM
+# trap cleanup EXIT INT TERM
 
 if [ "$#" -ne 1 ]; then
     echo "Usage: ./${SCRIPT_NAME} <test_batch_file>"
@@ -48,14 +48,14 @@ while IFS= read -r line || [[ -n "$line" ]]; do
     echo ""
     echo "INFO: Processing line ${LINE_NUM}: ${line}"
 
-    FIELD_COUNT=$(echo "$line" | awk -F'\t' '{print NF}')
+    FIELD_COUNT=$(echo "$line" | awk '{print NF}')
 
     ORIGINAL_PWD=$(pwd)
     cd "${BUILD_DIR_ABS}"
 
     if [ "$FIELD_COUNT" -eq 8 ]; then
         echo "INFO: Detected 8 fields, using legacy mode."
-        IFS=$'\t' read -r NPUSIM_MAIN_CONFIG_FILE JSON_X JSON_CORE_ID JSON_EXU_X JSON_EXU_Y JSON_SFU_X JSON_SRAM_BITWIDTH JSON_SRAM_MAX_SIZE <<<"$line"
+        read -r NPUSIM_MAIN_CONFIG_FILE JSON_X JSON_CORE_ID JSON_EXU_X JSON_EXU_Y JSON_SFU_X JSON_SRAM_BITWIDTH JSON_SRAM_MAX_SIZE <<<"$line"
 
         CONFIG_CONTENT=$(
             cat <<EOF
@@ -84,13 +84,13 @@ EOF
 
     elif [ "$FIELD_COUNT" -eq 2 ]; then
         echo "INFO: Detected 2 fields, using new direct mode."
-        IFS=$'\t' read -r CONFIG_NAME CORE_CONFIG_NAME <<<"$line"
+        read -r CONFIG_NAME CORE_CONFIG_NAME <<<"$line"
 
         ./npusim --config-name="${CONFIG_NAME}" \
                  --core-config-name="${CORE_CONFIG_NAME}" \
                  >"${NPUSIM_STDOUT_TMP_BASENAME}"
     else
-        echo "ERROR: Line ${LINE_NUM} has invalid number of fields (expected 2 or 8)."
+        echo "ERROR: Line ${LINE_NUM} has invalid number of fields ${FIELD_COUNT} (expected 2 or 8)."
         echo -e "${line}\tERROR: Invalid parameter count" >>"${OUTPUT_BATCH_FILE}"
         cd "${ORIGINAL_PWD}"
         continue

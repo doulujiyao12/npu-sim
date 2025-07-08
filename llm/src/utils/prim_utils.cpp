@@ -1,6 +1,7 @@
 #include "utils/prim_utils.h"
 #include "prims/comp_prims.h"
 #include "prims/gpu_prims.h"
+#include "prims/moe_prims.h"
 #include "prims/norm_prims.h"
 #include "prims/pd_prims.h"
 #include "prims/prim_base.h"
@@ -82,6 +83,10 @@ prim_base *new_prim(string type) {
         prim = new silu_forward();
     else if (type == "swiglu_forward")
         prim = new swiglu_forward();
+    else if (type == "matmul_forward_moe")
+        prim = new matmul_forward_moe();
+    else if (type == "gate_forward")
+        prim = new gate_forward();
 
     else {
         cout << "Parse config prim: Not Implemented.\n";

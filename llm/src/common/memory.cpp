@@ -105,7 +105,7 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
     for (auto pair : data_map) {
         // cout << "[Traverse SRAM]: " << pair.first << endl;
         // valid = true 表示还没有被spill过
-        if (pair.second.valid)
+        if (pair.second.valid) 
             used += pair.second.size;
         else
             used += pair.second.size - pair.second.spill_size;
@@ -116,6 +116,8 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
 
     // 放得下
     if (used <= max_sram_size) {
+        cout << "[SRAM CHECK] Core " << cid
+         << " Sram size: " << used << "\n";
         return;
     }
 

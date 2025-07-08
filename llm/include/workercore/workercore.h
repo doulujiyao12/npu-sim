@@ -176,6 +176,9 @@ public:
         *next_datapass_label; // 记录sram中数据的标签，这个变量由set
                               // sram修改，并由紧接着的comp原语读取并使用
 
+    // moe相关
+    vector<int> selected_experts;
+
     SC_HAS_PROCESS(WorkerCoreExecutor);
     WorkerCoreExecutor(const sc_module_name &n, int s_cid,
                        Event_engine *event_engine);

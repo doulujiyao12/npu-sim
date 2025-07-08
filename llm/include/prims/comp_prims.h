@@ -170,6 +170,7 @@ public:
                               const float *bias, int B, int T, int C, int OC);
 };
 
+
 class switch_data : public comp_base {
 public:
     int IN, OUT;

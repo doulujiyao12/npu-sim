@@ -24,7 +24,10 @@ int find_var(string var) {
             return v.second;
     }
 
-    cout << "Check config settings, unknown variable: " << var << endl;
+    if (var.length() <= 8)
+        cout << "[ERROR] Check config settings, unknown variable: " << var
+             << endl;
+
     return 1;
 }
 
@@ -205,10 +208,9 @@ void init_grid(string config_path, string core_config_path) {
     }
 
     for (int i = sample.id + 1; i < GRID_SIZE; i++) {
-        tile_exu.push_back(make_pair(
-            i, new ExuConfig(MAC_Array, sample.exu_x, sample.exu_y)));
-        tile_sfu.push_back(
-            make_pair(i, new SfuConfig(Linear, sample.sfu_x)));
+        tile_exu.push_back(
+            make_pair(i, new ExuConfig(MAC_Array, sample.exu_x, sample.exu_y)));
+        tile_sfu.push_back(make_pair(i, new SfuConfig(Linear, sample.sfu_x)));
         mem_sram_bw.push_back(make_pair(i, sample.sram_bitwidth));
         mem_dram_config_str.push_back(make_pair(i, sample.dram_config));
     }
