@@ -219,7 +219,7 @@ void init_global_members() {
     dram_array = new uint32_t[GRID_SIZE];
 #endif
 
-#if DCACHE
+#if DCACHE == 1
     dcache_tags = new uint64_t *[GRID_SIZE];
     dcache_occupancy = new uint32_t[GRID_SIZE];
     dcache_last_evicted = new uint32_t[GRID_SIZE];
@@ -236,19 +236,23 @@ void initialize_cache_structures() {
     printf("GRID_SIZE%d, ss%ld\n", GRID_SIZE, dataset_words_per_tile);
     assert(data_footprint_in_words > 0);
 
+    // u_int64_t total_lines =
+    //     data_footprint_in_words >> dcache_words_in_line_log2;
     u_int64_t total_lines =
-        data_footprint_in_words >> dcache_words_in_line_log2;
+        dataset_words_per_tile >> dcache_words_in_line_log2;
     printf("dataset_words_per_tile %ld \n", dataset_words_per_tile);
     printf("data_footprint_in_words %ld \n", data_footprint_in_words);
     printf("total_lines %ld \n", total_lines);
     // dcache_freq = (u_int16_t *)calloc(total_lines, sizeof(u_int16_t));
-    dcache_dirty = (bool *)calloc(total_lines, sizeof(bool));
+    // dcache_dirty = (bool *)calloc(total_lines, sizeof(bool));
+    dcache_dirty = new std::unordered_set<uint64_t>[GRID_SIZE];  // One set per tile
 
     // dcache_size dcache size of each tile
     u_int64_t lines_per_tile = dcache_size >> dcache_words_in_line_log2;
     for (int i = 0; i < GRID_SIZE; i++) {
         u_int64_t *array_uint =
             (u_int64_t *)calloc(lines_per_tile, sizeof(u_int64_t));
+        // bool *dcache_dirty = (bool *)calloc(total_lines, sizeof(bool));
         for (int j = 0; j < lines_per_tile; j++) {
             array_uint[j] = UINT64_MAX;
         }
@@ -266,6 +270,8 @@ void init_perf_counters() {
     mc_transactions =
         (u_int64_t *)calloc(total_hbm_channels, sizeof(u_int64_t));
     mc_latency = (u_int64_t *)calloc(total_hbm_channels, sizeof(u_int64_t));
+    mc_transactions = (u_int64_t *) calloc(total_hbm_channels, sizeof(u_int64_t));
+    mc_writebacks = (u_int64_t *) calloc(total_hbm_channels, sizeof(u_int64_t));
 
     // total_counters = new u_int64_t**[GRID_X];
     frame_counters = new u_int32_t **[GRID_X];
@@ -285,10 +291,17 @@ void init_perf_counters() {
 
 void destroy_cache_structures() {
     free(mc_transactions);
+    free(mc_writebacks);
     free(mc_latency);
+
 #if DCACHE
-    // free(dcache_freq);
-    free(dcache_dirty);
+    // for (int i = 0; i < GRID_SIZE; ++i) {
+    //     free(dcache_dirty[i]);  // Free each array for the grid
+    // }
+    // free(dcache_dirty);
+    delete[] dcache_dirty;
+
+    
 
     for (int i = 0; i < GRID_SIZE; i++) {
         free(dcache_tags[i]);
@@ -350,9 +363,11 @@ void system_cleanup() {
     // }
 
     delete[] dram_array;
+#if DCACHE == 1
     delete[] dcache_tags;
     delete[] dcache_occupancy;
     delete[] dcache_last_evicted;
+#endif
 }
 
 // mesh的结构，编号是z字型编号的

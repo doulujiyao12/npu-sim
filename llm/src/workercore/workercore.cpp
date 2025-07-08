@@ -32,7 +32,7 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
     : sc_module(n), cid(s_cid), event_engine(event_engine) {
     systolic_config = new HardwareTaskConfig();
     other_config = new HardwareTaskConfig();
-    dcache = new DCache(sc_gen_unique_name("dcache"), (int)cid / GRID_X,
+    dcache = new DCache(sc_gen_unique_name("dcache"), cid, (int)cid / GRID_X,
                         (int)cid % GRID_X, this->event_engine, dram_config_name,
                         "../DRAMSys/configs");
     cout << " MaxAddr "
@@ -52,7 +52,10 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
                                       cid, this->event_engine);
     executor->MaxDramAddr =
         dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
-    // dataset_words_per_tile = dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
+
+    
+    executor->defaultDataLength =  dcache->dramSysWrapper->dramsys->getMemSpec().defaultBytesPerBurst;
+    assert(dataset_words_per_tile < dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress());
     g_dram_kvtable[cid] =
         new DramKVTable(executor->MaxDramAddr, (uint64_t)50 * 1024 * 1024, 20);
     executor->systolic_config = systolic_config;

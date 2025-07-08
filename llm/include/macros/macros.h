@@ -5,7 +5,7 @@
 
 #ifndef DCACHE
 #define DCACHE                                                                 \
-    1 // 1: cache and DRAM in separete die, 2: cache and DRAM in the same HBM
+    0 // 1: cache and DRAM in separete die, 2: cache and DRAM in the same HBM
       // die
 #endif
 
@@ -19,6 +19,7 @@
 #define USE_SRAM_MANAGER 0
 #define USE_NB_DRAMSYS 1
 #define USE_L1L2_CACHE 1
+#define USE_BEHA_SRAM 1
 #define FAST_WARMUP 1
 #define SR_PARA 0
 #define GPU_CACHE_DEBUG 0
@@ -26,6 +27,7 @@
 #define NB_CACHE_DEBUG 0
 #define DEBUG_SRAM_MANAGER 0
 #define DRAM_ALIGN 1024
+#define DRAM_BURST_BYTE 0
 
 
 // 数据包占位

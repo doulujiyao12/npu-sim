@@ -70,6 +70,10 @@ public:
         base_address = base_addr;
         total_requests = cache_cnt;
         data_length = line_size / 8;     // 假设每行按8字节分块
+#if DRAM_BURST_BYTE > 0 
+        total_requests = (total_requests * data_length + DRAM_BURST_BYTE - 1) / DRAM_BURST_BYTE;
+        data_length = DRAM_BURST_BYTE;
+#endif
         current_request = 0;             // Reset request counter
         config_updated = true;           // Notify the main process
         this->read_or_write = read_or_write;   // 读写标志位 0 是 读 1 是 写
