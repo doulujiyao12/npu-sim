@@ -106,9 +106,6 @@ int load_expert::task_core(TaskCoreContext &context) {
     prefetched_experts->clear();
     prefetched_experts->push_back(exp_1);
 
-    // dram地址
-    u_int64_t dram_addr_tile = cid * dataset_words_per_tile;
-
     // 将单个专家的所有数据load到sram中
     check_static_data(context, dram_time, dram_addr_tile,
                       data_size_weight_single, label_weight_prefix_1 + to_string(exp_1));

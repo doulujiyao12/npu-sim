@@ -44,7 +44,7 @@
           "id": 0,
           "cast": [
             {
-              "dest": 131,
+              "dest": 1,
               "critical": true
             }
           ],
@@ -189,10 +189,10 @@
           ]
         },
         {
-          "id": 131,
+          "id": 1,
           "cast": [
             {
-              "dest": 132,
+              "dest": 2,
               "critical": true
             }
           ],
@@ -200,10 +200,10 @@
           "prim_copy": 0
         },
         {
-          "id": 132,
+          "id": 2,
           "cast": [
             {
-              "dest": 233,
+              "dest": 3,
               "critical": true
             }
           ],
@@ -211,10 +211,10 @@
           "prim_copy": 0
         },
         {
-          "id": 233,
+          "id": 3,
           "cast": [
             {
-              "dest": 234,
+              "dest": 4,
               "critical": true
             }
           ],
@@ -222,10 +222,10 @@
           "prim_copy": 0
         },
         {
-          "id": 234,
+          "id": 4,
           "cast": [
             {
-              "dest": 235,
+              "dest": 5,
               "critical": true
             }
           ],
@@ -233,7 +233,7 @@
           "prim_copy": 0
         },
         {
-          "id": 235,
+          "id": 5,
           "cast": [
             {
               "dest": 6,
