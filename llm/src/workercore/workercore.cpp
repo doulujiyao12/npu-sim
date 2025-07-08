@@ -1094,6 +1094,7 @@ void WorkerCoreExecutor::task_logic() {
             moe_base *moe = (moe_base *)p;
             moe->datapass_label = *next_datapass_label;
             moe->selected_experts = &selected_experts;
+            moe->selected_freq = &selected_freq;
         }
         
         p->cid = cid;

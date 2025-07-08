@@ -95,6 +95,7 @@
                   "T": "T",
                   "C": "3C-R",
                   "NH": "NH",
+                  "R": "R",
                   "job_type": "prefill",
                   "sram_address": {
                     "indata": "matmul1_out",
@@ -575,7 +576,7 @@
                   "T": "1",
                   "C": "C",
                   "sram_address": {
-                    "indata": "input_label",
+                    "indata": "_input_label",
                     "outdata": "rmsnorm1_out"
                   },
                   "dram_address": {

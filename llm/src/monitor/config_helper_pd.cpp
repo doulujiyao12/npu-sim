@@ -14,11 +14,6 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
     jfile >> j;
 
     decode_done = 0;
-    for (int i = 0; i < GRID_SIZE; i++) {
-        CoreStatus status = CoreStatus(i, JOB_BOTH);
-        coreStatus.push_back(status);
-    }
-
 
     // 收集相关参数
     auto config_reqs = j["requests"];
@@ -31,6 +26,12 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
     model_stage = config_model["stage"];
     batch_size = config_model["batch"];
     kv_heads = config_model["kv_heads"];
+
+    attend_cores = GRID_SIZE / model_stage * model_stage;
+    for (int i = 0; i < attend_cores; i++) {
+        CoreStatus status = CoreStatus(i, JOB_BOTH);
+        coreStatus.push_back(status);
+    }
 
     // 收集req的arrive时间
     // if (config_reqs["arrival"].size() != req_cnt) {
@@ -56,7 +57,7 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
         requestRecords.push_back(record);
     }
 
-    for (int i = 0; i < GRID_SIZE / model_stage; i++) {
+    for (int i = 0; i < attend_cores / model_stage; i++) {
         queue<int> p, q;
         idle_decode.push_back(p);
         unfinished_prefill.push_back(q);
@@ -157,16 +158,15 @@ void config_helper_pd::iter_done(vector<Msg> done_msg) {
                     sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX,
                             KVCACHE_PREFIX, stage.req_id);
                     string label_k = format_label_k;
-                    for (int i = 0; i < GRID_SIZE; i++) {
+                    for (int i = 0; i < attend_cores; i++) {
                         g_dram_kvtable[i]->remove(label_k);
                     }
-
 
                     char format_label_v[100];
                     sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX,
                             KVCACHE_PREFIX, stage.req_id);
                     string label_v = format_label_v;
-                    for (int i = 0; i < GRID_SIZE; i++) {
+                    for (int i = 0; i < attend_cores; i++) {
                         g_dram_kvtable[i]->remove(label_v);
                     }
 

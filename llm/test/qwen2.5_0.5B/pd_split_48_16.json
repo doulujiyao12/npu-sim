@@ -31,7 +31,7 @@
                   "T": "T",
                   "C": "C",
                   "sram_address": {
-                    "indata": "input_label",
+                    "indata": "_input_label",
                     "outdata": "rmsnorm1_out"
                   },
                   "dram_address": {
@@ -548,7 +548,7 @@
                   "T": "1",
                   "C": "C",
                   "sram_address": {
-                    "indata": "input_label",
+                    "indata": "_input_label",
                     "outdata": "rmsnorm1_out"
                   },
                   "dram_address": {
@@ -717,7 +717,7 @@
                   "T": "1",
                   "C": "C",
                   "sram_address": {
-                    "indata": "input_label",
+                    "indata": "_input_label",
                     "outdata": "rmsnorm1_out"
                   },
                   "dram_address": {
@@ -886,7 +886,7 @@
                   "T": "1",
                   "C": "C",
                   "sram_address": {
-                    "indata": "input_label",
+                    "indata": "_input_label",
                     "outdata": "rmsnorm1_out"
                   },
                   "dram_address": {

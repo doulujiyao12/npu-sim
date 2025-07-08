@@ -18,6 +18,7 @@
     "C/4": 224,
     "2C": 1792,
     "3CR": 384,
+    "3C-R": 1152,
     "3C-R/2": 576,
     "3CR/2": 192,
     "CR/2": 64,
@@ -93,6 +94,7 @@
                   "T": "T",
                   "C": "3C-R",
                   "NH": "NH",
+                  "R": "R",
                   "job_type": "prefill",
                   "sram_address": {
                     "indata": "matmul1_out",
@@ -529,7 +531,7 @@
                   "T": "1",
                   "C": "C",
                   "sram_address": {
-                    "indata": "input_label",
+                    "indata": "_input_label",
                     "outdata": "rmsnorm1_out"
                   },
                   "dram_address": {
@@ -943,7 +945,12 @@
           "loop": "L",
           "cast": [
             {
-              "dest": -1
+              "dest": -1,
+              "loopout": "true"
+            },
+            {
+              "dest": 33,
+              "loopout": "false"
             }
           ],
           "recv_cnt": 1,

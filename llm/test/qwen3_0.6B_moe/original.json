@@ -3,26 +3,24 @@
   "vars": {
     "B": 1,
     "T": 128,
-    "C": 1024,
-    "C/2": 512,
-    "NH": 16,
-    "NH/2": 8,
+    "C": 768,
+    "C/2": 384,
+    "NH": 12,
+    "NH/2": 6,
     "L": 28,
-    "3C": 3072,
-    "4C": 4096,
-    "BTC": 131072,
-    "2BTC": 262144,
-    "3BTC": 393216,
-    "3BTC/2": 196608,
-    "4BTC": 524288,
-    "3C/2": 1536,
-    "3C/4": 768,
-    "C/4": 256,
-    "2C": 2048,
-    "3CR": 1536,
-    "3CR/2": 768,
-    "3C-R": 2048,
-    "3C-R/2": 1024,
+    "3C": 2304,
+    "4C": 3072,
+    "BTC": 98304,
+    "2BTC": 196608,
+    "3BTC": 294912,
+    "3BTC/2": 147456,
+    "4BTC": 393216,
+    "3C/2": 1152,
+    "3C/4": 576,
+    "C/4": 192,
+    "2C": 1536,
+    "3C-R": 1536,
+    "3C-R/2": 768,
     "R": 2,
     "K": 2,
     "E_N": 4,
@@ -208,76 +206,89 @@
     },
     {
       "id": 1,
-      "cast": [
+      "worklist": [
         {
-          "dest": 0,
-          "critical": true
-        }
-      ],
-      "recv_cnt": 1,
-      "prims": [
-        {
-          "type": "matmul_forward_moe",
-          "B": "B",
-          "T": "T",
-          "C": "C",
-          "OC": "3C",
-          "K": "K",
-          "E_N": "E_N",
-          "choose": true,
-          "sram_address": {
-            "indata": "_input_label",
-            "outdata": "matmul_moe1_out"
-          },
-          "dram_address": {
-            "data": "matmul_moe1_data"
-          }
+          "cast": [
+            {
+              "dest": 0,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prims": [
+            {
+              "type": "matmul_forward_moe",
+              "B": "B",
+              "T": "T",
+              "C": "C",
+              "OC": "3C",
+              "K": "K",
+              "E_N": "E_N",
+              "choose": true,
+              "sram_address": {
+                "indata": "_input_label",
+                "outdata": "matmul_moe1_out"
+              },
+              "dram_address": {
+                "data": "matmul_moe1_data"
+              }
+            },
+            {
+              "type": "matmul_forward_moe",
+              "use_hw": false,
+              "B": "B",
+              "T": "T",
+              "C": "C",
+              "OC": "3C",
+              "K": "K",
+              "E_N": "E_N",
+              "sram_address": {
+                "indata": "input_label",
+                "outdata": "matmul_moe2_out"
+              },
+              "dram_address": {
+                "data": "matmul_moe2_data"
+              }
+            },
+            {
+              "type": "swiglu_forward",
+              "N": "3BTCK",
+              "sram_address": {
+                "indata": "matmul_moe1_out matmul_moe2_out",
+                "outdata": "swiglu1_out"
+              },
+              "dram_address": {
+                "input": 0,
+                "data": -1
+              }
+            },
+            {
+              "type": "matmul_forward_moe",
+              "B": "B",
+              "T": "T",
+              "C": "3C",
+              "OC": "C",
+              "K": "K",
+              "E_N": "E_N",
+              "is_merge": true,
+              "sram_address": {
+                "indata": "swiglu1_out",
+                "outdata": "matmul_moe3_out"
+              },
+              "dram_address": {
+                "data": "matmul_moe3_data"
+              }
+            }
+          ]
         },
         {
-          "type": "matmul_forward_moe",
-          "use_hw": false,
-          "B": "B",
-          "T": "T",
-          "C": "C",
-          "OC": "3C",
-          "K": "K",
-          "E_N": "E_N",
-          "sram_address": {
-            "indata": "input_label",
-            "outdata": "matmul_moe2_out"
-          },
-          "dram_address": {
-            "data": "matmul_moe2_data"
-          }
-        },
-        {
-          "type": "swiglu_forward",
-          "N": "3BTCK",
-          "sram_address": {
-            "indata": "matmul_moe1_out matmul_moe2_out",
-            "outdata": "swiglu1_out"
-          },
-          "dram_address": {
-            "input": 0,
-            "data": -1
-          }
-        },
-        {
-          "type": "matmul_forward_moe",
-          "B": "B",
-          "T": "T",
-          "C": "3C",
-          "OC": "C",
-          "K": "K",
-          "E_N": "E_N",
-          "is_merge": true,
-          "sram_address": {
-            "indata": "swiglu1_out",
-            "outdata": "matmul4_out"
-          },
-          "dram_address": {
-            "data": "matmul4_data"
-          }
+          "cast": [],
+          "recv_cnt": 0,
+          "prims": [
+            {
+
+            }
+          ]
         }
       ]
     },

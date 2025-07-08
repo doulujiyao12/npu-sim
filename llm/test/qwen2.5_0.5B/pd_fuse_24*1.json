@@ -59,6 +59,7 @@
                   "T": "T",
                   "C": "3CR",
                   "NH": "NH",
+                  "R": "R",
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "rope1_out"

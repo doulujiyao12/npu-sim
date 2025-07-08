@@ -8,7 +8,7 @@
     ]
   },
   "model": {
-    "heads": 32,
+    "heads": 20,
     "eof_chance": 0.1,
     "stage": 16,
     "batch": 2,

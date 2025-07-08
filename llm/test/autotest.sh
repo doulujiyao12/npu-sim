@@ -106,6 +106,13 @@ EOF
             RECORD_FOUND=1
             break
         fi
+        if [[ "$line_catch" == "[ERROR]"* ]]; then
+            remaining_content="${line_catch#"[ERROR]"}"
+            remaining_content="${remaining_content##+([ \t])}"
+            RESULT_STRING="${remaining_content}"
+            RECORD_FOUND=1
+            break
+        fi
     done < <(tac "${NPUSIM_STDOUT_TMP_BASENAME}")
 
     if [ $RECORD_FOUND -eq 0 ]; then

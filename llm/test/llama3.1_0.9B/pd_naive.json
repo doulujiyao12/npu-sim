@@ -2,34 +2,31 @@
   "vars": {
     "B": 1,
     "T": 128,
-    "C": 2048,
-    "C/2": 1024,
-    "NH": 32,
-    "NH/2": 16,
+    "C": 1280,
+    "C/2": 640,
+    "NH": 20,
+    "NH/2": 10,
     "NH/4": 8,
-    "NH/8": 4,
     "L": 16,
     "SEQ": 15,
-    "3C": 6144,
-    "4C": 8192,
-    "BTC": 262144,
-    "BTC/2": 131072,
-    "2BTC": 524288,
-    "3BTC": 786432,
-    "3BTC/2": 393216,
-    "3BTC/4": 196608,
-    "3BTC/8": 98304,
-    "4BTC": 1048576,
-    "3C/2": 3072,
-    "3C/4": 1536,
-    "3C/8": 768,
-    "C/4": 512,
-    "C/8": 256,
-    "2C": 4096,
-    "3C-R/2": 1536,
-    "3C-R/4": 768,
-    "3C-R/8": 384,
-    "3C-R": 3072,
+    "3C": 3840,
+    "4C": 5120,
+    "BTC": 163840,
+    "2BTC": 327680,
+    "3BTC": 491520,
+    "3BTC/2": 245760,
+    "3BTC/4": 122880,
+    "3BTC/8": 61440,
+    "4BTC": 655360,
+    "3C/2": 1920,
+    "3C/4": 960,
+    "3C/8": 480,
+    "C/4": 320,
+    "2C": 2560,
+    "3C-R/2": 960,
+    "3C-R/4": 480,
+    "3C-R/8": 240,
+    "3C-R": 1920,
     "R": 4,
     "1": 1,
     "DH": 64,
@@ -175,7 +172,7 @@
                   "B": "B",
                   "T": "T",
                   "C": "C",
-                  "OC": "4C",
+                  "OC": "3C",
                   "sram_address": {
                     "indata": "_split_matmul2_out",
                     "outdata": "matmul3_out"
@@ -190,7 +187,7 @@
                   "B": "B",
                   "T": "T",
                   "C": "C",
-                  "OC": "4C",
+                  "OC": "3C",
                   "sram_address": {
                     "indata": "split_matmul2_out",
                     "outdata": "matmul4_out"
@@ -201,7 +198,7 @@
                 },
                 {
                   "type": "swiglu_forward",
-                  "N": "4BTC",
+                  "N": "3BTC",
                   "sram_address": {
                     "indata": "matmul3_out matmul4_out",
                     "outdata": "swiglu1_out"
@@ -215,7 +212,7 @@
                   "type": "Matmul_f",
                   "B": "B",
                   "T": "T",
-                  "C": "4C",
+                  "C": "3C",
                   "OC": "C",
                   "sram_address": {
                     "indata": "swiglu1_out",
@@ -398,12 +395,215 @@
           "id": 15,
           "cast": [
             {
-              "dest": 33,
+              "dest": 16,
               "critical": true
             }
           ],
           "recv_cnt": 1,
           "prim_copy": 0
+        },
+        {
+          "id": 16,
+          "cast": [
+            {
+              "dest": 17,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 17,
+          "cast": [
+            {
+              "dest": 18,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 18,
+          "cast": [
+            {
+              "dest": 19,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 19,
+          "cast": [
+            {
+              "dest": 20,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 20,
+          "cast": [
+            {
+              "dest": 21,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 21,
+          "cast": [
+            {
+              "dest": 22,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 22,
+          "cast": [
+            {
+              "dest": 23,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 23,
+          "cast": [
+            {
+              "dest": 24,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 24,
+          "cast": [
+            {
+              "dest": 25,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 25,
+          "cast": [
+            {
+              "dest": 26,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 26,
+          "cast": [
+            {
+              "dest": 27,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 27,
+          "cast": [
+            {
+              "dest": 28,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 28,
+          "cast": [
+            {
+              "dest": 29,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 29,
+          "cast": [
+            {
+              "dest": 30,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 30,
+          "cast": [
+            {
+              "dest": 31,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 31,
+          "cast": [
+            {
+              "dest": 32
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "id": 32,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 33
+                }
+              ],
+              "prims": [
+                {
+                  "type": "switch_data",
+                  "IN": "BTC",
+                  "OUT": "C",
+                  "sram_address": {
+                    "indata": "input_label",
+                    "outdata": "switch_out"
+                  },
+                  "dram_address": {
+                    "data": -1,
+                    "out": "switch_out"
+                  }
+                }
+              ]
+            }
+          ]
         },
         {
           "id": 33,
@@ -423,7 +623,7 @@
                   "T": "1",
                   "C": "C",
                   "sram_address": {
-                    "indata": "input_label",
+                    "indata": "_input_label",
                     "outdata": "rmsnorm1_out"
                   },
                   "dram_address": {
@@ -524,7 +724,7 @@
                   "B": "B",
                   "T": "1",
                   "C": "C",
-                  "OC": "4C",
+                  "OC": "3C",
                   "sram_address": {
                     "indata": "_split_matmul2_out",
                     "outdata": "matmul3_out"
@@ -539,7 +739,7 @@
                   "B": "B",
                   "T": "1",
                   "C": "C",
-                  "OC": "4C",
+                  "OC": "3C",
                   "sram_address": {
                     "indata": "split_matmul2_out",
                     "outdata": "matmul4_out"
@@ -550,7 +750,7 @@
                 },
                 {
                   "type": "swiglu_forward",
-                  "N": "4C",
+                  "N": "3C",
                   "sram_address": {
                     "indata": "matmul3_out matmul4_out",
                     "outdata": "swiglu1_out"
@@ -564,7 +764,7 @@
                   "type": "Matmul_f",
                   "B": "B",
                   "T": "1",
-                  "C": "4C",
+                  "C": "3C",
                   "OC": "C",
                   "sram_address": {
                     "indata": "swiglu1_out",
@@ -749,12 +949,188 @@
           "loop": "SEQ",
           "cast": [
             {
+              "dest": 49
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 49,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 50
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 50,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 51
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 51,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 52
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 52,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 53
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 53,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 54
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 54,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 55
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 55,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 56
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 56,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 57
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 57,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 58
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 58,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 59
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 59,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 60
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 60,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 61
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 61,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 62
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 62,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 63
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 63,
+          "loop": "SEQ",
+          "cast": [
+            {
+              "dest": 64
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 33
+        },
+        {
+          "id": 64,
+          "loop": "SEQ",
+          "cast": [
+            {
               "dest": 33,
-              "loopout": false
+              "loopout": "false"
             },
             {
               "dest": -1,
-              "loopout": true
+              "loopout": "true"
             }
           ],
           "recv_cnt": 1,

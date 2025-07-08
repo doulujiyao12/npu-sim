@@ -28,6 +28,7 @@ public:
     int model_stage;
     int batch_size;
     int kv_heads;
+    int attend_cores; // 参与仿真的核数量，不一定等于总核数
 
     config_helper_pd(string filename, string font_ttf, sc_event *ev_sig,
                      int config_chip_id = 0);

@@ -153,6 +153,7 @@ enum PRIM_TYPE_CODE {
     SWIGLU_F_TYPE = 0x19,
     GATE_FORWARD_TYPE = 0x1a,
     MATMUL_FORWARD_MOE_TYPE = 0x1b,
+    LOAD_EXPERT_TYPE = 0x1c,
 
     SEND_GLOBAL_MEMORY_TYPE = 0x40,
     RECV_GLOBAL_MEMORY_TYPE = 0x41,
@@ -177,3 +178,11 @@ enum PRIM_TYPE_CODE {
 // 用于计算核硬件配置
 enum Etype { MAC_Array };
 enum Sftype { Linear };
+
+// 用于moe专家加载策略
+enum MOE_LOAD_STRATEGY {
+    MOE_LOAD_STRATEGY_NONE = 0,
+    MOE_LOAD_STRATEGY_RANDOM,
+    MOE_LOAD_STRATEGY_HOT,
+    MOE_LOAD_STRATEGY_BEST,
+};

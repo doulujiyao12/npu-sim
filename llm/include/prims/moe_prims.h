@@ -23,3 +23,25 @@ public:
     HardwareTaskConfig *generate_hw_config();
     matmul_forward_moe() { name = "matmul_forward_moe"; }
 };
+
+
+class load_expert : public moe_base {
+public:
+    int E_N; // 专家个数
+    int K; // 需要选择的专家个数
+    int OC, C;
+    MOE_LOAD_STRATEGY strategy;
+
+    int task();
+    int task_core(TaskCoreContext &context);
+
+    sc_bv<128> serialize();
+    void deserialize(sc_bv<128> buffer);
+
+    void parse_json(json j);
+    void print_self(string prefix);
+    int sram_utilization(DATATYPE datatype, int cid = 0);
+
+    void initialize();
+    load_expert() { name = "load_expert"; }
+};

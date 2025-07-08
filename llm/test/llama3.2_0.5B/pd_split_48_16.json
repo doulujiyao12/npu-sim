@@ -6,7 +6,7 @@
     "arrival": [
       1
     ],
-    "heads": 32,
+    "heads": 20,
     "eof_chance": 0.1,
     "prefill_stage": 16,
     "decode_stage": 8,

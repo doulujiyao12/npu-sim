@@ -185,6 +185,7 @@ int matmul_forward_moe::task_core(TaskCoreContext &context) {
                 if (rand_result(50))
                     continue; // 50%概率不重选
 
+                exp_flag[e] = false;
                 do {
                     e = rand() % E_N;
                 } while (exp_flag[e]);
@@ -199,6 +200,12 @@ int matmul_forward_moe::task_core(TaskCoreContext &context) {
                 exp_flag[s_exp] = true;
                 selected_experts->push_back(s_exp);
             }
+
+            while (selected_freq->size() < E_N)
+                selected_freq->push_back(0);
+
+            for (auto e : *selected_experts)
+                (*selected_freq)[e]++;
         } else {
             if (selected_experts->size() != K) {
                 cout << "[ERROR] selected_experts size mismatch: "
@@ -208,7 +215,17 @@ int matmul_forward_moe::task_core(TaskCoreContext &context) {
             }
         }
 
+        // 优先查看是否有被prefetch的专家
+        bool checked[selected_experts->size()];
+        for (int i = 0; i < selected_experts->size(); i++)
+            checked[i] = false;
+
         for (auto e : *selected_experts) {
+            if (std::find(prefetched_experts->begin(),
+                          prefetched_experts->end(),
+                          e) == prefetched_experts->end())
+                continue;
+
             auto label_weight = ETERNAL_PREFIX + prefix + "_w_" + to_string(e);
             check_static_data(context, dram_time,
                               weight_global_addr + e * data_size_weight_single,
@@ -218,8 +235,28 @@ int matmul_forward_moe::task_core(TaskCoreContext &context) {
             check_static_data(context, dram_time,
                               bias_global_addr + e * data_size_bias_single,
                               data_size_bias_single, label_bias);
-            BETTER_PRINT(dram_time);
+
+            checked[e] = true;
         }
+
+        for (auto e : *selected_experts) {
+            if (checked[e])
+                continue;
+
+            auto label_weight = ETERNAL_PREFIX + prefix + "_w_" + to_string(e);
+            check_static_data(context, dram_time,
+                              weight_global_addr + e * data_size_weight_single,
+                              data_size_weight_single, label_weight);
+
+            auto label_bias = ETERNAL_PREFIX + prefix + "_b_" + to_string(e);
+            check_static_data(context, dram_time,
+                              bias_global_addr + e * data_size_bias_single,
+                              data_size_bias_single, label_bias);
+
+            checked[e] = true;
+        }
+
+        BETTER_PRINT(dram_time);
 
         // 删除标签
         if (!input_reuse)
@@ -231,13 +268,13 @@ int matmul_forward_moe::task_core(TaskCoreContext &context) {
 
     int flops;
     if (is_merge)
-        flops = B * T * OC * 2 * K +  B * T * OC * K;
+        flops = B * T * OC * 2 * K + B * T * OC * K;
     else
         flops = B * T * OC * 2 * K;
 
     // 计算overlap并写回output数据
-    write_output_data(context, flops, 0,
-                      dram_time, overlap_time, data_size_out, out_global_addr);
+    write_output_data(context, flops, 0, dram_time, overlap_time, data_size_out,
+                      out_global_addr);
     BETTER_PRINT(overlap_time);
 
     return 0;
