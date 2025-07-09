@@ -70,6 +70,8 @@
 #define SIMU_READ_PORT 2
 #define SIMU_WRITE_PORT 1
 #define ADDRESS_MAX (SRAM_BANKS * BANK_DEPTH)
+#define VERBOSE_PRINT 1
+
 
 // mem_access_unit相关
 #define wait_time 10

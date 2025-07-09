@@ -1,6 +1,7 @@
 #include "defs/global.h"
 #include "common/memory.h"
 #include "defs/enums.h"
+#include <systemc>
 
 u_int64_t dcache_hits = 0;
 u_int64_t dcache_misses = 0;
@@ -61,3 +62,56 @@ int CORE_PER_SM;
 
 // 模拟模式（数据流/gpu）
 SIM_MODE SYSTEM_MODE = SIM_DATAFLOW;
+
+int verbose_level;
+std::unordered_map<int, std::ofstream*> log_streams;
+
+const char* get_core_color(int core_id) {
+    static const char* colors[] = {
+        "\033[31m", // 红色
+        "\033[32m", // 绿色
+        "\033[33m", // 黄色
+        "\033[34m", // 蓝色
+        "\033[35m", // 品红
+        "\033[36m", // 青色
+        "\033[91m", // 亮红
+        "\033[92m", // 亮绿
+    };
+    return colors[core_id % (sizeof(colors)/sizeof(colors[0]))];
+}
+
+void log_verbose_impl(int level, int core_id, const std::string& message) {
+    if (verbose_level >= level) {
+        std::ostringstream oss;
+        oss << get_core_color(core_id)
+            << "[INFO] Core " << core_id << " " << message << " " << sc_time_stamp().to_string()
+            << "\033[0m";
+
+        std::string log_msg = oss.str();
+
+        // 控制台输出
+        std::cout << log_msg << std::endl;
+
+        // 文件输出
+        auto it = log_streams.find(core_id);
+        if (it == log_streams.end()) {
+            std::string filename = "core_" + std::to_string(core_id) + ".log";
+            log_streams[core_id] = new std::ofstream(filename, std::ios::app);
+            if (*log_streams[core_id])
+                *log_streams[core_id] << "-- New Session --\n";
+        }
+        if (log_streams[core_id] && log_streams[core_id]->is_open()) {
+            *log_streams[core_id] << log_msg << std::endl;
+        }
+    }
+}
+
+void close_log_files() {
+    for (auto& pair : log_streams) {
+        if (pair.second && pair.second->is_open()) {
+            pair.second->close();
+            delete pair.second;
+        }
+    }
+    log_streams.clear();
+}

@@ -29,7 +29,8 @@ Define_int64_opt("--MAC-SIZE", g_flag_mac_size, 128, "MAC size");
 Define_int64_opt("--trace-window", g_flag_trace_window, 2, "Trace window size");
 Define_int64_opt("--sram-max", g_flag_max_sram, 8388608,
                  "Max SRAM size"); // 3145728
-
+Define_int64_opt("--verbose-level", g_verbose_level, 1,
+                 "verbose-level"); // 3145728
 // ----------------------------------------------------------------------------
 // all the individual layers' forward and backward passes
 // B = batch_size, T = sequence_length, C = channels, V = vocab_size
@@ -77,6 +78,7 @@ int sc_main(int argc, char *argv[]) {
 
     comp_util = g_flag_comp_util;
     MAX_SRAM_SIZE = g_flag_max_sram;
+    verbose_level = g_verbose_level;
 
     init_grid(g_flag_config_file.c_str(), g_flag_core_config_file.c_str());
     init_global_members();
@@ -108,6 +110,7 @@ int sc_main(int argc, char *argv[]) {
     sc_close_vcd_trace_file(tf);
 
     system_cleanup();
+    close_log_files();
 
     clock_t end = clock();
     cout << "花费了" << (double)(end - start) / CLOCKS_PER_SEC << "秒" << endl;

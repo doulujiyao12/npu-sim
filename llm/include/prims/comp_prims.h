@@ -154,6 +154,8 @@ public:
     int task();
     int task_r();
     int task_core(TaskCoreContext &context);
+    void print_dim(int cid);
+
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);

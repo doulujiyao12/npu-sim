@@ -12,6 +12,7 @@
 #include "utils/system_utils.h"
 
 void Matmul_f::print_self(string prefix) {
+    
     cout << prefix << "<matmul_forward>\n";
     cout << prefix << "\tB: " << B << ", T: " << T << ", C: " << C
          << ", OC: " << OC << endl;
@@ -19,6 +20,13 @@ void Matmul_f::print_self(string prefix) {
          << ", previous_inp_size: " << p_inp_size << endl;
     cout << prefix << "\toutput_offset: " << out_offset
          << ", input_offset: " << inp_offset << endl;
+}
+void Matmul_f::print_dim(int cid) {
+    LOG_VERBOSE(1, cid,"Prim name:" << name << " "  << " <matmul_forward>" );
+    LOG_VERBOSE(1, cid,"Prim name:" << name << " "  << "\tB: " << B << ", T: " << T << ", C: " << C << ", OC: " << OC );
+    LOG_VERBOSE(1, cid,"Prim name:" << name << " "  << "\tout_size: " << out_size << " , inp_size: " << inp_size << ", previous_inp_size: " << p_inp_size );
+    LOG_VERBOSE(1, cid,"Prim name:" << name << " "  << "\toutput_offset: " << out_offset << ", input_offset: " << inp_offset );
+
 }
 
 void Matmul_f::initialize() {
@@ -220,6 +228,7 @@ int Matmul_f::task_core(TaskCoreContext &context) {
     // 读入input数据
     check_input_data(context, dram_time, inp_global_addr, data_size_input);
     BETTER_PRINT(dram_time);
+    print_dim(context.cid);
 
 #if USE_SRAM == 1
     {
