@@ -106,7 +106,7 @@ int Merge_matmul::task_core(TaskCoreContext &context) {
         data_size_out = slice * B * T * C;
 
     // dram地址
-    u_int64_t dram_addr_tile = cid * dataset_words_per_tile * 4;
+    u_int64_t dram_addr_tile = 0; //cid * dataset_words_per_tile;
     u_int64_t out_global_addr = dram_addr_tile + out_offset * 4;
     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * 4;
 

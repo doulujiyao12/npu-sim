@@ -71,8 +71,8 @@ void comp_base::check_input_data(TaskCoreContext &context, uint64_t &dram_time,
     auto mau = context.mau;
     auto hmau = context.hmau;
     auto sram_addr = context.sram_addr;
-
-    int inp_sram_offset = 0;
+    // dahu ???
+    int inp_sram_offset = *sram_addr;
 
 #if DUMMY == 1
     float *dram_start = nullptr;
@@ -235,13 +235,50 @@ void comp_base::check_input_data(TaskCoreContext &context, uint64_t &dram_time,
 #endif
 }
 
-void comp_base::check_static_data(TaskCoreContext &context, uint64_t &dram_time,
-                                  uint64_t label_global_addr,
+
+
+void comp_base::perf_read_data(TaskCoreContext &context, uint64_t &dram_time,
                                   int data_size_label, string label_name) {
 #if USE_NB_DRAMSYS == 0
     auto wc = context.wc;
 #endif
     auto sram_addr = context.sram_addr;
+
+
+    AddrPosKey sc_key;
+    int flag = sram_pos_locator->findPair(label_name, sc_key);
+    if (flag == -1) {
+        assert(false && "weight data not found");
+    } else if (flag > 0) {
+        assert(false && "weight data can not be spilled");
+    }
+    // dahu ??
+    int sram_offset = 0;
+    sram_pos_locator->findPair(label_name, sc_key);
+#if USE_SRAM_MANAGER == 1
+    sram_pos_locator->printAllKeysWithAllocId();
+    // Print allocation IDs for debugging
+    std::cout << label_name << " Key Allocation ID: " << sc_key.alloc_id
+              << std::endl;
+
+    sram_read_generic(context, data_byte * data_size_label, sram_offset,
+                      dram_time, sc_key.alloc_id, true, sram_pos_locator);
+#else
+
+    sram_read_generic(context, data_byte * data_size_label, sram_offset,
+                      dram_time);
+
+#endif
+}
+void comp_base::check_static_data(TaskCoreContext &context, uint64_t &dram_time,
+                                  uint64_t label_global_addr,
+                                  int data_size_label, string label_name, bool use_pf) {
+#if USE_NB_DRAMSYS == 0
+    auto wc = context.wc;
+#endif
+    auto sram_addr = context.sram_addr;
+    // dahu ??
+    int sram_offset = *sram_addr;
 
 #if DUMMY == 1
     float *dram_start = nullptr;
@@ -282,8 +319,8 @@ void comp_base::check_static_data(TaskCoreContext &context, uint64_t &dram_time,
         sram_pos_locator->addPair(label_name, sc_key, context, dram_time);
 #endif
     }
-
-    int sram_offset;
+    
+    
     sram_pos_locator->findPair(label_name, sc_key);
     LOG_VERBOSE(1, context.cid,"Prim name:" << name << " read weight data from sram" );
 #if USE_SRAM_MANAGER == 1
@@ -291,11 +328,15 @@ void comp_base::check_static_data(TaskCoreContext &context, uint64_t &dram_time,
     // Print allocation IDs for debugging
     std::cout << label_name << " Key Allocation ID: " << sc_key.alloc_id
               << std::endl;
+    if (use_pf == false){
     sram_read_generic(context, data_byte * data_size_label, sram_offset,
                       dram_time, sc_key.alloc_id, true, sram_pos_locator);
+    }
 #else
+    if (use_pf == false){
     sram_read_generic(context, data_byte * data_size_label, sram_offset,
                       dram_time);
+    }
 #endif
 }
 

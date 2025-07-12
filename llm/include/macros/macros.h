@@ -28,6 +28,7 @@
 #define DEBUG_SRAM_MANAGER 0
 #define DRAM_ALIGN 1024
 #define DRAM_BURST_BYTE 0
+#define ENABLE_COLORS 0
 
 
 // 数据包占位
@@ -71,6 +72,7 @@
 #define SIMU_WRITE_PORT 1
 #define ADDRESS_MAX (SRAM_BANKS * BANK_DEPTH)
 #define VERBOSE_PRINT 1
+#define PERFORMANCE_MODE 1
 
 
 // mem_access_unit相关

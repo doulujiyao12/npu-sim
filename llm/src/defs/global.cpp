@@ -67,6 +67,7 @@ int verbose_level;
 std::unordered_map<int, std::ofstream*> log_streams;
 
 const char* get_core_color(int core_id) {
+
     static const char* colors[] = {
         "\033[31m", // 红色
         "\033[32m", // 绿色
@@ -83,10 +84,15 @@ const char* get_core_color(int core_id) {
 void log_verbose_impl(int level, int core_id, const std::string& message) {
     if (verbose_level >= level) {
         std::ostringstream oss;
+        
+#if ENABLE_COLORS == 1
         oss << get_core_color(core_id)
             << "[INFO] Core " << core_id << " " << message << " " << sc_time_stamp().to_string()
-            << "\033[0m";
-
+             << "\033[0m";
+#else
+        
+        oss << "[INFO] Core " << core_id << " " << message << " " << sc_time_stamp().to_string();
+#endif
         std::string log_msg = oss.str();
 
         // 控制台输出
