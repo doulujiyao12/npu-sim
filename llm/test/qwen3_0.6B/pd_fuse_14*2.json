@@ -10,7 +10,7 @@
   "model": {
     "heads": 16,
     "kv_heads": 8,
-    "head_size": 128,
+    "head_size": 64,
     "eof_chance": 0.1,
     "stage": 14,
     "batch": 2

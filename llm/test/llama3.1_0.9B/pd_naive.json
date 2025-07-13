@@ -174,7 +174,7 @@
                   "C": "C",
                   "OC": "3C",
                   "sram_address": {
-                    "indata": "_split_matmul2_out",
+                    "indata": "_rmsnorm2_out",
                     "outdata": "matmul3_out"
                   },
                   "dram_address": {
@@ -189,7 +189,7 @@
                   "C": "C",
                   "OC": "3C",
                   "sram_address": {
-                    "indata": "split_matmul2_out",
+                    "indata": "rmsnorm2_out",
                     "outdata": "matmul4_out"
                   },
                   "dram_address": {
@@ -726,7 +726,7 @@
                   "C": "C",
                   "OC": "3C",
                   "sram_address": {
-                    "indata": "_split_matmul2_out",
+                    "indata": "_rmsnorm2_out",
                     "outdata": "matmul3_out"
                   },
                   "dram_address": {
@@ -741,7 +741,7 @@
                   "C": "C",
                   "OC": "3C",
                   "sram_address": {
-                    "indata": "split_matmul2_out",
+                    "indata": "rmsnorm2_out",
                     "outdata": "matmul4_out"
                   },
                   "dram_address": {

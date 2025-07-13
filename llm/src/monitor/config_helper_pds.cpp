@@ -596,7 +596,9 @@ void config_helper_pds::parse_done_msg(Event_engine *event_engine,
         g_recv_done_cnt_p = 0;
         wait_schedule_p = true;
         notify_event->notify(CYCLE, SC_NS);
-    } else if (g_recv_done_cnt_d >= decode_core) {
+    } 
+    
+    if (g_recv_done_cnt_d >= decode_core) {
         iter_done(JOB_DECODE);
 
         g_done_msg_d.clear();

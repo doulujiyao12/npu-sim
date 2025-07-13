@@ -268,9 +268,9 @@ int matmul_forward_moe::task_core(TaskCoreContext &context) {
 
     int flops;
     if (is_merge)
-        flops = B * T * OC * 2 * K + B * T * OC * K;
+        flops = B * T * C * OC * 2 * K + B * T * OC * K;
     else
-        flops = B * T * OC * 2 * K;
+        flops = B * T * C * OC * 2 * K;
 
     // 计算overlap并写回output数据
     write_output_data(context, flops, 0, dram_time, overlap_time, data_size_out,

@@ -14,7 +14,7 @@
             "exu_x": 64,
             "exu_y": 64,
             "sfu_x": 1024,
-            "sram_bitwidth": 192
+            "sram_bitwidth": 256
         }
     ]
 }

@@ -166,7 +166,7 @@ void config_helper_pd::iter_done(vector<Msg> done_msg) {
                     sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX,
                             KVCACHE_PREFIX, stage.req_id);
                     string label_v = format_label_v;
-                    for (int i = 0; i < attend_cores; i++) {
+                    for (int i = 0; i < attend_cores; i++) { 
                         g_dram_kvtable[i]->remove(label_v);
                     }
 

@@ -189,13 +189,13 @@ void init_grid(string config_path, string core_config_path) {
         CoreHWConfig c = core;
         for (int i = sample.id + 1; i < c.id; i++) {
             tile_exu.push_back(
-                make_pair(sample.id, new ExuConfig(MAC_Array, sample.exu_x,
+                make_pair(i, new ExuConfig(MAC_Array, sample.exu_x,
                                                    sample.exu_y)));
             tile_sfu.push_back(
-                make_pair(sample.id, new SfuConfig(Linear, sample.sfu_x)));
-            mem_sram_bw.push_back(make_pair(sample.id, sample.sram_bitwidth));
+                make_pair(i, new SfuConfig(Linear, sample.sfu_x)));
+            mem_sram_bw.push_back(make_pair(i, sample.sram_bitwidth));
             mem_dram_config_str.push_back(
-                make_pair(sample.id, sample.dram_config));
+                make_pair(i, sample.dram_config));
         }
 
         tile_exu.push_back(
@@ -240,14 +240,14 @@ void initialize_cache_structures() {
 
     // u_int64_t total_lines =
     //     data_footprint_in_words >> dcache_words_in_line_log2;
-    u_int64_t total_lines =
-        dataset_words_per_tile >> dcache_words_in_line_log2;
+    u_int64_t total_lines = dataset_words_per_tile >> dcache_words_in_line_log2;
     printf("dataset_words_per_tile %ld \n", dataset_words_per_tile);
     printf("data_footprint_in_words %ld \n", data_footprint_in_words);
     printf("total_lines %ld \n", total_lines);
     // dcache_freq = (u_int16_t *)calloc(total_lines, sizeof(u_int16_t));
     // dcache_dirty = (bool *)calloc(total_lines, sizeof(bool));
-    dcache_dirty = new std::unordered_set<uint64_t>[GRID_SIZE];  // One set per tile
+    dcache_dirty =
+        new std::unordered_set<uint64_t>[GRID_SIZE]; // One set per tile
 
     // dcache_size dcache size of each tile
     u_int64_t lines_per_tile = dcache_size >> dcache_words_in_line_log2;
@@ -272,8 +272,9 @@ void init_perf_counters() {
     mc_transactions =
         (u_int64_t *)calloc(total_hbm_channels, sizeof(u_int64_t));
     mc_latency = (u_int64_t *)calloc(total_hbm_channels, sizeof(u_int64_t));
-    mc_transactions = (u_int64_t *) calloc(total_hbm_channels, sizeof(u_int64_t));
-    mc_writebacks = (u_int64_t *) calloc(total_hbm_channels, sizeof(u_int64_t));
+    mc_transactions =
+        (u_int64_t *)calloc(total_hbm_channels, sizeof(u_int64_t));
+    mc_writebacks = (u_int64_t *)calloc(total_hbm_channels, sizeof(u_int64_t));
 
     // total_counters = new u_int64_t**[GRID_X];
     frame_counters = new u_int32_t **[GRID_X];
@@ -303,7 +304,6 @@ void destroy_cache_structures() {
     // free(dcache_dirty);
     delete[] dcache_dirty;
 
-    
 
     for (int i = 0; i < GRID_SIZE; i++) {
         free(dcache_tags[i]);

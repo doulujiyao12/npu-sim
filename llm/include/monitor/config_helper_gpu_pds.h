@@ -1,6 +1,6 @@
 #pragma once
-#include "monitor/config_helper_base.h"
 #include "common/pd.h"
+#include "monitor/config_helper_base.h"
 
 class config_helper_gpu_pds : public config_helper_base {
 public:
@@ -8,9 +8,11 @@ public:
     GpuPosLocator *gpu_pos_locator;
     vector<CoreStatus> coreStatus;
     vector<RequestRecord> requestRecords;
+    vector<queue<int>> idle_decode; // 由于超过credit而需要被stall的decode
 
     int decode_done;
-    vector<Msg> temp_config;        // 存放所有还没有发出去的config
+    vector<Msg> temp_config; // 存放所有还没有发出去的config
+    queue<int> req_decode;   // 做完prefill之后，等待进行decode的请求
 
     // 模型配置
     int heads;
@@ -35,6 +37,10 @@ public:
 
     config_helper_gpu_pds(string filename, string font_ttf, sc_event *ev_sig,
                           int config_chip_id = 0);
+
+    config_helper_gpu_pds *clone() const override {
+        return new config_helper_gpu_pds(*this);
+    }
 
     void generate_prims(int i) {}
     void generate_prims(int i, vector<Msg> &temp_buffer);

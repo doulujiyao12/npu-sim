@@ -7,6 +7,7 @@
       1
     ],
     "heads": 20,
+    "head_size": 64,
     "eof_chance": 0.1,
     "prefill_stage": 16,
     "decode_stage": 8,
@@ -379,7 +380,7 @@
                   "T": "1",
                   "C": "C",
                   "sram_address": {
-                    "indata": "_input_label",
+                    "indata": "_dram_label input_label",
                     "outdata": "rmsnorm1_out"
                   },
                   "dram_address": {
