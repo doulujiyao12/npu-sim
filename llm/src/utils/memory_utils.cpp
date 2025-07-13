@@ -136,10 +136,13 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
         nb_dcache->reconfigure(inp_global_addr, dma_read_count, cache_count,
                                cache_lines, 0);
         sc_time start_nbdram = sc_time_stamp();
-        cout << "Core " << context.cid << " start nbdram: " << sc_time_stamp().to_string() << endl;
+        LOG_VERBOSE(1, context.cid," start sram first write nbdram: " << sc_time_stamp().to_string());
+        // cout << "Core " << context.cid << " start nbdram: " << sc_time_stamp().to_string() << endl;
         wait(*e_nbdram);
         sc_time end_nbdram = sc_time_stamp();
-        cout << "Core " << context.cid << " end nbdram: " << sc_time_stamp().to_string() << endl;
+        LOG_VERBOSE(1, context.cid," end sram first write nbdram: " << sc_time_stamp().to_string());
+
+        // cout << "Core " << context.cid << " end nbdram: " << sc_time_stamp().to_string() << endl;
         u_int64_t nbdram_time = (end_nbdram - start_nbdram).to_seconds() * 1e9;
 
         for (int i = 0; i < dma_read_count; i++) {
@@ -219,12 +222,12 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
                                                          dma_read_count,
                                    1, cache_count, cache_lines, 0);
             start_nbdram = sc_time_stamp();
-            cout << "start write back padding nbdram: "
-                 << sc_time_stamp().to_string() << endl;
+            // cout << "start write back padding nbdram: "
+            //      << sc_time_stamp().to_string() << endl;
             wait(*e_nbdram);
             end_nbdram = sc_time_stamp();
-            cout << "end padding nbdram: " << sc_time_stamp().to_string()
-                 << endl;
+            // cout << "end padding nbdram: " << sc_time_stamp().to_string()
+            //      << endl;
             nbdram_time = (end_nbdram - start_nbdram).to_seconds() * 1e9;
             sram_time = 0;
             sc_bv<SRAM_BITWIDTH> data_tmp2;
@@ -365,10 +368,12 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
     nb_dcache->reconfigure(inp_global_addr, dma_read_count, cache_count,
                            cache_lines, 0);
     sc_time start_nbdram = sc_time_stamp();
-    cout << "Core " << context.cid << " start spill back nbdram: " << sc_time_stamp().to_string() << endl;
+    LOG_VERBOSE(1, context.cid," start spill back nbdram: " << sc_time_stamp().to_string());
+    // cout << "Core " << context.cid << " start spill back nbdram: " << sc_time_stamp().to_string() << endl;
     wait(*e_nbdram);
     sc_time end_nbdram = sc_time_stamp();
-    cout << "Core " << context.cid << " spill back end nbdram: " << sc_time_stamp().to_string() << endl;
+    LOG_VERBOSE(1, context.cid," end spill back nbdram: " << sc_time_stamp().to_string());
+    // cout << "Core " << context.cid << " spill back end nbdram: " << sc_time_stamp().to_string() << endl;
     u_int64_t nbdram_time = (end_nbdram - start_nbdram).to_seconds() * 1e9;
 
     for (int i = 0; i < dma_read_count; i++) {
@@ -427,12 +432,11 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
                                    cache_lines * cache_count * dma_read_count,
                                1, cache_count, cache_lines, 0);
         start_nbdram = sc_time_stamp();
-        cout << inp_global_addr + cache_lines * cache_count * dma_read_count
-             << " " << 1 << " " << cache_count << " " << cache_lines << endl;
-        cout << "Core " << context.cid << " start padding nbdram: " << sc_time_stamp().to_string() << endl;
+
+        // cout << "Core " << context.cid << " start padding nbdram: " << sc_time_stamp().to_string() << endl;
         wait(*e_nbdram);
         end_nbdram = sc_time_stamp();
-        cout << "Core " << context.cid << " end padding nbdram: " << sc_time_stamp().to_string() << endl;
+        // cout << "Core " << context.cid << " end padding nbdram: " << sc_time_stamp().to_string() << endl;
         nbdram_time = (end_nbdram - start_nbdram).to_seconds() * 1e9;
         sram_time = 0;
         // sc_bv<SRAM_BITWIDTH> data_tmp2;
@@ -511,12 +515,14 @@ void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
     int bit_residue =
         data_size_in_byte * 8 - dma_read_count * (sram_bitw * SRAM_BANKS);
     int single_read_count = ceiling_division(bit_residue, sram_bitw);
+    
 
-    cout << "[INFO] sram_read_generic: dma_read_count: " << dma_read_count
-         << ", single_read_count: " << single_read_count << endl;
-    cout << "[INFO] sram_read_generic : data_size_in_byte : "
-         << data_size_in_byte << ", sram_addr_offset : " << sram_addr_offset
-         << endl;
+    LOG_VERBOSE(1, context.cid," sram_read_generic: dma_read_count: " << dma_read_count << ", single_read_count: " << single_read_count);
+    // cout << "[INFO] " << " Core " << context.cid << "sram_read_generic: dma_read_count: " << dma_read_count
+    //      << ", single_read_count: " << single_read_count << endl;
+    // cout << "[INFO] sram_read_generic : data_size_in_byte : "
+    //      << data_size_in_byte << ", sram_addr_offset : " << sram_addr_offset
+    //      << endl;
 
 
     auto mau = context.mau;
@@ -635,6 +641,8 @@ void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
 void sram_read_generic_temp(TaskCoreContext &context, int data_size_in_byte,
                             int sram_addr_offset, u_int64_t &dram_time) {
     int sram_bitw = get_sram_bitwidth(context.cid);
+    LOG_VERBOSE(1, context.cid," sram_read_generic_temp ");
+
 
     int dma_read_count = data_size_in_byte * 8 / (int)(sram_bitw * SRAM_BANKS);
     int bit_residue =
@@ -704,6 +712,9 @@ void sram_update_cache(TaskCoreContext &context, string label_k,
                        SramPosLocator *sram_pos_locator, int data_size_in_byte,
                        u_int64_t &dram_time, int cid) {
 
+    LOG_VERBOSE(1, context.cid," sram_update_cache ");
+
+
     auto k_daddr_tmp = g_dram_kvtable[cid]->get(label_k);
     if (k_daddr_tmp.has_value()) {
 
@@ -734,6 +745,8 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
                                bool use_manager,
                                SramPosLocator *sram_pos_locator,
                                u_int64_t global_addr) {
+    LOG_VERBOSE(1, context.cid," sram_write_append_generic ");
+
     int sram_bitw = get_sram_bitwidth(context.cid);
 
     int dma_read_count = data_size_in_byte * 8 / (int)(sram_bitw * SRAM_BANKS);

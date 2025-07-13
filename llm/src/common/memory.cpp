@@ -120,12 +120,16 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
          << " Sram size: " << used << "\n";
         return;
     }
+    
+    LOG_VERBOSE(1, context.cid, " Sram fail to allocate enough space! Need to spill & rearrange." );
 
-    cout << "[SRAM CHECK] Core " << cid
-         << " Sram fail to allocate enough space! Need to spill & "
-            "rearrange.\n";
+
+    // cout << "[SRAM CHECK] Core " << cid
+    //      << " Sram fail to allocate enough space! Need to spill & "
+    //         "rearrange.\n";
 
     // 放不下，需要spill，查找里面record最小的成员（除了key）
+    sc_time start_nbdram = sc_time_stamp();
     while (used > max_sram_size) {
         std::cout << "\033[1;31m" << ": Core " << cid
                   << " Sram check: used: " << used
@@ -207,6 +211,10 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
         //      << ": label size: " << data_map[min_label].size
         //      << ", spill_size: " << data_map[min_label].spill_size << endl;
     }
+    sc_time end_nbdram = sc_time_stamp();
+    u_int64_t nbdram_time = (end_nbdram - start_nbdram).to_seconds() * 1e9;
+    LOG_VERBOSE(1, context.cid, " Spill time: " << nbdram_time );
+
 
     // 重排
     // 每次addPair后都需要重排sram_addr地址，保证最前面的一块是连续使用的，sram指向最前面空闲的

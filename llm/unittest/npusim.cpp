@@ -8,6 +8,8 @@
 #include "utils/system_utils.h"
 #include <ctime>
 #include <iostream>
+#include <filesystem>
+#include <iostream>
 
 #include <SFML/Graphics.hpp>
 using namespace std;
@@ -29,7 +31,8 @@ Define_int64_opt("--MAC-SIZE", g_flag_mac_size, 128, "MAC size");
 Define_int64_opt("--trace-window", g_flag_trace_window, 2, "Trace window size");
 Define_int64_opt("--sram-max", g_flag_max_sram, 8388608,
                  "Max SRAM size"); // 3145728
-
+Define_int64_opt("--verbose-level", g_verbose_level, 1,
+                 "verbose-level"); // 3145728
 // ----------------------------------------------------------------------------
 // all the individual layers' forward and backward passes
 // B = batch_size, T = sequence_length, C = channels, V = vocab_size
@@ -40,7 +43,21 @@ Define_int64_opt("--sram-max", g_flag_max_sram, 8388608,
 // https://www.bilibili.com/read/cv36513074/
 // https://zhuanlan.zhihu.com/p/108231904
 
-
+void delete_core_log_files() {
+    const std::string current_dir = ".";  // Current working directory
+    try {
+        for (const auto& entry : std::filesystem::directory_iterator(current_dir)) {
+            if (entry.is_regular_file() && 
+                entry.path().filename().string().find("core_") == 0 &&
+                entry.path().extension() == ".log") {
+                std::filesystem::remove(entry.path());
+                std::cout << "Deleted log file: " << entry.path().filename().string() << std::endl;
+            }
+        }
+    } catch (const std::filesystem::filesystem_error& e) {
+        std::cerr << "Error deleting log files: " << e.what() << std::endl;
+    }
+}
 int sc_main(int argc, char *argv[]) {
     clock_t start = clock();
 
@@ -77,6 +94,8 @@ int sc_main(int argc, char *argv[]) {
 
     comp_util = g_flag_comp_util;
     MAX_SRAM_SIZE = g_flag_max_sram;
+    verbose_level = g_verbose_level;
+    delete_core_log_files();
 
     init_grid(g_flag_config_file.c_str(), g_flag_core_config_file.c_str());
     init_global_members();
@@ -108,6 +127,7 @@ int sc_main(int argc, char *argv[]) {
     sc_close_vcd_trace_file(tf);
 
     system_cleanup();
+    close_log_files();
 
     clock_t end = clock();
     cout << "花费了" << (double)(end - start) / CLOCKS_PER_SEC << "秒" << endl;

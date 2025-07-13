@@ -123,7 +123,7 @@ int Attention_f::task_core(TaskCoreContext &context) {
     int data_size_out = B * T * C / (1 + 2 / R);
 
     // dram地址
-    u_int64_t dram_addr_tile = cid * dataset_words_per_tile;
+    u_int64_t dram_addr_tile = 0; //cid * dataset_words_per_tile;
     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
     u_int64_t prea_global_addr = dram_addr_tile + prea_offset * data_byte;
     u_int64_t a_global_addr = dram_addr_tile + a_offset * data_byte;

@@ -71,7 +71,7 @@ int load_expert::task_core(TaskCoreContext &context) {
     int data_size_bias_single = OC;
 
     // dram地址
-    u_int64_t dram_addr_tile = cid * dataset_words_per_tile;
+    u_int64_t dram_addr_tile = 0; //cid * dataset_words_per_tile;
 
     // 获取单个专家的所有数据
     auto label_weight_prefix_1 = datapass_label.indata[0] + "_w_";
