@@ -27,7 +27,7 @@ int Residual_f_gpu::task_core(TaskCoreContext &context) {
         input_mem_offset[i] = 0;
     }
 
-    for (int i = 0; i < in_label_cnt;) {
+    for (int i = 0; i < in_label_cnt; i++) {
         if (datapass_label.indata[i] == UNSET_LABEL)
             continue;
 

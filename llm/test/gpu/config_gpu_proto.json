@@ -16,8 +16,6 @@
   "chips": [
     {
       "chip_id": 0,
-      "GridX": 4,
-      "GridY": 4,
       "core_per_sm": 32,
       "streams": [
         {

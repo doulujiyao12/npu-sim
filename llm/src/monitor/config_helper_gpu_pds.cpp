@@ -196,6 +196,9 @@ void config_helper_gpu_pds::iter_start(PD_JOB type) {
     if (type == JOB_PREFILL) {
         for (auto status : coreStatus) {
             int id = status.id;
+            if (id >= prefill_core)
+                continue;
+
             int done = 0;
             vector<Stage> new_stage;
 
@@ -251,6 +254,8 @@ void config_helper_gpu_pds::iter_start(PD_JOB type) {
     else if (type == JOB_DECODE) {
         for (auto status : coreStatus) {
             int id = status.id;
+            if (id < prefill_core)
+                continue;
 
             // 拿出上一个iter的所有任务
             int credit = 0;
@@ -370,6 +375,7 @@ void config_helper_gpu_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
     auto &work = core.worklist[0];
 
     // prefill core recv_cnt统一为1, decode统一为0
+    work.recv_tag = i;
     if (i < prefill_core)
         work.recv_cnt = 1;
     else

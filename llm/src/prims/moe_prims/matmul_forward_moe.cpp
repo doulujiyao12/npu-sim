@@ -64,8 +64,8 @@ void matmul_forward_moe::parse_json(json j) {
     cout << "inp_offset: " << inp_offset << endl;
     cout << "out_offset: " << out_offset << endl;
 
-    if (j.contains("sram_label"))
-        parse_sram_label(j["sram_label"]);
+    if (j.contains("sram_address"))
+        parse_sram_label(j["sram_address"]);
 }
 
 int matmul_forward_moe::sram_utilization(DATATYPE datatype, int cid) {
@@ -142,7 +142,7 @@ int matmul_forward_moe::task_core(TaskCoreContext &context) {
     }
 
     // dram地址
-    u_int64_t dram_addr_tile = 0; //cid * dataset_words_per_tile;
+    u_int64_t dram_addr_tile = 0; // cid * dataset_words_per_tile;
     u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
     u_int64_t weight_global_addr = dram_addr_tile + w_offset * data_byte;
@@ -173,6 +173,8 @@ int matmul_forward_moe::task_core(TaskCoreContext &context) {
         if (need_choose) {
             if (selected_experts->size() != K)
                 selected_experts->clear();
+
+            cout << "[MOE] Core " << cid << ": Selecting experts..." << endl;
 
             bool exp_flag[E_N];
             for (auto &b : exp_flag)
@@ -206,6 +208,7 @@ int matmul_forward_moe::task_core(TaskCoreContext &context) {
 
             for (auto e : *selected_experts)
                 (*selected_freq)[e]++;
+
         } else {
             if (selected_experts->size() != K) {
                 cout << "[ERROR] selected_experts size mismatch: "
@@ -213,6 +216,10 @@ int matmul_forward_moe::task_core(TaskCoreContext &context) {
                 sc_stop();
                 return 0;
             }
+        }
+
+        for (auto e : *selected_experts) {
+            cout << "selected expert: " << e << endl;
         }
 
         // 优先查看是否有被prefetch的专家

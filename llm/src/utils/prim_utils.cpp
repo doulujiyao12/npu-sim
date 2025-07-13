@@ -87,9 +87,11 @@ prim_base *new_prim(string type) {
         prim = new matmul_forward_moe();
     else if (type == "gate_forward")
         prim = new gate_forward();
+    else if (type == "load_expert")
+        prim = new load_expert();
 
     else {
-        cout << "Parse config prim: Not Implemented.\n";
+        cout << "Parse config prim: Not Implemented type: " << type << "\n";
 
         sc_stop();
     }
