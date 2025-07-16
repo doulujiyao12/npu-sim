@@ -1,9 +1,10 @@
 #include "defs/global.h"
+#include "defs/enums.h"
 #include "prims/gpu_prims.h"
 #include "utils/memory_utils.h"
 #include "utils/system_utils.h"
 
-int Attention_f_gpu::task_core(TaskCoreContext &context) {
+int attention_forward_gpu_pd::task_core(TaskCoreContext &context) {
     int data_byte = 0;
     if (datatype == INT8) {
         data_byte = 1;
@@ -14,17 +15,16 @@ int Attention_f_gpu::task_core(TaskCoreContext &context) {
     int data_size_input = data_byte * B * T * C;       // QKV input
     int data_size_preatt = data_byte * B * NH * T * T; // preatt
     int data_size_att = data_byte * B * NH * T * T;    // att
-    int data_size_out =
-        data_byte * B * T * C / (3 * slice_x * slice_y); // output
+    int data_size_out = data_byte * B * T * C / (slice_x * slice_y); // output
 
     int mem_time = 0;
     auto input_mem_offset = 0;
     if (!gpu_pos_locator->findPair(datapass_label.indata[0],
                                    input_mem_offset)) {
-        printf(
-            "[ERROR] Attention_f_gpu: gpu_pos_locator cannot find the label: "
-            "%s\n",
-            datapass_label.indata[0].c_str());
+        printf("[ERROR] attention_forward_gpu_pd: gpu_pos_locator cannot find "
+               "the label: "
+               "%s\n",
+               datapass_label.indata[0].c_str());
         sc_stop();
     }
 
@@ -45,27 +45,33 @@ int Attention_f_gpu::task_core(TaskCoreContext &context) {
     AddrPosKey a_key = AddrPosKey(0, data_size_att);
     gpu_pos_locator->fetchPair(label_att, a_key);
 
-    cout << cid << " [Attention_f_gpu] before read1: " << mem_time
+    cout << cid << " [attention_forward_gpu_pd] before read1: " << mem_time
          << " at addr " << input_mem_offset << endl;
 
     int overlap_time = 0;
 #if USE_L1L2_CACHE == 1
-    // V
-    gpu_read_generic(context,
-                     input_mem_offset + data_size_input / 3 * 2 +
-                         data_size_input / (3 * slice_x * slice_y) *
-                             fetch_index,
-                     data_size_input / (3 * slice_x * slice_y), mem_time);
-    // K
-    gpu_read_generic(context,
-                     input_mem_offset + data_size_input / 3 +
-                         data_size_input / (3 * slice_x * slice_y) *
-                             fetch_index,
-                     data_size_input / (3 * slice_x * slice_y), mem_time);
+    for (auto stage : batchInfo) {
+        char format_label_k[100];
+        sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+                stage.req_id);
+        string label_k = format_label_k;
 
-    cout << cid << " [Attention_f_gpu] after read1: " << mem_time << endl;
-    cout << cid << " [Attention_f_gpu] before write1: " << mem_time
-         << " at addr " << p_key.pos << endl;
+        char format_label_v[100];
+        sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+                stage.req_id);
+        string label_v = format_label_v;
+
+        AddrPosKey k_key, v_key;
+        gpu_pos_locator->findPair(label_k, k_key);
+        gpu_pos_locator->findPair(label_v, v_key);
+
+        gpu_read_generic(
+            context, k_key.pos + k_key.size / (slice_x * slice_y) * fetch_index,
+            k_key.size / (slice_x * slice_y), mem_time);
+        gpu_read_generic(
+            context, v_key.pos + v_key.size / (slice_x * slice_y) * fetch_index,
+            v_key.size / (slice_x * slice_y), mem_time);
+    }
 
     gpu_write_generic(context,
                       p_key.pos +
@@ -98,16 +104,19 @@ int Attention_f_gpu::task_core(TaskCoreContext &context) {
     gpu_write_generic(context, out_key.pos, data_size_out, overlap_time);
 #endif
 
-    cout << cid << " [Attention_f_gpu] after write: " << overlap_time << endl;
+    cout << cid << " [attention_forward_gpu_pd] after write: " << overlap_time
+         << endl;
 
     return overlap_time;
 }
 
-int Attention_f_gpu::task() { return 0; }
+int attention_forward_gpu_pd::task() { return 0; }
 
-int Attention_f_gpu::sram_utilization(DATATYPE datatype, int cid) { return 0; }
+int attention_forward_gpu_pd::sram_utilization(DATATYPE datatype, int cid) {
+    return 0;
+}
 
-void Attention_f_gpu::deserialize(sc_bv<128> buffer) {
+void attention_forward_gpu_pd::deserialize(sc_bv<128> buffer) {
     slice_x = buffer.range(15, 8).to_uint();
     slice_y = buffer.range(23, 16).to_uint();
     B = buffer.range(55, 40).to_uint64();
@@ -118,9 +127,9 @@ void Attention_f_gpu::deserialize(sc_bv<128> buffer) {
     fetch_index = buffer.range(121, 106).to_uint64();
 }
 
-sc_bv<128> Attention_f_gpu::serialize() {
+sc_bv<128> attention_forward_gpu_pd::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(ATTENTION_F_GPU_TYPE);
+    d.range(7, 0) = sc_bv<8>(ATTENTION_FORWARD_GPU_PD_TYPE);
     d.range(15, 8) = sc_bv<8>(slice_x);
     d.range(23, 16) = sc_bv<8>(slice_y);
     d.range(55, 40) = sc_bv<16>(B);
@@ -133,16 +142,18 @@ sc_bv<128> Attention_f_gpu::serialize() {
     return d;
 }
 
-void Attention_f_gpu::print_self(string prefix) {
+void attention_forward_gpu_pd::print_self(string prefix) {
     cout << prefix << "<attention_forward_gpu>\n";
     cout << prefix << "\tB: " << B << ", T: " << T << ", C: " << C << endl;
     cout << prefix << "slice_x: " << slice_x << ", slice_y: " << slice_y
          << endl;
 }
 
-gpu_base *Attention_f_gpu::clone() { return new Attention_f_gpu(*this); }
+gpu_base *attention_forward_gpu_pd::clone() {
+    return new attention_forward_gpu_pd(*this);
+}
 
-void Attention_f_gpu::parse_json(json j) {
+void attention_forward_gpu_pd::parse_json(json j) {
     B = find_var(j["B"]);
     T = find_var(j["T"]);
     C = find_var(j["C"]);

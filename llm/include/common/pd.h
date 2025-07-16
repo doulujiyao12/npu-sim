@@ -49,6 +49,7 @@ public:
     bool available;
     bool data_sent;
 
+    CoreStatus() {}
     CoreStatus(int id, PD_JOB type) : id(id), job_type(type) {
         available = true;
         data_sent = false;

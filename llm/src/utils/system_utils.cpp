@@ -155,8 +155,8 @@ void init_grid(string config_path, string core_config_path) {
             SYSTEM_MODE = SIM_PD;
         else if (mode == "sched_pds")
             SYSTEM_MODE = SIM_PDS;
-        else if (mode == "gpu_pds")
-            SYSTEM_MODE = SIM_GPU_PDS;
+        else if (mode == "gpu_pd")
+            SYSTEM_MODE = SIM_GPU_PD;
     } else {
         SYSTEM_MODE = SIM_DATAFLOW;
     }

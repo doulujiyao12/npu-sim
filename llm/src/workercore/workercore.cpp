@@ -441,6 +441,12 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     case LAYERNORM_F_GPU_TYPE:
         task = new Layernorm_f_gpu();
         break;
+    case MATMUL_FORWARD_GPU_PD_TYPE:
+        task = new matmul_forward_gpu_pd();
+        break;
+    case ATTENTION_FORWARD_GPU_PD_TYPE:
+        task = new attention_forward_gpu_pd();
+        break;
     case MATMUL_FORWARD_PD_TYPE:
         task = new matmul_forward_pd();
         break;
@@ -1111,6 +1117,16 @@ void WorkerCoreExecutor::task_logic() {
             moe->selected_experts = &selected_experts;
             moe->selected_freq = &selected_freq;
             moe->prefetched_experts = &prefetched_experts;
+        }
+
+        if (typeid(p) == typeid(matmul_forward_gpu_pd)) {
+            matmul_forward_gpu_pd *matmul = (matmul_forward_gpu_pd *)p;
+            matmul->batchInfo = *batchInfo;
+            matmul->decode_done = &decode_done;
+        } else if (typeid(p) == typeid(attention_forward_gpu_pd)) {
+            attention_forward_gpu_pd *attention = (attention_forward_gpu_pd *)p;
+            attention->decode_done = &decode_done;
+            attention->batchInfo = *batchInfo;
         }
 
         p->cid = cid;

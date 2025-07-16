@@ -111,7 +111,6 @@ void config_helper_gpu::fill_queue_config(queue<Msg> *q) {
 
 void config_helper_gpu::generate_prims(int i) {
     CoreConfig *c = &coreconfigs[i];
-    cout << i << endl;
 
     for (auto &work : c->worklist) {
         // 不向in_loop推入任何原语，只操作last_loop

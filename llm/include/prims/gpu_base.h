@@ -16,6 +16,7 @@ public:
 
     bool mock;
     int req_sm;
+    int fetch_index; // 用于记录取权重需要偏移的offset
 
     GpuPosLocator *gpu_pos_locator;
     AddrDatapassLabel datapass_label;

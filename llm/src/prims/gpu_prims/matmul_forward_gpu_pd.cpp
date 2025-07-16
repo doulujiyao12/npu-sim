@@ -2,24 +2,25 @@
 #include "utils/memory_utils.h"
 #include "utils/system_utils.h"
 
-int Matmul_f_gpu::task_core(TaskCoreContext &context) {
+int matmul_forward_gpu_pd::task_core(TaskCoreContext &context) {
     int data_byte = 0;
-    if (datatype == INT8) {
+    if (datatype == INT8)
         data_byte = 1;
-    } else if (datatype == FP16) {
+    else if (datatype == FP16)
         data_byte = 2;
-    }
 
+    // 这里记录的是总大小，实际取用的时候需要除以slice大小
     int data_size_input = B * T * C * data_byte;
     int data_size_weight = OC * C * data_byte;
     int data_size_bias = OC * data_byte;
-    int data_size_out = B * T * OC * data_byte / (slice_x * slice_y);
+    int data_size_out = B * T * OC * data_byte / (slice_x * slice_y) / 3;
 
     int mem_time = 0;
     auto input_mem_offset = 0;
     if (!gpu_pos_locator->findPair(datapass_label.indata[0],
                                    input_mem_offset)) {
-        printf("[ERROR] Matmul_f_gpu: gpu_pos_locator cannot find the label: "
+        printf("[ERROR] matmul_forward_gpu_pd: gpu_pos_locator cannot find the "
+               "label: "
                "%s\n",
                datapass_label.indata[0].c_str());
         sc_stop();
@@ -42,10 +43,11 @@ int Matmul_f_gpu::task_core(TaskCoreContext &context) {
     AddrPosKey b_key = AddrPosKey(0, data_size_bias);
     gpu_pos_locator->fetchPair(label_bias, b_key);
 
-    cout << cid << " [Matmul_f_gpu] before read1: " << mem_time << " at addr "
+    cout << cid << " [matmul_forward_gpu_pd] before read1: " << mem_time << " at addr "
          << input_mem_offset << endl;
 
     int overlap_time = 0;
+
 #if USE_L1L2_CACHE == 1
     // 通过fetch_index计算位置
     int row_index = fetch_index / slice_x;
@@ -64,29 +66,70 @@ int Matmul_f_gpu::task_core(TaskCoreContext &context) {
     gpu_read_generic(context, b_key.pos + b_key.size / slice_x * col_index,
                      data_size_bias / slice_x, mem_time);
 
-    // TODO: 模拟计算cycle数
+    for (auto stage : batchInfo) {
+        int size = 0;
+        switch (job_type) {
+        case JOB_PREFILL:
+        case JOB_BOTH:
+            size = data_byte * B * OC * stage.token_num / (slice_y * slice_x);
+            break;
+        case JOB_DECODE:
+            size = data_byte * B * OC * 1 / (slice_y * slice_x);
+            break;
+        default:
+            assert(false && "Unsupported job type");
+        }
+
+        char format_label_k[100];
+        sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+                stage.req_id);
+        string label_k = format_label_k;
+
+        char format_label_v[100];
+        sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+                stage.req_id);
+        string label_v = format_label_v;
+
+        gpu_pos_locator->updatePair(label_k, size);
+        gpu_pos_locator->updatePair(label_v, size);
+
+        AddrPosKey key_k, key_v;
+        gpu_pos_locator->findPair(label_k, key_k);
+        gpu_pos_locator->findPair(label_v, key_v);
+
+        gpu_write_generic(context, key_k.pos + (key_k.size - size), size,
+                          mem_time);
+        gpu_write_generic(context, key_v.pos + (key_v.size - size), size,
+                          mem_time);
+    }
+
     overlap_time = mem_time;
+
     AddrPosKey out_key;
     gpu_pos_locator->updatePair(datapass_label.outdata, data_size_out);
     gpu_pos_locator->findPair(datapass_label.outdata, out_key);
-    cout << cid << " [Matmul_f_gpu] before write: " << mem_time << " at addr "
-         << out_key.pos << endl;
+
+    cout << cid << " [matmul_forward_gpu_pd] before write: " << mem_time
+         << " at addr " << out_key.pos << endl;
     gpu_write_generic(context, out_key.pos + data_size_out * fetch_index,
                       data_size_out, overlap_time);
 #endif
 
-    cout << cid << " [Matmul_f_gpu] after write: " << overlap_time << endl;
+    cout << cid << " [matmul_forward_gpu_pd] after write: " << mem_time
+         << " at addr " << out_key.pos << endl;
 
     return overlap_time;
 }
 
-int Matmul_f_gpu::task() { return 0; }
+int matmul_forward_gpu_pd::task() { return 0; }
 
-int Matmul_f_gpu::sram_utilization(DATATYPE datatype, int cid) { return 0; }
+int matmul_forward_gpu_pd::sram_utilization(DATATYPE datatype, int cid) {
+    return 0;
+}
 
-sc_bv<128> Matmul_f_gpu::serialize() {
+sc_bv<128> matmul_forward_gpu_pd::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(MATMUL_F_GPU_TYPE);
+    d.range(7, 0) = sc_bv<8>(MATMUL_FORWARD_GPU_PD_TYPE);
     d.range(15, 8) = sc_bv<8>(slice_x);
     d.range(23, 16) = sc_bv<8>(slice_y);
     d.range(55, 40) = sc_bv<16>(B);
@@ -99,19 +142,19 @@ sc_bv<128> Matmul_f_gpu::serialize() {
     return d;
 }
 
-void Matmul_f_gpu::deserialize(sc_bv<128> buffer) {
+void matmul_forward_gpu_pd::deserialize(sc_bv<128> buffer) {
     slice_x = buffer.range(15, 8).to_uint();
     slice_y = buffer.range(23, 16).to_uint();
-    B = buffer.range(55, 40).to_uint64();
-    T = buffer.range(71, 56).to_uint64();
-    C = buffer.range(87, 72).to_uint64();
-    OC = buffer.range(103, 88).to_uint64();
-    datatype = DATATYPE(buffer.range(105, 104).to_uint64());
-    fetch_index = buffer.range(121, 106).to_uint64();
+    B = buffer.range(55, 40).to_uint();
+    T = buffer.range(71, 56).to_uint();
+    C = buffer.range(87, 72).to_uint();
+    OC = buffer.range(103, 88).to_uint();
+    datatype = (DATATYPE)buffer.range(105, 104).to_uint();
+    fetch_index = buffer.range(121, 106).to_uint();
 }
 
-void Matmul_f_gpu::print_self(string prefix) {
-    cout << prefix << "<Matmul_f_gpu:>" << endl;
+void matmul_forward_gpu_pd::print_self(string prefix) {
+    cout << prefix << "matmul_forward_gpu_pd" << endl;
     cout << prefix << "\tB: " << B << endl;
     cout << prefix << "\tT: " << T << endl;
     cout << prefix << "\tC: " << C << endl;
@@ -120,9 +163,7 @@ void Matmul_f_gpu::print_self(string prefix) {
          << endl;
 }
 
-gpu_base *Matmul_f_gpu::clone() { return new Matmul_f_gpu(*this); }
-
-void Matmul_f_gpu::parse_json(json j) {
+void matmul_forward_gpu_pd::parse_json(json j) {
     B = find_var(j["B"]);
     T = find_var(j["T"]);
     C = find_var(j["C"]);

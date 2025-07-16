@@ -156,6 +156,8 @@ public:
     bool findPair(std::string &key, int &result);
     bool findPair(std::string &key, AddrPosKey &result);
 
+    void updatePair(std::string &key, int size);
+
     void deletePair(std::string &key);
     void clearAll();
 };

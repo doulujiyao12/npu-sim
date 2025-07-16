@@ -1,25 +1,34 @@
 #include "monitor/monitor.h"
-#include "monitor/config_helper_gpu.h"
-#include "utils/system_utils.h"
 #include "defs/global.h"
+#include "monitor/config_helper_gpu.h"
+#include "monitor/config_helper_gpu_pd.h"
+#include "utils/system_utils.h"
 
 Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine,
                  const char *config_name, const char *font_ttf)
-    : sc_module(n), event_engine(event_engine), config_name(config_name), font_ttf(font_ttf) {
+    : sc_module(n),
+      event_engine(event_engine),
+      config_name(config_name),
+      font_ttf(font_ttf) {
     memInterface = new MemInterface("mem-interface", this->event_engine,
                                     config_name, font_ttf);
-    globalMemInterface = new GlobalMemInterface("global-mem-interface", this->event_engine, config_name, font_ttf);
+    globalMemInterface = new GlobalMemInterface(
+        "global-mem-interface", this->event_engine, config_name, font_ttf);
 
     init();
 }
 
 Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine,
                  config_helper_base *input_config)
-    : sc_module(n), event_engine(event_engine), config_name(nullptr), font_ttf(nullptr) {
+    : sc_module(n),
+      event_engine(event_engine),
+      config_name(nullptr),
+      font_ttf(nullptr) {
     memInterface =
         new MemInterface("mem-interface", this->event_engine, input_config);
-    
-    globalMemInterface = new GlobalMemInterface("global-mem-interface", this->event_engine, input_config);
+
+    globalMemInterface = new GlobalMemInterface(
+        "global-mem-interface", this->event_engine, input_config);
     // globalMemInterface = new GlobalMemInterface();
     init();
 }
@@ -49,13 +58,15 @@ Monitor::~Monitor() {
 void Monitor::init() {
     routerMonitor = new RouterMonitor("router-monitor", this->event_engine);
     workerCores = new WorkerCore *[GRID_SIZE];
-    g_dram_kvtable = new DramKVTable*[GRID_SIZE];
+    g_dram_kvtable = new DramKVTable *[GRID_SIZE];
 
     // globalMemInterface = new GlobalMemInterface();
 
     // //[yicheng] 初始化global memory
-    // // chipGlobalMemory = new ChipGlobalMemory(sc_gen_unique_name("chip-global-memory"), "../DRAMSys/configs/ddr4-example.json", "../DRAMSys/configs");
-    
+    // // chipGlobalMemory = new
+    // ChipGlobalMemory(sc_gen_unique_name("chip-global-memory"),
+    // "../DRAMSys/configs/ddr4-example.json", "../DRAMSys/configs");
+
     // // dcache = new DCache(sc_gen_unique_name("dcache"), (int)cid / GRID_X,
     // //                     (int)cid % GRID_X, this->event_engine,
     // //                     "../DRAMSys/configs/ddr4-example.json",
@@ -65,7 +76,7 @@ void Monitor::init() {
     // globalMemInterface = new GlobalMemInterface(
     //     sc_gen_unique_name("global-mem-interface"), this->event_engine,
     //     config_name, font_ttf);
-    
+
     for (int i = 0; i < GRID_SIZE; i++) {
         workerCores[i] = new WorkerCore(sc_gen_unique_name("workercore"), i,
                                         this->event_engine, get_dram_config(i));
@@ -76,17 +87,19 @@ void Monitor::init() {
            "only allow one global mem");
     if (memInterface->has_global_mem.size() == 1) {
         for (auto i : memInterface->has_global_mem) {
-            std::cout << "[Global Mem]: global link inited " <<  i << std::endl;
+            std::cout << "[Global Mem]: global link inited " << i << std::endl;
             // instantiate the NB_GlobalMemIF for this executor
             workerCores[i]->executor->init_global_mem();
-            // bind the NB_GlobalMemIF initiator socket to the ChipGlobalMemory target socket
-            workerCores[i]->executor->nb_global_mem_socket->socket.bind(globalMemInterface->chipGlobalMemory->socket);
+            // bind the NB_GlobalMemIF initiator socket to the ChipGlobalMemory
+            // target socket
+            workerCores[i]->executor->nb_global_mem_socket->socket.bind(
+                globalMemInterface->chipGlobalMemory->socket);
         }
-    }
-    else{ //如果谁都没有连接，直接绑定到第0个Core上
+    } else { // 如果谁都没有连接，直接绑定到第0个Core上
         std::cout << "[Global Mem]: global link not inited " << std::endl;
         workerCores[0]->executor->init_global_mem();
-        workerCores[0]->executor->nb_global_mem_socket->socket.bind(globalMemInterface->chipGlobalMemory->socket);
+        workerCores[0]->executor->nb_global_mem_socket->socket.bind(
+            globalMemInterface->chipGlobalMemory->socket);
     }
 
 #if USE_L1L2_CACHE == 1
@@ -105,6 +118,12 @@ void Monitor::init() {
     if (SYSTEM_MODE == SIM_GPU) {
         gpu_pos_locator = new GpuPosLocator();
         ((config_helper_gpu *)memInterface->config_helper)->gpu_pos_locator =
+            gpu_pos_locator;
+        for (int i = 0; i < GRID_SIZE; i++)
+            workerCores[i]->executor->gpu_pos_locator = gpu_pos_locator;
+    } else if (SYSTEM_MODE == SIM_GPU_PD) {
+        gpu_pos_locator = new GpuPosLocator();
+        ((config_helper_gpu_pd *)memInterface->config_helper)->gpu_pos_locator =
             gpu_pos_locator;
         for (int i = 0; i < GRID_SIZE; i++)
             workerCores[i]->executor->gpu_pos_locator = gpu_pos_locator;
@@ -197,7 +216,7 @@ void Monitor::init() {
 
 void Monitor::start_simu() {
     // 开始分发配置
-        // Msg t;
+    // Msg t;
     // t.des = 0;
     // t.msg_type = DATA;
     // t.is_end = true;
