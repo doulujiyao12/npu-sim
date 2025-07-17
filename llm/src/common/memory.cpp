@@ -105,7 +105,7 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
     for (auto pair : data_map) {
         // cout << "[Traverse SRAM]: " << pair.first << endl;
         // valid = true 表示还没有被spill过
-        if (pair.second.valid) 
+        if (pair.second.valid)
             used += pair.second.size;
         else
             used += pair.second.size - pair.second.spill_size;
@@ -116,12 +116,13 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
 
     // 放得下
     if (used <= max_sram_size) {
-        cout << "[SRAM CHECK] Core " << cid
-         << " Sram size: " << used << "\n";
+        cout << "[SRAM CHECK] Core " << cid << " Sram size: " << used << "\n";
         return;
     }
-    
-    LOG_VERBOSE(1, context.cid, " Sram fail to allocate enough space! Need to spill & rearrange." );
+
+    LOG_VERBOSE(
+        1, context.cid,
+        " Sram fail to allocate enough space! Need to spill & rearrange.");
 
 
     // cout << "[SRAM CHECK] Core " << cid
@@ -213,7 +214,7 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
     }
     sc_time end_nbdram = sc_time_stamp();
     u_int64_t nbdram_time = (end_nbdram - start_nbdram).to_seconds() * 1e9;
-    LOG_VERBOSE(1, context.cid, " Spill time: " << nbdram_time );
+    LOG_VERBOSE(1, context.cid, " Spill time: " << nbdram_time);
 
 
     // 重排
@@ -424,8 +425,6 @@ void GpuPosLocator::addPair(const std::string &key, AddrPosKey &value) {
     data_map[key] = value;
     addr_top += value.size;
 
-    cout << key << " " << value.size << endl;
-
     // 对齐
     addr_top = ceiling_division(addr_top, 64) * 64;
 
@@ -450,6 +449,7 @@ bool GpuPosLocator::findPair(std::string &key, int &result) {
         return true;
     }
 
+    cout << "[GpuPosLocator] failed to find key: " << key << endl;
     return false;
 }
 
@@ -461,6 +461,16 @@ bool GpuPosLocator::findPair(std::string &key, AddrPosKey &result) {
     }
 
     return false;
+}
+
+void GpuPosLocator::updatePair(std::string &key, int size) {
+    AddrPosKey value = AddrPosKey(0, size);
+    if (!findPair(key, value))
+        addPair(key, value);
+    else {
+        value.size += size;
+        addPair(key, value);
+    }
 }
 
 void GpuPosLocator::deletePair(std::string &key) { data_map.erase(key); }

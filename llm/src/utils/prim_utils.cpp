@@ -63,6 +63,10 @@ prim_base *new_prim(string type) {
         prim = new Layernorm_f_gpu();
     else if (type == "Residual_f_gpu")
         prim = new Residual_f_gpu();
+    else if (type == "matmul_forward_gpu_pd")
+        prim = new matmul_forward_gpu_pd();
+    else if (type == "attention_forward_gpu_pd")
+        prim = new attention_forward_gpu_pd();
     else if (type == "Matmul_f_pd")
         prim = new matmul_forward_pd();
     else if (type == "Attention_f_pd")
@@ -87,9 +91,11 @@ prim_base *new_prim(string type) {
         prim = new matmul_forward_moe();
     else if (type == "gate_forward")
         prim = new gate_forward();
+    else if (type == "load_expert")
+        prim = new load_expert();
 
     else {
-        cout << "Parse config prim: Not Implemented.\n";
+        cout << "Parse config prim: Not Implemented type: " << type << "\n";
 
         sc_stop();
     }

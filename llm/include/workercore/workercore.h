@@ -179,6 +179,7 @@ public:
     // moe相关
     vector<int> selected_experts;
     vector<int> selected_freq;
+    vector<int> prefetched_experts;
 
     SC_HAS_PROCESS(WorkerCoreExecutor);
     WorkerCoreExecutor(const sc_module_name &n, int s_cid,

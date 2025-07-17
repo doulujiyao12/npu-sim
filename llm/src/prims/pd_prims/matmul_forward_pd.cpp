@@ -62,10 +62,10 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
         switch (job_type) {
         case JOB_PREFILL:
         case JOB_BOTH:
-            size = data_byte * B * C * stage.token_num;
+            size = data_byte * B * OC * stage.token_num;
             break;
         case JOB_DECODE:
-            size = data_byte * B * C * 1;
+            size = data_byte * B * OC * 1;
             break;
         default:
             assert(false && "Unsupported job type");

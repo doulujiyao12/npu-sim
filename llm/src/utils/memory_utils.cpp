@@ -93,7 +93,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
     u_int64_t in_dcacheline = 0;
     int cache_lines = 1 << (dcache_words_in_line_log2 + 2 + 3);
     int cache_count = SRAM_BANKS * sram_bitw / cache_lines;
-    assert (cache_count > 0 &&
+    assert(cache_count > 0 &&
            "cache_count must be larger than 0, check SRAM_BANKS and sram_bitw");
     int sram_time = 0;
 
@@ -156,7 +156,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
 
 
 #if USE_NB_DRAMSYS == 1
-#if DRAM_BURST_BYTE >0
+#if DRAM_BURST_BYTE > 0
         assert(DRAM_BURST_BYTE > context.defaultDataLength);
 #endif 
 
@@ -188,7 +188,9 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
                                     "RW_Dram", "E",
                                     Trace_event_util("RW_Dram"));
         sc_time end_nbdram = sc_time_stamp();
-        LOG_VERBOSE(1, context.cid," end sram first write nbdram: " << sc_time_stamp().to_string());
+        LOG_VERBOSE(
+            1, context.cid,
+            " end sram first write nbdram: " << sc_time_stamp().to_string());
 
         // cout << "Core " << context.cid << " end nbdram: " << sc_time_stamp().to_string() << endl;
 #endif
@@ -306,7 +308,6 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
 #endif
                 }
                 sram_time += RAM_WRITE_LATENCY;
-
             }
 
             if (nbdram_time < sram_time) {
@@ -439,9 +440,8 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
     sc_time start_first_write_time = sc_time_stamp();
 
 
-
 #if USE_NB_DRAMSYS == 1
-#if DRAM_BURST_BYTE >0
+#if DRAM_BURST_BYTE > 0
     assert(DRAM_BURST_BYTE > context.defaultDataLength);
 #endif 
 
@@ -503,11 +503,9 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
             trans.set_streaming_width(cache_lines / 8);
             trans.set_command(tlm::TLM_READ_COMMAND);
 #if DUMMY == 1
-            trans.set_data_ptr(
-                reinterpret_cast<unsigned char *>((void *)0));
+            trans.set_data_ptr(reinterpret_cast<unsigned char *>((void *)0));
 #else
-            trans.set_data_ptr(
-                reinterpret_cast<unsigned char *>(dram_start));
+            trans.set_data_ptr(reinterpret_cast<unsigned char *>(dram_start));
 #endif
             trans.set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
             sc_time delay = sc_time(0, SC_NS);
@@ -545,16 +543,17 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
                                     "RW_Dram", "E",
                                     Trace_event_util("RW_Dram"));
         end_nbdram = sc_time_stamp();
-        // cout << "Core " << context.cid << " end padding nbdram: " << sc_time_stamp().to_string() << endl;
+        // cout << "Core " << context.cid << " end padding nbdram: " <<
+        // sc_time_stamp().to_string() << endl;
         nbdram_time = (end_nbdram - start_nbdram).to_seconds() * 1e9;
         sram_time = 0;
         // sc_bv<SRAM_BITWIDTH> data_tmp2;
         // data_tmp2 = 0;
         // sc_time elapsed_time;
         for (int i = 0; i < single_read_count; i++) {
-            // mau->mem_read_port->read(sram_addr_temp, data_tmp2, elapsed_time);
-            // u_int64_t sram_timer = elapsed_time.to_seconds() * 1e9;
-            // sram_time += sram_timer;
+            // mau->mem_read_port->read(sram_addr_temp, data_tmp2,
+            // elapsed_time); u_int64_t sram_timer = elapsed_time.to_seconds() *
+            // 1e9; sram_time += sram_timer;
             sram_addr_temp = sram_addr_temp + 1;
 
             sram_time += RAM_READ_LATENCY;
@@ -575,11 +574,9 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
             trans.set_streaming_width(cache_lines / 8);
             trans.set_command(tlm::TLM_READ_COMMAND);
 #if DUMMY == 1
-            trans.set_data_ptr(
-                reinterpret_cast<unsigned char *>((void *)0));
+            trans.set_data_ptr(reinterpret_cast<unsigned char *>((void *)0));
 #else
-            trans.set_data_ptr(
-                reinterpret_cast<unsigned char *>(dram_start));
+            trans.set_data_ptr(reinterpret_cast<unsigned char *>(dram_start));
 #endif
             trans.set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
             sc_time delay = sc_time(0, SC_NS);
@@ -611,7 +608,6 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
     sc_time end_first_write_time = sc_time_stamp();
     dram_time +=
         (end_first_write_time - start_first_write_time).to_seconds() * 1e9;
-
 }
 
 void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
@@ -624,10 +620,14 @@ void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
     int bit_residue =
         data_size_in_byte * 8 - dma_read_count * (sram_bitw * SRAM_BANKS);
     int single_read_count = ceiling_division(bit_residue, sram_bitw);
-    
 
-    LOG_VERBOSE(1, context.cid," sram_read_generic: dma_read_count: " << dma_read_count << ", single_read_count: " << single_read_count);
-    // cout << "[INFO] " << " Core " << context.cid << "sram_read_generic: dma_read_count: " << dma_read_count
+
+    LOG_VERBOSE(1, context.cid,
+                " sram_read_generic: dma_read_count: "
+                    << dma_read_count
+                    << ", single_read_count: " << single_read_count);
+    // cout << "[INFO] " << " Core " << context.cid << "sram_read_generic:
+    // dma_read_count: " << dma_read_count
     //      << ", single_read_count: " << single_read_count << endl;
     // cout << "[INFO] sram_read_generic : data_size_in_byte : "
     //      << data_size_in_byte << ", sram_addr_offset : " << sram_addr_offset
@@ -667,7 +667,7 @@ void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
     assert(read_bytes <= sram_cap_bytes);
 #endif
 
-    int sram_time =0;
+    int sram_time = 0;
     for (int i = 0; i < dma_read_count; i++) {
         if (i != 0) {
 #if USE_SRAM_MANAGER == 1
@@ -704,9 +704,7 @@ void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
 #if USE_BEHA_SRAM == 1
     wait(sram_time, SC_NS);
 
-#endif 
-
-
+#endif
 
 
     sc_bv<SRAM_BITWIDTH> data_tmp2;
@@ -743,14 +741,14 @@ void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
 #if USE_BEHA_SRAM == 1
     wait(sram_time, SC_NS);
 
-#endif 
+#endif
 }
 
 
 void sram_read_generic_temp(TaskCoreContext &context, int data_size_in_byte,
                             int sram_addr_offset, u_int64_t &dram_time) {
     int sram_bitw = get_sram_bitwidth(context.cid);
-    LOG_VERBOSE(1, context.cid," sram_read_generic_temp ");
+    LOG_VERBOSE(1, context.cid, " sram_read_generic_temp ");
 
 
     int dma_read_count = data_size_in_byte * 8 / (int)(sram_bitw * SRAM_BANKS);
@@ -771,7 +769,7 @@ void sram_read_generic_temp(TaskCoreContext &context, int data_size_in_byte,
     for (int i = 0; i < SRAM_BANKS; i++) {
         data_tmp[i] = 0;
     }
-    int sram_time = 0;  
+    int sram_time = 0;
     for (int i = 0; i < dma_read_count; i++) {
 #if USE_BEHA_SRAM == 0
         sc_time elapsed_time;
@@ -790,7 +788,7 @@ void sram_read_generic_temp(TaskCoreContext &context, int data_size_in_byte,
 #if USE_BEHA_SRAM == 1
     wait(sram_time, SC_NS);
 
-#endif 
+#endif
 
 
     sc_bv<SRAM_BITWIDTH> data_tmp2;
@@ -800,9 +798,9 @@ void sram_read_generic_temp(TaskCoreContext &context, int data_size_in_byte,
     sram_time = 0;
     for (int i = 0; i < single_read_count; i++) {
         sram_addr_offset = sram_addr_offset + 1;
-#if USE_BEHA_SRAM == 0        
+#if USE_BEHA_SRAM == 0
         mau->mem_read_port->read(sram_addr_offset, data_tmp2, elapsed_time);
-        
+
         u_int64_t sram_timer = elapsed_time.to_seconds() * 1e9;
         dram_time += sram_timer;
 #else
@@ -814,14 +812,14 @@ void sram_read_generic_temp(TaskCoreContext &context, int data_size_in_byte,
 #if USE_BEHA_SRAM == 1
     wait(sram_time, SC_NS);
 
-#endif 
+#endif
 }
 
 void sram_update_cache(TaskCoreContext &context, string label_k,
                        SramPosLocator *sram_pos_locator, int data_size_in_byte,
                        u_int64_t &dram_time, int cid) {
 
-    LOG_VERBOSE(1, context.cid," sram_update_cache ");
+    LOG_VERBOSE(1, context.cid, " sram_update_cache ");
 
 
     auto k_daddr_tmp = g_dram_kvtable[cid]->get(label_k);
@@ -831,7 +829,6 @@ void sram_update_cache(TaskCoreContext &context, string label_k,
         g_dram_kvtable[cid]->add(label_k);
     }
     uint64_t k_daddr = g_dram_kvtable[cid]->get(label_k).value();
-
 
 
     sc_time start_first_write_time = sc_time_stamp();
@@ -844,8 +841,6 @@ void sram_update_cache(TaskCoreContext &context, string label_k,
     sc_time end_first_write_time = sc_time_stamp();
     dram_time +=
         (end_first_write_time - start_first_write_time).to_seconds() * 1e9;
-
-
 }
 
 // 会修改 context.sram_addr 的数值
@@ -854,7 +849,7 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
                                bool use_manager,
                                SramPosLocator *sram_pos_locator,
                                u_int64_t global_addr) {
-    LOG_VERBOSE(1, context.cid," sram_write_append_generic ");
+    LOG_VERBOSE(1, context.cid, " sram_write_append_generic ");
 
     int sram_bitw = get_sram_bitwidth(context.cid);
 
@@ -967,8 +962,8 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
 #if USE_BEHA_SRAM == 1
     wait(sram_time, SC_NS);
 
-#endif 
-    sram_time =0;
+#endif
+    sram_time = 0;
 
     sc_bv<SRAM_BITWIDTH> data_tmp2;
     data_tmp2 = 0;
@@ -1001,12 +996,11 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
 #if USE_BEHA_SRAM == 1
     wait(sram_time, SC_NS);
 
-#endif 
+#endif
 
     sc_time end_first_write_time = sc_time_stamp();
     dram_time +=
         (end_first_write_time - start_first_write_time).to_seconds() * 1e9;
-
 
 
 #if USE_SRAM_MANAGER == 1
@@ -1057,7 +1051,7 @@ void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
     }
 #if USE_BEHA_SRAM == 1
     wait(sram_time, SC_NS);
-#endif 
+#endif
 
     sc_bv<SRAM_BITWIDTH> data_tmp2;
     data_tmp2 = 0;
@@ -1076,10 +1070,11 @@ void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
     }
 #if USE_BEHA_SRAM == 1
     wait(sram_time, SC_NS);
-#endif 
+#endif
 }
 
-// void check_freq(std::unordered_map<u_int64_t, u_int16_t> &freq, u_int64_t *tags,
+// void check_freq(std::unordered_map<u_int64_t, u_int16_t> &freq, u_int64_t
+// *tags,
 //                 u_int32_t set, u_int64_t elem_tag) {
 //     if (freq[elem_tag] == CACHE_MAX_FREQ) {
 //         // Halve the frequency of every line in the cache set
@@ -1094,7 +1089,8 @@ void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
 
 // #if DCACHE
 // int dcache_replacement_policy(u_int32_t tileid, u_int64_t *tags,
-//                               u_int64_t new_tag, u_int16_t &set_empty_lines) {
+//                               u_int64_t new_tag, u_int16_t &set_empty_lines)
+//                               {
 //     // Search the element of tags whose index into freq has the lowest value
 //     int evict_dcache_idx, dcache_idx;
 //     u_int16_t line_freq, min_freq = UINT16_MAX;
@@ -1118,7 +1114,8 @@ void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
 //         else {
 //             line_freq = 0;
 //             set_empty_lines++;
-//         } // 原本的set中有一个way是空的，所以就用它，并且告诉外面原本set有空的，不用dirty
+//         } //
+//         原本的set中有一个way是空的，所以就用它，并且告诉外面原本set有空的，不用dirty
 
 //         if (line_freq < min_freq) {
 //             // Best candidate for eviction
@@ -1210,7 +1207,8 @@ void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
 //             u_int16_t mc_queue_id = die_id(tX, tY) * hbm_channels +
 //                                     (tY * DIE_W + tX) % hbm_channels;
 //             // Number of transactions that have been fetched from the HBM
-//             // channel since the beggining of the program Assume that the Mem.
+//             // channel since the beggining of the program Assume that the
+//             Mem.
 //             // controller channel can take one request per HBM cycle
 //             // 该通道历史上所有的交易总和
 //             int64_t trans_count = (int64_t)mc_transactions[mc_queue_id];
@@ -1247,12 +1245,15 @@ void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
 // #endif
 //             u_int64_t evict_tag = tags[evict_dcache_idx];
 
-//             // An eviction occurs when dcache_freq (valid bit) is 0, but a tag
+//             // An eviction occurs when dcache_freq (valid bit) is 0, but a
+//             tag
 //             // is already in the dcache
 //             // FIXME: A local DCache can have evictions by collision of tags
 //             // since the address space is not aligned locally (e.g. a dcache
-//             // with 100 lines may get evictions even if its footprint is only 10
-//             // vertices and 40 edges, since we don't consider the local address
+//             // with 100 lines may get evictions even if its footprint is only
+//             10
+//             // vertices and 40 edges, since we don't consider the local
+//             address
 //             // space)
 
 //             if (set_empty_lines == 0) { // IF CACHE SET FULL
@@ -1429,7 +1430,8 @@ TaskCoreContext generate_context(WorkerCoreExecutor *workercore) {
         workercore->start_nb_dram_event, workercore->end_nb_dram_event,
         workercore->nb_dcache_socket, workercore->loop_cnt,
         workercore->sram_manager_, workercore->start_nb_gpu_dram_event,
-        workercore->end_nb_gpu_dram_event, workercore->MaxDramAddr, workercore->defaultDataLength);
+        workercore->end_nb_gpu_dram_event, workercore->MaxDramAddr,
+        workercore->defaultDataLength);
 #elif USE_NB_DRAMSYS == 1
     TaskCoreContext context(
         workercore->mem_access_port, workercore->high_bw_mem_access_port,
@@ -1437,7 +1439,8 @@ TaskCoreContext generate_context(WorkerCoreExecutor *workercore) {
         workercore->high_bw_temp_mem_access_port, workercore->sram_addr,
         workercore->start_nb_dram_event, workercore->end_nb_dram_event,
         workercore->nb_dcache_socket, workercore->sram_manager_,
-        workercore->loop_cnt, workercore->MaxDramAddr, wokercore->defaultDataLength);
+        workercore->loop_cnt, workercore->MaxDramAddr,
+        wokercore->defaultDataLength);
 #else
 
         TaskCoreContext context(
@@ -1446,7 +1449,8 @@ TaskCoreContext generate_context(WorkerCoreExecutor *workercore) {
             workercore->temp_mem_access_port,
             workercore->high_bw_temp_mem_access_port, workercore->sram_addr,
             workercore->start_nb_dram_event, workercore->end_nb_dram_event,
-            workercore->sram_manager_, workercore->loop_cnt, workercore->MaxDramAddr, workercore->defaultDataLength);
+            workercore->sram_manager_, workercore->loop_cnt,
+            workercore->MaxDramAddr, workercore->defaultDataLength);
 #endif
     context.SetGlobalMemIF(nb_global_memif, start_global_event,
                            end_global_event);

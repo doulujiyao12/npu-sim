@@ -166,7 +166,7 @@ void config_helper_pd::iter_done(vector<Msg> done_msg) {
                     sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX,
                             KVCACHE_PREFIX, stage.req_id);
                     string label_v = format_label_v;
-                    for (int i = 0; i < attend_cores; i++) { 
+                    for (int i = 0; i < attend_cores; i++) {
                         g_dram_kvtable[i]->remove(label_v);
                     }
 
@@ -257,6 +257,8 @@ void config_helper_pd::iter_start() {
 
                 else if (CORE_CREDIT - credit >= PD_RATIO && new_reqs) {
                     // 统计现在可以被指派的请求个数
+                    new_reqs = false;
+                    
                     for (auto &req : requestRecords) {
                         sc_core::sc_time arv_time(req.arrival_time,
                                                   sc_core::SC_NS);
@@ -267,16 +269,16 @@ void config_helper_pd::iter_start() {
                                 Stage(req.id, PREFILL,
                                       req.seq_len / req.prefill_iters));
                             req.phase = PREFILL;
-                            req.prefill_distribute++;
-                            prefill_waiting_list.push(req.id);
+                            
+                            if (++req.prefill_distribute < req.prefill_iters)
+                                prefill_waiting_list.push(req.id);
                             cout << "[PD SCHEDULE] Core " << id
                                  << " push in new request PREFILL " << req.id
                                  << endl;
+                            new_reqs = true;
                             break;
                         }
                     }
-
-                    new_reqs = false;
                 } else
                     break;
             }

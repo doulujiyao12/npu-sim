@@ -97,7 +97,7 @@ enum SIM_MODE {
     SIM_GPU,
     SIM_PD,
     SIM_PDS,
-    SIM_GPU_PDS,
+    SIM_GPU_PD,
 };
 
 // PD阶段
@@ -174,6 +174,8 @@ enum PRIM_TYPE_CODE {
     GELU_F_GPU_TYPE = 0xe2,
     RESIDUAL_F_GPU_TYPE = 0xe3,
     LAYERNORM_F_GPU_TYPE = 0xe4,
+    MATMUL_FORWARD_GPU_PD_TYPE = 0xe5,
+    ATTENTION_FORWARD_GPU_PD_TYPE = 0xe6,
 };
 
 // 用于计算核硬件配置

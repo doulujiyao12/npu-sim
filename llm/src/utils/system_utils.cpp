@@ -141,6 +141,7 @@ void init_grid(string config_path, string core_config_path) {
 
     if (j1.contains("mode")) {
         auto mode = j1["mode"];
+        cout << "Mode: " << mode << "\n";
 
         if (mode == "dataflow") {
             SYSTEM_MODE = SIM_DATAFLOW;
@@ -154,9 +155,13 @@ void init_grid(string config_path, string core_config_path) {
             SYSTEM_MODE = SIM_PD;
         else if (mode == "sched_pds")
             SYSTEM_MODE = SIM_PDS;
+        else if (mode == "gpu_pd")
+            SYSTEM_MODE = SIM_GPU_PD;
     } else {
         SYSTEM_MODE = SIM_DATAFLOW;
     }
+
+    cout << "Simulation mode: " << SYSTEM_MODE << "\n";
 
     if (j1.contains("chips") && SYSTEM_MODE == SIM_GPU)
         CORE_PER_SM = j1["chips"][0]["core_per_sm"];

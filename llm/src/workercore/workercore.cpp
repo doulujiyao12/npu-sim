@@ -12,9 +12,9 @@
 #include "memory/gpu/GPU_L1L2_Cache.h"
 #include "memory/sram/Mem_access_unit.h"
 #include "prims/comp_prims.h"
+#include "prims/moe_prims.h"
 #include "prims/norm_prims.h"
 #include "prims/pd_prims.h"
-#include "prims/moe_prims.h"
 #include "prims/prim_base.h"
 #include "trace/Event_engine.h"
 #include "utils/file_utils.h"
@@ -40,23 +40,27 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
          << dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
     auto sram_bitw = get_sram_bitwidth(s_cid);
     ram_array = new DynamicBandwidthRamRow<sc_bv<SRAM_BITWIDTH>, SRAM_BANKS>(
-        sc_gen_unique_name("ram_array"), 0, MAX_SRAM_SIZE * 8 / sram_bitw / SRAM_BANKS, SIMU_READ_PORT,
+        sc_gen_unique_name("ram_array"), 0,
+        MAX_SRAM_SIZE * 8 / sram_bitw / SRAM_BANKS, SIMU_READ_PORT,
         SIMU_WRITE_PORT, BANK_PORT_NUM + SRAM_BANKS, BANK_PORT_NUM,
         BANK_HIGH_READ_PORT_NUM, event_engine);
     temp_ram_array =
         new DynamicBandwidthRamRow<sc_bv<SRAM_BITWIDTH>, SRAM_BANKS>(
-            sc_gen_unique_name("temp_ram_array"), 0, MAX_SRAM_SIZE * 8 / sram_bitw / SRAM_BANKS,
-            SIMU_READ_PORT, SIMU_WRITE_PORT, BANK_PORT_NUM + SRAM_BANKS,
-            BANK_PORT_NUM, BANK_HIGH_READ_PORT_NUM, event_engine);
+            sc_gen_unique_name("temp_ram_array"), 0,
+            MAX_SRAM_SIZE * 8 / sram_bitw / SRAM_BANKS, SIMU_READ_PORT,
+            SIMU_WRITE_PORT, BANK_PORT_NUM + SRAM_BANKS, BANK_PORT_NUM,
+            BANK_HIGH_READ_PORT_NUM, event_engine);
 
     executor = new WorkerCoreExecutor(sc_gen_unique_name("workercore-exec"),
                                       cid, this->event_engine);
     executor->MaxDramAddr =
         dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
 
-    
-    executor->defaultDataLength =  dcache->dramSysWrapper->dramsys->getMemSpec().defaultBytesPerBurst;
-    assert(dataset_words_per_tile < dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress());
+
+    executor->defaultDataLength =
+        dcache->dramSysWrapper->dramsys->getMemSpec().defaultBytesPerBurst;
+    assert(dataset_words_per_tile <
+           dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress());
     g_dram_kvtable[cid] =
         new DramKVTable(executor->MaxDramAddr, (uint64_t)50 * 1024 * 1024, 20);
     executor->systolic_config = systolic_config;
@@ -165,8 +169,8 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
     batchInfo = new vector<Stage>;
 #if USE_NB_DRAMSYS == 1
     nb_dcache_socket =
-        new NB_DcacheIF(cid, sc_gen_unique_name("nb_dcache"), start_nb_dram_event,
-                        end_nb_dram_event, event_engine);
+        new NB_DcacheIF(cid, sc_gen_unique_name("nb_dcache"),
+                        start_nb_dram_event, end_nb_dram_event, event_engine);
     // nb_global_mem_socket =
     //     new NB_GlobalMemIF(sc_gen_unique_name("nb_global_mem"),
     //     start_global_mem_event,
@@ -297,7 +301,8 @@ void WorkerCoreExecutor::worker_core_execute() {
             bool last_comp = false;
             if (prim_queue.size() >= 2 &&
                 prim_queue[1]->prim_type != COMP_PRIM &&
-                prim_queue[1]->prim_type != PD_PRIM) {
+                prim_queue[1]->prim_type != PD_PRIM &&
+                prim_queue[1]->prim_type != MOE_PRIM) {
                 last_comp = true;
             }
 
@@ -436,6 +441,12 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     case LAYERNORM_F_GPU_TYPE:
         task = new Layernorm_f_gpu();
         break;
+    case MATMUL_FORWARD_GPU_PD_TYPE:
+        task = new matmul_forward_gpu_pd();
+        break;
+    case ATTENTION_FORWARD_GPU_PD_TYPE:
+        task = new attention_forward_gpu_pd();
+        break;
     case MATMUL_FORWARD_PD_TYPE:
         task = new matmul_forward_pd();
         break;
@@ -466,6 +477,9 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     case MATMUL_FORWARD_MOE_TYPE:
         task = new matmul_forward_moe();
         break;
+    case LOAD_EXPERT_TYPE:
+        task = new load_expert();
+        break;
     default:
         assert(0 && "Unknown prim");
         cout << "Unknown prim: " << type << ".\n";
@@ -490,6 +504,10 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
         pd_base *pd = (pd_base *)task;
         pd->sram_pos_locator = sram_pos_locator;
         pd->sram_pos_locator->cid = cid;
+    } else if (task->prim_type == MOE_PRIM) {
+        moe_base *moe = (moe_base *)task;
+        moe->sram_pos_locator = sram_pos_locator;
+        moe->sram_pos_locator->cid = cid;
     }
 
     return task;
@@ -1025,7 +1043,8 @@ void WorkerCoreExecutor::recv_logic() {
 
                     job_done = true;
                 } else {
-                    // cout << "[RECV] Core " << cid << ": received all CONFIG.\n";
+                    // cout << "[RECV] Core " << cid << ": received all
+                    // CONFIG.\n";
                     if (!buffer_i.size())
                         wait(ev_recv_config);
 
@@ -1092,12 +1111,22 @@ void WorkerCoreExecutor::task_logic() {
             pd->datapass_label = *next_datapass_label;
             pd->batchInfo = *batchInfo;
             pd->decode_done = &decode_done;
-        }
-        else if (p->prim_type == MOE_PRIM) {
+        } else if (p->prim_type == MOE_PRIM) {
             moe_base *moe = (moe_base *)p;
             moe->datapass_label = *next_datapass_label;
             moe->selected_experts = &selected_experts;
             moe->selected_freq = &selected_freq;
+            moe->prefetched_experts = &prefetched_experts;
+        }
+
+        if (typeid(p) == typeid(matmul_forward_gpu_pd)) {
+            matmul_forward_gpu_pd *matmul = (matmul_forward_gpu_pd *)p;
+            matmul->batchInfo = *batchInfo;
+            matmul->decode_done = &decode_done;
+        } else if (typeid(p) == typeid(attention_forward_gpu_pd)) {
+            attention_forward_gpu_pd *attention = (attention_forward_gpu_pd *)p;
+            attention->decode_done = &decode_done;
+            attention->batchInfo = *batchInfo;
         }
         context.event_engine = event_engine;
 #if USE_GLOBAL_DRAM == 1

@@ -5,6 +5,7 @@ class config_helper_gpu : public config_helper_base {
 public:
     vector<StreamConfig> streams;
     int gpu_index; // 正在发放第几个gpu start data，仅在GPU模式下使用
+    int done_loop; // 已经完成多少loop了，针对loop字段
     GpuPosLocator *gpu_pos_locator;
 
     config_helper_gpu(string filename, string font_ttf, int config_chip_id = 0);

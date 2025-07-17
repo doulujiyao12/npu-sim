@@ -201,130 +201,134 @@
               ]
             }
           ]
-        }
-      ]
-    },
-    {
-      "id": 1,
-      "worklist": [
+        },
         {
-          "cast": [
+          "id": 1,
+          "worklist": [
             {
-              "dest": 0,
-              "critical": true
-            }
-          ],
-          "recv_cnt": 1,
-          "prims": [
-            {
-              "type": "matmul_forward_moe",
-              "B": "B",
-              "T": "T",
-              "C": "C",
-              "OC": "3C",
-              "K": "K",
-              "E_N": "E_N",
-              "choose": true,
-              "sram_address": {
-                "indata": "_input_label",
-                "outdata": "matmul_moe1_out"
-              },
-              "dram_address": {
-                "data": "matmul_moe1_data"
-              }
+              "cast": [
+                {
+                  "dest": 0,
+                  "critical": true
+                }
+              ],
+              "recv_cnt": 1,
+              "prims": [
+                {
+                  "type": "matmul_forward_moe",
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "3C",
+                  "K": "K",
+                  "E_N": "E_N",
+                  "choose": true,
+                  "sram_address": {
+                    "indata": "_input_label",
+                    "outdata": "matmul_moe1_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul_moe1_data",
+                    "out": "TODO"
+                  }
+                },
+                {
+                  "type": "matmul_forward_moe",
+                  "use_hw": false,
+                  "B": "B",
+                  "T": "T",
+                  "C": "C",
+                  "OC": "3C",
+                  "K": "K",
+                  "E_N": "E_N",
+                  "sram_address": {
+                    "indata": "input_label",
+                    "outdata": "matmul_moe2_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul_moe2_data",
+                    "out": "TODO"
+                  }
+                },
+                {
+                  "type": "swiglu_forward",
+                  "N": "3BTCK",
+                  "sram_address": {
+                    "indata": "matmul_moe1_out matmul_moe2_out",
+                    "outdata": "swiglu1_out"
+                  },
+                  "dram_address": {
+                    "input": 0,
+                    "data": -1
+                  }
+                },
+                {
+                  "type": "matmul_forward_moe",
+                  "B": "B",
+                  "T": "T",
+                  "C": "3C",
+                  "OC": "C",
+                  "K": "K",
+                  "E_N": "E_N",
+                  "is_merge": true,
+                  "sram_address": {
+                    "indata": "swiglu1_out",
+                    "outdata": "matmul_moe3_out"
+                  },
+                  "dram_address": {
+                    "data": "matmul_moe3_data",
+                    "out": "TODO"
+                  }
+                }
+              ]
             },
             {
-              "type": "matmul_forward_moe",
-              "use_hw": false,
-              "B": "B",
-              "T": "T",
-              "C": "C",
-              "OC": "3C",
-              "K": "K",
-              "E_N": "E_N",
-              "sram_address": {
-                "indata": "input_label",
-                "outdata": "matmul_moe2_out"
-              },
-              "dram_address": {
-                "data": "matmul_moe2_data"
-              }
-            },
-            {
-              "type": "swiglu_forward",
-              "N": "3BTCK",
-              "sram_address": {
-                "indata": "matmul_moe1_out matmul_moe2_out",
-                "outdata": "swiglu1_out"
-              },
-              "dram_address": {
-                "input": 0,
-                "data": -1
-              }
-            },
-            {
-              "type": "matmul_forward_moe",
-              "B": "B",
-              "T": "T",
-              "C": "3C",
-              "OC": "C",
-              "K": "K",
-              "E_N": "E_N",
-              "is_merge": true,
-              "sram_address": {
-                "indata": "swiglu1_out",
-                "outdata": "matmul_moe3_out"
-              },
-              "dram_address": {
-                "data": "matmul_moe3_data"
-              }
+              "cast": [],
+              "recv_cnt": 0,
+              "prims": [
+                {
+                  "type": "load_expert",
+                  "E_N": "E_N",
+                  "K": "K",
+                  "strategy": "hot"
+                }
+              ]
             }
           ]
         },
         {
-          "cast": [],
-          "recv_cnt": 0,
-          "prims": [
+          "id": 2,
+          "prim_copy": 0,
+          "worklist": [
             {
-              "type": "load_expert",
-              "E_N": "E_N",
-              "K": "K"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "prim_copy": 0,
-      "worklist": [
-        {
-          "recv_cnt": 1,
-          "cast": [
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 3
+                }
+              ]
+            },
             {
-              "dest": 3
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": -1
+                }
+              ]
             }
           ]
         },
         {
-          "recv_cnt": 1,
-          "cast": [
+          "id": 3,
+          "prim_copy": 1,
+          "worklist": [
             {
-              "dest": -1
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 3,
-      "prim_copy": 1,
-      "worklist": [
-        {
-          "recv_cnt": 1,
-          "cast": [
-            {
-              "dest": 2
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 2
+                }
+              ]
             }
           ]
         }

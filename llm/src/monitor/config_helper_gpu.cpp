@@ -70,6 +70,8 @@ config_helper_gpu::config_helper_gpu(string filename, string font_ttf,
     pipeline = 1;
     g_recv_ack_cnt = 0;
     g_recv_done_cnt = 0;
+    gpu_index = 0;
+    done_loop = 0;
 
     print_self();
 }
@@ -109,7 +111,6 @@ void config_helper_gpu::fill_queue_config(queue<Msg> *q) {
 
 void config_helper_gpu::generate_prims(int i) {
     CoreConfig *c = &coreconfigs[i];
-    cout << i << endl;
 
     for (auto &work : c->worklist) {
         // 不向in_loop推入任何原语，只操作last_loop
@@ -149,7 +150,6 @@ void config_helper_gpu::fill_queue_start(queue<Msg> *q) {
     }
 
     for (int i = 0; i < min(sms, GRID_SIZE); i++) {
-        cout << "lllw " << i << endl;
         auto config = coreconfigs[i];
         int index = config.id / GRID_X;
         int pkg_index = 0;
@@ -265,11 +265,17 @@ void config_helper_gpu::parse_done_msg(Event_engine *event_engine,
              << streams[0].prims.size() << endl;
 
         if (gpu_index == streams[0].prims.size()) {
-            cout << "Config helper GPU: all work done.\n";
-            sc_stop();
-        } else {
-            g_recv_done_cnt = 0;
-            notify_event->notify(CYCLE, SC_NS);
+            gpu_index = 0;
+            done_loop++;
+            cout << "Config helper GPU: one loop done. " << done_loop << " of "
+                 << streams[0].loop << endl;
+            if (done_loop == streams[0].loop) {
+                cout << "Config helper GPU: all work done.\n";
+                sc_stop();
+            }
         }
+
+        g_recv_done_cnt = 0;
+        notify_event->notify(CYCLE, SC_NS);
     }
 }

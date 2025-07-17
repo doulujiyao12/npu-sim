@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "monitor/config_helper_core.h"
+#include "prims/moe_base.h"
 #include "utils/display_utils.h"
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
@@ -332,11 +333,21 @@ void config_helper_core::generate_prims(int i) {
             prim_base *p = new_prim("Set_addr");
             auto label = ((Set_addr *)p)->datapass_label;
             // Set_addr 的label 指向其后面的那条原语
-            for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-                label->indata[i] =
-                    ((comp_base *)prim)->datapass_label.indata[i];
+            if (prim->prim_type == COMP_PRIM) {
+                for (int i = 0; i < MAX_SPLIT_NUM; i++) {
+                    label->indata[i] =
+                        ((comp_base *)prim)->datapass_label.indata[i];
+                }
+                label->outdata = ((comp_base *)prim)->datapass_label.outdata;
+            } else if (prim->prim_type == MOE_PRIM) {
+                for (int i = 0; i < MAX_SPLIT_NUM; i++) {
+                    label->indata[i] =
+                        ((moe_base *)prim)->datapass_label.indata[i];
+                    cout << "Core " << c->id << " moe " << i << " "
+                         << label->indata[i] << endl;
+                }
+                label->outdata = ((moe_base *)prim)->datapass_label.outdata;
             }
-            label->outdata = ((comp_base *)prim)->datapass_label.outdata;
 
             // 这里直接推入字符串形式的label，之后会在序列化的时候转化为整形label
             work.prims_in_loop.push_back(p);
@@ -473,6 +484,10 @@ void config_helper_core::calculate_address(bool do_loop) {
                     // output_offset = cp->out_offset;
                     output_label = cp->datapass_label.outdata;
                     break;
+                } else if (p->prim_type == MOE_PRIM) {
+                    moe_base *mp = (moe_base *)p;
+                    output_size = mp->out_size;
+                    output_label = mp->datapass_label.outdata;
                 }
             }
 
