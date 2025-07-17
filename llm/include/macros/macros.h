@@ -29,6 +29,7 @@
 #define DRAM_ALIGN 1024
 #define DRAM_BURST_BYTE 0
 #define ENABLE_COLORS 0
+#define USE_GLOBAL_DRAM 0
 
 
 // 数据包占位

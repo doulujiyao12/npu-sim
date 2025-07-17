@@ -3,6 +3,7 @@
 
 #include "monitor/config_helper_core.h"
 #include "monitor/config_helper_gpu.h"
+#include "monitor/config_helper_gpu_pds.h"
 #include "monitor/config_helper_pd.h"
 #include "monitor/config_helper_pds.h"
 #include "monitor/mem_interface.h"
@@ -25,11 +26,13 @@ MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
     else if (SYSTEM_MODE == SIM_PD)
         config_helper =
             new config_helper_pd(config_name, font_ttf, &ev_req_handler);
-    else if (SYSTEM_MODE == SIM_PDS) {
+    else if (SYSTEM_MODE == SIM_PDS)
         config_helper =
             new config_helper_pds(config_name, font_ttf, &ev_req_handler);
-    }
-    
+    else if (SYSTEM_MODE == SIM_GPU_PDS)
+        config_helper =
+            new config_helper_gpu_pds(config_name, font_ttf, &ev_req_handler);
+
     init();
 }
 
@@ -135,7 +138,8 @@ void MemInterface::end_of_simulation() {
         for (auto work : c->worklist) {
             for (auto prim : work.prims_in_loop) {
                 if (prim) { // 确保指针非空
-                    total_utilization += prim->sram_utilization(prim->datatype, c->id);
+                    total_utilization +=
+                        prim->sram_utilization(prim->datatype, c->id);
                 }
             }
         }
@@ -161,6 +165,13 @@ void MemInterface::distribute_config() {
             ((config_helper_pd *)config_helper)->iter_start();
         else if (SYSTEM_MODE == SIM_PDS) {
             config_helper_pds *helper = (config_helper_pds *)config_helper;
+            if (helper->wait_schedule_p)
+                helper->iter_start(JOB_PREFILL);
+            if (helper->wait_schedule_d)
+                helper->iter_start(JOB_DECODE);
+        } else if (SYSTEM_MODE == SIM_GPU_PDS) {
+            config_helper_gpu_pds *helper =
+                (config_helper_gpu_pds *)config_helper;
             if (helper->wait_schedule_p)
                 helper->iter_start(JOB_PREFILL);
             if (helper->wait_schedule_d)
@@ -271,13 +282,12 @@ void MemInterface::recv_ack() {
         sc_event *notify_event = nullptr;
         switch (SYSTEM_MODE) {
         case SIM_DATAFLOW:
-            notify_event = &ev_switch_phase;
-            break;
         case SIM_GPU:
             notify_event = &ev_switch_phase;
             break;
         case SIM_PD:
         case SIM_PDS:
+        case SIM_GPU_PDS:
             notify_event = &ev_dis_start;
             break;
         }
@@ -300,6 +310,7 @@ void MemInterface::recv_done() {
             break;
         case SIM_PD:
         case SIM_PDS:
+        case SIM_GPU_PDS:
             notify_event = &ev_dis_config;
             break;
         }
@@ -362,7 +373,8 @@ void MemInterface::write_helper() {
 
 void MemInterface::req_handler() {
     while (true) {
-        if (SYSTEM_MODE != SIM_PD && SYSTEM_MODE != SIM_PDS) {
+        if (SYSTEM_MODE != SIM_PD && SYSTEM_MODE != SIM_PDS &&
+            SYSTEM_MODE != SIM_GPU_PDS) {
             cout << "[ERROR] Request handler can only be used in PD mode or "
                     "PDS mode.\n";
             sc_stop();
@@ -371,7 +383,6 @@ void MemInterface::req_handler() {
         if (SYSTEM_MODE == SIM_PD) {
             config_helper_pd *pd = (config_helper_pd *)config_helper;
             for (int i = 0; i < pd->arrival_time.size(); i++) {
-                cout << pd->arrival_time[i] << " ss\n";
                 sc_time next_time(pd->arrival_time[i], SC_NS);
                 if (next_time < sc_time_stamp()) {
                     cout << "[ERROR] Be sure all reqs come in sequentially.\n";
@@ -384,6 +395,18 @@ void MemInterface::req_handler() {
         } else if (SYSTEM_MODE == SIM_PDS) {
             config_helper_pds *pd = (config_helper_pds *)config_helper;
             for (int i = 0; i < pd->arrival_time.size(); i++) {
+                sc_time next_time(pd->arrival_time[i], SC_NS);
+                if (next_time < sc_time_stamp()) {
+                    cout << "[ERROR] Be sure all reqs come in sequentially.\n";
+                    sc_stop();
+                }
+
+                wait(next_time - sc_time_stamp());
+                ev_dis_config.notify(0, SC_NS);
+            }
+        } else if (SYSTEM_MODE == SIM_GPU_PDS) {
+            config_helper_gpu_pds *pd = (config_helper_gpu_pds *)config_helper;
+             for (int i = 0; i < pd->arrival_time.size(); i++) {
                 sc_time next_time(pd->arrival_time[i], SC_NS);
                 if (next_time < sc_time_stamp()) {
                     cout << "[ERROR] Be sure all reqs come in sequentially.\n";

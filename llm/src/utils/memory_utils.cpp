@@ -21,6 +21,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
                               bool use_manager,
                               SramPosLocator *sram_pos_locator,
                               bool dummy_alloc, bool add_dram_addr) {
+                          
     int sram_bitw = get_sram_bitwidth(context.cid);
 
     int dma_read_count = data_size_in_byte * 8 / (sram_bitw * SRAM_BANKS);
@@ -55,6 +56,31 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
 #endif
     auto s_nbdram = context.s_nbdram;
     auto e_nbdram = context.e_nbdram;
+
+
+
+#if USE_GLOBAL_DRAM == 1
+
+    inp_global_addr =
+        (global_addr / 64) * 64; // 向下取整到dram 取址的整数倍，这里是32
+    int end_addr = global_addr + data_size_in_byte;
+    int end_global_addr = ((end_addr + 63) / 64) * 64; // 尾地址向上取整
+
+    int aligned_data_size_in_byte = end_global_addr - inp_global_addr;
+
+
+    auto gpunb_dcache_if = context.gpunb_dcache_if;
+
+    s_nbdram = context.start_nb_gpu_dram_event;
+    e_nbdram = context.end_nb_gpu_dram_event;
+
+    u_int64_t in_dcacheline_g = 0;
+    int cache_lines_g = 1 << (dcache_words_in_line_log2 + 2 + 3);
+    int cache_count_g =
+        ceiling_division(aligned_data_size_in_byte * 8, cache_lines_g);
+#endif 
+
+
 
     vector<sc_bv<SRAM_BITWIDTH>> data_tmp(SRAM_BANKS);
     for (int i = 0; i < SRAM_BANKS; i++) {
@@ -133,16 +159,39 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
 #if DRAM_BURST_BYTE >0
         assert(DRAM_BURST_BYTE > context.defaultDataLength);
 #endif 
+
+#if USE_GLOBAL_DRAM == 1
+    // assert(inp_global_addr!=0);
+    gpunb_dcache_if->reconfigure(inp_global_addr, cache_count_g, cache_lines_g, 0);
+    sc_time start_nbdram = sc_time_stamp();
+    context.event_engine->add_event("Core " + toHexString(context.cid),
+                                    "read_gpu", "B",
+                                    Trace_event_util("read_gpu"));
+
+    wait(*e_nbdram);
+    sc_time end_nbdram = sc_time_stamp();
+    context.event_engine->add_event("Core " + toHexString(context.cid),
+                                    "read_gpu", "E",
+                                    Trace_event_util("read_gpu"));
+
+#else
         nb_dcache->reconfigure(inp_global_addr, dma_read_count, cache_count,
                                cache_lines, 0);
         sc_time start_nbdram = sc_time_stamp();
         LOG_VERBOSE(1, context.cid," start sram first write nbdram: " << sc_time_stamp().to_string());
         // cout << "Core " << context.cid << " start nbdram: " << sc_time_stamp().to_string() << endl;
+        context.event_engine->add_event("Core " + toHexString(context.cid),
+                                    "RW_Dram", "B",
+                                    Trace_event_util("RW_Dram"));
         wait(*e_nbdram);
+        context.event_engine->add_event("Core " + toHexString(context.cid),
+                                    "RW_Dram", "E",
+                                    Trace_event_util("RW_Dram"));
         sc_time end_nbdram = sc_time_stamp();
         LOG_VERBOSE(1, context.cid," end sram first write nbdram: " << sc_time_stamp().to_string());
 
         // cout << "Core " << context.cid << " end nbdram: " << sc_time_stamp().to_string() << endl;
+#endif
         u_int64_t nbdram_time = (end_nbdram - start_nbdram).to_seconds() * 1e9;
 
         for (int i = 0; i < dma_read_count; i++) {
@@ -218,13 +267,20 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
         if (single_read_count > 0) {
 
 #if USE_NB_DRAMSYS == 1
+#if USE_GLOBAL_DRAM == 0
             nb_dcache->reconfigure(inp_global_addr + cache_lines * cache_count *
                                                          dma_read_count,
                                    1, cache_count, cache_lines, 0);
             start_nbdram = sc_time_stamp();
             // cout << "start write back padding nbdram: "
             //      << sc_time_stamp().to_string() << endl;
+            context.event_engine->add_event("Core " + toHexString(context.cid),
+                                    "RW_Dram", "B",
+                                    Trace_event_util("RW_Dram"));
             wait(*e_nbdram);
+            context.event_engine->add_event("Core " + toHexString(context.cid),
+                                    "RW_Dram", "E   ",
+                                    Trace_event_util("RW_Dram"));
             end_nbdram = sc_time_stamp();
             // cout << "end padding nbdram: " << sc_time_stamp().to_string()
             //      << endl;
@@ -256,7 +312,9 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
             if (nbdram_time < sram_time) {
                 wait(sram_time - nbdram_time, SC_NS);
             }
+#endif
         }
+
 
 
 #else
@@ -356,6 +414,27 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
     int cache_count = SRAM_BANKS * sram_bitw / cache_lines;
     int sram_time = 0;
 
+#if USE_GLOBAL_DRAM == 1
+
+    inp_global_addr =
+        (global_addr / 64) * 64; // 向下取整到dram 取址的整数倍，这里是32
+    int end_addr = global_addr + data_size_in_byte;
+    int end_global_addr = ((end_addr + 63) / 64) * 64; // 尾地址向上取整
+
+    int aligned_data_size_in_byte = end_global_addr - inp_global_addr;
+
+
+    auto gpunb_dcache_if = context.gpunb_dcache_if;
+
+    s_nbdram = context.start_nb_gpu_dram_event;
+    e_nbdram = context.end_nb_gpu_dram_event;
+
+    u_int64_t in_dcacheline_g = 0;
+    int cache_lines_g = 1 << (dcache_words_in_line_log2 + 2 + 3);
+    int cache_count_g =
+        ceiling_division(aligned_data_size_in_byte * 8, cache_lines_g);
+#endif 
+
 
     sc_time start_first_write_time = sc_time_stamp();
 
@@ -365,15 +444,38 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
 #if DRAM_BURST_BYTE >0
     assert(DRAM_BURST_BYTE > context.defaultDataLength);
 #endif 
+
+#if USE_GLOBAL_DRAM == 1
+    // assert(inp_global_addr!=0);
+    gpunb_dcache_if->reconfigure(inp_global_addr, cache_count_g, cache_lines_g, 0);
+    sc_time start_nbdram = sc_time_stamp();
+    context.event_engine->add_event("Core " + toHexString(context.cid),
+                                    "read_gpu", "B",
+                                    Trace_event_util("read_gpu"));
+
+    wait(*e_nbdram);
+    sc_time end_nbdram = sc_time_stamp();
+    context.event_engine->add_event("Core " + toHexString(context.cid),
+                                    "read_gpu", "E",
+                                    Trace_event_util("read_gpu"));
+
+#else
     nb_dcache->reconfigure(inp_global_addr, dma_read_count, cache_count,
                            cache_lines, 0);
     sc_time start_nbdram = sc_time_stamp();
     LOG_VERBOSE(1, context.cid," start spill back nbdram: " << sc_time_stamp().to_string());
     // cout << "Core " << context.cid << " start spill back nbdram: " << sc_time_stamp().to_string() << endl;
+    context.event_engine->add_event("Core " + toHexString(context.cid),
+                                    "RW_Dram", "B",
+                                    Trace_event_util("RW_Dram"));
     wait(*e_nbdram);
+    context.event_engine->add_event("Core " + toHexString(context.cid),
+                                    "RW_Dram", "E",
+                                    Trace_event_util("RW_Dram"));
     sc_time end_nbdram = sc_time_stamp();
     LOG_VERBOSE(1, context.cid," end spill back nbdram: " << sc_time_stamp().to_string());
     // cout << "Core " << context.cid << " spill back end nbdram: " << sc_time_stamp().to_string() << endl;
+#endif
     u_int64_t nbdram_time = (end_nbdram - start_nbdram).to_seconds() * 1e9;
 
     for (int i = 0; i < dma_read_count; i++) {
@@ -428,13 +530,20 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
     if (single_read_count > 0) {
 
 #if USE_NB_DRAMSYS == 1
+#if USE_GLOBAL_DRAM == 0
         nb_dcache->reconfigure(inp_global_addr +
                                    cache_lines * cache_count * dma_read_count,
                                1, cache_count, cache_lines, 0);
         start_nbdram = sc_time_stamp();
 
         // cout << "Core " << context.cid << " start padding nbdram: " << sc_time_stamp().to_string() << endl;
+        context.event_engine->add_event("Core " + toHexString(context.cid),
+                                    "RW_Dram", "B",
+                                    Trace_event_util("RW_Dram"));
         wait(*e_nbdram);
+        context.event_engine->add_event("Core " + toHexString(context.cid),
+                                    "RW_Dram", "E",
+                                    Trace_event_util("RW_Dram"));
         end_nbdram = sc_time_stamp();
         // cout << "Core " << context.cid << " end padding nbdram: " << sc_time_stamp().to_string() << endl;
         nbdram_time = (end_nbdram - start_nbdram).to_seconds() * 1e9;
@@ -454,6 +563,7 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
         if (nbdram_time < sram_time) {
             wait(sram_time - nbdram_time, SC_NS);
         }
+#endif
 #else
 
         nbdram_time = 0;
@@ -493,8 +603,7 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
         wait(nbdram_time, SC_NS);
         if (nbdram_time < sram_time) {
             wait(sram_time - nbdram_time, SC_NS);
-        }
-        
+        }       
 #endif
     }
 

@@ -7,6 +7,7 @@
       1
     ],
     "heads": 14,
+    "head_size": 64,
     "eof_chance": 0.1,
     "prefill_stage": 8,
     "decode_stage": 8,
@@ -548,7 +549,7 @@
                   "T": "1",
                   "C": "C",
                   "sram_address": {
-                    "indata": "_input_label",
+                    "indata": "_dram_label input_label",
                     "outdata": "rmsnorm1_out"
                   },
                   "dram_address": {
@@ -717,7 +718,7 @@
                   "T": "1",
                   "C": "C",
                   "sram_address": {
-                    "indata": "_input_label",
+                    "indata": "_residual2_out",
                     "outdata": "rmsnorm1_out"
                   },
                   "dram_address": {
@@ -792,7 +793,7 @@
                   "type": "Residual_f",
                   "N": "C",
                   "sram_address": {
-                    "indata": "input_label matmul2_out",
+                    "indata": "residual2_out matmul2_out",
                     "outdata": "residual1_out"
                   },
                   "dram_address": {
@@ -886,7 +887,7 @@
                   "T": "1",
                   "C": "C",
                   "sram_address": {
-                    "indata": "_input_label",
+                    "indata": "_residual2_out",
                     "outdata": "rmsnorm1_out"
                   },
                   "dram_address": {
@@ -961,7 +962,7 @@
                   "type": "Residual_f",
                   "N": "C",
                   "sram_address": {
-                    "indata": "input_label matmul2_out",
+                    "indata": "residual2_out matmul2_out",
                     "outdata": "residual1_out"
                   },
                   "dram_address": {

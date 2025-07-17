@@ -1402,7 +1402,6 @@ public:
             // 处理队列中的写回请求
             WritebackRequest req = writebackQueue.front();
             writebackQueue.pop();
-
             // 将写回请求添加到统一队列
             CacheRequest unifiedReq(CacheRequest::WRITEBACK_REQ, req.address,
                                     req.data, req.lineSize);
@@ -1517,7 +1516,21 @@ public:
             }
 
             // 检查req是否为空
-            if (!req.address || !req.data || !req.dataLength) {
+            if (!req.data || !req.dataLength) {
+                if (!req.address) {
+                    cout << "Address is null." << req.address << endl;
+                    cout << "Error: Request address is null." << endl;
+                }
+                if (!req.data) {
+                    cout << "Error: Request data pointer is null." << endl;
+                }
+                if (!req.dataLength) {
+                    cout << "Error: Request data length is zero." << endl;
+                }
+                if (!req.address || !req.data || !req.dataLength) {
+                    SC_REPORT_ERROR("L2Cache", "Invalid request parameters");
+                    return;
+                }
                 SC_REPORT_ERROR("L2Cache", "Invalid request parameters");
                 return;
             }

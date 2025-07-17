@@ -1099,6 +1099,13 @@ void WorkerCoreExecutor::task_logic() {
             moe->selected_experts = &selected_experts;
             moe->selected_freq = &selected_freq;
         }
+        context.event_engine = event_engine;
+#if USE_GLOBAL_DRAM == 1
+    context.event_engine = event_engine;
+
+
+    context.gpunb_dcache_if = gpunb_dcache_if;     
+#endif
         
         p->cid = cid;
         cout << "[PRIM] Core <\033[38;5;214m" << cid

@@ -97,6 +97,7 @@ enum SIM_MODE {
     SIM_GPU,
     SIM_PD,
     SIM_PDS,
+    SIM_GPU_PDS,
 };
 
 // PD阶段

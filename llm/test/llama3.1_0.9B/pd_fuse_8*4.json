@@ -13,7 +13,7 @@
     "stage": 16,
     "batch": 2,
     "kv_heads": 8,
-    "head_size": 128
+    "head_size": 64
   },
   "chips": [
     {
@@ -199,7 +199,7 @@
                   "T": "T",
                   "C": "C",
                   "sram_address": {
-                    "indata": "_residual1_out",
+                    "indata": "_residual2_out",
                     "outdata": "rmsnorm2_out"
                   },
                   "dram_address": {
@@ -265,8 +265,8 @@
                   "type": "Residual_f",
                   "N": "BTC",
                   "sram_address": {
-                    "indata": "residual1_out matmul4_out",
-                    "outdata": "residual2_out"
+                    "indata": "residual2_out matmul4_out",
+                    "outdata": "residual1_out"
                   },
                   "dram_address": {
                     "data": -1,
@@ -279,7 +279,7 @@
                   "T": "T",
                   "C": "C",
                   "sram_address": {
-                    "indata": "_residual2_out",
+                    "indata": "_residual1_out",
                     "outdata": "rmsnorm1_out"
                   },
                   "dram_address": {
@@ -353,8 +353,8 @@
                   "type": "Residual_f",
                   "N": "BTC",
                   "sram_address": {
-                    "indata": "residual2_out matmul2_out",
-                    "outdata": "residual1_out"
+                    "indata": "residual1_out matmul2_out",
+                    "outdata": "residual2_out"
                   },
                   "dram_address": {
                     "data": -1,
@@ -367,7 +367,7 @@
                   "T": "T",
                   "C": "C",
                   "sram_address": {
-                    "indata": "_residual1_out",
+                    "indata": "_residual2_out",
                     "outdata": "rmsnorm2_out"
                   },
                   "dram_address": {
@@ -433,8 +433,8 @@
                   "type": "Residual_f",
                   "N": "BTC",
                   "sram_address": {
-                    "indata": "residual1_out matmul4_out",
-                    "outdata": "residual2_out"
+                    "indata": "residual2_out matmul4_out",
+                    "outdata": "residual1_out"
                   },
                   "dram_address": {
                     "data": -1,

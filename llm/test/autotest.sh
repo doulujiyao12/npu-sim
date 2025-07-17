@@ -86,8 +86,8 @@ EOF
         echo "INFO: Detected 2 fields, using new direct mode."
         read -r CONFIG_NAME CORE_CONFIG_NAME <<<"$line"
 
-        ./npusim --config-name="${CONFIG_NAME}" \
-                 --core-config-name="${CORE_CONFIG_NAME}" \
+        ./npusim --config-file="../llm/test/${CONFIG_NAME}" \
+                 --core-config-file="../llm/test/${CORE_CONFIG_NAME}" \
                  >"${NPUSIM_STDOUT_TMP_BASENAME}"
     else
         echo "ERROR: Line ${LINE_NUM} has invalid number of fields ${FIELD_COUNT} (expected 2 or 8)."

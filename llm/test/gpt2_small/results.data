@@ -22,6 +22,7 @@ config_gpt2_small_tp_2.json 15 0 512 512 8192 64	 5364373248 ps
 config_gpt2_small_tp_2.json 15 0 512 512 8192 128	 4828035280 ps
 config_gpt2_small_tp_2.json 15 0 512 512 8192 256	 4565454624 ps
 config_gpt2_small_tp_2.json 15 0 512 512 8192 512	 4433697232 ps
+
 config_gpt2_small_tp_4.json 15 0 64 64 1024 64	 5178515048 ps
 config_gpt2_small_tp_4.json 15 0 64 64 1024 128	 5054065392 ps
 config_gpt2_small_tp_4.json 15 0 64 64 1024 256		 4994142064 ps
@@ -144,6 +145,7 @@ config_gpt2_small_tp_4.json 15 0 512 512 8192 64	12582912   	 3696407616 ps
 config_gpt2_small_tp_4.json 15 0 512 512 8192 128	12582912   	 3323685968 ps
 config_gpt2_small_tp_4.json 15 0 512 512 8192 256	12582912   	 3144376 ns
 config_gpt2_small_tp_4.json 15 0 512 512 8192 512	12582912   	 3051916720 ps
+
 config_gpt2_small_tp_8.json 15 0 64 64 1024 64 6291456  	 4675589792 ps
 config_gpt2_small_tp_8.json 15 0 64 64 1024 128	 6291456  	 4481408104 ps
 config_gpt2_small_tp_8.json 15 0 64 64 1024 256	 6291456  	 4386932320 ps
@@ -221,3 +223,7 @@ config_gpt2_small_pd_naive.json 15 0 128 128 2048 128            56703117136 ps
 config_gpt2_small_pd_fuse_12*1.json 6 0 128 128 2048 128	 26167090 ns
 gpt2_small/pd_fuse_6*2.json 6 0 128 128 2048 128 8388608	 36045010 ns
 gpt2_small/pd_fuse_4*3.json 6 0 128 128 2048 128 8388608	 50877476 ns
+gpt2_small/pd_split_32_32.json 8 0 128 128 2048 128 8388608	 16602338 ns
+gpt2_small/pd_split_48_16.json 8 0 128 128 2048 128 8388608	 14997570 ns
+gpt2_small/pd_split_32_32.json core_configs/8*8_32_32.json	 12833443 ns
+gpt2_small/pd_split_48_16.json core_configs/8*8_48_16.json	 11520539 ns
