@@ -1098,7 +1098,7 @@ void WorkerCoreExecutor::task_logic() {
             comp->datapass_label = *next_datapass_label;
         }
 #if USE_L1L2_CACHE == 1
-        else if (p->prim_type == GPU_PRIM) {
+        else if (p->prim_type == GPU_PRIM) {    
             context.gpunb_dcache_if = gpunb_dcache_if;
             context.event_engine = event_engine;
 
