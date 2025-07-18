@@ -350,7 +350,7 @@ void comp_base::write_output_data(TaskCoreContext &context, int exu_flops,
     SfuConfig *sfu = get_sfu_config(cid);
 
     if (exu->type == MAC_Array)
-        cycle += exu_flops / (exu->x_dims * exu->y_dims * comp_util) * CYCLE;
+        cycle += exu_flops / (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
     else
         assert(false && "Unsupported tile type");
 

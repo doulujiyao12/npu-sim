@@ -121,6 +121,42 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
 #endif
 
 
+#if PERFORMANCE_MODE == 1
+
+    ExuConfig *exu = get_exu_config(context.cid);
+
+    int weight_tile_x = (C + exu->x_dims - 1) / exu->x_dims;   
+    int weight_tile_y = (OC + exu->y_dims - 1) / exu->y_dims;
+
+    int padding_input_x = (T * B) > exu->x_dims ? T * B : exu->x_dims;
+
+    int performance_cycle = (exu->x_dims + exu->x_dims + padding_input_x) * weight_tile_x * weight_tile_y;
+
+    int performance_comp = performance_cycle * exu->y_dims * exu->x_dims * comp_util;
+    LOG_VERBOSE(1, context.cid,"Prim name:" << name << " performance_cycle " << performance_cycle);
+
+    int loop_input_count = weight_tile_y - 1; // read loop_input_count Repetitive input 
+
+    for (int loop = 0; loop < loop_input_count; loop++){
+        for (int p = 0; p < data_size_input.size(); p++) {
+            if (datapass_label.indata[p].find(DRAM_LABEL) == 0) {
+
+                perf_read_data(context, dram_time, data_size_input[p], datapass_label.indata[p]);
+            }
+        }
+    }
+
+    
+
+    write_output_data(context, performance_comp, 0, dram_time, overlap_time,
+                      data_size_out / 3, out_global_addr);
+
+#else
+    // // 计算overlap并写回output数据
+    // // cout << "matmul output data size: " << data_size_out << endl;
+    // write_output_data(context, B * T * C * OC * 2, 0, dram_time, overlap_time,
+    //                   data_size_out / 3, out_global_addr);
+
     switch (job_type) {
 
         case JOB_PREFILL:
@@ -135,6 +171,12 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
         default:
             assert(false && "Unsupported job type");
     }
+
+
+#endif 
+
+
+    
 
     // // 计算overlap并写回output数据
     // write_output_data(context, B * T * C * OC * 2, 0, dram_time, overlap_time,

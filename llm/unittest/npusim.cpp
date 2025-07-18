@@ -18,9 +18,9 @@ using namespace std;
 Define_bool_opt("--help", g_flag_help, false, "show these help information");
 Define_bool_opt("--node-mode", g_flag_node, false, "whether to sim in a node");
 Define_string_opt("--config-file", g_flag_config_file,
-                  "../llm/test/config_gpt2_small.json", "config file");
+                  "../llm/test/gpt2_small/pd_fuse_6*2.json", "config file");
 Define_string_opt("--core-config-file", g_flag_core_config_file,
-                  "../llm/test/core_4x4.json", "core config file");
+                  "../llm/test/core_configs/core_6x6.json", "core config file");
 Define_string_opt("--ttf-file", g_flag_ttf, "../font/NotoSansDisplay-Bold.ttf",
                   "font ttf file");
 Define_bool_opt("--use-dramsys", g_flag_dramsys, true,
