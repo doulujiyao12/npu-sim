@@ -58,17 +58,6 @@ int Set_addr::task_core(TaskCoreContext &context) {
     }
     target->outdata = datapass_label->outdata;
 
-    char format_label[100];
-    sprintf(format_label, "#%d", context.loop_cnt);
-    string label_suffix = format_label;
-    for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-        if (target->indata[i] != UNSET_LABEL &&
-            target->indata[i] != DRAM_LABEL) {
-            target->indata[i] += label_suffix;
-        }
-    }
-    target->outdata += label_suffix;
-
     return 0;
 }
 int Set_addr::task() { return 0; }

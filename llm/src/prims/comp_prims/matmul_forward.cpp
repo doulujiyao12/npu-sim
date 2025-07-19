@@ -12,7 +12,7 @@
 #include "utils/system_utils.h"
 
 void Matmul_f::print_self(string prefix) {
-    
+
     cout << prefix << "<matmul_forward>\n";
     cout << prefix << "\tB: " << B << ", T: " << T << ", C: " << C
          << ", OC: " << OC << endl;
@@ -22,11 +22,17 @@ void Matmul_f::print_self(string prefix) {
          << ", input_offset: " << inp_offset << endl;
 }
 void Matmul_f::print_dim(int cid) {
-    LOG_VERBOSE(1, cid,"Prim name:" << name << " "  << " <matmul_forward>" );
-    LOG_VERBOSE(1, cid,"Prim name:" << name << " "  << "\tB: " << B << ", T: " << T << ", C: " << C << ", OC: " << OC );
-    LOG_VERBOSE(1, cid,"Prim name:" << name << " "  << "\tout_size: " << out_size << " , inp_size: " << inp_size << ", previous_inp_size: " << p_inp_size );
-    LOG_VERBOSE(1, cid,"Prim name:" << name << " "  << "\toutput_offset: " << out_offset << ", input_offset: " << inp_offset );
-
+    LOG_VERBOSE(1, cid, "Prim name:" << name << " " << " <matmul_forward>");
+    LOG_VERBOSE(1, cid,
+                "Prim name:" << name << " " << "\tB: " << B << ", T: " << T
+                             << ", C: " << C << ", OC: " << OC);
+    LOG_VERBOSE(1, cid,
+                "Prim name:" << name << " " << "\tout_size: " << out_size
+                             << " , inp_size: " << inp_size
+                             << ", previous_inp_size: " << p_inp_size);
+    LOG_VERBOSE(1, cid,
+                "Prim name:" << name << " " << "\toutput_offset: " << out_offset
+                             << ", input_offset: " << inp_offset);
 }
 
 void Matmul_f::initialize() {
@@ -204,7 +210,7 @@ int Matmul_f::task_core(TaskCoreContext &context) {
     int data_size_out = B * T * OC;
 
     // dram地址
-    u_int64_t dram_addr_tile = 0; //cid * dataset_words_per_tile;
+    u_int64_t dram_addr_tile = 0; // cid * dataset_words_per_tile;
     u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
     u_int64_t weight_global_addr = dram_addr_tile + w_offset * data_byte;
@@ -254,28 +260,34 @@ int Matmul_f::task_core(TaskCoreContext &context) {
 
     ExuConfig *exu = get_exu_config(context.cid);
 
-    int weight_tile_x = (C + exu->x_dims - 1) / exu->x_dims;   
+    int weight_tile_x = (C + exu->x_dims - 1) / exu->x_dims;
     int weight_tile_y = (OC + exu->y_dims - 1) / exu->y_dims;
 
     int padding_input_x = (T * B) > exu->x_dims ? T * B : exu->x_dims;
 
-    int performance_cycle = (exu->x_dims + exu->x_dims + padding_input_x) * weight_tile_x * weight_tile_y;
+    int performance_cycle = (exu->x_dims + exu->x_dims + padding_input_x) *
+                            weight_tile_x * weight_tile_y;
 
-    int performance_comp = performance_cycle * exu->y_dims * exu->x_dims * comp_util;
-    LOG_VERBOSE(1, context.cid,"Prim name:" << name << " performance_cycle " << performance_cycle);
+    int performance_comp =
+        performance_cycle * exu->y_dims * exu->x_dims * comp_util;
+    LOG_VERBOSE(1, context.cid,
+                "Prim name:" << name << " performance_cycle "
+                             << performance_cycle);
 
-    int loop_input_count = weight_tile_y - 1; // read loop_input_count Repetitive input 
+    int loop_input_count =
+        weight_tile_y - 1; // read loop_input_count Repetitive input
 
-    for (int loop = 0; loop < loop_input_count; loop++){
+    for (int loop = 0; loop < loop_input_count; loop++) {
         for (int p = 0; p < data_size_input.size(); p++) {
             if (datapass_label.indata[p].find(DRAM_LABEL) == 0) {
-
-                perf_read_data(context, dram_time, data_size_input[p], datapass_label.indata[p]);
+                cout << "[MATMUL] Core " << cid << ": Checking input "
+                     << datapass_label.indata[p] << "..." << endl;
+                perf_read_data(context, dram_time, data_size_input[p],
+                               datapass_label.indata[p]);
             }
         }
     }
 
-    
 
     write_output_data(context, performance_comp, 0, dram_time, overlap_time,
                       data_size_out, out_global_addr);
@@ -285,7 +297,7 @@ int Matmul_f::task_core(TaskCoreContext &context) {
     // cout << "matmul output data size: " << data_size_out << endl;
     write_output_data(context, B * T * C * OC * 2, 0, dram_time, overlap_time,
                       data_size_out, out_global_addr);
-#endif 
+#endif
     BETTER_PRINT(overlap_time);
 
     return overlap_time;

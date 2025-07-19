@@ -22,6 +22,9 @@ void Send_prim::print_self(string prefix) {
     cout << prefix << "\t[" << type_s << "] > send to " << des_id << endl;
     cout << prefix << "\tmax_packet: " << max_packet << ", tag_id: " << tag_id
          << ", end_length: " << end_length << endl;
+
+    if (type == SEND_DATA)
+        cout << prefix << "\tout_label: " << output_label << endl;
 }
 
 void Send_prim::parse_json(json j, vector<pair<string, int>> vtable) {}
@@ -80,10 +83,21 @@ int Send_prim::task_core(TaskCoreContext &context) {
 
     // 找到output_label对应的数据块
     if (type == SEND_DATA) {
+        bool need_delete = false;
+
+        std::size_t pos = output_label.find("DEL_");
+        if (pos != std::string::npos) {
+            output_label = output_label.substr(pos + 4);
+            need_delete = true;
+        }
+
         AddrPosKey sc_key;
         int flag = sram_pos_locator->findPair(output_label, sc_key);
         mau->mem_read_port->read(sc_key.pos + M_D_DATA * (data_packet_id - 1),
                                  msg_data, elapsed_time);
+
+        if (need_delete)
+            sram_pos_locator->deletePair(output_label);
     }
 
     msg_data = 0b1;

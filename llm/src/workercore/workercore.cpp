@@ -480,6 +480,12 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     case LOAD_EXPERT_TYPE:
         task = new load_expert();
         break;
+    case PARSE_INPUT_TYPE:
+        task = new parse_input();
+        break;
+    case PARSE_OUTPUT_TYPE:
+        task = new parse_output();
+        break;
     default:
         assert(0 && "Unknown prim");
         cout << "Unknown prim: " << type << ".\n";
@@ -973,7 +979,7 @@ void WorkerCoreExecutor::recv_logic() {
                         // 核的输出，并且已经会由router保存在sram上
                         AddrPosKey inp_key = AddrPosKey(*sram_addr, 0);
                         char format_label[100];
-                        sprintf(format_label, "%s#%d", INPUT_LABEL, loop_cnt);
+                        sprintf(format_label, "%s", INPUT_LABEL);
                         string input_label = format_label;
 
                         u_int64_t temp;
@@ -1008,8 +1014,7 @@ void WorkerCoreExecutor::recv_logic() {
                                 SYSTEM_MODE == SIM_PDS) {
                                 AddrPosKey inp_key;
                                 char format_label[100];
-                                sprintf(format_label, "%s#%d", INPUT_LABEL,
-                                        loop_cnt);
+                                sprintf(format_label, "%s", INPUT_LABEL);
                                 string input_label = format_label;
                                 inp_key.size = 0; //+= max_recv * M_D_DATA;
                                 sram_pos_locator->findPair(input_label,
@@ -1098,7 +1103,7 @@ void WorkerCoreExecutor::task_logic() {
             comp->datapass_label = *next_datapass_label;
         }
 #if USE_L1L2_CACHE == 1
-        else if (p->prim_type == GPU_PRIM) {    
+        else if (p->prim_type == GPU_PRIM) {
             context.gpunb_dcache_if = gpunb_dcache_if;
             context.event_engine = event_engine;
 
@@ -1130,12 +1135,12 @@ void WorkerCoreExecutor::task_logic() {
         }
         context.event_engine = event_engine;
 #if USE_GLOBAL_DRAM == 1
-    context.event_engine = event_engine;
+        context.event_engine = event_engine;
 
 
-    context.gpunb_dcache_if = gpunb_dcache_if;     
+        context.gpunb_dcache_if = gpunb_dcache_if;
 #endif
-        
+
         p->cid = cid;
         cout << "[PRIM] Core <\033[38;5;214m" << cid
              << "\033[0m>: PRIM NAME -----------------------: " << p->name

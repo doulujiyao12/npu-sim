@@ -340,6 +340,19 @@ void SramPosLocator::updateKVPair(TaskCoreContext &context, std::string &key,
     assert(0);
 #endif
 }
+
+void SramPosLocator::changePairName(std::string &old_key, std::string &new_key) { 
+    // 将旧标签名修改为新标签名
+    AddrPosKey result;
+    auto it = data_map.find(old_key);
+    if (it != data_map.end()) {
+        result = it->second;
+        data_map.erase(it);
+    }
+
+    data_map[new_key] = result;
+}
+
 // 为sram中标签为key的数据块增加size的大小。如果该数据块还不存在，则创建一个。
 void SramPosLocator::updatePair(std::string &key, int size,
                                 TaskCoreContext &context,
@@ -369,7 +382,7 @@ void SramPosLocator::updatePair(std::string &key, int size,
 }
 
 void SramPosLocator::deletePair(std::string &key) {
-    cout << "delete label " << key << endl;
+    cout << "Core " << cid << " delete label " << key << endl;
     auto it = data_map.find(key);
     if (it != data_map.end()) {
 #if USE_SRAM_MANAGER

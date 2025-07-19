@@ -67,7 +67,8 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "layernorm1_in"
+                                        "indata": "layernorm1_in",
+                                        "outdata": "layernorm1_in"
                                     }
                                 },
                                 {
@@ -127,7 +128,8 @@
                                     "type": "parse_output",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_1_w"
+                                        "indata": "eternal_matmul1_1_w",
+                                        "outdata": "DEL_eternal_matmul1_1_w"
                                     }
                                 }
                             ]
@@ -144,7 +146,8 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_2_w"
+                                        "indata": "eternal_matmul1_2_w",
+                                        "outdata": "eternal_matmul1_2_w"
                                     }
                                 },
                                 {
@@ -166,7 +169,8 @@
                                     "type": "parse_output",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_2_w"
+                                        "indata": "eternal_matmul1_2_w",
+                                        "outdata": "DEL_eternal_matmul1_2_w"
                                     }
                                 }
                             ]
@@ -183,7 +187,8 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_3_w"
+                                        "indata": "eternal_matmul1_3_w",
+                                        "outdata": "eternal_matmul1_3_w"
                                     }
                                 },
                                 {
@@ -205,7 +210,8 @@
                                     "type": "parse_output",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_3_w"
+                                        "indata": "eternal_matmul1_3_w",
+                                        "outdata": "DEL_eternal_matmul1_3_w"
                                     }
                                 }
                             ]
@@ -218,7 +224,8 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_4_w"
+                                        "indata": "eternal_matmul1_4_w",
+                                        "outdata": "eternal_matmul1_4_w"
                                     }
                                 },
                                 {
@@ -293,7 +300,8 @@
                                     "type": "parse_output",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_1_w"
+                                        "indata": "eternal_matmul2_1_w",
+                                        "outdata": "DEL_eternal_matmul2_1_w"
                                     }
                                 }
                             ]
@@ -310,7 +318,8 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_2_w"
+                                        "indata": "eternal_matmul2_2_w",
+                                        "outdata": "eternal_matmul2_2_w"
                                     }
                                 },
                                 {
@@ -332,7 +341,8 @@
                                     "type": "parse_output",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_2_w"
+                                        "indata": "eternal_matmul2_2_w",
+                                        "outdata": "DEL_eternal_matmul2_2_w"
                                     }
                                 }
                             ]
@@ -349,7 +359,8 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_3_w"
+                                        "indata": "eternal_matmul2_3_w",
+                                        "outdata": "eternal_matmul2_3_w"
                                     }
                                 },
                                 {
@@ -371,7 +382,8 @@
                                     "type": "parse_output",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_3_w"
+                                        "indata": "eternal_matmul2_3_w",
+                                        "outdata": "DEL_eternal_matmul2_3_w"
                                     }
                                 }
                             ]
@@ -384,7 +396,8 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_4_w"
+                                        "indata": "eternal_matmul2_4_w",
+                                        "outdata": "eternal_matmul2_4_w"
                                     }
                                 },
                                 {
@@ -463,7 +476,8 @@
                                     "type": "parse_input",
                                     "size": "BTC/4",
                                     "sram_address": {
-                                        "indata": "split_matmul1_out"
+                                        "indata": "split_matmul1_out",
+                                        "outdata": "split_matmul1_out"
                                     }
                                 },
                                 {
@@ -495,14 +509,16 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_2_w"
+                                        "indata": "eternal_matmul1_2_w",
+                                        "outdata": "eternal_matmul1_2_w"
                                     }
                                 },
                                 {
                                     "type": "parse_output",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_1_w"
+                                        "indata": "eternal_matmul1_1_w",
+                                        "outdata": "DEL_eternal_matmul1_1_w"
                                     }
                                 }
                             ]
@@ -540,14 +556,16 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_3_w"
+                                        "indata": "eternal_matmul1_3_w",
+                                        "outdata": "eternal_matmul1_3_w"
                                     }
                                 },
                                 {
                                     "type": "parse_output",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_2_w"
+                                        "indata": "eternal_matmul1_2_w",
+                                        "outdata": "DEL_eternal_matmul1_2_w"
                                     }
                                 }
                             ]
@@ -585,14 +603,16 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_4_w"
+                                        "indata": "eternal_matmul1_4_w",
+                                        "outdata": "eternal_matmul1_4_w"
                                     }
                                 },
                                 {
                                     "type": "parse_output",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_3_w"
+                                        "indata": "eternal_matmul1_3_w",
+                                        "outdata": "DEL_eternal_matmul1_3_w"
                                     }
                                 }
                             ]
@@ -679,14 +699,16 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_2_w"
+                                        "indata": "eternal_matmul2_2_w",
+                                        "outdata": "eternal_matmul2_2_w"
                                     }
                                 },
                                 {
                                     "type": "parse_output",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_1_w"
+                                        "indata": "eternal_matmul2_1_w",
+                                        "outdata": "DEL_eternal_matmul2_1_w"
                                     }
                                 }
                             ]
@@ -724,14 +746,16 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_3_w"
+                                        "indata": "eternal_matmul2_3_w",
+                                        "outdata": "eternal_matmul2_3_w"
                                     }
                                 },
                                 {
                                     "type": "parse_output",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_2_w"
+                                        "indata": "eternal_matmul2_2_w",
+                                        "outdata": "DEL_eternal_matmul2_2_w"
                                     }
                                 }
                             ]
@@ -769,14 +793,16 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_4_w"
+                                        "indata": "eternal_matmul2_4_w",
+                                        "outdata": "eternal_matmul2_4_w"
                                     }
                                 },
                                 {
                                     "type": "parse_output",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_3_w"
+                                        "indata": "eternal_matmul2_3_w",
+                                        "outdata": "DEL_eternal_matmul2_3_w"
                                     }
                                 }
                             ]
@@ -835,7 +861,8 @@
                                     "type": "parse_input",
                                     "size": "BTC/4",
                                     "sram_address": {
-                                        "indata": "split_matmul1_out"
+                                        "indata": "split_matmul1_out",
+                                        "outdata": "split_matmul1_out"
                                     }
                                 },
                                 {
@@ -857,7 +884,8 @@
                                     "type": "parse_output",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_1_w"
+                                        "indata": "eternal_matmul1_1_w",
+                                        "outdata": "DEL_eternal_matmul1_1_w"
                                     }
                                 }
                             ]
@@ -874,7 +902,8 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_2_w"
+                                        "indata": "eternal_matmul1_2_w",
+                                        "outdata": "eternal_matmul1_2_w"
                                     }
                                 },
                                 {
@@ -896,7 +925,8 @@
                                     "type": "parse_output",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_2_w"
+                                        "indata": "eternal_matmul1_2_w",
+                                        "outdata": "DEL_eternal_matmul1_2_w"
                                     }
                                 }
                             ]
@@ -913,7 +943,8 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_3_w"
+                                        "indata": "eternal_matmul1_3_w",
+                                        "outdata": "eternal_matmul1_3_w"
                                     }
                                 },
                                 {
@@ -935,7 +966,8 @@
                                     "type": "parse_output",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_3_w"
+                                        "indata": "eternal_matmul1_3_w",
+                                        "outdata": "DEL_eternal_matmul1_3_w"
                                     }
                                 }
                             ]
@@ -948,7 +980,8 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_4_w"
+                                        "indata": "eternal_matmul1_4_w",
+                                        "outdata": "eternal_matmul1_4_w"
                                     }
                                 },
                                 {
@@ -1023,7 +1056,8 @@
                                     "type": "parse_output",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_1_w"
+                                        "indata": "eternal_matmul2_1_w",
+                                        "outdata": "DEL_eternal_matmul2_1_w"
                                     }
                                 }
                             ]
@@ -1040,7 +1074,8 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_2_w"
+                                        "indata": "eternal_matmul2_2_w",
+                                        "outdata": "eternal_matmul2_2_w"
                                     }
                                 },
                                 {
@@ -1062,7 +1097,8 @@
                                     "type": "parse_output",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_2_w"
+                                        "indata": "eternal_matmul2_2_w",
+                                        "outdata": "DEL_eternal_matmul2_2_w"
                                     }
                                 }
                             ]
@@ -1079,7 +1115,8 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_3_w"
+                                        "indata": "eternal_matmul2_3_w",
+                                        "outdata": "eternal_matmul2_3_w"
                                     }
                                 },
                                 {
@@ -1101,7 +1138,8 @@
                                     "type": "parse_output",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_3_w"
+                                        "indata": "eternal_matmul2_3_w",
+                                        "outdata": "DEL_eternal_matmul2_3_w"
                                     }
                                 }
                             ]
@@ -1118,7 +1156,8 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_4_w"
+                                        "indata": "eternal_matmul2_4_w",
+                                        "outdata": "eternal_matmul2_4_w"
                                     }
                                 },
                                 {
