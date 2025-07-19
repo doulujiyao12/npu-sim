@@ -19,6 +19,8 @@
         "3C/4": 576,
         "C/4": 192,
         "2C": 1536,
+        "T/4": 32,
+        "3CC/4": 442368,
         "layernorm1_data": 96,
         "split_matmul1_out": 97,
         "matmul1_data": 96,
@@ -65,7 +67,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3CC/4",
+                                    "size": "BTC",
                                     "sram_address": {
                                         "indata": "layernorm1_in",
                                         "outdata": "layernorm1_in"
