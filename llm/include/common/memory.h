@@ -131,7 +131,7 @@ public:
                     u_int64_t &dram_time);
     void updateKVPair(TaskCoreContext &context, std::string &key, uint64_t kv_daddr, int data_size_in_byte);
 
-    
+    void changePairName(std::string &old_key, std::string &new_key);
 
     void deletePair(std::string &key);
     void clearAll();

@@ -93,6 +93,10 @@ prim_base *new_prim(string type) {
         prim = new gate_forward();
     else if (type == "load_expert")
         prim = new load_expert();
+    else if (type == "parse_input")
+        prim = new parse_input();
+    else if (type == "parse_output")
+        prim = new parse_output();
 
     else {
         cout << "Parse config prim: Not Implemented type: " << type << "\n";

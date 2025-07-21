@@ -203,8 +203,6 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
         pipeline = 1;
     }
 
-    cout << "21\n";
-
     // 检查是否需要复制原语的核，config书写要求：需要重新写明所有work的cast、recv_cnt,数量等同于需要复制的那个核的work数量
     for (int i = 0; i < coreconfigs.size(); i++) {
         if (coreconfigs[i].prim_copy != -1) {
@@ -484,10 +482,6 @@ void config_helper_core::calculate_address(bool do_loop) {
                     // output_offset = cp->out_offset;
                     output_label = cp->datapass_label.outdata;
                     break;
-                } else if (p->prim_type == MOE_PRIM) {
-                    moe_base *mp = (moe_base *)p;
-                    output_size = mp->out_size;
-                    output_label = mp->datapass_label.outdata;
                 }
             }
 
