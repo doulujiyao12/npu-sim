@@ -123,6 +123,7 @@ void comp_base::check_input_data(TaskCoreContext &context, uint64_t &dram_time,
                        datapass_label.indata[p].c_str());
                 sc_stop();
             } else if (flag > 0) {
+                
 #if USE_SRAM_MANAGER == 1
                 LOG_VERBOSE(1, context.cid,"Prim name:" << name << " comp_base: sram_pos_locator find the label: " << datapass_label.indata[p] << " with flag: " << flag);
 
@@ -145,8 +146,9 @@ void comp_base::check_input_data(TaskCoreContext &context, uint64_t &dram_time,
                                           context, dram_time);
 #endif
             } else {
+                // send receive input data
 #if USE_SRAM_MANAGER == 1
-                LOG_VERBOSE(1, context.cid,"Prim name:" << name << " comp_base: already has sram: " << datapass_label.indata[p] << " with flag: " << flag);
+                LOG_VERBOSE(1, context.cid,"Prim name:" << name << " comp_base: send receive sram: " << datapass_label.indata[p] << " with flag: " << flag);
 
                 AddrPosKey inp_key;
                 int flag = sram_pos_locator->findPair(datapass_label.indata[p],
@@ -157,11 +159,20 @@ void comp_base::check_input_data(TaskCoreContext &context, uint64_t &dram_time,
                         dram_time, dram_start, datapass_label.indata[p], true,
                         sram_pos_locator, true);
                 }
+#else
+                LOG_VERBOSE(1, context.cid,"Prim name:" << name << " comp_base: send receive sram: " << datapass_label.indata[p] << " with flag: " << flag << " key size " << inp_key.size << " data size " << data_size_input[p]);
+
+                inp_key.size = data_size_input[p];
+                inp_key.spill_size = 0;
+                sram_pos_locator->addPair(datapass_label.indata[p], inp_key,
+                                          context, dram_time);
+
+
 #endif
             }
 #if USE_SRAM_MANAGER == 1
 
-
+            // mla kvcache 
             AddrPosKey sc_key;
             sram_pos_locator->findPair(datapass_label.indata[p], sc_key);
 
@@ -202,10 +213,25 @@ void comp_base::check_input_data(TaskCoreContext &context, uint64_t &dram_time,
                     sram_pos_locator->data_map[datapass_label.indata[p]].size;
                 sram_pos_locator->addPair(datapass_label.indata[p], sc_key,
                                           false);
-#if ASSERT == 1
+#if ASSERT == 1 
                 assert(sram_pos_locator->validateTotalSize());
 #endif
             }
+#else
+            if (sram_pos_locator->data_map[datapass_label.indata[p]].size <
+                inp_key.size) {
+                // std::cout << "address " << (void*)&inp_key << "address " << (void*)&sram_pos_locator->data_map[datapass_label.indata[p]] << std::endl;
+                // LOG_VERBOSE(1, context.cid,"Prim name:" << name <<  " key size " << inp_key.size << " data size " << sram_pos_locator->data_map[datapass_label.indata[p]].size);
+
+                assert(false);
+                LOG_VERBOSE(1, context.cid,"Prim name:" << name << "\033[1;33m"<< "warning!! input output not mapping" << "\033[0m");
+                sram_pos_locator->addPair(datapass_label.indata[p], inp_key,
+                                          false);  
+
+
+                }
+
+
 #endif
         }
 

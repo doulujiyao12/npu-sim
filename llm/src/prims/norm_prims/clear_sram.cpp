@@ -35,6 +35,8 @@ int Clear_sram::task_core(TaskCoreContext &context) {
             continue;
 
         bool flag = true;
+
+        // clear output last layer in core and reuse input 
         string eternal = ETERNAL_PREFIX;
         for (int i = 0; i < eternal.length(); i++) {
             if (eternal[i] != record.first[i]) {
