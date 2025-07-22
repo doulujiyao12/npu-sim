@@ -61,7 +61,7 @@ sequential : bool, optional
     ]
 
   上面的配置表示 1次0，L次3 模拟 ``prefill`` 和 ``decoding`` 阶段的 input 下发
-  如果在pd阶段。表示一个core中原语复制的此时，几个transformer block。
+  如果在pd阶段。表示一个core中原语复制的次数，几个transformer block。
 vars : dict
   记录数值的键值对，在下方的配置中出现的所有字符串可以在这里转换成对应的数字。
 

@@ -967,7 +967,7 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
                                              elapsed_time);
         // u_int64_t sram_timer = elapsed_time.to_seconds() * 1e9;
 #else
-        sram_time += RAM_WRITE_LATENCY;
+        sram_time += 0;//RAM_WRITE_LATENCY;
 #endif
     }
 #if USE_BEHA_SRAM == 1
@@ -999,7 +999,7 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
         mau->mem_write_port->write(sram_addr_temp, data_tmp2, elapsed_time);
 
 #else
-        sram_time += RAM_READ_LATENCY;
+        sram_time += 0;//RAM_WRITE_LATENCY;
 #endif
         // u_int64_t sram_timer = elapsed_time.to_seconds() * 1e9;
         // dram_time += sram_timer;
@@ -1055,7 +1055,7 @@ void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
                                              elapsed_time);
         u_int64_t sram_timer = elapsed_time.to_seconds() * 1e9;
 #else
-        sram_time += RAM_WRITE_LATENCY;
+        sram_time += 0;//RAM_WRITE_LATENCY;
 #endif
         // dram_time += sram_timer;
         temp_sram_addr = temp_sram_addr + SRAM_BANKS;
@@ -1073,7 +1073,7 @@ void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
 #if USE_BEHA_SRAM == 0
         mau->mem_write_port->write(temp_sram_addr, data_tmp2, elapsed_time);
 #else
-        sram_time += RAM_WRITE_LATENCY;
+        sram_time += 0;//RAM_WRITE_LATENCY;
 #endif
         temp_sram_addr = temp_sram_addr + 1;
         // u_int64_t sram_timer = elapsed_time.to_seconds() * 1e9;
