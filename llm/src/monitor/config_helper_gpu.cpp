@@ -145,7 +145,7 @@ void config_helper_gpu::fill_queue_start(queue<Msg> *q) {
     for (auto stream : streams) {
         for (auto source : stream.sources) {
             AddrPosKey source_key = AddrPosKey(0, source.second);
-            gpu_pos_locator->addPair(source.first + "#1", source_key);
+            gpu_pos_locator->addPair(source.first, source_key);
         }
     }
 
