@@ -15,6 +15,9 @@
 #include <tlm_utils/simple_target_socket.h>
 
 
+
+// revise context.sram_addr value
+
 void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
                               u_int64_t global_addr, u_int64_t &dram_time,
                               float *dram_start, std::string label_name,
@@ -382,6 +385,9 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
     }
 }
 
+
+// no need to revise context.sram_addr value
+
 void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
                              u_int64_t global_addr, u_int64_t &dram_time) {
     int sram_bitw = get_sram_bitwidth(context.cid);
@@ -398,6 +404,7 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
     auto mau = context.mau;
     auto hmau = context.hmau;
     auto sram_addr = context.sram_addr;
+    // no use 
     auto sram_addr_temp = *sram_addr;
 #if USE_NB_DRAMSYS == 1
     auto nb_dcache = context.nb_dcache;
@@ -610,6 +617,9 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
         (end_first_write_time - start_first_write_time).to_seconds() * 1e9;
 }
 
+
+// no revise context.sram_addr value
+
 void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
                        int sram_addr_offset, u_int64_t &dram_time,
                        AllocationID alloc_id, bool use_manager,
@@ -744,6 +754,7 @@ void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
 #endif
 }
 
+//no revise context.sram_addr value
 
 void sram_read_generic_temp(TaskCoreContext &context, int data_size_in_byte,
                             int sram_addr_offset, u_int64_t &dram_time) {
@@ -843,7 +854,7 @@ void sram_update_cache(TaskCoreContext &context, string label_k,
         (end_first_write_time - start_first_write_time).to_seconds() * 1e9;
 }
 
-// 会修改 context.sram_addr 的数值
+// revise context.sram_addr value
 void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
                                u_int64_t &dram_time, std::string label_name,
                                bool use_manager,
@@ -956,7 +967,7 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
                                              elapsed_time);
         // u_int64_t sram_timer = elapsed_time.to_seconds() * 1e9;
 #else
-        sram_time += RAM_WRITE_LATENCY;
+        sram_time += 0;//RAM_WRITE_LATENCY;
 #endif
     }
 #if USE_BEHA_SRAM == 1
@@ -988,7 +999,7 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
         mau->mem_write_port->write(sram_addr_temp, data_tmp2, elapsed_time);
 
 #else
-        sram_time += RAM_READ_LATENCY;
+        sram_time += 0;//RAM_WRITE_LATENCY;
 #endif
         // u_int64_t sram_timer = elapsed_time.to_seconds() * 1e9;
         // dram_time += sram_timer;
@@ -1015,7 +1026,7 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
 
 #endif
 }
-// 不会修改 context.sram_addr 的数值
+// 会修改 context.sram_addr 的数值
 void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
                           int &temp_sram_addr, u_int64_t &dram_time) {
     int sram_bitw = get_sram_bitwidth(context.cid);
@@ -1044,7 +1055,7 @@ void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
                                              elapsed_time);
         u_int64_t sram_timer = elapsed_time.to_seconds() * 1e9;
 #else
-        sram_time += RAM_WRITE_LATENCY;
+        sram_time += 0;//RAM_WRITE_LATENCY;
 #endif
         // dram_time += sram_timer;
         temp_sram_addr = temp_sram_addr + SRAM_BANKS;
@@ -1062,7 +1073,7 @@ void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
 #if USE_BEHA_SRAM == 0
         mau->mem_write_port->write(temp_sram_addr, data_tmp2, elapsed_time);
 #else
-        sram_time += RAM_WRITE_LATENCY;
+        sram_time += 0;//RAM_WRITE_LATENCY;
 #endif
         temp_sram_addr = temp_sram_addr + 1;
         // u_int64_t sram_timer = elapsed_time.to_seconds() * 1e9;
