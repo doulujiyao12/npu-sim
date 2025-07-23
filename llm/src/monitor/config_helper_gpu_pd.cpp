@@ -84,7 +84,7 @@ void config_helper_gpu_pd::fill_queue_start(queue<Msg> *q) {
     if (prim_index == 0 && has_prefill) {
         for (auto source : source_info) {
             AddrPosKey source_key = AddrPosKey(0, find_var(source.second));
-            gpu_pos_locator->addPair(source.first + "#1", source_key);
+            gpu_pos_locator->addPair(source.first, source_key);
         }
     }
 

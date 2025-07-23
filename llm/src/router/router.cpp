@@ -215,10 +215,10 @@ void RouterUnit::router_execute() {
             int des = req.des;
             int source = req.source;
             Directions next = get_next_hop(des, source);
-            cout << "[INFO] Router " << rid << ", checking req from " << source
-                 << endl;
 
             if (output_lock[next] == 0 || output_lock[next] == req.tag_id) {
+                cout << "[INFO] Router " << rid << ", checking req from "
+                     << source << endl;
                 if (buffer_o[CENTER].size() < MAX_BUFFER_PACKET_SIZE) {
                     it = req_queue.erase(it);
                     buffer_o[CENTER].emplace(serialize_msg(req));
