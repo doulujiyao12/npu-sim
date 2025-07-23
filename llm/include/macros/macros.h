@@ -9,27 +9,108 @@
       // die
 #endif
 
+// // 自定义宏
+// #define DUMMY 1
+// #define DUMMY_SRAM 1
+// #define DUMMY_SRAMV 1
+// #define USE_SRAM 1            // otherwise use Dcache
+// // #define MAX_SRAM_SIZE 8388608 //33554432  // byte
+// #define SRAM_BLOCK_SIZE 128   // byte
+// #define USE_SRAM_MANAGER 0
+// #define USE_NB_DRAMSYS 1
+// #define USE_L1L2_CACHE 1
+// #define USE_BEHA_SRAM 1
+// #define FAST_WARMUP 1
+// #define SR_PARA 0
+// #define GPU_CACHE_DEBUG 0
+// #define GPU_TMP_DEBUG 0
+// #define NB_CACHE_DEBUG 0
+// #define DEBUG_SRAM_MANAGER 0
+// #define DRAM_ALIGN 1024
+// #define DRAM_BURST_BYTE 0
+// #define ENABLE_COLORS 0
+// #define USE_GLOBAL_DRAM 0
+
 // 自定义宏
+#ifndef DUMMY
 #define DUMMY 1
+#endif
+
+#ifndef DUMMY_SRAM
 #define DUMMY_SRAM 1
+#endif
+
+#ifndef DUMMY_SRAMV
 #define DUMMY_SRAMV 1
-#define USE_SRAM 1            // otherwise use Dcache
+#endif
+
+#ifndef USE_SRAM
+#define USE_SRAM 1 // otherwise use Dcache
+#endif
+
+// #ifndef MAX_SRAM_SIZE
 // #define MAX_SRAM_SIZE 8388608 //33554432  // byte
-#define SRAM_BLOCK_SIZE 128   // byte
+// #endif
+
+#ifndef SRAM_BLOCK_SIZE
+#define SRAM_BLOCK_SIZE 128 // byte
+#endif
+
+#ifndef USE_SRAM_MANAGER
 #define USE_SRAM_MANAGER 0
+#endif
+
+#ifndef USE_NB_DRAMSYS
 #define USE_NB_DRAMSYS 1
+#endif
+
+#ifndef USE_L1L2_CACHE
 #define USE_L1L2_CACHE 1
+#endif
+
+#ifndef USE_BEHA_SRAM
 #define USE_BEHA_SRAM 1
+#endif
+
+#ifndef FAST_WARMUP
 #define FAST_WARMUP 1
+#endif
+
+#ifndef SR_PARA
 #define SR_PARA 0
+#endif
+
+#ifndef GPU_CACHE_DEBUG
 #define GPU_CACHE_DEBUG 0
+#endif
+
+#ifndef GPU_TMP_DEBUG
 #define GPU_TMP_DEBUG 0
+#endif
+
+#ifndef NB_CACHE_DEBUG
 #define NB_CACHE_DEBUG 0
+#endif
+
+#ifndef DEBUG_SRAM_MANAGER
 #define DEBUG_SRAM_MANAGER 0
+#endif
+
+#ifndef DRAM_ALIGN
 #define DRAM_ALIGN 1024
+#endif
+
+#ifndef DRAM_BURST_BYTE
 #define DRAM_BURST_BYTE 0
+#endif
+
+#ifndef ENABLE_COLORS
 #define ENABLE_COLORS 0
+#endif
+
+#ifndef USE_GLOBAL_DRAM
 #define USE_GLOBAL_DRAM 0
+#endif
 
 
 // 数据包占位

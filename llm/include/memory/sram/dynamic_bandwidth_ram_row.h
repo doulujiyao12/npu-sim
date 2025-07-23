@@ -11,6 +11,19 @@
 // start_address 是所有的地址位（包括末位对齐位置），不是index
 // read_port_per_bank_ 每个 bank 能够同时读的数量
 // read_port_num_ 每个 bank 总共有几个读端口
+
+template<class T, unsigned BANK_NUM>
+struct WriteRequest {
+    uint64_t base_address;
+    std::vector<T> data;
+    sc_event done_event;     // 用于通知完成
+    sc_time* elapsed_time;   // 返回耗时
+    bool completed;          // 标记是否完成（可选）
+
+    WriteRequest(uint64_t addr, const std::vector<T>& d, sc_time* et)
+        : base_address(addr), data(d), elapsed_time(et), completed(false) {}
+};
+
 template <class T, unsigned BANK_NUM>
 class DynamicBandwidthRamRow : public sc_channel,
                                public multiport_read_if<T, BANK_NUM>,
@@ -22,7 +35,8 @@ public:
                            uint64_t write_port_per_bank, int read_port_num,
                            int write_port_num, int hb_read_port_num,
                            Event_engine *_e_engine)
-        : low_bw_start_address_(start_address),
+        : write_request_fifo_(10),
+          low_bw_start_address_(start_address),
           depth_per_bank_(depth_per_bank),
           read_port_per_bank_(read_port_per_bank),
           write_port_per_bank_(write_port_per_bank),
@@ -57,10 +71,14 @@ public:
         bound_read_port_num_ = 0;
         bound_write_port_num_ = 0;
         bound_high_bw_read_port_num_ = 0;
+        SC_THREAD(process_write_requests);
     }
 
 public:
     Event_engine *e_engine_;
+    sc_fifo<WriteRequest<T, BANK_NUM>*> write_request_fifo_;
+
+    void process_write_requests();  // 专用处理线程
 
     vector<ArbiterRamBank<T> *> ram_banks_;
     vector<sc_signal<uint64_t> *> addresses_;
@@ -126,6 +144,70 @@ DynamicBandwidthRamRow<T, BANK_NUM>::get_local_address(uint64_t address) {
 }
 
 template <class T, unsigned BANK_NUM>
+void DynamicBandwidthRamRow<T, BANK_NUM>::process_write_requests() {
+    while (true) {
+        // 从 FIFO 读取请求（阻塞）
+        WriteRequest<T, BANK_NUM>* request = write_request_fifo_.read();
+
+        sc_time start_time = sc_time_stamp();
+        sc_event_and_list event_all_done;
+
+        uint64_t base_address = request->base_address;
+
+        // 第一阶段：设置地址和数据，触发写
+        {
+            // 获取信号量（确保只有一个高带宽写在进行）
+            if (high_bw_write_semaphore_->trywait() == -1) {
+                high_bw_write_semaphore_->wait();
+            }
+
+            for (auto i = 0; i < BANK_NUM; i++) {
+                uint64_t addr_offset = base_address + i;
+                uint64_t bank_index = get_bank_index(addr_offset);
+                uint64_t local_address = get_local_address(addr_offset);
+
+                // 写入地址
+                write_addresses_[bank_index]->write(local_address);
+
+                // 写入数据
+                data_to_banks_[i]->write(request->data[i]);
+
+                // 收集完成事件
+                event_all_done &= ram_banks_[bank_index]->write_done_event_;
+            }
+
+#if VERBOSE_TRACE == 1
+            e_engine_->add_event(this->name(), "multiport_write", "B",
+                                 Trace_event_util("write_processor"));
+#endif
+
+            // 触发并行写事件
+            for (auto i = 0; i < BANK_NUM; i++) {
+                uint64_t bank_index = get_bank_index(base_address + i);
+                ram_banks_[bank_index]->write_in_parallel_event_.notify(SC_ZERO_TIME);
+            }
+        }
+
+        // 等待所有 bank 写完成
+        wait(event_all_done);
+
+#if VERBOSE_TRACE == 1
+        e_engine_->add_event(this->name(), "multiport_write", "E",
+                             Trace_event_util("write_processor"));
+#endif
+
+        // 计算耗时
+        *(request->elapsed_time) = sc_time_stamp() - start_time;
+
+        // 释放信号量
+        high_bw_write_semaphore_->post();
+
+        // 通知原始线程完成
+        request->done_event.notify(SC_ZERO_TIME);
+    }
+}
+
+template <class T, unsigned BANK_NUM>
 inline void
 DynamicBandwidthRamRow<T, BANK_NUM>::register_port(sc_port_base &port_,
                                                    const char *if_typename_) {
@@ -169,51 +251,73 @@ DynamicBandwidthRamRow<T, BANK_NUM>::read(uint64_t address, T &data,
 template <class T, unsigned BANK_NUM>
 inline transfer_status DynamicBandwidthRamRow<T, BANK_NUM>::multiport_write(
     uint64_t address_in_high_bitwidth, vector<T> &data, sc_time &elapsed_time) {
-    // 检查数据大小与银行数量是否匹配
+    
     assert(data.size() == BANK_NUM);
-    sc_time start_time = sc_time_stamp();
-    // 获取写信号量，确保同时只能有一个多端口写操作
-    if (high_bw_write_semaphore_->trywait() == -1) {
-        high_bw_write_semaphore_->wait(); // 阻塞直到信号量可用
-    }
 
-    uint64_t base_address = address_in_high_bitwidth;
-    sc_event_and_list event_all_done;
+    // 创建请求对象（动态分配，由处理线程释放）
+    auto request = new WriteRequest<T, BANK_NUM>(address_in_high_bitwidth, data, &elapsed_time);
 
-    // 每个bank写入地址和数据
-    for (auto i = 0; i < BANK_NUM; i++) {
-        uint64_t bank_index = get_bank_index(base_address + i);
-        uint64_t local_address = get_local_address(base_address + i);
-        write_addresses_[bank_index]->write(local_address);
+    // 提交请求
+    write_request_fifo_.write(request);
 
-        // 确保写入地址和数据合法
-        assert(bank_index < BANK_NUM);
+    // 等待完成
+    wait(request->done_event);
 
-        event_all_done &= ram_banks_[bank_index]->write_done_event_;
-    }
+    // 清理
+    transfer_status status = TRANSFER_OK; // 可扩展为支持错误状态
+    delete request;
 
-    // notify 每个bank 还是进行读
-    for (auto i = 0; i < BANK_NUM; i++) {
-        uint64_t bank_index = get_bank_index(base_address + i);
-        uint64_t local_address = get_local_address(base_address + i);
-        data_to_banks_[i]->write(data[i]);
-        ram_banks_[bank_index]->write_in_parallel_event_.notify(SC_ZERO_TIME);
-    }
-#if VERBOSE_TRACE == 1
-    e_engine_->add_event(this->name(), __func__, "B",
-                         Trace_event_util(sc_get_current_process_b()->name()));
-#endif
-    wait(event_all_done);
-#if VERBOSE_TRACE == 1
-    e_engine_->add_event(this->name(), __func__, "E",
-                         Trace_event_util(sc_get_current_process_b()->name()));
-#endif
-    // 释放信号量
-    high_bw_write_semaphore_->post();
-    elapsed_time = sc_time_stamp() - start_time;
-
-    return TRANSFER_OK;
+    return status;
 }
+
+// template <class T, unsigned BANK_NUM>
+// inline transfer_status DynamicBandwidthRamRow<T, BANK_NUM>::multiport_write(
+//     uint64_t address_in_high_bitwidth, vector<T> &data, sc_time &elapsed_time) {
+//     // 检查数据大小与银行数量是否匹配
+//     assert(data.size() == BANK_NUM);
+//     sc_time start_time = sc_time_stamp();
+//     // 获取写信号量，确保同时只能有一个多端口写操作
+//     if (high_bw_write_semaphore_->trywait() == -1) {
+//         high_bw_write_semaphore_->wait(); // 阻塞直到信号量可用
+//     }
+
+//     uint64_t base_address = address_in_high_bitwidth;
+//     sc_event_and_list event_all_done;
+
+//     // 每个bank写入地址和数据
+//     for (auto i = 0; i < BANK_NUM; i++) {
+//         uint64_t bank_index = get_bank_index(base_address + i);
+//         uint64_t local_address = get_local_address(base_address + i);
+//         write_addresses_[bank_index]->write(local_address);
+
+//         // 确保写入地址和数据合法
+//         assert(bank_index < BANK_NUM);
+
+//         event_all_done &= ram_banks_[bank_index]->write_done_event_;
+//     }
+
+//     // notify 每个bank 还是进行读
+//     for (auto i = 0; i < BANK_NUM; i++) {
+//         uint64_t bank_index = get_bank_index(base_address + i);
+//         uint64_t local_address = get_local_address(base_address + i);
+//         data_to_banks_[i]->write(data[i]);
+//         ram_banks_[bank_index]->write_in_parallel_event_.notify(SC_ZERO_TIME);
+//     }
+// #if VERBOSE_TRACE == 1
+//     e_engine_->add_event(this->name(), __func__, "B",
+//                          Trace_event_util(sc_get_current_process_b()->name()));
+// #endif
+//     wait(event_all_done);
+// #if VERBOSE_TRACE == 1
+//     e_engine_->add_event(this->name(), __func__, "E",
+//                          Trace_event_util(sc_get_current_process_b()->name()));
+// #endif
+//     // 释放信号量
+//     high_bw_write_semaphore_->post();
+//     elapsed_time = sc_time_stamp() - start_time;
+
+//     return TRANSFER_OK;
+// }
 
 
 // 一次read 读出所有的bank

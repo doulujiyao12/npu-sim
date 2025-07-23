@@ -24,6 +24,7 @@ public:
         assert(end_address_ >= start_address_);
 
         e_engine_ = _e_engine;
+        write_shadow = true;
 
         uint64_t start_address_of_bank = start_address;
         ram_bank_ =
@@ -58,6 +59,7 @@ public:
 
 public:
     Event_engine *e_engine_;
+    bool write_shadow;
 
     Ram<T> *ram_bank_;
     sc_semaphore *read_semaphore_;
@@ -92,7 +94,7 @@ template <class T> inline void ArbiterRamBank<T>::write_in_parallel() {
                                               write_semaphore_->get_value()));
 #endif
         // 执行写操作，确保地址在范围内
-        assert(ram_bank_->write(address_temp, data_temp) == TRANSFER_OK);
+        assert(ram_bank_->write(address_temp, data_temp,write_shadow) == TRANSFER_OK);
 
         write_semaphore_->post(); // 释放信号量
 #if VERBOSE_TRACE == 1
