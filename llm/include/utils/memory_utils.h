@@ -18,6 +18,7 @@ void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
 void sram_update_cache(TaskCoreContext &context, string label_k, SramPosLocator *sram_pos_locator, int data_size_in_byte, u_int64_t &dram_time,int cid);
 void check_freq(std::unordered_map<u_int64_t, u_int16_t> &freq, u_int64_t *tags,
                 u_int32_t set, u_int64_t elem_tag);
+void sram_write(TaskCoreContext &context, int dma_read_count, int sram_addr_temp,  AllocationID alloc_id, bool use_manager);
 
 #if DCACHE
 int dcache_replacement_policy(u_int32_t tileid, u_int64_t *tags,

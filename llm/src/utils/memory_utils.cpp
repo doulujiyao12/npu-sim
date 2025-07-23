@@ -16,8 +16,37 @@
 
 
 
-// revise context.sram_addr value
+void sram_write(TaskCoreContext &context, int dma_read_count, int sram_addr_temp,  AllocationID alloc_id, bool use_manager){
+    auto hmau = context.hmau;
+    auto sram_manager_ = context.sram_manager_;
+    vector<sc_bv<SRAM_BITWIDTH>> data_tmp(SRAM_BANKS);
+    for (int i = 0; i < SRAM_BANKS; i++) {
+        data_tmp[i] = 0;
+    }
+    for (int i = 0; i < dma_read_count; i++) {
+            if (i != 0) {
+#if USE_SRAM_MANAGER == 1
+                if (use_manager == true) {
+                    sram_addr_temp =
+                        sram_manager_->get_address_with_offset(
+                            alloc_id, sram_addr_temp * sram_bitw / 8,
+                            SRAM_BANKS * sram_bitw / 8) /
+                        (sram_bitw / 8);
+                } else {
+                    sram_addr_temp = sram_addr_temp + SRAM_BANKS;
+                }
+#else
+                sram_addr_temp = sram_addr_temp + SRAM_BANKS;
+#endif
+            }
+            sc_time elapsed_time;
+            hmau->mem_read_port->multiport_write(sram_addr_temp, data_tmp,
+                                                 elapsed_time);
+        }
+    (*context.e_sram).notify(SC_ZERO_TIME);
 
+}
+// revise context.sram_addr value
 void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
                               u_int64_t global_addr, u_int64_t &dram_time,
                               float *dram_start, std::string label_name,
@@ -59,6 +88,13 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
 #endif
     auto s_nbdram = context.s_nbdram;
     auto e_nbdram = context.e_nbdram;
+    
+#if USE_BEHA_SRAM == 0
+    sc_event_and_list ram_e;
+    ram_e &= *context.e_nbdram;
+    ram_e &= *context.e_sram;
+
+#endif 
 
 
 
@@ -85,10 +121,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
 
 
 
-    vector<sc_bv<SRAM_BITWIDTH>> data_tmp(SRAM_BANKS);
-    for (int i = 0; i < SRAM_BANKS; i++) {
-        data_tmp[i] = 0;
-    }
+    
     // std::vector<std::pair<u_int64_t, sc_time>> addr_time_pairs;
     // // 获取当前线程的名字
     // std::string thread_name = sc_core::sc_get_current_process_b()->name();
@@ -103,9 +136,9 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
 
     sc_time start_first_write_time = sc_time_stamp();
 
-
+AllocationID alloc_id = 0;
 #if USE_SRAM_MANAGER == 1
-    AllocationID alloc_id = 0;
+    
     if (use_manager == true) {
         SizeWAddr swa(aligned_data_byte, inp_global_addr);
 #if ASSERT == 1
@@ -165,6 +198,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
 
 #if USE_GLOBAL_DRAM == 1
     // assert(inp_global_addr!=0);
+
     gpunb_dcache_if->reconfigure(inp_global_addr, cache_count_g, cache_lines_g, 0);
     sc_time start_nbdram = sc_time_stamp();
     context.event_engine->add_event("Core " + toHexString(context.cid),
@@ -178,6 +212,12 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
                                     Trace_event_util("read_gpu"));
 
 #else
+#if USE_BEHA_SRAM == 0
+        context.sram_writer->trigger_write(hmau, sram_manager_,
+                                            dma_read_count, sram_addr_temp,
+                                            alloc_id, use_manager);
+        
+#endif 
         nb_dcache->reconfigure(inp_global_addr, dma_read_count, cache_count,
                                cache_lines, 0);
         sc_time start_nbdram = sc_time_stamp();
@@ -186,7 +226,11 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
         context.event_engine->add_event("Core " + toHexString(context.cid),
                                     "RW_Dram", "B",
                                     Trace_event_util("RW_Dram"));
+#if USE_BEHA_SRAM == 1
         wait(*e_nbdram);
+#else
+        wait(ram_e);
+#endif
         context.event_engine->add_event("Core " + toHexString(context.cid),
                                     "RW_Dram", "E",
                                     Trace_event_util("RW_Dram"));
@@ -198,7 +242,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
         // cout << "Core " << context.cid << " end nbdram: " << sc_time_stamp().to_string() << endl;
 #endif
         u_int64_t nbdram_time = (end_nbdram - start_nbdram).to_seconds() * 1e9;
-
+#if USE_BEHA_SRAM == 1
         for (int i = 0; i < dma_read_count; i++) {
             if (i != 0) {
 #if USE_SRAM_MANAGER == 1
@@ -222,7 +266,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
             wait(sram_time - nbdram_time, SC_NS);
         }
 
-
+#endif
 #else
         u_int64_t nbdram_time = 0;
         for (int i = 0; i < dma_read_count; i++) {

@@ -8,6 +8,7 @@
 #include "memory/gpu/GPU_L1L2_Cache.h"
 #include "memory/sram/High_mem_access_unit.h"
 #include "memory/sram/Mem_access_unit.h"
+#include "memory/sram_writer.h"
 #include "trace/Event_engine.h"
 #include "unit_module/sram_manager/sram_manager.h"
 
@@ -46,6 +47,9 @@ public:
     AllocationID alloc_id_;
     sc_event *s_nbdram;
     sc_event *e_nbdram;
+    sc_event *s_sram;
+    sc_event *e_sram;
+    SRAMWriteModule* sram_writer;
     int loop_cnt;
     uint64_t MaxDramAddr; // 当前核最大的 dram 地址
     unsigned int defaultDataLength;

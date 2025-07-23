@@ -154,6 +154,7 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
     SC_THREAD(poll_buffer_i);
     sram_addr = new int(0);
     sram_manager_ = new SramManager(0, MAX_SRAM_SIZE, SRAM_BLOCK_SIZE, 0);
+    
 
     send_done = true;
     send_last_packet = false;
@@ -162,11 +163,15 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
     end_global_mem_event = new sc_event();
     start_nb_dram_event = new sc_event();
     start_nb_gpu_dram_event = new sc_event();
+    start_sram_event = new sc_event();
+    end_sram_event = new sc_event();
+
     end_nb_dram_event = new sc_event();
     end_nb_gpu_dram_event = new sc_event();
     next_datapass_label = new AddrDatapassLabel();
     sram_pos_locator = new SramPosLocator(s_cid, sram_manager_);
     batchInfo = new vector<Stage>;
+    sram_writer = new SRAMWriteModule("sram_writer", end_sram_event);
 #if USE_NB_DRAMSYS == 1
     nb_dcache_socket =
         new NB_DcacheIF(cid, sc_gen_unique_name("nb_dcache"),
@@ -1134,6 +1139,12 @@ void WorkerCoreExecutor::task_logic() {
             attention->batchInfo = *batchInfo;
         }
         context.event_engine = event_engine;
+        context.s_sram = start_sram_event;
+        context.e_sram = end_sram_event;
+#if USE_BEHA_SRAM == 0
+
+        context.sram_writer = sram_writer;
+#endif 
 #if USE_GLOBAL_DRAM == 1
         context.event_engine = event_engine;
 
@@ -1394,9 +1405,12 @@ WorkerCoreExecutor::~WorkerCoreExecutor() {
     delete high_bw_temp_mem_access_port;
     delete start_nb_dram_event;
     delete end_nb_dram_event;
+    delete start_sram_event;
+    delete end_sram_event;
     delete start_global_mem_event;
     delete end_global_mem_event;
     delete sram_manager_;
+    delete sram_writer;
     delete g_dram_kvtable;
     delete g_dram_kvtable[cid];
 }
