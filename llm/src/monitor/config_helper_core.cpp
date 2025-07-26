@@ -305,7 +305,7 @@ void config_helper_core::generate_prims(int i) {
 
     bool is_source = false;
     for (auto source : source_info) {
-        if (source.first == i) {
+        if (source.first == c->id) {
             is_source = true;
             break;
         }
@@ -558,6 +558,7 @@ void config_helper_core::fill_queue_start(queue<Msg> *q) {
     for (int pipe = 0; pipe < pipeline; pipe++) {
         for (auto source : source_info) {
             int i = source.first;
+            cout << "Sending source to " << i << endl;
             int size = source.second;
 
             int index = i / GRID_X;

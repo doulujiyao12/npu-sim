@@ -154,7 +154,7 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
     SC_THREAD(poll_buffer_i);
     sram_addr = new int(0);
     sram_manager_ = new SramManager(0, MAX_SRAM_SIZE, SRAM_BLOCK_SIZE, 0);
-    
+
 
     send_done = true;
     send_last_packet = false;
@@ -1144,7 +1144,7 @@ void WorkerCoreExecutor::task_logic() {
 #if USE_BEHA_SRAM == 0
 
         context.sram_writer = sram_writer;
-#endif 
+#endif
 #if USE_GLOBAL_DRAM == 1
         context.event_engine = event_engine;
 
