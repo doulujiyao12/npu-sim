@@ -101,7 +101,7 @@
 #endif
 
 #ifndef DRAM_BURST_BYTE
-#define DRAM_BURST_BYTE 0
+#define DRAM_BURST_BYTE 1024
 #endif
 
 #ifndef ENABLE_COLORS

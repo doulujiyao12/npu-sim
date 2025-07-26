@@ -57,7 +57,7 @@ int gate_forward::sram_utilization(DATATYPE datatype, int cid) {
     int out_sram =
         ceiling_division(B * T * K * data_byte * 8, get_sram_bitwidth(cid));
 
-    total_sram = p_inp_sram + out_sram;
+    total_sram = (p_inp_sram + out_sram) * get_sram_bitwidth(cid) / 8;
 
     return total_sram;
 }

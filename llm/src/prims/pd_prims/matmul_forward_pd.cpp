@@ -241,7 +241,7 @@ int matmul_forward_pd::sram_utilization(DATATYPE datatype, int cid) {
         ceiling_division(out_size * data_byte * 8, get_sram_bitwidth(cid));
 
     total_sram = p_inp_sram + w1_inps_sram + b_sram + out_sram;
-
+    total_sram *= get_sram_bitwidth(cid) / 8;
     return total_sram;
 }
 

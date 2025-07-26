@@ -141,7 +141,7 @@ int Matmul_f::sram_utilization(DATATYPE datatype, int cid) {
     // }
 
     total_sram = p_inp_sram + w1_inps_sram + b_sram + out_sram;
-
+    total_sram *= get_sram_bitwidth(cid) / 8;
     return total_sram;
 }
 

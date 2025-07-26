@@ -75,6 +75,7 @@ int Max_pool::sram_utilization(DATATYPE datatype, int cid) {
 
 
     total_sram = p_inp_sram + out_sram;
+    total_sram *= get_sram_bitwidth(cid) / 8;
 
     return total_sram;
 }
