@@ -210,7 +210,7 @@ public:
     void send_helper(); // 同时在send和recv中被调用
     void call_systolic_array();
 
-    bool atomic_helper_lock(sc_time try_time, int status);
+    bool atomic_helper_lock(sc_time try_time, int status, bool force = false);
 
     prim_base *parse_prim(sc_bv<128> buffer);
 

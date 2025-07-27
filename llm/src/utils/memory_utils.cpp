@@ -224,16 +224,16 @@ AllocationID alloc_id = 0;
         LOG_VERBOSE(1, context.cid," start sram first write nbdram: " << sc_time_stamp().to_string());
         // cout << "Core " << context.cid << " start nbdram: " << sc_time_stamp().to_string() << endl;
         context.event_engine->add_event("Core " + toHexString(context.cid),
-                                    "RW_Dram", "B",
-                                    Trace_event_util("RW_Dram"));
+                                    "R_Dram", "B",
+                                    Trace_event_util("R_Dram"));
 #if USE_BEHA_SRAM == 1
         wait(*e_nbdram);
 #else
         wait(ram_e);
 #endif
         context.event_engine->add_event("Core " + toHexString(context.cid),
-                                    "RW_Dram", "E",
-                                    Trace_event_util("RW_Dram"));
+                                    "R_Dram", "E",
+                                    Trace_event_util("R_Dram"));
         sc_time end_nbdram = sc_time_stamp();
         LOG_VERBOSE(
             1, context.cid,
@@ -324,12 +324,12 @@ AllocationID alloc_id = 0;
             // cout << "start write back padding nbdram: "
             //      << sc_time_stamp().to_string() << endl;
             context.event_engine->add_event("Core " + toHexString(context.cid),
-                                    "RW_Dram", "B",
-                                    Trace_event_util("RW_Dram"));
+                                    "R_Dram", "B",
+                                    Trace_event_util("R_Dram"));
             wait(*e_nbdram);
             context.event_engine->add_event("Core " + toHexString(context.cid),
-                                    "RW_Dram", "E   ",
-                                    Trace_event_util("RW_Dram"));
+                                    "R_Dram", "E   ",
+                                    Trace_event_util("R_Dram"));
             end_nbdram = sc_time_stamp();
             // cout << "end padding nbdram: " << sc_time_stamp().to_string()
             //      << endl;
@@ -517,12 +517,12 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
     LOG_VERBOSE(1, context.cid," start spill back nbdram: " << sc_time_stamp().to_string());
     // cout << "Core " << context.cid << " start spill back nbdram: " << sc_time_stamp().to_string() << endl;
     context.event_engine->add_event("Core " + toHexString(context.cid),
-                                    "RW_Dram", "B",
-                                    Trace_event_util("RW_Dram"));
+                                    "W_Dram", "B",
+                                    Trace_event_util("W_Dram"));
     wait(*e_nbdram);
     context.event_engine->add_event("Core " + toHexString(context.cid),
-                                    "RW_Dram", "E",
-                                    Trace_event_util("RW_Dram"));
+                                    "W_Dram", "E",
+                                    Trace_event_util("W_Dram"));
     sc_time end_nbdram = sc_time_stamp();
     LOG_VERBOSE(1, context.cid," end spill back nbdram: " << sc_time_stamp().to_string());
     // cout << "Core " << context.cid << " spill back end nbdram: " << sc_time_stamp().to_string() << endl;
@@ -587,12 +587,12 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
 
         // cout << "Core " << context.cid << " start padding nbdram: " << sc_time_stamp().to_string() << endl;
         context.event_engine->add_event("Core " + toHexString(context.cid),
-                                    "RW_Dram", "B",
-                                    Trace_event_util("RW_Dram"));
+                                    "W_Dram", "B",
+                                    Trace_event_util("W_Dram"));
         wait(*e_nbdram);
         context.event_engine->add_event("Core " + toHexString(context.cid),
-                                    "RW_Dram", "E",
-                                    Trace_event_util("RW_Dram"));
+                                    "W_Dram", "E",
+                                    Trace_event_util("W_Dram"));
         end_nbdram = sc_time_stamp();
         // cout << "Core " << context.cid << " end padding nbdram: " <<
         // sc_time_stamp().to_string() << endl;

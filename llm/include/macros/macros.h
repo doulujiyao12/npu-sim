@@ -77,7 +77,7 @@
 #endif
 
 #ifndef SR_PARA
-#define SR_PARA 0
+#define SR_PARA 1
 #endif
 
 #ifndef GPU_CACHE_DEBUG
@@ -110,6 +110,9 @@
 
 #ifndef USE_GLOBAL_DRAM
 #define USE_GLOBAL_DRAM 0
+#endif
+#ifndef ROUTER_PIPE
+#define ROUTER_PIPE 1
 #endif
 
 
