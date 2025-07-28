@@ -77,7 +77,7 @@
 #endif
 
 #ifndef SR_PARA
-#define SR_PARA 0
+#define SR_PARA 1
 #endif
 
 #ifndef GPU_CACHE_DEBUG
@@ -101,7 +101,7 @@
 #endif
 
 #ifndef DRAM_BURST_BYTE
-#define DRAM_BURST_BYTE 0
+#define DRAM_BURST_BYTE 1024
 #endif
 
 #ifndef ENABLE_COLORS
@@ -110,6 +110,9 @@
 
 #ifndef USE_GLOBAL_DRAM
 #define USE_GLOBAL_DRAM 0
+#endif
+#ifndef ROUTER_PIPE
+#define ROUTER_PIPE 1
 #endif
 
 

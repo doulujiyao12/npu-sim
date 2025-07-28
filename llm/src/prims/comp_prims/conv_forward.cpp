@@ -77,7 +77,7 @@ int Conv_f::sram_utilization(DATATYPE datatype, int cid) {
         ceiling_division(out_size * data_byte * 8, get_sram_bitwidth(cid));
 
 
-    total_sram = p_inp_sram + w1_inps_sram + b_sram + out_sram;
+    total_sram = (p_inp_sram + w1_inps_sram + b_sram + out_sram) * get_sram_bitwidth(cid) / 8;
 
     // std::cout << "Variables1:" << std::endl;
     // std::cout << "B (Batch size): " << B << std::endl;

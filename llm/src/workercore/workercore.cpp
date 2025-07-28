@@ -583,6 +583,9 @@ void WorkerCoreExecutor::send_logic() {
 
             // SEND_DATA, SEND_ACK, SEND_REQ
             if (prim->type == SEND_DATA) {
+#if ROUTER_PIPE == 1
+                while (job_done != true){
+#endif
                 // [发送方] 正常发送数据
                 prim->data_packet_id++;
 
@@ -594,7 +597,8 @@ void WorkerCoreExecutor::send_logic() {
 
                 int delay = 0;
                 TaskCoreContext context = generate_context(this);
-
+                // 因为send task_core 会delay 所以 ev_send_helper 有机会发出去
+                // 然后wc 里面又要wait 一个cycle ev_send_helper 一低一高
                 delay = prim->task_core(context);
 
                 if (!channel_avail_i.read())
@@ -605,7 +609,8 @@ void WorkerCoreExecutor::send_logic() {
                         MSG_TYPE::DATA, prim->data_packet_id, prim->des_id, 0,
                         prim->tag_id, length, sc_bv<128>(0x1));
 
-                send_helper_write = 3;
+                //send_helper_write = 3;
+                atomic_helper_lock(sc_time_stamp(), 3);
                 ev_send_helper.notify(0, SC_NS);
 
                 if (prim->data_packet_id == prim->max_packet) {
@@ -615,6 +620,9 @@ void WorkerCoreExecutor::send_logic() {
 
                     job_done = true;
                 }
+#if ROUTER_PIPE == 1
+            }
+#endif
             }
 
             else if (prim->type == SEND_REQ) {
@@ -704,8 +712,15 @@ void WorkerCoreExecutor::send_para_logic() {
             bool job_done = false; // 结束内圈循环的标志
 
             while (true) {
+#if ROUTER_PIPE == 0
                 if (atomic_helper_lock(sc_time_stamp(), 0))
                     ev_send_helper.notify(0, SC_NS);
+#else
+                while (atomic_helper_lock(sc_time_stamp(), 0) == false){
+                    wait(CYCLE,SC_NS);
+                }
+                ev_send_helper.notify(0, SC_NS);
+#endif
 
                 if (job_done)
                     break;
@@ -717,8 +732,15 @@ void WorkerCoreExecutor::send_para_logic() {
                     Send_prim *s_prim = (Send_prim *)prim;
 
                     // atomic_helper_lock 其实是为了表示上锁
+#if ROUTER_PIPE == 1
+                    while (job_done == false){
+                        if (channel_avail_i.read() &&
+                        atomic_helper_lock(sc_time_stamp(), 1)) {
+                        // atomic_helper_lock(sc_time_stamp(), 1) always true unless 811 atomic_helper_lock(sc_time_stamp(), 0);
+#else
                     if (channel_avail_i.read() &&
                         atomic_helper_lock(sc_time_stamp(), 1)) {
+#endif
                         ev_send_helper.notify(0, SC_NS);
 
                         s_prim->data_packet_id++;
@@ -728,23 +750,47 @@ void WorkerCoreExecutor::send_para_logic() {
                         int length = M_D_DATA;
                         if (is_end_packet) {
                             length = s_prim->end_length;
+#if ROUTER_PIPE == 0 
                             while (!send_last_packet)
                                 wait(ev_send_last_packet);
 
+#else
+                            while (!send_last_packet){
+                                atomic_helper_lock(sc_time_stamp(), 0, true);
+                                wait(ev_send_last_packet);
+                                while (atomic_helper_lock(sc_time_stamp(), 0) == false){
+                                    wait(CYCLE, SC_NS);
+                                }
+                            }
+#endif
+                            
+
                             send_last_packet = false;
                         }
-
-                        int delay = 0;
-                        TaskCoreContext context = generate_context(this);
-                        delay = prim->task_core(context);
-
+#if ROUTER_PIPE == 1
                         send_buffer =
                             Msg(s_prim->data_packet_id == s_prim->max_packet,
                                 MSG_TYPE::DATA, s_prim->data_packet_id,
                                 s_prim->des_id, 0, s_prim->tag_id, length,
                                 sc_bv<128>(0x1));
 
+#endif 
+
+                        int delay = 0;
+                        TaskCoreContext context = generate_context(this);
+                        delay = prim->task_core(context);
+#if ROUTER_PIPE == 0
+                        send_buffer =
+                            Msg(s_prim->data_packet_id == s_prim->max_packet,
+                                MSG_TYPE::DATA, s_prim->data_packet_id,
+                                s_prim->des_id, 0, s_prim->tag_id, length,
+                                sc_bv<128>(0x1));
+#endif 
+#if ROUTER_PIPE == 1
+                        atomic_helper_lock(sc_time_stamp(), 0, true);
+#else
                         atomic_helper_lock(sc_time_stamp(), 2);
+#endif
                         ev_send_helper.notify(0, SC_NS);
 
                         if (s_prim->data_packet_id == s_prim->max_packet) {
@@ -754,6 +800,23 @@ void WorkerCoreExecutor::send_para_logic() {
                                  << send_buffer.is_end << endl;
                         }
                     }
+#if ROUTER_PIPE == 1
+                    else{
+                    cout << "Core " << cid << " " << channel_avail_i.read() << endl;
+
+                    if (send_helper_write == 1){
+                        send_helper_write = 0;
+                    }
+
+                    wait(CYCLE, SC_NS);
+                    atomic_helper_lock(sc_time_stamp(), 0);
+                    // cout << "Core " << channel_avail_i.read() << endl;
+                    
+
+                    }
+
+                }
+#endif
                 }
 
                 else if (typeid(*prim) == typeid(Send_prim) &&
@@ -1270,22 +1333,46 @@ void WorkerCoreExecutor::req_logic() {
 /*
  在workercore executor中添加了一把锁，用于lock住write helper，
  因为同时运行send和recv原语会在同一个时钟周期内access write helper函数
- 0是在 send
- 的时，起到修改present_time的作用，并且如果当前没有锁的情况下（没有其他模块需要使用），默认拉低(当前模块也不需要使用)
- 1表示拿到锁但是等待send原语的sram读，2表示send原语的sram读完可以发送
- 3表示不需要读取sram的其他信号的发送，比如ack 和 done信号
- 2和3都是可以发送 0和1不行
 */
-bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status) {
+
+/*
+send_helper_write >= 2, that data_sent_o = true send a msg to router
+send_helper_write < 2, that data_sent_o = false, reset signal
+
+present_time the most recent time that the helper is try to lock
+
+try = present_time some one has try to lock the helper before in the same time
+
+status = 0, If a new cycle begins and no other module requires the helper, reset send_helper_write to 0. pool down data_sent_o
+status = 1, 表示 准备执行send task_core （会有delay） 一般在status 0 之后 同一个周期内，行为和 0 一致
+
+status = 2 表示send 从 sram 里面已经拿到数据了，可以开始发送了
+
+status = 1 2 都只出现一次
+
+
+
+*/
+bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status, bool force) {
     bool res;
 
     if (try_time < present_time)
         res = false;
 
     if (try_time == present_time) {
-        if (status == 0)
+        // cout << "Core " << cid <<" try_time=: " << try_time << " present_time: " << present_time << " status: " << status << "send_helper_write " << send_helper_write<< endl;
+
+        if (status == 0){
+
+            if (force ==true){
+                send_helper_write = status;
+                return true;
+            }
             return false;
+        }
+            
         if (status == 1) { // send prepare
+            // status 1 只会出现在这里
             if (send_helper_write == 0) {
                 send_helper_write = 1;
                 res = true;
@@ -1312,6 +1399,7 @@ bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status) {
     }
 
     if (try_time > present_time) {
+        // cout << "Core " << cid <<" try_time>: " << try_time << " present_time: " << present_time << " status: " << status << "send_helper_write " << send_helper_write<<endl;
         if (try_time - present_time < sc_time(CYCLE, SC_NS))
             return false;
 
@@ -1326,11 +1414,16 @@ bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status) {
                 res = false;
             }
         } else {
-            // 这里应该只会进 status 0, 1 和 3 (除了返回给host ack
-            // 因为while循环) 都会在0后处理，且不会有延迟，所以pre=try_time
-            if (send_helper_write == 1)
+            // 这里应该只会进 status 0, 
+            //1 和 3 ( 3 除了返回给host ack 因为while循环) 都会在0后处理，且不会有延迟，所以pre=try_time
+            // status 1 后面只能紧跟status 2 
+            // 防止status 3 把 原本 status 2 抢占 了
+            if (send_helper_write == 1 && force == false) 
                 res = false;
             else {
+                // 0 或者 3 是当前周期第一来的状态 
+                // 2 只会出现上面一种情况 成为当前周期第一来的状态
+                
                 send_helper_write = status;
                 res = true;
             }
@@ -1339,10 +1432,16 @@ bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status) {
 
     return res;
 }
-
+// data_sent_o pos trigger router && later router can self trigger if data_sent_o is true
+// 是否拉低不重要，只要 data_sent_o 是高就能发送
 void WorkerCoreExecutor::send_helper() {
     while (true) {
+#if ROUTER_PIPE == 1
+        if (send_helper_write >= 1) {
+
+#else
         if (send_helper_write >= 2) {
+#endif
             channel_o.write(serialize_msg(send_buffer));
             data_sent_o.write(true);
             ev_next_write_clear.notify(CYCLE, SC_NS);

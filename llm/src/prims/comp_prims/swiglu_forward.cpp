@@ -45,6 +45,7 @@ int swiglu_forward::sram_utilization(DATATYPE datatype, int cid) {
     int out_sram = ceiling_division(N * data_byte * 8, get_sram_bitwidth(cid));
 
     total_sram = inp_sram + out_sram;
+    total_sram *= get_sram_bitwidth(cid) / 8;
 
     return total_sram;
 }

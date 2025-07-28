@@ -81,6 +81,7 @@ int Layernorm_f::sram_utilization(DATATYPE datatype, int cid) {
         ceiling_division(out_size * data_byte * 8, get_sram_bitwidth(cid));
 
     total_sram = p_inp_sram + w_sram + b_sram + out_sram;
+    total_sram *= get_sram_bitwidth(cid) / 8;
 
     return total_sram;
 }
