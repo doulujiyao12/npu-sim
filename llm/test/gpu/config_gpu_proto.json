@@ -40,6 +40,8 @@
               "B": "B",
               "T": "T",
               "C": "C",
+              "slice_x": 4,
+              "slice_y": 4,
               "address": {
                 "indata": "layernorm_1_in",
                 "outdata": "layernorm_1_out"
@@ -58,6 +60,8 @@
               "T": "T",
               "C": "C",
               "OC": "3C",
+              "slice_x": 4,
+              "slice_y": 4,
               "address": {
                 "indata": "layernorm_1_out",
                 "outdata": "matmul_1_out"
@@ -76,6 +80,8 @@
               "T": "T",
               "C": "3C",
               "NH": "NH",
+              "slice_x": 4,
+              "slice_y": 4,
               "address": {
                 "indata": "matmul_1_out",
                 "outdata": "attention_1_out"
@@ -94,6 +100,8 @@
               "T": "T",
               "C": "3C",
               "OC": "C",
+              "slice_x": 4,
+              "slice_y": 4,
               "address": {
                 "indata": "attention_1_out",
                 "outdata": "matmul_2_out"
@@ -109,6 +117,8 @@
                 "require_sm": 4
               },
               "N": "BTC",
+              "slice_x": 4,
+              "slice_y": 4,
               "address": {
                 "indata": "layernorm_1_in matmul_2_out",
                 "outdata": "residual_1_out"
@@ -126,6 +136,8 @@
               "B": "B",
               "T": "T",
               "C": "C",
+              "slice_x": 4,
+              "slice_y": 4,
               "address": {
                 "indata": "residual_1_out",
                 "outdata": "layernorm_2_out"
@@ -144,6 +156,8 @@
               "T": "T",
               "C": "C",
               "OC": "4C",
+              "slice_x": 4,
+              "slice_y": 4,
               "address": {
                 "indata": "layernorm_2_out",
                 "outdata": "matmul_3_out"
@@ -159,6 +173,8 @@
                 "require_sm": 4
               },
               "N": "4BTC",
+              "slice_x": 4,
+              "slice_y": 4,
               "address": {
                 "indata": "matmul_3_out",
                 "outdata": "gelu_1_out"
@@ -177,6 +193,8 @@
               "T": "T",
               "C": "4C",
               "OC": "C",
+              "slice_x": 4,
+              "slice_y": 4,
               "address": {
                 "indata": "gelu_1_out",
                 "outdata": "matmul_4_out"
@@ -192,6 +210,8 @@
                 "require_sm": 4
               },
               "N": "BTC",
+              "slice_x": 4,
+              "slice_y": 4,
               "address": {
                 "indata": "residual_1_out matmul_4_out",
                 "outdata": "layernorm_1_in"
