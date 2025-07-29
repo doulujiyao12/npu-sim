@@ -10,6 +10,7 @@
 #include <iostream>
 #include <filesystem>
 #include <iostream>
+#include <regex>
 
 #include <SFML/Graphics.hpp>
 using namespace std;
@@ -58,6 +59,42 @@ void delete_core_log_files() {
         std::cerr << "Error deleting log files: " << e.what() << std::endl;
     }
 }
+
+
+
+void remove_all_sram_log_files() {
+    try {
+        // Define the log directory path
+        std::filesystem::path log_dir("sram_util");
+        
+        // Check if directory exists
+        if (!std::filesystem::exists(log_dir)) {
+            std::filesystem::create_directory(log_dir);
+            // If directory doesn't exist, nothing to remove
+            return;
+        }
+        
+        // Define the regex pattern to match sram_manager_cid_*.log files
+        std::regex log_pattern("sram_manager_cid_\\d+\\.log");
+        
+        // Iterate through all files in the sram_util directory
+        for (const auto& entry : std::filesystem::directory_iterator(log_dir)) {
+            // Check if entry is a regular file
+            if (entry.is_regular_file()) {
+                // Get the filename as a string
+                std::string filename = entry.path().filename().string();
+                
+                // Check if filename matches our pattern
+                if (std::regex_match(filename, log_pattern)) {
+                    // Remove the file
+                    std::filesystem::remove(entry.path());
+                }
+            }
+        }
+    } catch (const std::filesystem::filesystem_error& e) {
+        std::cerr << "Warning: Could not remove log files from sram_util folder. Reason: " << e.what() << std::endl;
+    }
+}
 int sc_main(int argc, char *argv[]) {
     clock_t start = clock();
 
@@ -96,6 +133,7 @@ int sc_main(int argc, char *argv[]) {
     MAX_SRAM_SIZE = g_flag_max_sram;
     verbose_level = g_verbose_level;
     delete_core_log_files();
+    remove_all_sram_log_files();
 
     init_grid(g_flag_config_file.c_str(), g_flag_core_config_file.c_str());
     init_global_members();

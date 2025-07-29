@@ -153,7 +153,7 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
 
     SC_THREAD(poll_buffer_i);
     sram_addr = new int(0);
-    sram_manager_ = new SramManager(0, MAX_SRAM_SIZE, SRAM_BLOCK_SIZE, 0);
+    sram_manager_ = new SramManager(0, cid, MAX_SRAM_SIZE, SRAM_BLOCK_SIZE, 0);
 
 
     send_done = true;

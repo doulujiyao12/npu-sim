@@ -5,8 +5,9 @@
 #include <cassert>
 
 // Constructor
-SramManager::SramManager(int sram_start_address, int total_sram_size, int block_size, int num_blocks)
+SramManager::SramManager(int sram_start_address, int cid, int total_sram_size, int block_size, int num_blocks)
     : sram_start_address_(sram_start_address),
+      cid(cid),
       total_sram_size_(total_sram_size),
       block_size_(block_size),
       num_blocks_(num_blocks), // Initialize num_blocks_
@@ -41,6 +42,27 @@ SramManager::SramManager(int sram_start_address, int total_sram_size, int block_
     // If num_blocks_ is 0, vectors/lists remain empty.
 }
 
+
+void SramManager::log_free_block_ratio() const {
+    // Calculate ratio of free blocks to total blocks
+    double ratio = (num_blocks_ > 0) ? static_cast<double>(num_blocks_ - free_block_indices_.size()) / num_blocks_ : 0.0;
+    
+    // Create log filename based on cid
+    std::string filename = "sram_util/sram_manager_cid_" + std::to_string(cid) + ".log";
+    
+    // Open file in append mode
+    std::ofstream log_file(filename, std::ios_base::app);
+    
+    if (log_file.is_open()) {
+        // Write timestamp and ratio to log file
+        log_file << "Time: " << sc_core::sc_time_stamp().to_string() 
+                 << " Free/Total Ratio: " << std::fixed << std::setprecision(4) << ratio 
+                 << " (" << num_blocks_ - free_block_indices_.size() << "/" << num_blocks_ << ")\n";
+        log_file.close();
+    } else {
+        std::cerr << "Error: Could not open log file " << filename << " for writing.\n";
+    }
+}
 // Allocate memory
 AllocationID SramManager::allocate(int requested_size) {
 
@@ -156,7 +178,9 @@ AllocationID SramManager::allocate(int requested_size) {
         // If potential_blocks.size() < blocks_needed, we continue from the *next* free block.
         // it++;
     }
+
     assert(false && "No suitable contiguous block sequence found");
+    log_free_block_ratio();
     return 0; // No suitable contiguous block sequence found
 }
 
@@ -276,6 +300,7 @@ AllocationID SramManager::allocate_append(int requested_size, AllocationID id) {
         // If potential_blocks.size() < blocks_needed, we continue from the *next* free block.
         // it++;
     }
+    log_free_block_ratio();
     assert(false && "No suitable contiguous block sequence found");
     return 0; // No suitable contiguous block sequence found
 }
@@ -322,6 +347,7 @@ bool SramManager::deallocate(AllocationID id) {
     // free_block_indices_.unique();
 
     allocations_.erase(alloc_it);
+    log_free_block_ratio();
     // printAllAllocationIDs();
     return all_valid; // Return true if all specified blocks were valid and processed,
                       // false if any block_idx was out of bounds.
