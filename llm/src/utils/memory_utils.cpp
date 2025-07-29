@@ -17,33 +17,33 @@
 
 
 void sram_write(TaskCoreContext &context, int dma_read_count, int sram_addr_temp,  AllocationID alloc_id, bool use_manager){
-    auto hmau = context.hmau;
-    auto sram_manager_ = context.sram_manager_;
-    vector<sc_bv<SRAM_BITWIDTH>> data_tmp(SRAM_BANKS);
-    for (int i = 0; i < SRAM_BANKS; i++) {
-        data_tmp[i] = 0;
-    }
-    for (int i = 0; i < dma_read_count; i++) {
-            if (i != 0) {
-#if USE_SRAM_MANAGER == 1
-                if (use_manager == true) {
-                    sram_addr_temp =
-                        sram_manager_->get_address_with_offset(
-                            alloc_id, sram_addr_temp * sram_bitw / 8,
-                            SRAM_BANKS * sram_bitw / 8) /
-                        (sram_bitw / 8);
-                } else {
-                    sram_addr_temp = sram_addr_temp + SRAM_BANKS;
-                }
-#else
-                sram_addr_temp = sram_addr_temp + SRAM_BANKS;
-#endif
-            }
-            sc_time elapsed_time;
-            hmau->mem_read_port->multiport_write(sram_addr_temp, data_tmp,
-                                                 elapsed_time);
-        }
-    (*context.e_sram).notify(SC_ZERO_TIME);
+//     auto hmau = context.hmau;
+//     auto sram_manager_ = context.sram_manager_;
+//     vector<sc_bv<SRAM_BITWIDTH>> data_tmp(SRAM_BANKS);
+//     for (int i = 0; i < SRAM_BANKS; i++) {
+//         data_tmp[i] = 0;
+//     }
+//     for (int i = 0; i < dma_read_count; i++) {
+//             if (i != 0) {
+// #if USE_SRAM_MANAGER == 1
+//                 if (use_manager == true) {
+//                     sram_addr_temp =
+//                         sram_manager_->get_address_with_offset(
+//                             alloc_id, sram_addr_temp * sram_bitw / 8,
+//                             SRAM_BANKS * sram_bitw / 8) /
+//                         (sram_bitw / 8);
+//                 } else {
+//                     sram_addr_temp = sram_addr_temp + SRAM_BANKS;
+//                 }
+// #else
+//                 sram_addr_temp = sram_addr_temp + SRAM_BANKS;
+// #endif
+//             }
+//             sc_time elapsed_time;
+//             hmau->mem_read_port->multiport_write(sram_addr_temp, data_tmp,
+//                                                  elapsed_time);
+//         }
+//     (*context.e_sram).notify(SC_ZERO_TIME);
 
 }
 // revise context.sram_addr value
@@ -215,7 +215,7 @@ AllocationID alloc_id = 0;
 #if USE_BEHA_SRAM == 0
         context.sram_writer->trigger_write(hmau, sram_manager_,
                                             dma_read_count, sram_addr_temp,
-                                            alloc_id, use_manager);
+                                            alloc_id, sram_bitw, use_manager);
         
 #endif 
         nb_dcache->reconfigure(inp_global_addr, dma_read_count, cache_count,
@@ -939,6 +939,12 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
 #if USE_SRAM_MANAGER == 1
     AllocationID alloc_id = 0;
     if (use_manager == true) {
+        AddrPosKey tmp;
+        int flag =
+                sram_pos_locator->findPair(label_name, tmp);
+        if (flag == 0){
+            sram_pos_locator->deletePair(label_name);
+        }
 
         SizeWAddr swa(aligned_data_byte, global_addr);
 
@@ -951,6 +957,8 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
                                   true);
 
         // 使用 SramManager 分配内存
+        // cout << "aligned_data_byte: " << aligned_data_byte
+        //      << endl;
         alloc_id = sram_manager_->allocate(aligned_data_byte);
         assert(alloc_id > 0 && "alloc_id must larger than 0 ");
         context.alloc_id_ = alloc_id;

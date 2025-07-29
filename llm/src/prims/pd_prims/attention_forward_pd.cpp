@@ -163,7 +163,7 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
 #if USE_SRAM_MANAGER == 1
             std::cout << "[INFO] comp_base: sram_pos_locator find the "
                          "label: "
-                      << datapass_label.indata[p] << " with flag: " << flag
+                      << label_decode_k << " with flag: " << flag
                       << std::endl;
             sram_first_write_generic(context, flag, kcache.dram_addr, dram_time,
                                      nullptr, label_decode_k, true,
@@ -197,7 +197,7 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
 #if USE_SRAM_MANAGER == 1
             std::cout << "[INFO] comp_base: sram_pos_locator find the "
                          "label: "
-                      << datapass_label.indata[p] << " with flag: " << flag
+                      << label_decode_v << " with flag: " << flag
                       << std::endl;
             sram_first_write_generic(context, flag, vcache.dram_addr, dram_time,
                                      nullptr, label_decode_v, true,

@@ -29,13 +29,14 @@ public:
     }
 
     // 触发写操作的接口函数（可被其他模块调用）
-    void trigger_write(high_bw_mem_access_unit* hmau,  SramManager *sram_manager,int dma_read_count, int sram_addr_temp, AllocationID alloc_id, bool use_manager) {
+    void trigger_write(high_bw_mem_access_unit* hmau,  SramManager *sram_manager,int dma_read_count, int sram_addr_temp, AllocationID alloc_id, int SRAM_BITW, bool use_manager) {
         this->dma_read_count = dma_read_count;
         this->sram_addr_temp = sram_addr_temp;
         this->sram_manager_ = sram_manager;
         this->alloc_id = alloc_id;
         this->use_manager = use_manager;
         this->hmau = hmau;
+        this->SRAM_BITW = SRAM_BITW;
 
 
         // 启动线程（通过事件）
@@ -96,6 +97,7 @@ private:
     int sram_addr_temp;
     bool use_manager;
     high_bw_mem_access_unit* hmau;
+    int SRAM_BITW;
     
     
 
