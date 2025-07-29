@@ -114,7 +114,9 @@
 #ifndef ROUTER_PIPE
 #define ROUTER_PIPE 1
 #endif
-
+#ifndef ROUTER_LOOP
+#define ROUTER_LOOP 0
+#endif
 
 // 数据包占位
 #define M_D_IS_END 1

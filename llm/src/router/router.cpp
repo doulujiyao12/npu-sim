@@ -353,6 +353,9 @@ void RouterUnit::router_execute() {
                 host_channel_avail_o->write(false);
             }
         }
+#if ROUTER_LOOP == 1 
+        cout << "Router " << rid << "flag_trigger " << flag_trigger << endl;
+#endif 
 
         // trigger again
         if (flag_trigger)

@@ -717,7 +717,13 @@ void WorkerCoreExecutor::send_para_logic() {
                     ev_send_helper.notify(0, SC_NS);
 #else
                 while (atomic_helper_lock(sc_time_stamp(), 0) == false){
+#if ROUTER_LOOP == 1
+                    cout << "Core " << cid << " wait for atomic_helper_lock" << endl;
+#endif 
                     wait(CYCLE,SC_NS);
+#if ROUTER_LOOP == 1
+                    cout << "Core " << cid << " wake up" << endl;
+#endif
                 }
                 ev_send_helper.notify(0, SC_NS);
 #endif
@@ -736,6 +742,10 @@ void WorkerCoreExecutor::send_para_logic() {
                     while (job_done == false){
                         if (channel_avail_i.read() &&
                         atomic_helper_lock(sc_time_stamp(), 1)) {
+#if ROUTER_LOOP == 1
+                        cout << "Core " << cid << " wait for 746 atomic_helper_lock time " <<  sc_time_stamp() << endl;
+
+#endif
                         // atomic_helper_lock(sc_time_stamp(), 1) always true unless 811 atomic_helper_lock(sc_time_stamp(), 0);
 #else
                     if (channel_avail_i.read() &&
@@ -757,6 +767,9 @@ void WorkerCoreExecutor::send_para_logic() {
 #else
                             while (!send_last_packet){
                                 atomic_helper_lock(sc_time_stamp(), 0, true);
+#if ROUTER_LOOP == 1
+                                cout << "Core " << cid << " wait for 771 atomic_helper_lock" << endl;
+#endif
                                 wait(ev_send_last_packet);
                                 while (atomic_helper_lock(sc_time_stamp(), 0) == false){
                                     wait(CYCLE, SC_NS);
@@ -927,6 +940,9 @@ void WorkerCoreExecutor::recv_logic() {
              << prim->recv_cnt << ", recv_tag " << prim->tag_id << endl;
 
         while (true) {
+#if ROUTER_LOOP == 1
+            cout << "Core " << cid << " wait for 944 atomic_helper_lock" << endl;
+#endif
             if (atomic_helper_lock(sc_time_stamp(), 0))
                 ev_send_helper.notify(0, SC_NS);
 
@@ -1013,8 +1029,15 @@ void WorkerCoreExecutor::recv_logic() {
                     Msg temp;
                     // 表示 当前周期该核有需要处理的msg 的recv包
                     if (prim->type == RECV_DATA) {
+#if ROUTER_LOOP == 1
+                        if (!recv_buffer.size()){
+                            cout << "Core " << cid << " wait for 1024 atomic_helper_lock" << endl;
+                            wait(ev_recv_data);
+                        }
+#else
                         if (!recv_buffer.size())
                             wait(ev_recv_data);
+#endif
 
                         temp = recv_buffer.front();
                     } else if (prim->type == RECV_START) {
@@ -1360,8 +1383,9 @@ bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status, bool f
         res = false;
 
     if (try_time == present_time) {
-        // cout << "Core " << cid <<" try_time=: " << try_time << " present_time: " << present_time << " status: " << status << "send_helper_write " << send_helper_write<< endl;
-
+#if ROUTER_LOOP == 1
+        cout << "Core " << cid <<" try_time============: " << try_time << " present_time: " << present_time << " status: " << status << "send_helper_write " << send_helper_write<< endl;
+#endif 
         if (status == 0){
 
             if (force ==true){
@@ -1399,7 +1423,9 @@ bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status, bool f
     }
 
     if (try_time > present_time) {
-        // cout << "Core " << cid <<" try_time>: " << try_time << " present_time: " << present_time << " status: " << status << "send_helper_write " << send_helper_write<<endl;
+#if ROUTER_LOOP == 1
+        cout << "Core " << cid <<" try_time>>>>>>>>>>: " << try_time << " present_time: " << present_time << " status: " << status << "send_helper_write " << send_helper_write<<endl;
+#endif
         if (try_time - present_time < sc_time(CYCLE, SC_NS))
             return false;
 

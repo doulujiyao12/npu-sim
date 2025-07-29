@@ -298,17 +298,20 @@ void SramPosLocator::updateKVPair(TaskCoreContext &context, std::string &key,
 
 
     } else {
+        // cout << "already exist" <<endl;
     }
 
     spill_size = findPair(key, result);
 
     assert(spill_size >= 0);
+    // assert(validateTotalSize());
 
     // cout << "left_byte" << result.left_byte << endl;
     // cout << " data_size_in_byte" << data_size_in_byte << endl;
     if (result.left_byte > data_size_in_byte) {
         result.spill_size = 0;
         result.left_byte -= data_size_in_byte;
+        // cout << "left_byte" << result.left_byte << endl;
         return;
     } else {
         int alignment = std::max(get_sram_bitwidth(cid), SRAM_BLOCK_SIZE * 8);
@@ -327,7 +330,7 @@ void SramPosLocator::updateKVPair(TaskCoreContext &context, std::string &key,
         addPair(key, result, context, dram_time_tmp, false);
 
         auto sram_manager_ = context.sram_manager_;
-        // cout << "alignment_byte" << alignment_byte << endl;
+        // cout << "alignment_byte" << alignment_byte *tmp << "tmp " << tmp << " " << result.size << endl;
         sram_manager_->allocate_append(alignment_byte * tmp, result.alloc_id);
 #if ASSERT == 1
         assert(validateTotalSize());
