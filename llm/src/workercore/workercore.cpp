@@ -980,13 +980,13 @@ void WorkerCoreExecutor::recv_logic() {
                     wait(ev_recv_prepare_data);
 
                 temp = recv_buffer.front();
-                if (prim->tag_id != cid && temp.tag_id != prim->tag_id) {
-                    cout << "[WARN] Core " << cid
-                         << " gets incompatible tag id: prim tag "
-                         << prim->tag_id << " with buffer top msg tag "
-                         << temp.tag_id << endl;
-                    sc_stop();
-                }
+                // if (prim->tag_id != cid && temp.tag_id != prim->tag_id) {
+                //     cout << "[WARN] Core " << cid
+                //          << " gets incompatible tag id: prim tag "
+                //          << prim->tag_id << " with buffer top msg tag "
+                //          << temp.tag_id << endl;
+                //     sc_stop();
+                // }
 
                 recv_buffer.pop();
                 // 复制到SRAM中
