@@ -7,13 +7,17 @@
 #include <cstdint> // For int, int
 #include <stdexcept> // For std::invalid_argument
 #include "macros/macros.h"
+#include <fstream>
+#include <string>
+#include <iomanip>
+#include <systemc>
 // Optional: Define a type for allocation IDs for clarity
 using AllocationID = float;
 
 class SramManager {
 public:
     // Constructor
-    SramManager(int sram_start_address, int total_sram_size, int block_size, int num_blocks);
+    SramManager(int sram_start_address, int cid, int total_sram_size, int block_size, int num_blocks);
 
     // Allocate memory
     // Returns an AllocationID on success, or 0 on failure.
@@ -25,6 +29,7 @@ public:
 
     // Deallocate memory associated with an AllocationID
     bool deallocate(AllocationID id);
+    void log_free_block_ratio() const;
 
     // Optional: Get the actual SRAM address for an allocation ID
     int get_address(AllocationID id) const;
@@ -50,6 +55,7 @@ public:
     int total_sram_size_;
     int block_size_;
     int num_blocks_;
+    int cid;
 
     std::vector<bool> block_status_; // Tracks if a block is used (true) or free (false)
     // Stores {allocation_id -> vector_of_block_indices}
