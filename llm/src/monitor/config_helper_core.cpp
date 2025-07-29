@@ -213,9 +213,15 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
 
                 auto target_core = get_core(coreconfigs[i].prim_copy);
                 auto target_work = target_core->worklist[j];
-                target_work.cast = prev_job.cast;
+                for (int c = 0; c < target_work.cast.size(); c++) {
+                    if (target_work.cast[c].tag == target_work.cast[c].dest || prev_job.cast[c].tag != prev_job.cast[c].dest)
+                        target_work.cast[c].tag = prev_job.cast[c].tag;
+                    target_work.cast[c].dest = prev_job.cast[c].dest;
+                    target_work.cast[c].loopout = prev_job.cast[c].loopout;
+                }
                 target_work.recv_cnt = prev_job.recv_cnt;
-                target_work.recv_tag = prev_job.recv_tag;
+                if (target_work.recv_tag == coreconfigs[i].prim_copy || prev_job.recv_tag != coreconfigs[i].id)
+                    target_work.recv_tag = prev_job.recv_tag;
                 coreconfigs[i].worklist.push_back(target_work);
             }
         }
