@@ -149,6 +149,8 @@ class Set_batch : public prim_base {
 public:
     vector<Stage> *target;
     vector<Stage> batchInfo;
+    bool auto_pd;
+    int *stage_cnt;
 
     int task();
     int task_core(TaskCoreContext &context);
@@ -161,11 +163,20 @@ public:
     int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize() {};
 
-    Set_batch() {}
+    Set_batch() { auto_pd = false; }
 
     Set_batch(vector<Stage> batchInfo) { this->batchInfo = batchInfo; }
+    Set_batch(vector<Stage> batchInfo, bool auto_pd) {
+        this->batchInfo = batchInfo;
+        this->auto_pd = auto_pd;
+    }
 
     Set_batch(vector<Stage> *target) { this->target = target; }
+
+    Set_batch(vector<Stage> *target, int *stage_cnt) {
+        this->target = target;
+        this->stage_cnt = stage_cnt;
+    }
 };
 
 class Store_prim : public prim_base {

@@ -213,14 +213,20 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
 
                 auto target_core = get_core(coreconfigs[i].prim_copy);
                 auto target_work = target_core->worklist[j];
-                for (int c = 0; c < target_work.cast.size(); c++) {
-                    if (target_work.cast[c].tag == target_work.cast[c].dest || prev_job.cast[c].tag != prev_job.cast[c].dest)
+                for (int c = 0; c < prev_job.cast.size(); c++) {
+                    if (c >= target_work.cast.size()) {
+                        target_work.cast.push_back(prev_job.cast[c]);
+                        continue;
+                    }
+                    if (target_work.cast[c].tag == target_work.cast[c].dest ||
+                        prev_job.cast[c].tag != prev_job.cast[c].dest)
                         target_work.cast[c].tag = prev_job.cast[c].tag;
                     target_work.cast[c].dest = prev_job.cast[c].dest;
                     target_work.cast[c].loopout = prev_job.cast[c].loopout;
                 }
                 target_work.recv_cnt = prev_job.recv_cnt;
-                if (target_work.recv_tag == coreconfigs[i].prim_copy || prev_job.recv_tag != coreconfigs[i].id)
+                if (target_work.recv_tag == coreconfigs[i].prim_copy ||
+                    prev_job.recv_tag != coreconfigs[i].id)
                     target_work.recv_tag = prev_job.recv_tag;
                 coreconfigs[i].worklist.push_back(target_work);
             }
@@ -258,6 +264,7 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
     for (auto config : coreconfigs) {
         int index = config.id / GRID_X;
         vector<Msg> single_rep_in_loop;
+        vector<Msg> single_rep_next_loop; // 存放第二个loop开始的原语
         vector<Msg> single_rep_last_loop;
 
         for (auto work : config.worklist) {
@@ -267,10 +274,22 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
                                                  config.id, prim->serialize()));
             }
 
+            for (auto prim : work.prims_in_loop) {
+                if (typeid(*prim) == typeid(Recv_prim)) {
+                    Recv_prim *recv_prim = (Recv_prim *)prim;
+                    if (recv_prim->type == RECV_TYPE::RECV_START)
+                        recv_prim->type = RECV_DATA;
+                }
+
+                single_rep_next_loop.push_back(Msg(
+                    false, MSG_TYPE::CONFIG, single_rep_next_loop.size() + 1,
+                    config.id, prim->serialize()));
+            }
+
             for (auto prim : work.prims_last_loop)
-                single_rep_last_loop.push_back(
-                    Msg(false, MSG_TYPE::CONFIG, single_rep_in_loop.size() + 1,
-                        config.id, prim->serialize()));
+                single_rep_last_loop.push_back(Msg(
+                    false, MSG_TYPE::CONFIG, single_rep_last_loop.size() + 1,
+                    config.id, prim->serialize()));
         }
 
         prim_base *recv_weight = new Recv_prim(RECV_TYPE::RECV_WEIGHT,
@@ -283,21 +302,35 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
         for (int i = 0; i < batch_size; i++)
             batchInfo.push_back(Stage(i + 1, PREFILL, seq_len));
 
-        prim_base *set_batch = new Set_batch(batchInfo);
+        prim_base *set_batch = new Set_batch(batchInfo, true);
 
         cout << "core " << config.id << ", loop: " << config.loop << endl;
+        int seq_cnt = 2;
 
         for (int i = 0; i < config.loop - 1; i++) {
-            for (int j = 1; j <= single_rep_in_loop.size(); j++) {
-                Msg m = single_rep_in_loop[j - 1];
-                m.seq_id = j + single_rep_in_loop.size() * i + 1;
-                q[index].push(m);
+            q[index].push(Msg(false, MSG_TYPE::CONFIG, seq_cnt++, config.id,
+                              set_batch->serialize()));
+            if (i == 0) {
+                for (int j = 1; j <= single_rep_in_loop.size(); j++) {
+                    Msg m = single_rep_in_loop[j - 1];
+                    m.seq_id = seq_cnt++;
+                    q[index].push(m);
+                }
+            } else {
+                for (int j = 1; j <= single_rep_next_loop.size(); j++) {
+                    Msg m = single_rep_next_loop[j - 1];
+                    m.seq_id = seq_cnt++;
+                    q[index].push(m);
+                }
             }
         }
 
         for (int j = 1; j <= single_rep_last_loop.size(); j++) {
+            q[index].push(Msg(false, MSG_TYPE::CONFIG, seq_cnt++, config.id,
+                              set_batch->serialize()));
+
             Msg m = single_rep_last_loop[j - 1];
-            m.seq_id = j + single_rep_in_loop.size() * (config.loop - 1) + 1;
+            m.seq_id = seq_cnt++;
             m.refill = m.is_end = j == single_rep_last_loop.size();
 
             q[index].push(m);
@@ -351,6 +384,14 @@ void config_helper_core::generate_prims(int i) {
                          << label->indata[i] << endl;
                 }
                 label->outdata = ((moe_base *)prim)->datapass_label.outdata;
+            } else if (prim->prim_type == PD_PRIM) {
+                for (int i = 0; i < MAX_SPLIT_NUM; i++) {
+                    label->indata[i] =
+                        ((pd_base *)prim)->datapass_label.indata[i];
+                    cout << "Core " << c->id << " pd " << i << " "
+                         << label->indata[i] << endl;
+                }
+                label->outdata = ((pd_base *)prim)->datapass_label.outdata;
             }
 
             // 这里直接推入字符串形式的label，之后会在序列化的时候转化为整形label
@@ -385,7 +426,7 @@ void config_helper_core::generate_prims(int i) {
 
 
         // 再生成最后一个loop的原语
-        if (is_source && w == 0)
+        if (is_source && w == 0 && c->loop == 1)
             work.prims_last_loop.push_back(new Recv_prim(
                 RECV_TYPE::RECV_START, work.recv_tag, work.recv_cnt));
         else

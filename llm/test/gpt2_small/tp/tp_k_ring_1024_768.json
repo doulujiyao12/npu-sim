@@ -97,7 +97,7 @@
                                     }
                                 },
                                 {
-                                    "type": "Matmul_f",
+                                    "type": "Matmul_f_pd",
                                     "use_hw": false,
                                     "B": "B",
                                     "T": "T",
@@ -325,11 +325,12 @@
                                     }
                                 },
                                 {
-                                    "type": "Attention_f",
+                                    "type": "Attention_f_pd",
                                     "B": "B",
                                     "T": "T",
-                                    "C": "3C/4",
+                                    "C": "C/4",
                                     "NH": "NH/4",
+"DH": "DH",
                                     "R": "R",
                                     "sram_address": {
                                         "indata": "switch_out",
@@ -1130,7 +1131,7 @@
                                     }
                                 },
                                 {
-                                    "type": "Matmul_f",
+                                    "type": "Matmul_f_pd",
                                     "use_hw": false,
                                     "B": "B",
                                     "T": "T",
@@ -1328,11 +1329,12 @@
                             "cast": [],
                             "prims": [
                                 {
-                                    "type": "Attention_f",
+                                    "type": "Attention_f_pd",
                                     "B": "B",
                                     "T": "T",
-                                    "C": "3C/4",
+                                    "C": "C/4",
                                     "NH": "NH/4",
+"DH": "DH",
                                     "R": "R",
                                     "sram_address": {
                                         "indata": "switch_out",
@@ -2037,7 +2039,7 @@
                                     }
                                 },
                                 {
-                                    "type": "Matmul_f",
+                                    "type": "Matmul_f_pd",
                                     "use_hw": false,
                                     "B": "B",
                                     "T": "T",
@@ -2265,11 +2267,12 @@
                                     }
                                 },
                                 {
-                                    "type": "Attention_f",
+                                    "type": "Attention_f_pd",
                                     "B": "B",
                                     "T": "T",
-                                    "C": "3C/4",
+                                    "C": "C/4",
                                     "NH": "NH/4",
+"DH": "DH",
                                     "R": "R",
                                     "sram_address": {
                                         "indata": "switch_out",
@@ -3070,7 +3073,7 @@
                                     }
                                 },
                                 {
-                                    "type": "Matmul_f",
+                                    "type": "Matmul_f_pd",
                                     "use_hw": false,
                                     "B": "B",
                                     "T": "T",
@@ -3268,11 +3271,12 @@
                             "cast": [],
                             "prims": [
                                 {
-                                    "type": "Attention_f",
+                                    "type": "Attention_f_pd",
                                     "B": "B",
                                     "T": "T",
-                                    "C": "3C/4",
+                                    "C": "C/4",
                                     "NH": "NH/4",
+"DH": "DH",
                                     "R": "R",
                                     "sram_address": {
                                         "indata": "switch_out",

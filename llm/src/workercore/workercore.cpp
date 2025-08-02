@@ -171,6 +171,7 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
     next_datapass_label = new AddrDatapassLabel();
     sram_pos_locator = new SramPosLocator(s_cid, sram_manager_);
     batchInfo = new vector<Stage>;
+    stage_cnt = 0;
     sram_writer = new SRAMWriteModule("sram_writer", end_sram_event);
 #if USE_NB_DRAMSYS == 1
     nb_dcache_socket =
@@ -337,6 +338,14 @@ void WorkerCoreExecutor::worker_core_execute() {
             }
 
             if (!flag) {
+                if (SYSTEM_MODE == SIM_DATAFLOW &&
+                    typeid(*p) == typeid(Recv_prim)) {
+                    Recv_prim *rp = (Recv_prim *)p;
+                    if (rp->type == RECV_START) {
+                        rp->type = RECV_DATA;
+                    }
+                }
+
                 prim_queue.emplace_back(p);
             }
         }
@@ -423,7 +432,7 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
         task = new Clear_sram(this->sram_pos_locator, &loop_cnt);
         break;
     case SET_BATCH_TYPE:
-        task = new Set_batch(this->batchInfo);
+        task = new Set_batch(this->batchInfo, &stage_cnt);
         break;
     case SWITCH_DATA_TYPE:
         task = new switch_data();
@@ -584,44 +593,46 @@ void WorkerCoreExecutor::send_logic() {
             // SEND_DATA, SEND_ACK, SEND_REQ
             if (prim->type == SEND_DATA) {
 #if ROUTER_PIPE == 1
-                while (job_done != true){
+                while (job_done != true) {
 #endif
-                // [发送方] 正常发送数据
-                prim->data_packet_id++;
+                    // [发送方] 正常发送数据
+                    prim->data_packet_id++;
 
-                bool is_end_packet = prim->data_packet_id == prim->max_packet;
-                int length = M_D_DATA;
-                if (is_end_packet) {
-                    length = prim->end_length;
-                }
+                    bool is_end_packet =
+                        prim->data_packet_id == prim->max_packet;
+                    int length = M_D_DATA;
+                    if (is_end_packet) {
+                        length = prim->end_length;
+                    }
 
-                int delay = 0;
-                TaskCoreContext context = generate_context(this);
-                // 因为send task_core 会delay 所以 ev_send_helper 有机会发出去
-                // 然后wc 里面又要wait 一个cycle ev_send_helper 一低一高
-                delay = prim->task_core(context);
+                    int delay = 0;
+                    TaskCoreContext context = generate_context(this);
+                    // 因为send task_core 会delay 所以 ev_send_helper
+                    // 有机会发出去 然后wc 里面又要wait 一个cycle ev_send_helper
+                    // 一低一高
+                    delay = prim->task_core(context);
 
-                if (!channel_avail_i.read())
-                    wait(ev_channel_avail_i);
+                    if (!channel_avail_i.read())
+                        wait(ev_channel_avail_i);
 
-                send_buffer =
-                    Msg(prim->data_packet_id == prim->max_packet,
-                        MSG_TYPE::DATA, prim->data_packet_id, prim->des_id, 0,
-                        prim->tag_id, length, sc_bv<128>(0x1));
+                    send_buffer =
+                        Msg(prim->data_packet_id == prim->max_packet,
+                            MSG_TYPE::DATA, prim->data_packet_id, prim->des_id,
+                            0, prim->tag_id, length, sc_bv<128>(0x1));
 
-                //send_helper_write = 3;
-                atomic_helper_lock(sc_time_stamp(), 3);
-                ev_send_helper.notify(0, SC_NS);
+                    // send_helper_write = 3;
+                    atomic_helper_lock(sc_time_stamp(), 3);
+                    ev_send_helper.notify(0, SC_NS);
 
-                if (prim->data_packet_id == prim->max_packet) {
-                    cout << "Core " << cid
-                         << " max_packet: " << prim->max_packet << " "
-                         << send_buffer.is_end << endl;
+                    if (prim->data_packet_id == prim->max_packet) {
+                        cout << "Core " << cid
+                             << " max_packet: " << prim->max_packet << " "
+                             << send_buffer.is_end << endl;
 
-                    job_done = true;
-                }
+                        job_done = true;
+                    }
 #if ROUTER_PIPE == 1
-            }
+                }
 #endif
             }
 
@@ -716,11 +727,12 @@ void WorkerCoreExecutor::send_para_logic() {
                 if (atomic_helper_lock(sc_time_stamp(), 0))
                     ev_send_helper.notify(0, SC_NS);
 #else
-                while (atomic_helper_lock(sc_time_stamp(), 0) == false){
+                while (atomic_helper_lock(sc_time_stamp(), 0) == false) {
 #if ROUTER_LOOP == 1
-                    cout << "Core " << cid << " wait for atomic_helper_lock" << endl;
-#endif 
-                    wait(CYCLE,SC_NS);
+                    cout << "Core " << cid << " wait for atomic_helper_lock"
+                         << endl;
+#endif
+                    wait(CYCLE, SC_NS);
 #if ROUTER_LOOP == 1
                     cout << "Core " << cid << " wake up" << endl;
 #endif
@@ -739,96 +751,102 @@ void WorkerCoreExecutor::send_para_logic() {
 
                     // atomic_helper_lock 其实是为了表示上锁
 #if ROUTER_PIPE == 1
-                    while (job_done == false){
+                    while (job_done == false) {
                         if (channel_avail_i.read() &&
-                        atomic_helper_lock(sc_time_stamp(), 1)) {
+                            atomic_helper_lock(sc_time_stamp(), 1)) {
 #if ROUTER_LOOP == 1
-                        cout << "Core " << cid << " wait for 746 atomic_helper_lock time " <<  sc_time_stamp() << endl;
+                            cout << "Core " << cid
+                                 << " wait for 746 atomic_helper_lock time "
+                                 << sc_time_stamp() << endl;
 
 #endif
-                        // atomic_helper_lock(sc_time_stamp(), 1) always true unless 811 atomic_helper_lock(sc_time_stamp(), 0);
+                            // atomic_helper_lock(sc_time_stamp(), 1) always
+                            // true unless 811
+                            // atomic_helper_lock(sc_time_stamp(), 0);
 #else
                     if (channel_avail_i.read() &&
                         atomic_helper_lock(sc_time_stamp(), 1)) {
 #endif
-                        ev_send_helper.notify(0, SC_NS);
+                            ev_send_helper.notify(0, SC_NS);
 
-                        s_prim->data_packet_id++;
+                            s_prim->data_packet_id++;
 
-                        bool is_end_packet =
-                            s_prim->data_packet_id == s_prim->max_packet;
-                        int length = M_D_DATA;
-                        if (is_end_packet) {
-                            length = s_prim->end_length;
-#if ROUTER_PIPE == 0 
-                            while (!send_last_packet)
-                                wait(ev_send_last_packet);
+                            bool is_end_packet =
+                                s_prim->data_packet_id == s_prim->max_packet;
+                            int length = M_D_DATA;
+                            if (is_end_packet) {
+                                length = s_prim->end_length;
+#if ROUTER_PIPE == 0
+                                while (!send_last_packet)
+                                    wait(ev_send_last_packet);
 
 #else
-                            while (!send_last_packet){
+                            while (!send_last_packet) {
                                 atomic_helper_lock(sc_time_stamp(), 0, true);
 #if ROUTER_LOOP == 1
-                                cout << "Core " << cid << " wait for 771 atomic_helper_lock" << endl;
+                                cout << "Core " << cid
+                                     << " wait for 771 atomic_helper_lock"
+                                     << endl;
 #endif
                                 wait(ev_send_last_packet);
-                                while (atomic_helper_lock(sc_time_stamp(), 0) == false){
+                                while (atomic_helper_lock(sc_time_stamp(), 0) ==
+                                       false) {
                                     wait(CYCLE, SC_NS);
                                 }
                             }
 #endif
-                            
 
-                            send_last_packet = false;
-                        }
+
+                                send_last_packet = false;
+                            }
 #if ROUTER_PIPE == 1
-                        send_buffer =
-                            Msg(s_prim->data_packet_id == s_prim->max_packet,
+                            send_buffer = Msg(
+                                s_prim->data_packet_id == s_prim->max_packet,
                                 MSG_TYPE::DATA, s_prim->data_packet_id,
                                 s_prim->des_id, 0, s_prim->tag_id, length,
                                 sc_bv<128>(0x1));
 
-#endif 
+#endif
 
-                        int delay = 0;
-                        TaskCoreContext context = generate_context(this);
-                        delay = prim->task_core(context);
+                            int delay = 0;
+                            TaskCoreContext context = generate_context(this);
+                            delay = prim->task_core(context);
 #if ROUTER_PIPE == 0
-                        send_buffer =
-                            Msg(s_prim->data_packet_id == s_prim->max_packet,
+                            send_buffer = Msg(
+                                s_prim->data_packet_id == s_prim->max_packet,
                                 MSG_TYPE::DATA, s_prim->data_packet_id,
                                 s_prim->des_id, 0, s_prim->tag_id, length,
                                 sc_bv<128>(0x1));
-#endif 
+#endif
 #if ROUTER_PIPE == 1
-                        atomic_helper_lock(sc_time_stamp(), 0, true);
+                            atomic_helper_lock(sc_time_stamp(), 0, true);
 #else
                         atomic_helper_lock(sc_time_stamp(), 2);
 #endif
-                        ev_send_helper.notify(0, SC_NS);
+                            ev_send_helper.notify(0, SC_NS);
 
-                        if (s_prim->data_packet_id == s_prim->max_packet) {
-                            job_done = true;
-                            cout << "Core " << cid
-                                 << " max_packet: " << s_prim->max_packet << " "
-                                 << send_buffer.is_end << endl;
+                            if (s_prim->data_packet_id == s_prim->max_packet) {
+                                job_done = true;
+                                cout << "Core " << cid
+                                     << " max_packet: " << s_prim->max_packet
+                                     << " " << send_buffer.is_end << endl;
+                            }
+                        }
+#if ROUTER_PIPE == 1
+                        else {
+                            cout << "Core " << cid << " "
+                                 << channel_avail_i.read() << endl;
+
+                            if (send_helper_write == 1) {
+                                send_helper_write = 0;
+                            }
+
+                            wait(CYCLE, SC_NS);
+                            atomic_helper_lock(sc_time_stamp(), 0);
+                            // cout << "Core " << channel_avail_i.read() <<
+                            // endl;
                         }
                     }
-#if ROUTER_PIPE == 1
-                    else{
-                    cout << "Core " << cid << " " << channel_avail_i.read() << endl;
-
-                    if (send_helper_write == 1){
-                        send_helper_write = 0;
-                    }
-
-                    wait(CYCLE, SC_NS);
-                    atomic_helper_lock(sc_time_stamp(), 0);
-                    // cout << "Core " << channel_avail_i.read() << endl;
-                    
-
-                    }
-
-                }
 #endif
                 }
 
@@ -941,7 +959,8 @@ void WorkerCoreExecutor::recv_logic() {
 
         while (true) {
 #if ROUTER_LOOP == 1
-            cout << "Core " << cid << " wait for 944 atomic_helper_lock" << endl;
+            cout << "Core " << cid << " wait for 944 atomic_helper_lock"
+                 << endl;
 #endif
             if (atomic_helper_lock(sc_time_stamp(), 0))
                 ev_send_helper.notify(0, SC_NS);
@@ -1030,8 +1049,9 @@ void WorkerCoreExecutor::recv_logic() {
                     // 表示 当前周期该核有需要处理的msg 的recv包
                     if (prim->type == RECV_DATA) {
 #if ROUTER_LOOP == 1
-                        if (!recv_buffer.size()){
-                            cout << "Core " << cid << " wait for 1024 atomic_helper_lock" << endl;
+                        if (!recv_buffer.size()) {
+                            cout << "Core " << cid
+                                 << " wait for 1024 atomic_helper_lock" << endl;
                             wait(ev_recv_data);
                         }
 #else
@@ -1366,8 +1386,9 @@ present_time the most recent time that the helper is try to lock
 
 try = present_time some one has try to lock the helper before in the same time
 
-status = 0, If a new cycle begins and no other module requires the helper, reset send_helper_write to 0. pool down data_sent_o
-status = 1, 表示 准备执行send task_core （会有delay） 一般在status 0 之后 同一个周期内，行为和 0 一致
+status = 0, If a new cycle begins and no other module requires the helper, reset
+send_helper_write to 0. pool down data_sent_o status = 1, 表示 准备执行send
+task_core （会有delay） 一般在status 0 之后 同一个周期内，行为和 0 一致
 
 status = 2 表示send 从 sram 里面已经拿到数据了，可以开始发送了
 
@@ -1376,7 +1397,8 @@ status = 1 2 都只出现一次
 
 
 */
-bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status, bool force) {
+bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status,
+                                            bool force) {
     bool res;
 
     if (try_time < present_time)
@@ -1384,17 +1406,19 @@ bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status, bool f
 
     if (try_time == present_time) {
 #if ROUTER_LOOP == 1
-        cout << "Core " << cid <<" try_time============: " << try_time << " present_time: " << present_time << " status: " << status << "send_helper_write " << send_helper_write<< endl;
-#endif 
-        if (status == 0){
+        cout << "Core " << cid << " try_time============: " << try_time
+             << " present_time: " << present_time << " status: " << status
+             << "send_helper_write " << send_helper_write << endl;
+#endif
+        if (status == 0) {
 
-            if (force ==true){
+            if (force == true) {
                 send_helper_write = status;
                 return true;
             }
             return false;
         }
-            
+
         if (status == 1) { // send prepare
             // status 1 只会出现在这里
             if (send_helper_write == 0) {
@@ -1424,7 +1448,9 @@ bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status, bool f
 
     if (try_time > present_time) {
 #if ROUTER_LOOP == 1
-        cout << "Core " << cid <<" try_time>>>>>>>>>>: " << try_time << " present_time: " << present_time << " status: " << status << "send_helper_write " << send_helper_write<<endl;
+        cout << "Core " << cid << " try_time>>>>>>>>>>: " << try_time
+             << " present_time: " << present_time << " status: " << status
+             << "send_helper_write " << send_helper_write << endl;
 #endif
         if (try_time - present_time < sc_time(CYCLE, SC_NS))
             return false;
@@ -1440,16 +1466,17 @@ bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status, bool f
                 res = false;
             }
         } else {
-            // 这里应该只会进 status 0, 
-            //1 和 3 ( 3 除了返回给host ack 因为while循环) 都会在0后处理，且不会有延迟，所以pre=try_time
-            // status 1 后面只能紧跟status 2 
+            // 这里应该只会进 status 0,
+            // 1 和 3 ( 3 除了返回给host ack 因为while循环)
+            // 都会在0后处理，且不会有延迟，所以pre=try_time
+            // status 1 后面只能紧跟status 2
             // 防止status 3 把 原本 status 2 抢占 了
-            if (send_helper_write == 1 && force == false) 
+            if (send_helper_write == 1 && force == false)
                 res = false;
             else {
-                // 0 或者 3 是当前周期第一来的状态 
+                // 0 或者 3 是当前周期第一来的状态
                 // 2 只会出现上面一种情况 成为当前周期第一来的状态
-                
+
                 send_helper_write = status;
                 res = true;
             }
@@ -1458,8 +1485,8 @@ bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status, bool f
 
     return res;
 }
-// data_sent_o pos trigger router && later router can self trigger if data_sent_o is true
-// 是否拉低不重要，只要 data_sent_o 是高就能发送
+// data_sent_o pos trigger router && later router can self trigger if
+// data_sent_o is true 是否拉低不重要，只要 data_sent_o 是高就能发送
 void WorkerCoreExecutor::send_helper() {
     while (true) {
 #if ROUTER_PIPE == 1

@@ -2,31 +2,31 @@
     "random": false,
     "vars": {
         "B": 1,
-        "T": 1024,
-        "C": 768,
-        "CC": 589824,
-        "C/2": 384,
-        "NH": 12,
-        "NH/2": 6,
-        "NH/4": 3,
-        "L": 12,
-        "3C": 2304,
-        "4C": 3072,
-        "BTC": 786432,
-        "BTC/2": 393216,
-        "BTC/4": 196608,
-        "2BTC": 1572864,
-        "3BTC": 23592,
-        "3BTC/2": 1179648,
-        "3BTC/4": 589824,
-        "4BTC": 3145728,
-        "3C/2": 1152,
-        "3C/4": 576,
-        "C/4": 192,
-        "2C": 1536,
-        "T/4": 256,
-        "T/2": 512,
-        "3CC/4": 442368,
+        "T": 512,
+        "T/2": 256,
+        "T/4": 128,
+        "C": 1024,
+        "NH": 16,
+        "DH": 64,
+        "NH/2": 8,
+        "NH/4": 4,
+        "L": 5,
+        "3C": 3072,
+        "4C": 4096,
+        "BTC": 524288,
+        "BTC/2": 262144,
+        "BTC/4": 131072,
+        "2BTC": 1048576,
+        "3BTC": 1572864,
+        "3BTC/4": 393216,
+        "4BTC": 2097152,
+        "3C/2": 1536,
+        "3C/4": 768,
+        "C/2": 512,
+        "C/4": 256,
+        "2C": 2048,
+        "CC": 1048576,
+        "3CC/4": 786432,
         "layernorm1_data": 96,
         "split_matmul1_out": 97,
         "matmul1_data": 96,
@@ -67,7 +67,7 @@
             "chip_id": 0,
             "cores": [
                 {
-                    "id": 0,
+                    "loop": "L","id": 0,
                     "worklist": [
                         {
                             "recv_cnt": 1,
@@ -115,7 +115,7 @@
                             ],
                             "prims": [
                                 {
-                                    "type": "Matmul_f",
+                                    "type": "Matmul_f_pd",
                                     "use_hw": false,
                                     "B": "B",
                                     "T": "T/2",
@@ -153,7 +153,7 @@
                                     }
                                 },
                                 {
-                                    "type": "Matmul_f",
+                                    "type": "Matmul_f_pd",
                                     "use_hw": false,
                                     "B": "B",
                                     "T": "T/2",
@@ -261,11 +261,12 @@
                                     }
                                 },
                                 {
-                                    "type": "Attention_f",
+                                    "type": "Attention_f_pd",
                                     "B": "B",
                                     "T": "T",
-                                    "C": "3C/4",
+                                    "C": "C/4",
                                     "NH": "NH/4",
+"DH": "DH",
                                     "R": "R",
                                     "sram_address": {
                                         "indata": "merge_matmul1_out",
@@ -720,7 +721,7 @@
                     ]
                 },
                 {
-                    "id": 1,
+                    "loop": "L","id": 1,
                     "worklist": [
                         {
                             "recv_cnt": 1,
@@ -762,7 +763,7 @@
                                     }
                                 },
                                 {
-                                    "type": "Matmul_f",
+                                    "type": "Matmul_f_pd",
                                     "use_hw": false,
                                     "B": "B",
                                     "T": "T/2",
@@ -800,7 +801,7 @@
                                     }
                                 },
                                 {
-                                    "type": "Matmul_f",
+                                    "type": "Matmul_f_pd",
                                     "use_hw": false,
                                     "B": "B",
                                     "T": "T/2",
@@ -908,11 +909,12 @@
                                     }
                                 },
                                 {
-                                    "type": "Attention_f",
+                                    "type": "Attention_f_pd",
                                     "B": "B",
                                     "T": "T",
-                                    "C": "3C/4",
+                                    "C": "C/4",
                                     "NH": "NH/4",
+"DH": "DH",
                                     "R": "R",
                                     "sram_address": {
                                         "indata": "merge_matmul1_out",
@@ -1361,7 +1363,7 @@
                     ]
                 },
                 {
-                    "id": 2,
+                    "loop": "L","id": 2,
                     "worklist": [
                         {
                             "recv_cnt": 1,
@@ -2020,7 +2022,7 @@
                     ]
                 },
                 {
-                    "id": 3,
+                    "loop": "L","id": 3,
                     "worklist": [
                         {
                             "recv_cnt": 1,
@@ -2667,7 +2669,7 @@
                     ]
                 },
                 {
-                    "id": 8,
+                    "loop": "L","id": 8,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -2821,7 +2823,7 @@
                     ]
                 },
                 {
-                    "id": 9,
+                    "loop": "L","id": 9,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -2967,7 +2969,7 @@
                     ]
                 },
                 {
-                    "id": 10,
+                    "loop": "L","id": 10,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -3125,7 +3127,7 @@
                     ]
                 },
                 {
-                    "id": 11,
+                    "loop": "L","id": 11,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -3275,7 +3277,7 @@
                     ]
                 },
                 {
-                    "id": 16,
+                    "loop": "L","id": 16,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -3429,7 +3431,7 @@
                     ]
                 },
                 {
-                    "id": 17,
+                    "loop": "L","id": 17,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -3575,7 +3577,7 @@
                     ]
                 },
                 {
-                    "id": 18,
+                    "loop": "L","id": 18,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -3733,7 +3735,7 @@
                     ]
                 },
                 {
-                    "id": 19,
+                    "loop": "L","id": 19,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -3883,7 +3885,7 @@
                     ]
                 },
                 {
-                    "id": 24,
+                    "loop": "L","id": 24,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -4037,7 +4039,7 @@
                     ]
                 },
                 {
-                    "id": 25,
+                    "loop": "L","id": 25,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -4183,7 +4185,7 @@
                     ]
                 },
                 {
-                    "id": 26,
+                    "loop": "L","id": 26,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -4341,7 +4343,7 @@
                     ]
                 },
                 {
-                    "id": 27,
+                    "loop": "L","id": 27,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -4491,7 +4493,7 @@
                     ]
                 },
                 {
-                    "id": 32,
+                    "loop": "L","id": 32,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -4645,7 +4647,7 @@
                     ]
                 },
                 {
-                    "id": 33,
+                    "loop": "L","id": 33,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -4791,7 +4793,7 @@
                     ]
                 },
                 {
-                    "id": 34,
+                    "loop": "L","id": 34,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -4949,7 +4951,7 @@
                     ]
                 },
                 {
-                    "id": 35,
+                    "loop": "L","id": 35,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -5099,7 +5101,7 @@
                     ]
                 },
                 {
-                    "id": 40,
+                    "loop": "L","id": 40,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -5253,7 +5255,7 @@
                     ]
                 },
                 {
-                    "id": 41,
+                    "loop": "L","id": 41,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -5399,7 +5401,7 @@
                     ]
                 },
                 {
-                    "id": 42,
+                    "loop": "L","id": 42,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -5557,7 +5559,7 @@
                     ]
                 },
                 {
-                    "id": 43,
+                    "loop": "L","id": 43,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -5707,7 +5709,7 @@
                     ]
                 },
                 {
-                    "id": 48,
+                    "loop": "L","id": 48,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -5861,7 +5863,7 @@
                     ]
                 },
                 {
-                    "id": 49,
+                    "loop": "L","id": 49,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -6007,7 +6009,7 @@
                     ]
                 },
                 {
-                    "id": 50,
+                    "loop": "L","id": 50,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -6165,7 +6167,7 @@
                     ]
                 },
                 {
-                    "id": 51,
+                    "loop": "L","id": 51,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -6315,7 +6317,7 @@
                     ]
                 },
                 {
-                    "id": 56,
+                    "loop": "L","id": 56,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -6469,7 +6471,7 @@
                     ]
                 },
                 {
-                    "id": 57,
+                    "loop": "L","id": 57,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -6615,7 +6617,7 @@
                     ]
                 },
                 {
-                    "id": 58,
+                    "loop": "L","id": 58,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -6773,7 +6775,7 @@
                     ]
                 },
                 {
-                    "id": 59,
+                    "loop": "L","id": 59,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -6923,7 +6925,7 @@
                     ]
                 },
                 {
-                    "id": 60,
+                    "loop": "L","id": 60,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -7077,7 +7079,7 @@
                     ]
                 },
                 {
-                    "id": 61,
+                    "loop": "L","id": 61,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -7223,7 +7225,7 @@
                     ]
                 },
                 {
-                    "id": 62,
+                    "loop": "L","id": 62,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -7381,7 +7383,7 @@
                     ]
                 },
                 {
-                    "id": 63,
+                    "loop": "L","id": 63,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -7531,7 +7533,7 @@
                     ]
                 },
                 {
-                    "id": 52,
+                    "loop": "L","id": 52,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -7685,7 +7687,7 @@
                     ]
                 },
                 {
-                    "id": 53,
+                    "loop": "L","id": 53,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -7831,7 +7833,7 @@
                     ]
                 },
                 {
-                    "id": 54,
+                    "loop": "L","id": 54,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -7989,7 +7991,7 @@
                     ]
                 },
                 {
-                    "id": 55,
+                    "loop": "L","id": 55,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -8139,7 +8141,7 @@
                     ]
                 },
                 {
-                    "id": 44,
+                    "loop": "L","id": 44,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -8293,7 +8295,7 @@
                     ]
                 },
                 {
-                    "id": 45,
+                    "loop": "L","id": 45,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -8439,7 +8441,7 @@
                     ]
                 },
                 {
-                    "id": 46,
+                    "loop": "L","id": 46,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -8597,7 +8599,7 @@
                     ]
                 },
                 {
-                    "id": 47,
+                    "loop": "L","id": 47,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -8747,7 +8749,7 @@
                     ]
                 },
                 {
-                    "id": 36,
+                    "loop": "L","id": 36,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -8894,14 +8896,19 @@
                             "recv_tag": 41,
                             "cast": [
                                 {
-                                    "dest": 28
+                                    "dest": 0,
+                                    "loopout": "false"
+                                },
+                                {
+                                    "dest": -1,
+                                    "loopout": "true"
                                 }
                             ]
                         }
                     ]
                 },
                 {
-                    "id": 37,
+                    "loop": "L","id": 37,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -9040,14 +9047,19 @@
                             "recv_cnt": 0,
                             "cast": [
                                 {
-                                    "dest": 28
+                                    "dest": 1,
+                                    "loopout": "false"
+                                },
+                                {
+                                    "dest": -1,
+                                    "loopout": "true"
                                 }
                             ]
                         }
                     ]
                 },
                 {
-                    "id": 38,
+                    "loop": "L","id": 38,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -9198,14 +9210,19 @@
                             "recv_tag": 203,
                             "cast": [
                                 {
-                                    "dest": 28
+                                    "dest": 3,
+                                    "loopout": "false"
+                                },
+                                {
+                                    "dest": -1,
+                                    "loopout": "true"
                                 }
                             ]
                         }
                     ]
                 },
                 {
-                    "id": 39,
+                    "loop": "L","id": 39,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -9348,38 +9365,12 @@
                             "recv_cnt": 0,
                             "cast": [
                                 {
-                                    "dest": 28
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "id": 28,
-                    "worklist": [
-                        {
-                            "recv_cnt": 4,
-                            "cast": [
-                                {
-                                    "dest": -1
-                                }
-                            ],
-                            "prims": [
-                                {
-                                    "type": "parse_input",
-                                    "size": "BTC",
-                                    "sram_address": {
-                                        "indata": "result",
-                                        "outdata": "result"
-                                    }
+                                    "dest": 2,
+                                    "loopout": "false"
                                 },
                                 {
-                                    "type": "parse_output",
-                                    "size": "BTC",
-                                    "sram_address": {
-                                        "indata": "result",
-                                        "outdata": "result"
-                                    }
+                                    "dest": -1,
+                                    "loopout": "true"
                                 }
                             ]
                         }
