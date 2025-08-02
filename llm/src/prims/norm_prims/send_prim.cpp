@@ -93,13 +93,14 @@ int Send_prim::task_core(TaskCoreContext &context) {
 
         AddrPosKey sc_key;
         int flag = sram_pos_locator->findPair(output_label, sc_key);
+        sc_key.pos = 0;
+
 #if USE_SRAM_MANAGER == 1
-        mau->mem_read_port->read(0,
-                                 msg_data, elapsed_time);
+        mau->mem_read_port->read(0, msg_data, elapsed_time);
 #else
         // ERROT SRAM BITWIDTH
-        mau->mem_read_port->read(sc_key.pos + (data_packet_id - 1),
-                                 msg_data, elapsed_time);
+        mau->mem_read_port->read(sc_key.pos + (data_packet_id - 1), msg_data,
+                                 elapsed_time);
 #endif
         assert(elapsed_time.to_double() != 0);
 

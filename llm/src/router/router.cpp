@@ -34,7 +34,7 @@ RouterUnit::RouterUnit(const sc_module_name &n, int rid,
     for (int i = 0; i < DIRECTIONS; i++) {
         input_lock[i] = 0;
         input_lock_ref[i] = 0;
-        output_lock[i] = 0;
+        output_lock[i] = -1;
         output_lock_ref[i] = 0;
     }
 
@@ -200,7 +200,7 @@ void RouterUnit::router_execute() {
             Directions next = get_next_hop(d, rid);
 
             if (buffer_o[next].size() < MAX_BUFFER_PACKET_SIZE &&
-                output_lock[next] == 0) {
+                output_lock[next] == -1) {
                 host_buffer_i->pop();
                 buffer_o[next].emplace(temp);
 
@@ -216,7 +216,7 @@ void RouterUnit::router_execute() {
             int source = req.source;
             Directions next = get_next_hop(des, source);
 
-            if (output_lock[next] == 0 || output_lock[next] == req.tag_id) {
+            if (output_lock[next] == -1 || output_lock[next] == req.tag_id) {
                 cout << "[INFO] Router " << rid << ", checking req from "
                      << source << endl;
                 if (buffer_o[CENTER].size() < MAX_BUFFER_PACKET_SIZE) {
@@ -251,7 +251,7 @@ void RouterUnit::router_execute() {
                 continue;
             }
 
-            if (m.des != GRID_SIZE && output_lock[out] != 0 &&
+            if (m.des != GRID_SIZE && output_lock[out] != -1 &&
                 output_lock[out] !=
                     m.tag_id) // 如果不发往host，且目标通道上锁，且目标上锁tag不等同于自己的tag：continue
                 continue;
@@ -273,7 +273,7 @@ void RouterUnit::router_execute() {
             if (m.msg_type == DATA && m.seq_id == 1 && m.des != GRID_SIZE &&
                 m.source != GRID_SIZE) {
                 // i 是 ACK 的进入方向，需要计算 ACK 的输出方向
-                if (output_lock[out] == 0) {
+                if (output_lock[out] == -1) {
                     // 上锁
                     output_lock[out] = m.tag_id;
                     output_lock_ref[out]++;
@@ -314,7 +314,7 @@ void RouterUnit::router_execute() {
                          << " output ref below zero.\n";
                     sc_stop();
                 } else if (output_lock_ref[out] == 0) {
-                    output_lock[out] = 0;
+                    output_lock[out] = -1;
                 }
             }
 

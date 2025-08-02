@@ -13,9 +13,9 @@
 #include "memory/dram/DummyDcache.h"
 #include "memory/gpu/GPU_L1L2_Cache.h"
 #include "memory/sram/dynamic_bandwidth_ram_row.h"
+#include "memory/sram_writer.h"
 #include "trace/Event_engine.h"
 #include "unit_module/sram_manager/sram_manager.h"
-#include "memory/sram_writer.h"
 
 class WorkerCoreExecutor;
 
@@ -120,6 +120,7 @@ public:
     /* ----------------PD complex------------------- */
     vector<Stage> *batchInfo;
     vector<bool> decode_done;
+    int stage_cnt;
 
     /* --------------------------------------------- */
 
@@ -174,7 +175,7 @@ public:
     sc_event *end_global_mem_event;    // global memory访存结束标志
     sc_event *start_sram_event;
     sc_event *end_sram_event;
-    SRAMWriteModule* sram_writer;
+    SRAMWriteModule *sram_writer;
     SramPosLocator *sram_pos_locator; // 记录sram中数据的位置，label(string)-int
     AddrDatapassLabel
         *next_datapass_label; // 记录sram中数据的标签，这个变量由set

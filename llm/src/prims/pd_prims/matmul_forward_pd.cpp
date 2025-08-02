@@ -58,6 +58,7 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
 
     // 写入kvcache，根据batchInfo确定
     for (auto stage : batchInfo) {
+        cout << "[Matmul_pd] Core" << cid << " stage_type: " << stage.type << " token_num: " << stage.token_num << " req_id: " << stage.req_id << endl;
         int size = 0;
         switch (job_type) {
         case JOB_PREFILL:

@@ -167,6 +167,7 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
             cout << "[ERROR] SRAM have no more data to spill " << max_sram_size
                  << "<" << used << endl;
             sc_stop();
+            return;
         }
 
         // 如果已经spill一部分了，则选择剩余能spill的大小
