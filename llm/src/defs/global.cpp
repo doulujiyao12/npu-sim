@@ -23,6 +23,7 @@ AddrLabelTable g_addr_label_table;
 
 DramKVTable** g_dram_kvtable;
 int MAX_SRAM_SIZE;
+sc_event kv_event;
 
 // 记录所有在计算原语中的参数，见test文件夹下的config文件
 vector<pair<string, int>> vtable;
@@ -52,6 +53,7 @@ u_int32_t ***frame_counters;
 
 bool use_node;
 bool use_DramSys;
+bool gpu_inner;
 float comp_util;
 
 // 网络拓扑大小

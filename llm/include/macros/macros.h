@@ -101,7 +101,24 @@
 #endif
 
 #ifndef DRAM_BURST_BYTE
-#define DRAM_BURST_BYTE 1024
+#define DRAM_BURST_BYTE 2048
+#endif
+// same as DRAM_BURST_BYTE
+#ifndef L1CACHELINESIZE
+#define L1CACHELINESIZE 2048
+#endif
+
+#ifndef L2CACHELINESIZE
+#define L2CACHELINESIZE 2048
+#endif
+
+#ifndef L1CACHESIZE
+#define L1CACHESIZE 8388608
+#endif
+
+
+#ifndef L2CACHESIZE
+#define L2CACHESIZE 301989888
 #endif
 
 #ifndef ENABLE_COLORS
@@ -116,6 +133,11 @@
 #endif
 #ifndef ROUTER_LOOP
 #define ROUTER_LOOP 0
+#endif
+
+
+#ifndef MSHRHIT
+#define MSHRHIT 1
 #endif
 
 // 数据包占位

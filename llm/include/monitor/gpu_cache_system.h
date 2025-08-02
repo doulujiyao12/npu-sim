@@ -1,5 +1,6 @@
 #pragma once
 #include "systemc.h"
+#include "macros/macros.h"
 
 #include "memory/dramsys_wrapper.h"
 #include "memory/gpu/GPU_L1L2_Cache.h"
@@ -23,10 +24,11 @@ public:
           testConfig(
               ::DRAMSys::Config::from_path(configuration, resource_directory)) {
 
-        l2Cache = new L2Cache("l2_cache", 65536, 64, 8, 16);
+        l2Cache = new L2Cache("l2_cache", L2CACHESIZE, L2CACHELINESIZE, 8, 16);
 
         dramSysWrapper = new gem5::memory::DRAMSysWrapper("DRAMSysWrapper",
                                                           testConfig, false);
+        assert(DRAM_BURST_BYTE > dramSysWrapper->dramsys->getMemSpec().defaultBytesPerBurst);
         // mainMemory = new MainMemory("main_memory");
         bus = new Bus("bus", numProcessors);
 

@@ -35,7 +35,7 @@
                 "grid_y": 4,
                 "block_x": 4,
                 "block_y": 4,
-                "require_sm": 4
+                "require_sm": 16
               },
               "B": "B",
               "T": "T",
@@ -54,7 +54,7 @@
                 "grid_y": 4,
                 "block_x": 4,
                 "block_y": 4,
-                "require_sm": 4
+                "require_sm": 16
               },
               "B": "B",
               "T": "T",
@@ -74,7 +74,7 @@
                 "grid_y": 4,
                 "block_x": 4,
                 "block_y": 4,
-                "require_sm": 4
+                "require_sm": 16
               },
               "B": "B",
               "T": "T",
@@ -94,7 +94,7 @@
                 "grid_y": 4,
                 "block_x": 4,
                 "block_y": 4,
-                "require_sm": 4
+                "require_sm": 16
               },
               "B": "B",
               "T": "T",
@@ -114,7 +114,7 @@
                 "grid_y": 4,
                 "block_x": 4,
                 "block_y": 4,
-                "require_sm": 4
+                "require_sm": 16
               },
               "N": "BTC",
               "slice_x": 4,
@@ -131,7 +131,7 @@
                 "grid_y": 4,
                 "block_x": 4,
                 "block_y": 4,
-                "require_sm": 4
+                "require_sm": 16
               },
               "B": "B",
               "T": "T",
@@ -150,7 +150,7 @@
                 "grid_y": 4,
                 "block_x": 4,
                 "block_y": 4,
-                "require_sm": 4
+                "require_sm": 16
               },
               "B": "B",
               "T": "T",
@@ -170,7 +170,7 @@
                 "grid_y": 4,
                 "block_x": 4,
                 "block_y": 4,
-                "require_sm": 4
+                "require_sm": 16
               },
               "N": "4BTC",
               "slice_x": 4,
@@ -187,7 +187,7 @@
                 "grid_y": 4,
                 "block_x": 4,
                 "block_y": 4,
-                "require_sm": 4
+                "require_sm": 16
               },
               "B": "B",
               "T": "T",
@@ -207,7 +207,7 @@
                 "grid_y": 4,
                 "block_x": 4,
                 "block_y": 4,
-                "require_sm": 4
+                "require_sm": 16
               },
               "N": "BTC",
               "slice_x": 4,

@@ -431,6 +431,7 @@ void comp_base::write_output_data(TaskCoreContext &context, int exu_flops,
         AddrPosKey out_key =
             AddrPosKey(static_cast<int>(temp_out_sram_offset + i * interval),
                        data_byte * data_size_out / out_labels.size());
+        // already wait in addPair do not add overlap_time
         sram_pos_locator->addPair(out_labels[i], out_key, context, dram_time);
     }
 #endif

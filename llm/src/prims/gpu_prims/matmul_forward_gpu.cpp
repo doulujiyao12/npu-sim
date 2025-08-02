@@ -47,6 +47,7 @@ int Matmul_f_gpu::task_core(TaskCoreContext &context) {
 
     int overlap_time = 0;
 #if USE_L1L2_CACHE == 1
+if (gpu_inner == true){
     // 通过fetch_index计算位置
     int row_index = fetch_index / slice_x;
     int col_index = fetch_index % slice_x;
@@ -65,14 +66,99 @@ int Matmul_f_gpu::task_core(TaskCoreContext &context) {
                      data_size_bias / slice_x, mem_time);
 
     // TODO: 模拟计算cycle数
-    overlap_time = mem_time;
+    // overlap_time = mem_time;
     AddrPosKey out_key;
-    gpu_pos_locator->updatePair(datapass_label.outdata, data_size_out);
+    gpu_pos_locator->updatePair(datapass_label.outdata, data_size_out * (slice_x * slice_y));
     gpu_pos_locator->findPair(datapass_label.outdata, out_key);
     cout << cid << " [Matmul_f_gpu] before write: " << mem_time << " at addr "
          << out_key.pos << endl;
     gpu_write_generic(context, out_key.pos + data_size_out * fetch_index,
-                      data_size_out, overlap_time);
+                      data_size_out, mem_time);
+
+    int cycle = 0;
+    int cid = context.cid;
+    ExuConfig *exu = get_exu_config(cid);
+    SfuConfig *sfu = get_sfu_config(cid);
+                  
+    if (exu->type == MAC_Array)
+        cycle += (B * T * C * OC * 2 / (slice_x * slice_y)) / (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+    else
+        assert(false && "Unsupported tile type");
+
+    if (sfu->type == Linear)
+        cycle += 0 / sfu->x_dims * CYCLE;
+    else
+        assert(false && "Unsupported tile type");
+                  
+
+    if (mem_time > cycle) {
+        // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
+        overlap_time = 0;
+        LOG_VERBOSE(1, context.cid, "Prim name:" << name << RED << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
+
+        // std::cout << RED << "cycle: " << cycle << ", dram_time: " << dram_time
+        //           << RESET << std::endl;
+
+    } else {
+        overlap_time = cycle - mem_time;
+        LOG_VERBOSE(1, context.cid, "Prim name:" << name << GREEN << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
+
+    }
+    }else{
+    
+    int slice_total = slice_x * slice_y;
+    // input 读入
+    gpu_read_generic(context,
+        input_mem_offset + data_size_input / slice_total * fetch_index,
+        data_size_input / slice_total, mem_time);
+
+    // weight 读入
+    gpu_read_generic(context, w_key.pos + w_key.size / slice_total * fetch_index,
+            data_size_weight / slice_total, mem_time);
+
+    // bias 读入
+    gpu_read_generic(context, b_key.pos + b_key.size / slice_total * fetch_index,
+            data_size_bias / slice_total, mem_time);
+
+    AddrPosKey out_key;
+    gpu_pos_locator->updatePair(datapass_label.outdata, data_size_out * slice_total);
+    gpu_pos_locator->findPair(datapass_label.outdata, out_key);
+    cout << cid << " [Matmul_f_gpu] before write: " << mem_time << " at addr "
+            << out_key.pos << endl;
+    gpu_write_generic(context, out_key.pos,
+                        data_size_out * slice_total, mem_time);
+
+    int cycle = 0;
+    int cid = context.cid;
+    ExuConfig *exu = get_exu_config(cid);
+    SfuConfig *sfu = get_sfu_config(cid);
+                    
+    if (exu->type == MAC_Array)
+        cycle += (B * T * C * OC * 2 / (slice_x * slice_y)) / (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+    else
+        assert(false && "Unsupported tile type");
+
+    if (sfu->type == Linear)
+        cycle += 0 / sfu->x_dims * CYCLE;
+    else
+        assert(false && "Unsupported tile type");
+                    
+
+    if (mem_time > cycle) {
+        // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
+        overlap_time = 0;
+        LOG_VERBOSE(1, context.cid, "Prim name:" << name << RED << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
+
+        // std::cout << RED << "cycle: " << cycle << ", dram_time: " << dram_time
+        //           << RESET << std::endl;
+
+    } else {
+        overlap_time = cycle - mem_time;
+        LOG_VERBOSE(1, context.cid, "Prim name:" << name << GREEN << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
+
+    }
+
+    }
 #endif
 
     cout << cid << " [Matmul_f_gpu] after write: " << overlap_time << endl;

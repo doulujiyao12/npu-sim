@@ -1,6 +1,7 @@
 #pragma once
 #include "defs/enums.h"
 #include "macros/macros.h"
+#include "systemc.h"
 
 #include <cstdint>
 #include <iostream>
@@ -23,6 +24,8 @@ extern int MAX_SRAM_SIZE;
 
 class DramKVTable;
 extern DramKVTable** g_dram_kvtable;
+
+extern sc_event kv_event;
 
 // one per system，用于config转msg的消息传递
 class AddrLabelTable;
@@ -73,6 +76,7 @@ extern u_int32_t ***frame_counters;
 
 extern bool use_node;
 extern bool use_DramSys;
+extern bool gpu_inner;
 extern float comp_util;
 
 #define RESET "\x1B[0m"  // 重置颜色

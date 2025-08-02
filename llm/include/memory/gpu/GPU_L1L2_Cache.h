@@ -1632,6 +1632,29 @@ public:
                 }
 
                 if (!hit) {
+#if MSHRHIT == 1
+                    bool mshr_hit = false;
+                    uint64_t mshr_tag, mshr_setIndex, mshr_offset;
+                    for (int i = 0; i < mshrEntries.size(); i++) { 
+                        if (mshrEntries[i].isPending == true) { 
+                            parseAddress(mshrEntries[i].address, mshr_tag, mshr_setIndex, mshr_offset);
+                            if (mshr_tag == tag){
+
+                                mshr_hit = true;
+                                requestMutex.unlock();
+                                phase = END_RESP;
+                                sc_time bwDelay =
+                                    sc_core::sc_time(CYCLE, sc_core::SC_NS);
+                                payloadEventQueue.notify(trans, phase, bwDelay);
+                                return TLM_UPDATED;
+                            }
+
+                        }
+                        
+                    }
+
+
+#endif
                     // 未命中，放入MSHR
                     int mshrIndex = findFreeMSHR();
 // #if GPU_CACHE_DEBUG == 1
@@ -1692,6 +1715,29 @@ public:
                 }
 
                 if (!hit) {
+                    #if MSHRHIT == 1
+                    bool mshr_hit = false;
+                    uint64_t mshr_tag, mshr_setIndex, mshr_offset;
+                    for (int i = 0; i < mshrEntries.size(); i++) { 
+                        if (mshrEntries[i].isPending == true) { 
+                            parseAddress(mshrEntries[i].address, mshr_tag, mshr_setIndex, mshr_offset);
+                            if (mshr_tag == tag){
+
+                                mshr_hit = true;
+                                requestMutex.unlock();
+                                phase = END_RESP;
+                                sc_time bwDelay =
+                                    sc_core::sc_time(CYCLE, sc_core::SC_NS);
+                                payloadEventQueue.notify(trans, phase, bwDelay);
+                                return TLM_UPDATED;
+                            }
+
+                        }
+                        
+                    }
+
+
+#endif
                     int mshrIndex = findFreeMSHR();
 // #if GPU_CACHE_DEBUG == 1
 

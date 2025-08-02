@@ -32,6 +32,8 @@ Define_int64_opt("--MAC-SIZE", g_flag_mac_size, 128, "MAC size");
 Define_int64_opt("--trace-window", g_flag_trace_window, 2, "Trace window size");
 Define_int64_opt("--sram-max", g_flag_max_sram, 8388608,
                  "Max SRAM size"); // 3145728
+Define_bool_opt("--gpu_inner", g_inner, false,
+                    "inner matmul or outer matmul, default outer"); // 3145728
 Define_int64_opt("--verbose-level", g_verbose_level, 1,
                  "verbose-level"); // 3145728
 // ----------------------------------------------------------------------------
@@ -124,6 +126,8 @@ int sc_main(int argc, char *argv[]) {
     if (g_flag_dramsys) {
         use_DramSys = true;
     }
+    
+    gpu_inner = g_inner;
 
     if (g_flag_node) {
         use_node = true;

@@ -2,7 +2,7 @@
     "simulation": {
         "addressmapping": "am_hbm2_8Gb_pc_brc.json",
         "mcconfig": "fr_fcfs.json",
-        "memspec": "HBM2.json",
+        "memspec": "HBM2_WSC.json",
         "simconfig": "example.json",
         "simulationid": "hbm2-example",
         "tracesetup": [

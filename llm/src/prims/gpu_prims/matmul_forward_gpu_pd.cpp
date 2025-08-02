@@ -47,8 +47,10 @@ int matmul_forward_gpu_pd::task_core(TaskCoreContext &context) {
          << input_mem_offset << endl;
 
     int overlap_time = 0;
+    AddrPosKey out_key;
 
 #if USE_L1L2_CACHE == 1
+if (gpu_inner == true){
     // 通过fetch_index计算位置
     int row_index = fetch_index / slice_x;
     int col_index = fetch_index % slice_x;
@@ -71,10 +73,10 @@ int matmul_forward_gpu_pd::task_core(TaskCoreContext &context) {
         switch (job_type) {
         case JOB_PREFILL:
         case JOB_BOTH:
-            size = data_byte * B * OC * stage.token_num / (slice_y * slice_x);
+            size = data_byte * B * OC * stage.token_num / (slice_y * slice_x) / 3;
             break;
         case JOB_DECODE:
-            size = data_byte * B * OC * 1 / (slice_y * slice_x);
+            size = data_byte * B * OC * 1 / (slice_y * slice_x) / 3;
             break;
         default:
             assert(false && "Unsupported job type");
@@ -105,7 +107,7 @@ int matmul_forward_gpu_pd::task_core(TaskCoreContext &context) {
 
     overlap_time = mem_time;
 
-    AddrPosKey out_key;
+    
     gpu_pos_locator->updatePair(datapass_label.outdata, data_size_out);
     gpu_pos_locator->findPair(datapass_label.outdata, out_key);
 
@@ -113,6 +115,70 @@ int matmul_forward_gpu_pd::task_core(TaskCoreContext &context) {
          << " at addr " << out_key.pos << endl;
     gpu_write_generic(context, out_key.pos + data_size_out * fetch_index,
                       data_size_out, overlap_time);
+    }else{
+    int slice_total = slice_x * slice_y;
+    // input 读入
+    gpu_read_generic(context,
+        input_mem_offset + data_size_input / slice_total * fetch_index,
+        data_size_input / slice_total, mem_time);
+
+    // weight 读入
+    gpu_read_generic(context, w_key.pos + w_key.size / slice_total * fetch_index,
+            data_size_weight / slice_total, mem_time);
+
+    // bias 读入
+    gpu_read_generic(context, b_key.pos + b_key.size / slice_total * fetch_index,
+            data_size_bias / slice_total, mem_time);
+
+    for (auto stage : batchInfo) {
+        int size = 0;
+        switch (job_type) {
+        case JOB_PREFILL:
+        case JOB_BOTH:
+            size = data_byte * B * OC * stage.token_num / (slice_y * slice_x) / 3;
+            break;
+        case JOB_DECODE:
+            size = data_byte * B * OC * 1 / (slice_y * slice_x) / 3;
+            break;
+        default:
+            assert(false && "Unsupported job type");
+        }
+
+        char format_label_k[100];
+        sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+                stage.req_id);
+        string label_k = format_label_k;
+
+        char format_label_v[100];
+        sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+                stage.req_id);
+        string label_v = format_label_v;
+
+        gpu_pos_locator->updatePair(label_k, size);
+        gpu_pos_locator->updatePair(label_v, size);
+
+        AddrPosKey key_k, key_v;
+        gpu_pos_locator->findPair(label_k, key_k);
+        gpu_pos_locator->findPair(label_v, key_v);
+
+        gpu_write_generic(context, key_k.pos + (key_k.size - size), size,
+                          mem_time);
+        gpu_write_generic(context, key_v.pos + (key_v.size - size), size,
+                          mem_time);
+    }
+    overlap_time = mem_time;
+
+
+    gpu_pos_locator->updatePair(datapass_label.outdata, data_size_out);
+    gpu_pos_locator->findPair(datapass_label.outdata, out_key);
+
+    cout << cid << " [matmul_forward_gpu_pd] before write: " << mem_time
+         << " at addr " << out_key.pos << endl;
+    gpu_write_generic(context, out_key.pos + data_size_out * fetch_index,
+                      data_size_out, overlap_time);
+
+
+}
 #endif
 
     cout << cid << " [matmul_forward_gpu_pd] after write: " << mem_time

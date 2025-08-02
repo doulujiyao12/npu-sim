@@ -185,7 +185,7 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
 #endif
 #if USE_L1L2_CACHE == 1
     core_lv1_cache = new L1Cache(("l1_cache_" + to_string(cid)).c_str(), cid,
-                                 8192, 64, 4, 8);
+                                 L1CACHESIZE, L1CACHELINESIZE, 4, 8);
     gpunb_dcache_if = new GPUNB_dcacheIF(sc_gen_unique_name("nb_dcache_if"),
                                          cid, start_nb_gpu_dram_event,
                                          end_nb_gpu_dram_event, event_engine);
