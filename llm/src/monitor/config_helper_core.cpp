@@ -558,6 +558,12 @@ void config_helper_core::calculate_address(bool do_loop) {
 
                     // max pkg nums
                     temp->max_packet = pkg_nums;
+                    if (pkg_nums == 0) {
+                        cout << "weight " << weight << " slice size " << slice_size
+                             << " slice size in bit " << slice_size_in_bit
+                             << " pkg nums " << pkg_nums << " end length "
+                             << end_length << endl;
+                    }
                     temp->output_label = output_label_split.size() == 1
                                              ? output_label_split[0]
                                              : output_label_split[index];

@@ -584,7 +584,7 @@ void WorkerCoreExecutor::send_logic() {
 
         cout << "[SEND] Core " << cid << ": running send "
              << send_prim_type_to_string(prim->type) << ", destination "
-             << prim->des_id << ", tag " << prim->tag_id << endl;
+             << prim->des_id << ", tag " << prim->tag_id << ", max packet " << prim->max_packet << endl;
 
         while (true) {
             if (atomic_helper_lock(sc_time_stamp(), 0))

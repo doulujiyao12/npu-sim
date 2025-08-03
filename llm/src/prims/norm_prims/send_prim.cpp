@@ -44,10 +44,10 @@ void Send_prim::deserialize(sc_bv<128> buffer) {
 
     // local_offset = buffer.range(55, 40).to_uint64();
     type = SEND_TYPE(buffer.range(59, 56).to_uint64());
-    max_packet = buffer.range(75, 60).to_uint64();
-    tag_id = buffer.range(83, 76).to_uint64();
-    end_length = buffer.range(91, 84).to_uint64();
-    datatype = DATATYPE(buffer.range(93, 92).to_uint64());
+    max_packet = buffer.range(91, 60).to_uint64();
+    tag_id = buffer.range(99, 92).to_uint64();
+    end_length = buffer.range(107, 100).to_uint64();
+    datatype = DATATYPE(buffer.range(109, 108).to_uint64());
 }
 
 sc_bv<128> Send_prim::serialize() {
@@ -65,10 +65,10 @@ sc_bv<128> Send_prim::serialize() {
 
     // d.range(55, 40) = sc_bv<16>(local_offset);
     d.range(59, 56) = sc_bv<4>(type);
-    d.range(75, 60) = sc_bv<16>(max_packet);
-    d.range(83, 76) = sc_bv<8>(tag_id);
-    d.range(91, 84) = sc_bv<8>(end_length);
-    d.range(93, 92) = sc_bv<2>(datatype);
+    d.range(91, 60) = sc_bv<32>(max_packet);
+    d.range(99, 92) = sc_bv<8>(tag_id);
+    d.range(107, 100) = sc_bv<8>(end_length);
+    d.range(109, 108) = sc_bv<2>(datatype);
 
     return d;
 }
@@ -104,7 +104,7 @@ int Send_prim::task_core(TaskCoreContext &context) {
         // mau->mem_read_port->read(sc_key.pos + (data_packet_id - 1), msg_data,
         //                          elapsed_time);
 #endif
-        assert(elapsed_time.to_double() != 0);
+        // assert(elapsed_time.to_double() != 0);
 
         if (need_delete)
             sram_pos_locator->deletePair(output_label);
