@@ -53,14 +53,14 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
 
     executor = new WorkerCoreExecutor(sc_gen_unique_name("workercore-exec"),
                                       cid, this->event_engine);
+    // executor->MaxDramAddr =
+    //     dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
     executor->MaxDramAddr =
-        dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
-
-
+         dcache->dramSysWrapper->dramsys->getMemSpec().memorySizeBytes;
     executor->defaultDataLength =
         dcache->dramSysWrapper->dramsys->getMemSpec().defaultBytesPerBurst;
     assert(dataset_words_per_tile <
-           dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress());
+           dcache->dramSysWrapper->dramsys->getMemSpec().memorySizeBytes);
     g_dram_kvtable[cid] =
         new DramKVTable(executor->MaxDramAddr, (uint64_t)50 * 1024 * 1024, 20);
     executor->systolic_config = systolic_config;

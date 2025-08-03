@@ -34,6 +34,11 @@ Define_int64_opt("--sram-max", g_flag_max_sram, 8388608,
                  "Max SRAM size"); // 3145728
 Define_bool_opt("--gpu_inner", g_inner, false,
                     "inner matmul or outer matmul, default outer"); // 3145728
+Define_int64_opt("--dram_aligned", g_dram_aligned, 64,
+                    "gpu dram aligned");
+Define_string_opt("--gpu_dram_config", g_gpu_dram_config, "../DRAMSys/configs/hbm3-example.json",
+                    "gpu dram config");
+
 Define_int64_opt("--verbose-level", g_verbose_level, 1,
                  "verbose-level"); // 3145728
 // ----------------------------------------------------------------------------
@@ -136,6 +141,8 @@ int sc_main(int argc, char *argv[]) {
     comp_util = g_flag_comp_util;
     MAX_SRAM_SIZE = g_flag_max_sram;
     verbose_level = g_verbose_level;
+    dram_aligned = g_dram_aligned;
+    gpu_dram_config = g_gpu_dram_config;
     delete_core_log_files();
     remove_all_sram_log_files();
 

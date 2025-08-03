@@ -26,6 +26,9 @@ class DramKVTable;
 extern DramKVTable** g_dram_kvtable;
 
 extern sc_event kv_event;
+extern int dram_aligned;
+
+extern string gpu_dram_config;
 
 // one per system，用于config转msg的消息传递
 class AddrLabelTable;

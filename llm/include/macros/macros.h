@@ -53,7 +53,7 @@
 // #endif
 
 #ifndef SRAM_BLOCK_SIZE
-#define SRAM_BLOCK_SIZE 128 // byte
+#define SRAM_BLOCK_SIZE 64 // byte
 #endif
 
 #ifndef USE_SRAM_MANAGER

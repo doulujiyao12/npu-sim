@@ -24,6 +24,9 @@ AddrLabelTable g_addr_label_table;
 DramKVTable** g_dram_kvtable;
 int MAX_SRAM_SIZE;
 sc_event kv_event;
+int dram_aligned;
+
+string gpu_dram_config;
 
 // 记录所有在计算原语中的参数，见test文件夹下的config文件
 vector<pair<string, int>> vtable;

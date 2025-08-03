@@ -271,6 +271,7 @@ void config_helper_gpu::parse_done_msg(Event_engine *event_engine,
                  << streams[0].loop << endl;
             if (done_loop == streams[0].loop) {
                 cout << "Config helper GPU: all work done.\n";
+                cout << "[CATCH TEST] " << sc_time_stamp() << endl;
                 sc_stop();
             }
         }

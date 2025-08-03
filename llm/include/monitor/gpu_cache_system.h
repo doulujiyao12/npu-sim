@@ -28,6 +28,7 @@ public:
 
         dramSysWrapper = new gem5::memory::DRAMSysWrapper("DRAMSysWrapper",
                                                           testConfig, false);
+        dram_aligned = dramSysWrapper->dramsys->getMemSpec().defaultBytesPerBurst;
         assert(DRAM_BURST_BYTE > dramSysWrapper->dramsys->getMemSpec().defaultBytesPerBurst);
         // mainMemory = new MainMemory("main_memory");
         bus = new Bus("bus", numProcessors);

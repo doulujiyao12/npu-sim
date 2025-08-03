@@ -99,8 +99,10 @@ int Send_prim::task_core(TaskCoreContext &context) {
         mau->mem_read_port->read(0, msg_data, elapsed_time);
 #else
         // ERROT SRAM BITWIDTH
-        mau->mem_read_port->read(sc_key.pos + (data_packet_id - 1), msg_data,
+        mau->mem_read_port->read(0, msg_data,
                                  elapsed_time);
+        // mau->mem_read_port->read(sc_key.pos + (data_packet_id - 1), msg_data,
+        //                          elapsed_time);
 #endif
         assert(elapsed_time.to_double() != 0);
 

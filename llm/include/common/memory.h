@@ -151,6 +151,8 @@ public:
 
     void addPair(const std::string &key, AddrPosKey &value);
 
+    void addPair(const std::string &key, AddrPosKey &value, int size);
+
     void fetchPair(std::string &key,
                    AddrPosKey &result); // 如果没找到，直接添加一个
     bool findPair(std::string &key, int &result);

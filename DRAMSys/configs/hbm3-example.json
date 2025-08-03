@@ -1,10 +1,10 @@
 {
     "simulation": {
-        "addressmapping": "am_hbm2_8Gb_pc_brc.json",
+        "addressmapping": "am_hbm3_8Gb_pc_brc.json",
         "mcconfig": "fr_fcfs.json",
-        "memspec": "HBM2.json",
+        "memspec": "HBM2_WSC.json",
         "simconfig": "example.json",
-        "simulationid": "hbm2-example",
+        "simulationid": "hbm3-example",
         "tracesetup": [
             {
                 "clkMhz": 1000,

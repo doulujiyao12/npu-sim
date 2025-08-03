@@ -448,6 +448,16 @@ void GpuPosLocator::addPair(const std::string &key, AddrPosKey &value) {
     cout << "[GPU]: add pair: " << key << endl;
 }
 
+void GpuPosLocator::addPair(const std::string &key, AddrPosKey &value, int size) {
+    addr_top += size;
+    data_map[key] = value;
+
+    // 对齐
+    addr_top = ceiling_division(addr_top, 64) * 64;
+
+    cout << "[GPU]: update pair size: " << key << endl;
+}
+
 void GpuPosLocator::fetchPair(std::string &key, AddrPosKey &result) {
     auto it = data_map.find(key);
     if (it != data_map.end()) {

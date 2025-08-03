@@ -90,12 +90,40 @@ int Attention_f_gpu::task_core(TaskCoreContext &context) {
                                             fetch_index,
                      data_size_input / (3 * slice_x * slice_y), mem_time);
 
-    overlap_time = 0;
     AddrPosKey out_key;
     gpu_pos_locator->updatePair(datapass_label.outdata, data_size_out);
     gpu_pos_locator->findPair(datapass_label.outdata, out_key);
 
-    gpu_write_generic(context, out_key.pos, data_size_out, overlap_time);
+    gpu_write_generic(context, out_key.pos, data_size_out, mem_time);
+    int cycle = 0;
+    int cid = context.cid;
+    ExuConfig *exu = get_exu_config(cid);
+    SfuConfig *sfu = get_sfu_config(cid);
+                  
+    if (exu->type == MAC_Array)
+        cycle += B * NH * T * (T - 1) / 2 * (4 * C / NH + 5) / (slice_x * slice_y) / (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+    else
+        assert(false && "Unsupported tile type");
+
+    if (sfu->type == Linear)
+        cycle += 0 / (slice_x * slice_y) / sfu->x_dims * CYCLE;
+    else
+        assert(false && "Unsupported tile type");
+                  
+
+    if (mem_time > cycle) {
+        // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
+        overlap_time = 0;
+        LOG_VERBOSE(1, context.cid, "Prim name:" << name << RED << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
+
+        // std::cout << RED << "cycle: " << cycle << ", dram_time: " << dram_time
+        //           << RESET << std::endl;
+
+    } else {
+        overlap_time = cycle - mem_time;
+        LOG_VERBOSE(1, context.cid, "Prim name:" << name << GREEN << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
+
+    }
 #endif
 
     cout << cid << " [Attention_f_gpu] after write: " << overlap_time << endl;

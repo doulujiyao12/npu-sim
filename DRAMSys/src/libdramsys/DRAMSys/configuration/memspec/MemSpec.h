@@ -82,6 +82,7 @@ public:
     const unsigned bytesPerBeat;
     const unsigned defaultBytesPerBurst;
     const unsigned maxBytesPerBurst;
+    uint64_t memorySizeBytes = 0;
 
     // Clock
     const sc_core::sc_time tCK;
@@ -136,7 +137,7 @@ protected:
     // Command lengths in cycles on bus, usually one clock cycle
     std::vector<double> commandLengthInCycles;
     sc_core::sc_time burstDuration;
-    uint64_t memorySizeBytes = 0;
+    
 };
 
 } // namespace DRAMSys

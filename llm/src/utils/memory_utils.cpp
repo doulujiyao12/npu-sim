@@ -1380,9 +1380,9 @@ void gpu_read_generic(TaskCoreContext &context, uint64_t global_addr,
                       int data_size_in_byte, int &mem_time) {
 
     int inp_global_addr =
-        (global_addr / 64) * 64; // 向下取整到dram 取址的整数倍，这里是32
+        (global_addr / dram_aligned) * dram_aligned; // 向下取整到dram 取址的整数倍，这里是32
     int end_addr = global_addr + data_size_in_byte;
-    int end_global_addr = ((end_addr + 63) / 64) * 64; // 尾地址向上取整
+    int end_global_addr = ((end_addr + dram_aligned - 1) / dram_aligned) * dram_aligned; // 尾地址向上取整
 
     int aligned_data_size_in_byte = end_global_addr - inp_global_addr;
 
@@ -1436,9 +1436,9 @@ void gpu_write_generic(TaskCoreContext &context, uint64_t global_addr,
                        int data_size_in_byte, int &mem_time) {
 
     int inp_global_addr =
-        (global_addr / 64) * 64; // 向下取整到dram 取址的整数倍，这里是32
+        (global_addr / dram_aligned) * dram_aligned; // 向下取整到dram 取址的整数倍，这里是32
     int end_addr = global_addr + data_size_in_byte;
-    int end_global_addr = ((end_addr + 63) / 64) * 64; // 尾地址向上取整
+    int end_global_addr = ((end_addr + dram_aligned - 1) / dram_aligned) * dram_aligned; // 尾地址向上取整
 
     int aligned_data_size_in_byte = end_global_addr - inp_global_addr;
 
