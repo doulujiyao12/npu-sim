@@ -496,7 +496,7 @@ void GpuPosLocator::updatePair(std::string &key, int size) {
         addPair(key, value);
     else {
         value.size += size;
-        addPair(key, value);
+        addPair(key, value, size);
     }
 }
 
