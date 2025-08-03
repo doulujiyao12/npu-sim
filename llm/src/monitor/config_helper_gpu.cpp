@@ -118,18 +118,28 @@ void config_helper_gpu::generate_prims(int i) {
             new Recv_prim(RECV_TYPE::RECV_START, work.recv_tag, work.recv_cnt));
 
         for (auto prim : work.prims) {
-            prim_base *p = new_prim("Set_addr");
-            auto label = ((Set_addr *)p)->datapass_label;
+            gpu_base *gp = (gpu_base *)prim;
+            int sms = gp->req_sm;
 
-            // Set_addr 的label 指向其后面的那条原语
-            for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-                label->indata[i] = ((gpu_base *)prim)->datapass_label.indata[i];
+            // 只需要看单个原语重复次数
+            int repeat = sms / GRID_SIZE + (sms % GRID_SIZE > i);
+
+            for (int r = 0; r < repeat; r++) {
+                prim_base *p = new_prim("Set_addr");
+                auto label = ((Set_addr *)p)->datapass_label;
+
+                // Set_addr 的label 指向其后面的那条原语
+                for (int i = 0; i < MAX_SPLIT_NUM; i++) {
+                    label->indata[i] = gp->datapass_label.indata[i];
+                }
+                label->outdata = gp->datapass_label.outdata;
+
+                // 这里直接推入字符串形式的label，之后会在序列化的时候转化为整形label
+                work.prims_last_loop.push_back(p);
+
+                gp->fetch_index = i + r * GRID_SIZE;
+                work.prims_last_loop.push_back(prim);
             }
-            label->outdata = ((gpu_base *)prim)->datapass_label.outdata;
-
-            // 这里直接推入字符串形式的label，之后会在序列化的时候转化为整形label
-            work.prims_last_loop.push_back(p);
-            work.prims_last_loop.push_back(prim);
         }
 
         work.prims_last_loop.push_back(new Send_prim(SEND_TYPE::SEND_DONE));

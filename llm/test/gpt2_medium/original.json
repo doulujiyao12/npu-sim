@@ -91,7 +91,8 @@
                 "outdata": "attention1_out"
               },
               "dram_address": {
-                "data": "attention1_data"
+                "data": "attention1_data",
+                "out": "TODO"
               }
             },
             {
@@ -117,7 +118,8 @@
                 "outdata": "residual1_out"
               },
               "dram_address": {
-                "data": -1
+                "data": -1,
+                "out": "TODO"
               }
             },
             {
@@ -155,7 +157,8 @@
                 "outdata": "gelu1_out"
               },
               "dram_address": {
-                "data": -1
+                "data": -1,
+                "out": "TODO"
               }
             },
             {
@@ -169,7 +172,8 @@
                 "outdata": "matmul4_out"
               },
               "dram_address": {
-                "data": "matmul4_data"
+                "data": "matmul4_data",
+                "out": "TODO"
               }
             },
             {

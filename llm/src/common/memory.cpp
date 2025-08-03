@@ -452,6 +452,8 @@ void GpuPosLocator::addPair(const std::string &key, AddrPosKey &value, int size)
     addr_top += size;
     data_map[key] = value;
 
+    cout << "[GPU] Update Key:" << key << ", pos: " << value.pos << endl;
+
     // 对齐
     addr_top = ceiling_division(addr_top, 64) * 64;
 

@@ -67,9 +67,14 @@ int Layernorm_f_gpu::task_core(TaskCoreContext &context) {
     // overlap_time = mem_time;
     AddrPosKey out_key;
     gpu_pos_locator->updatePair(datapass_label.outdata, data_size_out);
+    cout << "Core " << cid << ": layernorm after update\n";
     gpu_pos_locator->findPair(datapass_label.outdata, out_key);
+    cout << "Core " << cid << ": layernorm after find\n";
+    cout << "out_pos: " << out_key.pos << " out_size: " << out_key.size << "\n";
+    cout << "fetch_index: " << fetch_index << endl;
 
     gpu_write_generic(context, out_key.pos + data_size_out * fetch_index, data_size_out, mem_time);
+    cout << "Core " << cid << ": layernorm after write\n";
 
     int cycle = 0;
     int cid = context.cid;
