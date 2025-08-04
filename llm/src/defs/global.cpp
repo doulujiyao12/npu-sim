@@ -26,6 +26,8 @@ int MAX_SRAM_SIZE;
 sc_event kv_event;
 int dram_aligned;
 
+int CORE_COMM_PAYLOAD = 1; // 一个时钟周期可以一次性发送多少数据包
+
 string gpu_dram_config;
 
 // 记录所有在计算原语中的参数，见test文件夹下的config文件
