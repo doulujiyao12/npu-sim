@@ -26,6 +26,10 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
     prefill_core = config_reqs["prefill_cores"];
     decode_core = config_reqs["decode_cores"];
     batch_size = config_reqs["batch_size"];
+    if (config_reqs.contains("prefill_iters"))
+        prefill_iters = config_reqs["prefill_iters"];
+    else
+        prefill_iters = 4;
 
     for (int i = 0; i < prefill_core + decode_core; i++) {
         if (i < prefill_core) {
@@ -73,6 +77,7 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
     for (int i = 0; i < req_cnt; i++) {
         RequestRecord record =
             RequestRecord(i, config_reqs["seq_len"], heads, arrival_time[i]);
+        record.prefill_iters = prefill_iters;
         requestRecords.push_back(record);
     }
 
@@ -596,8 +601,8 @@ void config_helper_pds::parse_done_msg(Event_engine *event_engine,
         g_recv_done_cnt_p = 0;
         wait_schedule_p = true;
         notify_event->notify(CYCLE, SC_NS);
-    } 
-    
+    }
+
     if (g_recv_done_cnt_d >= decode_core) {
         iter_done(JOB_DECODE);
 
@@ -612,16 +617,21 @@ void config_helper_pds::set_global_vars(int T) {
     vtable.clear();
     vtable.push_back(make_pair("B", 1));
     vtable.push_back(make_pair("T", T));
-    vtable.push_back(make_pair("C", heads * head_size));
-    vtable.push_back(make_pair("NH", heads));
+    vtable.push_back(make_pair("C", heads * head_size / prefill_iters));
+    vtable.push_back(make_pair("NH", heads / prefill_iters));
     vtable.push_back(make_pair("DH", head_size));
     vtable.push_back(make_pair("R", heads / kv_heads));
-    vtable.push_back(make_pair("3C", 3 * heads * head_size));
-    vtable.push_back(make_pair("4C", 4 * heads * head_size));
-    vtable.push_back(make_pair("BTC", T * heads * head_size));
-    vtable.push_back(make_pair("2BTC", 2 * T * heads * head_size));
-    vtable.push_back(make_pair("3BTC", 3 * T * heads * head_size));
-    vtable.push_back(make_pair("4BTC", 4 * T * heads * head_size));
-    vtable.push_back(make_pair("CR", head_size * kv_heads));
-    vtable.push_back(make_pair("3CR", 3 * kv_heads * head_size));
+    vtable.push_back(make_pair("3C", 3 * heads * head_size / prefill_iters));
+    vtable.push_back(make_pair("4C", 4 * heads * head_size / prefill_iters));
+    vtable.push_back(make_pair("BTC", T * heads * head_size / prefill_iters));
+    vtable.push_back(
+        make_pair("2BTC", 2 * T * heads * head_size / prefill_iters));
+    vtable.push_back(
+        make_pair("3BTC", 3 * T * heads * head_size / prefill_iters));
+    vtable.push_back(
+        make_pair("4BTC", 4 * T * heads * head_size / prefill_iters));
+    vtable.push_back(
+        make_pair("3C-R", heads * head_size * (2 + heads / kv_heads) /
+                              (heads / kv_heads)));
+    vtable.push_back(make_pair("CHUNK", prefill_iters));
 }

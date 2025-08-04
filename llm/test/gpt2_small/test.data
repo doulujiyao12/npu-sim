@@ -1,24 +1,6 @@
-gpt2_small/original.json 16 0 64 64 1024 64 8388608
-gpt2_small/original.json 16 0 64 64 1024 128 8388608
-gpt2_small/original.json 16 0 64 64 1024 256 8388608
-gpt2_small/original.json 16 0 64 64 1024 512 8388608
-gpt2_small/original.json 16 0 96 96 1536 64 8388608
-gpt2_small/original.json 16 0 96 96 1536 128 8388608
-gpt2_small/original.json 16 0 96 96 1536 256 8388608
-gpt2_small/original.json 16 0 96 96 1536 512 8388608
-gpt2_small/original.json 16 0 128 128 2048 64 8388608
-gpt2_small/original.json 16 0 128 128 2048 128 8388608
-gpt2_small/original.json 16 0 128 128 2048 256 8388608
-gpt2_small/original.json 16 0 128 128 2048 512 8388608
-gpt2_small/original.json 16 0 192 192 3072 64 8388608
-gpt2_small/original.json 16 0 192 192 3072 128 8388608
-gpt2_small/original.json 16 0 192 192 3072 256 8388608
-gpt2_small/original.json 16 0 192 192 3072 512 8388608
-gpt2_small/original.json 16 0 256 256 4096 64 8388608
-gpt2_small/original.json 16 0 256 256 4096 128 8388608
-gpt2_small/original.json 16 0 256 256 4096 256 8388608
-gpt2_small/original.json 16 0 256 256 4096 512 8388608
-gpt2_small/original.json 16 0 512 512 8192 64 8388608
-gpt2_small/original.json 16 0 512 512 8192 128 8388608
-gpt2_small/original.json 16 0 512 512 8192 256 8388608
-gpt2_small/original.json 16 0 512 512 8192 512 8388608
+gpt2_small/pd_fuse_12*1.json core_configs/core_8x8_2M.json
+gpt2_medium/pd_fuse_24*1.json core_configs/core_8x8_2M.json
+llama3.1_0.9B/pd_fuse_32*1.json core_configs/core_8x8_2M.json
+llama3.2_0.5B/pd_fuse_16*1.json core_configs/core_8x8_2M.json
+qwen2.5_0.5B/pd_fuse_24*1.json core_configs/core_8x8_2M.json
+qwen3_0.6B/pd_fuse_28*1.json core_configs/core_8x8_2M.json

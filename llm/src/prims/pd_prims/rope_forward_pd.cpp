@@ -69,7 +69,7 @@ int rope_forward_pd::task_core(TaskCoreContext &context) {
             size = data_byte * B * C * stage.token_num;
             break;
         case JOB_DECODE:
-            size = data_byte * B * C * 1;
+            size = data_byte * B * C * 1 * chunk;
             break;
         default:
             assert(false && "Unsupported job type");
@@ -147,6 +147,7 @@ sc_bv<128> rope_forward_pd::serialize() {
     d.range(103, 88) = sc_bv<16>(NH);
     d.range(107, 104) = sc_bv<4>(job_type);
     d.range(111, 108) = sc_bv<4>(R);
+    d.range(115, 112) = sc_bv<4>(chunk);
     return d;
 }
 
@@ -159,6 +160,7 @@ void rope_forward_pd::deserialize(sc_bv<128> buffer) {
     NH = buffer.range(103, 88).to_uint();
     job_type = PD_JOB(buffer.range(107, 104).to_uint());
     R = buffer.range(111, 108).to_uint();
+    chunk = buffer.range(115, 112).to_uint();
 
     initialize();
 }
@@ -169,6 +171,7 @@ void rope_forward_pd::parse_json(json j) {
     C = find_var(j["C"]);
     NH = find_var(j["NH"]);
     R = find_var(j["R"]);
+    chunk = find_var(j["chunk"]);
 
     auto job_str = j["job_type"];
     if (job_str == "prefill")

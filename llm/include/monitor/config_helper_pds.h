@@ -39,6 +39,7 @@ public:
     int batch_size;
     int head_size;
     int kv_heads;
+    int prefill_iters;
 
     config_helper_pds(string filename, string font_ttf, sc_event *ev_sig,
                       int config_chip_id = 0);

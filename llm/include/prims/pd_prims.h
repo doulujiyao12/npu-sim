@@ -6,6 +6,7 @@ public:
     int NH, DH, R;
     int w_offset, b_offset;
     PD_JOB job_type;
+    int chunk;
 
     int task();
     int task_core(TaskCoreContext &context);
@@ -52,6 +53,7 @@ public:
     int R;
     int sc_offset;
     PD_JOB job_type;
+    int chunk;
 
     int task();
     int task_core(TaskCoreContext &context);

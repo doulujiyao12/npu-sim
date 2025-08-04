@@ -47,6 +47,7 @@
                   "T": "T",
                   "C": "C",
                   "OC": "3C",
+                  "chunk": "CHUNK",
                   "job_type": "prefill",
                   "sram_address": {
                     "indata": "layernorm1_out",
@@ -60,7 +61,7 @@
                   "type": "Attention_f_pd",
                   "B": "B",
                   "T": "T",
-                  "C": "3C",
+                  "C": "C",
                   "NH": "NH",
                   "R": "R",
                   "DH": "DH",

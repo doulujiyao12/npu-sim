@@ -18,7 +18,7 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
     vector<int> data_size_input = {B * T * C};
     int data_size_weight = OC * C;
     int data_size_bias = OC;
-    int data_size_out = B * T * OC;
+    int data_size_out = B * T * OC / 3;
 
     // dram地址
     u_int64_t dram_addr_tile = 0; //cid * dataset_words_per_tile;
@@ -66,7 +66,7 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
             size = data_byte * B * OC * stage.token_num / 3;
             break;
         case JOB_DECODE:
-            size = data_byte * B * OC * 1 / 3;
+            size = data_byte * B * OC * 1 / 3 * chunk;
             break;
         default:
             assert(false && "Unsupported job type");
@@ -210,6 +210,7 @@ void matmul_forward_pd::parse_json(json j) {
     T = find_var(j["T"]);
     C = find_var(j["C"]);
     OC = find_var(j["OC"]);
+    chunk = find_var(j["chunk"]);
 
     auto job_str = j["job_type"];
     if (job_str == "prefill")
@@ -251,7 +252,8 @@ void matmul_forward_pd::deserialize(sc_bv<128> buffer) {
     inp_offset *= 1024;
     out_offset = buffer.range(39, 24).to_uint64();
     out_offset *= 1024;
-    B = buffer.range(47, 40).to_uint64();
+    B = buffer.range(43, 40).to_uint64();
+    chunk = buffer.range(47, 44).to_uint64();
     T = buffer.range(63, 48).to_uint64();
     C = buffer.range(79, 64).to_uint64();
     OC = buffer.range(95, 80).to_uint64();
@@ -270,7 +272,8 @@ sc_bv<128> matmul_forward_pd::serialize() {
     d.range(7, 0) = sc_bv<8>(MATMUL_FORWARD_PD_TYPE);
     d.range(23, 8) = sc_bv<16>(inp_offset);
     d.range(39, 24) = sc_bv<16>(out_offset);
-    d.range(47, 40) = sc_bv<8>(B);
+    d.range(43, 40) = sc_bv<4>(B);
+    d.range(47, 44) = sc_bv<4>(chunk);
     d.range(63, 48) = sc_bv<16>(T);
     d.range(79, 64) = sc_bv<16>(C);
     d.range(95, 80) = sc_bv<16>(OC);
