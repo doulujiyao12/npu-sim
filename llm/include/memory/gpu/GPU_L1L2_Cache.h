@@ -314,6 +314,8 @@ public:
             sc_time l2Delay = SC_ZERO_TIME;
 
             cpu_socket->nb_transport_bw(payload, l2Phase, l2Delay);
+        }else{
+            assert(false);
         }
     }
     void writebackHandler() {
@@ -388,6 +390,8 @@ public:
                                          trans->get_data_length(), trans);
                         requestQueue.push(req);
                         newRequest.notify();
+                    }else{
+                        assert(false);
                     }
                     // wait(CYCLE, SC_NS); // 定期检查
                 }
@@ -585,6 +589,8 @@ public:
                                 sc_core::sc_time(CYCLE, sc_core::SC_NS);
                             payloadEventQueue.notify(trans, phase, bwDelay);
                             return TLM_ACCEPTED;
+                        }else{
+                            assert(false);
                         }
                     }
                 }
@@ -593,7 +599,7 @@ public:
                     // 未命中，放入MSHR
                     int mshrIndex = findFreeMSHR();
 #if GPU_CACHE_DEBUG == 1
-                    cout << "L1Cache [" << cacheId << "]: READ MISS."
+                    cout << "L1Cache [" << cacheId << "]: WRITE MISS."
                          << " Time stamp: " << sc_time_stamp()
                          << " Address: " << addr << endl;
 #endif
@@ -616,6 +622,8 @@ public:
                         return TLM_COMPLETED;
                     }
                 }
+            }else{
+                assert(false);
             }
         } else if (phase == END_RESP) {
             // 处理结束响应
@@ -787,6 +795,8 @@ public:
                     tlm_phase cpuPhase = BEGIN_RESP;
                     sc_time cpuDelay = SC_ZERO_TIME;
                     cpu_socket->nb_transport_bw(*origTrans, cpuPhase, cpuDelay);
+                }else{
+                    assert(false);
                 }
             }
         } else if (phase == END_RESP && op_ext->op == WbL1Op::MSHR_L1) {
@@ -923,6 +933,8 @@ public:
                     tlm_phase cpuPhase = END_RESP;
                     sc_time cpuDelay = SC_ZERO_TIME;
                     cpu_socket->nb_transport_bw(*origTrans, cpuPhase, cpuDelay);
+                }else{
+                    assert(false);
                 }
             }
             return TLM_UPDATED;
@@ -935,6 +947,8 @@ public:
 
 
             // DAHU 释放L1 WB
+        }else{
+            assert(false);
         }
 
         return TLM_ACCEPTED;
@@ -952,9 +966,13 @@ public:
                     // 发起写回请求
                     // 简化实现...
                     line.state = INVALID;
+                    line.valid = false;
                 } else if (line.state == SHARED) {
                     // 如果是S状态，直接无效化
                     line.state = INVALID;
+                    line.valid = false;
+                }else{
+                    assert(false);
                 }
             }
         }
@@ -1101,6 +1119,8 @@ public:
                 // DAHU 可以不需要？
                 // l1_sockets[request.sourceId]->nb_transport_bw(*request.transaction,
                 // phase, delay);
+            }else{
+                assert(false);
             }
         }
     }
@@ -1154,6 +1174,8 @@ public:
 #endif
             l2_socket->nb_transport_fw(trans, phase, delay);
             return TLM_COMPLETED;
+        }else{
+            assert(false);
         }
 
         return TLM_ACCEPTED;
@@ -1228,6 +1250,8 @@ public:
 
             sc_time busDelay = SC_ZERO_TIME;
             (*l1_sockets[targetId])->nb_transport_bw(trans, phase, busDelay);
+        } else{
+            assert(false);
         }
 
         return TLM_ACCEPTED;
@@ -1340,6 +1364,8 @@ public:
             sc_time l2Delay = SC_ZERO_TIME;
 
             bus_socket->nb_transport_bw(payload, l2Phase, l2Delay);
+        }else{
+            assert(false);
         }
     }
     void peqCallback_L2WB(tlm::tlm_generic_payload &payload,
@@ -1459,6 +1485,8 @@ public:
                                          trans->get_data_length(), trans);
                         requestQueue.push(req);
                         newRequest.notify();
+                    }else{
+                        assert(false);
                     }
                 }
             }
@@ -1775,6 +1803,8 @@ public:
                         return TLM_COMPLETED;
                     }
                 }
+            }else{
+                assert(false);
             }
 
             requestMutex.unlock();
@@ -2111,6 +2141,8 @@ public:
 
                     mshrEntries[mshrIndex].isPending = false;
 
+                }else{
+                    assert(false);
                 }
             }
 
@@ -2216,6 +2248,8 @@ public:
             return TLM_UPDATED;
         } else if (phase == END_RESP) {
             return TLM_COMPLETED;
+        }else{
+            assert(false);
         }
 
         return TLM_ACCEPTED;

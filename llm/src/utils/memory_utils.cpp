@@ -1399,7 +1399,7 @@ void gpu_read_generic(TaskCoreContext &context, uint64_t global_addr,
 
 
     sc_time start_first_write_time = sc_time_stamp();
-#if GPU_TMP_DEBUG == 1
+#if GPU_CACHE_DEBUG == 1
 
     cout << "read cache_count: " << cache_count << "cache_lines " << cache_lines
          << endl;
@@ -1417,7 +1417,7 @@ void gpu_read_generic(TaskCoreContext &context, uint64_t global_addr,
     context.event_engine->add_event("Core " + toHexString(context.cid),
                                     "read_gpu", "E",
                                     Trace_event_util("read_gpu"));
-#if GPU_TMP_DEBUG == 1
+#if GPU_CACHE_DEBUG == 1
 
     cout << "end gpu_nbdram: " << sc_time_stamp().to_string() << " id "
          << gpunb_dcache_if->id << endl;
