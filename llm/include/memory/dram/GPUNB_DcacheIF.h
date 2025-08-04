@@ -216,6 +216,9 @@ private:
             if (total_requests > 0) {
                 transactionsSent = total_requests; // Set transactionsSent to total_requests
                 while (current_request < total_requests) {
+                    // cout << "GPUNB_dcacheIF[" << id
+                    //      << "] Start event notify" << "current_request= " << current_request << " total_requests= " << total_requests 
+                    //      << "read_or_write " << read_or_write << endl;
 
                     Request request;
                     request.address =
