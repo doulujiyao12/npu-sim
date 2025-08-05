@@ -21,7 +21,7 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
     int data_size_out = B * T * OC / 3;
 
     // dram地址
-    u_int64_t dram_addr_tile = 0; //cid * dataset_words_per_tile;
+    u_int64_t dram_addr_tile = 0; // cid * dataset_words_per_tile;
     u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
     u_int64_t weight_global_addr = dram_addr_tile + w_offset * data_byte;
@@ -58,7 +58,9 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
 
     // 写入kvcache，根据batchInfo确定
     for (auto stage : batchInfo) {
-        cout << "[Matmul_pd] Core" << cid << " stage_type: " << stage.type << " token_num: " << stage.token_num << " req_id: " << stage.req_id << endl;
+        cout << "[Matmul_pd] Core" << cid << " stage_type: " << stage.type
+             << " token_num: " << stage.token_num << " req_id: " << stage.req_id
+             << endl;
         int size = 0;
         switch (job_type) {
         case JOB_PREFILL:
@@ -88,7 +90,8 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
              << endl;
 
 #if USE_SRAM_MANAGER == 1
-        sram_update_cache(context, label_k, sram_pos_locator, size, dram_time, cid);
+        sram_update_cache(context, label_k, sram_pos_locator, size, dram_time,
+                          cid);
 #else
         sram_write_append_generic(context, size, dram_time);
         sram_pos_locator->updatePair(label_k, size, context, dram_time);
@@ -98,7 +101,8 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
              << endl;
 
 #if USE_SRAM_MANAGER == 1
-        sram_update_cache(context, label_v, sram_pos_locator, size, dram_time,cid);
+        sram_update_cache(context, label_v, sram_pos_locator, size, dram_time,
+                          cid);
 #else
         sram_write_append_generic(context, size, dram_time);
         sram_pos_locator->updatePair(label_v, size, context, dram_time);
@@ -126,28 +130,33 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
 
     ExuConfig *exu = get_exu_config(context.cid);
 
-    int weight_tile_x = (C + exu->x_dims - 1) / exu->x_dims;   
+    int weight_tile_x = (C + exu->x_dims - 1) / exu->x_dims;
     int weight_tile_y = (OC + exu->y_dims - 1) / exu->y_dims;
 
     int padding_input_x = (T * B) > exu->x_dims ? T * B : exu->x_dims;
 
-    int performance_cycle = (exu->x_dims + exu->x_dims + padding_input_x) * weight_tile_x * weight_tile_y;
+    int performance_cycle = (exu->x_dims + exu->x_dims + padding_input_x) *
+                            weight_tile_x * weight_tile_y;
 
-    int performance_comp = performance_cycle * exu->y_dims * exu->x_dims * comp_util;
-    LOG_VERBOSE(1, context.cid,"Prim name:" << name << " performance_cycle " << performance_cycle);
+    int performance_comp =
+        performance_cycle * exu->y_dims * exu->x_dims * comp_util;
+    LOG_VERBOSE(1, context.cid,
+                "Prim name:" << name << " performance_cycle "
+                             << performance_cycle);
 
-    int loop_input_count = weight_tile_y - 1; // read loop_input_count Repetitive input 
+    int loop_input_count =
+        weight_tile_y - 1; // read loop_input_count Repetitive input
 
-    for (int loop = 0; loop < loop_input_count; loop++){
+    for (int loop = 0; loop < loop_input_count; loop++) {
         for (int p = 0; p < data_size_input.size(); p++) {
             if (datapass_label.indata[p].find(DRAM_LABEL) == 0) {
 
-                perf_read_data(context, dram_time, data_size_input[p], datapass_label.indata[p]);
+                perf_read_data(context, dram_time, data_size_input[p],
+                               datapass_label.indata[p]);
             }
         }
     }
 
-    
 
     write_output_data(context, performance_comp, 0, dram_time, overlap_time,
                       data_size_out / 3, out_global_addr);
@@ -155,32 +164,32 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
 #else
     // // 计算overlap并写回output数据
     // // cout << "matmul output data size: " << data_size_out << endl;
-    // write_output_data(context, B * T * C * OC * 2, 0, dram_time, overlap_time,
+    // write_output_data(context, B * T * C * OC * 2, 0, dram_time,
+    // overlap_time,
     //                   data_size_out / 3, out_global_addr);
 
     switch (job_type) {
 
-        case JOB_PREFILL:
-        case JOB_DECODE:
-            write_output_data(context, B * T * C * OC * 2, 0, dram_time, overlap_time,
-                      data_size_out / 3, out_global_addr);
-            break;
-        case JOB_BOTH:
-            write_output_data(context, B * T * C * OC * 2, 0, dram_time, overlap_time,
-                      data_size_out / 3, out_global_addr);
-            break;
-        default:
-            assert(false && "Unsupported job type");
+    case JOB_PREFILL:
+    case JOB_DECODE:
+        write_output_data(context, B * T * C * OC * 2, 0, dram_time,
+                          overlap_time, data_size_out / 3, out_global_addr);
+        break;
+    case JOB_BOTH:
+        write_output_data(context, B * T * C * OC * 2, 0, dram_time,
+                          overlap_time, data_size_out / 3, out_global_addr);
+        break;
+    default:
+        assert(false && "Unsupported job type");
     }
 
 
-#endif 
+#endif
 
-
-    
 
     // // 计算overlap并写回output数据
-    // write_output_data(context, B * T * C * OC * 2, 0, dram_time, overlap_time,
+    // write_output_data(context, B * T * C * OC * 2, 0, dram_time,
+    // overlap_time,
     //                   data_size_out, out_global_addr);
     BETTER_PRINT(overlap_time);
 
@@ -210,7 +219,11 @@ void matmul_forward_pd::parse_json(json j) {
     T = find_var(j["T"]);
     C = find_var(j["C"]);
     OC = find_var(j["OC"]);
-    chunk = find_var(j["chunk"]);
+
+    if (j.contains("chunk"))
+        chunk = find_var(j["chunk"]);
+    else
+        chunk = 1;
 
     auto job_str = j["job_type"];
     if (job_str == "prefill")

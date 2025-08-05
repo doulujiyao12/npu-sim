@@ -233,8 +233,6 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
         }
     }
 
-    cout << "1\n";
-
     end_cores = 0;
     g_recv_ack_cnt = 0;
     g_recv_done_cnt = 0;
@@ -696,7 +694,7 @@ void config_helper_core::parse_done_msg(Event_engine *event_engine,
                             Trace_event_util());
 
     cout << "g_recv_done_cnt " << g_recv_done_cnt << " end " << end_cores
-         << " pipe " << pipeline << endl;
+         << " total pipe " << pipeline << endl;
 
     if (g_recv_done_cnt >= end_cores * pipeline) {
         cout << "Config helper DATAFLOW: all work done, end_core: " << end_cores

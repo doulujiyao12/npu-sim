@@ -56,7 +56,7 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
     // executor->MaxDramAddr =
     //     dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
     executor->MaxDramAddr =
-         dcache->dramSysWrapper->dramsys->getMemSpec().memorySizeBytes;
+        dcache->dramSysWrapper->dramsys->getMemSpec().memorySizeBytes;
     executor->defaultDataLength =
         dcache->dramSysWrapper->dramsys->getMemSpec().defaultBytesPerBurst;
     assert(dataset_words_per_tile <
@@ -342,7 +342,9 @@ void WorkerCoreExecutor::worker_core_execute() {
                     typeid(*p) == typeid(Recv_prim)) {
                     Recv_prim *rp = (Recv_prim *)p;
                     if (rp->type == RECV_START) {
+#if PIPELINE_MODE == 0
                         rp->type = RECV_DATA;
+#endif
                     }
                 }
 
@@ -584,7 +586,8 @@ void WorkerCoreExecutor::send_logic() {
 
         cout << "[SEND] Core " << cid << ": running send "
              << send_prim_type_to_string(prim->type) << ", destination "
-             << prim->des_id << ", tag " << prim->tag_id << ", max packet " << prim->max_packet << endl;
+             << prim->des_id << ", tag " << prim->tag_id << ", max packet "
+             << prim->max_packet << endl;
 
         while (true) {
             if (atomic_helper_lock(sc_time_stamp(), 0))

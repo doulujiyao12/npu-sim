@@ -201,6 +201,9 @@
 #define PD_RATIO 2
 #define CORE_CREDIT 5
 
+// 是否开启数据流模式中的流水线并行（此时循环PD将不能使用）
+#define PIPELINE_MODE 0
+
 // 函数宏
 #define ceil_macro(x) ((x) - (int)(x) > 0.1 ? (int)(x) + 1 : (int)(x))
 
