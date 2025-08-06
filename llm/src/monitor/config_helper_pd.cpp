@@ -26,6 +26,10 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
     model_stage = config_model["stage"];
     batch_size = config_model["batch"];
     kv_heads = config_model["kv_heads"];
+    if (config_model.contains("prefill_iters"))
+        prefill_iters = config_model["prefill_iters"];
+    else
+        prefill_iters = 4;
 
     attend_cores = GRID_SIZE / model_stage * model_stage;
     for (int i = 0; i < attend_cores; i++) {
@@ -54,13 +58,18 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
     for (int i = 0; i < req_cnt; i++) {
         RequestRecord record =
             RequestRecord(i, config_reqs["seq_len"], heads, arrival_time[i]);
+        record.prefill_iters = prefill_iters;
         requestRecords.push_back(record);
     }
 
     for (int i = 0; i < attend_cores / model_stage; i++) {
-        queue<int> p, q;
+        queue<int> p;
         idle_decode.push_back(p);
-        unfinished_prefill.push_back(q);
+    }
+
+    for (int i = 0; i < attend_cores; i++) {
+        queue<int> p;
+        unfinished_prefill.push_back(p);
     }
 
     // 建立原语模板
@@ -221,8 +230,7 @@ void config_helper_pd::iter_start() {
 
             bool new_reqs = true;
             queue<int> &decode_waiting_list = idle_decode[id / model_stage];
-            queue<int> &prefill_waiting_list =
-                unfinished_prefill[id / model_stage];
+            queue<int> &prefill_waiting_list = unfinished_prefill[id];
             cout << "[PD SCHEDULE] Core " << id << " credit: " << credit
                  << endl;
 
@@ -258,7 +266,7 @@ void config_helper_pd::iter_start() {
                 else if (CORE_CREDIT - credit >= PD_RATIO && new_reqs) {
                     // 统计现在可以被指派的请求个数
                     new_reqs = false;
-                    
+
                     for (auto &req : requestRecords) {
                         sc_core::sc_time arv_time(req.arrival_time,
                                                   sc_core::SC_NS);
@@ -269,7 +277,7 @@ void config_helper_pd::iter_start() {
                                 Stage(req.id, PREFILL,
                                       req.seq_len / req.prefill_iters));
                             req.phase = PREFILL;
-                            
+
                             if (++req.prefill_distribute < req.prefill_iters)
                                 prefill_waiting_list.push(req.id);
                             cout << "[PD SCHEDULE] Core " << id
@@ -538,16 +546,19 @@ void config_helper_pd::set_global_vars(int T) {
     vtable.clear();
     vtable.push_back(make_pair("B", 1));
     vtable.push_back(make_pair("T", T));
-    vtable.push_back(make_pair("C", heads * head_size));
-    vtable.push_back(make_pair("NH", heads));
+    vtable.push_back(make_pair("C", heads * head_size / prefill_iters));
+    vtable.push_back(make_pair("NH", heads / prefill_iters));
     vtable.push_back(make_pair("DH", head_size));
     vtable.push_back(make_pair("R", heads / kv_heads));
-    vtable.push_back(make_pair("3C", 3 * heads * head_size));
-    vtable.push_back(make_pair("4C", 4 * heads * head_size));
-    vtable.push_back(make_pair("BTC", T * heads * head_size));
-    vtable.push_back(make_pair("2BTC", 2 * T * heads * head_size));
-    vtable.push_back(make_pair("3BTC", 3 * T * heads * head_size));
-    vtable.push_back(make_pair("4BTC", 4 * T * heads * head_size));
-    vtable.push_back(make_pair("CR", head_size * kv_heads));
-    vtable.push_back(make_pair("3CR", 3 * kv_heads * head_size));
+    vtable.push_back(make_pair("3C", 3 * heads * head_size / prefill_iters));
+    vtable.push_back(make_pair("4C", 4 * heads * head_size / prefill_iters));
+    vtable.push_back(make_pair("BTC", T * heads * head_size / prefill_iters));
+    vtable.push_back(
+        make_pair("2BTC", 2 * T * heads * head_size / prefill_iters));
+    vtable.push_back(
+        make_pair("3BTC", 3 * T * heads * head_size / prefill_iters));
+    vtable.push_back(
+        make_pair("4BTC", 4 * T * heads * head_size / prefill_iters));
+    vtable.push_back(make_pair("3C-R", heads * head_size * (2 + heads / kv_heads) / (heads / kv_heads)));
+    vtable.push_back(make_pair("CHUNK", prefill_iters));
 }

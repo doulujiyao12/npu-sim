@@ -233,8 +233,6 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
         }
     }
 
-    cout << "1\n";
-
     end_cores = 0;
     g_recv_ack_cnt = 0;
     g_recv_done_cnt = 0;
@@ -557,12 +555,14 @@ void config_helper_core::calculate_address(bool do_loop) {
                         slice_size_in_bit - (pkg_nums - 1) * M_D_DATA;
 
                     // max pkg nums
-                    temp->max_packet = pkg_nums;
+                    temp->max_packet = pkg_nums % CORE_COMM_PAYLOAD
+                                           ? pkg_nums / CORE_COMM_PAYLOAD + 1
+                                           : pkg_nums / CORE_COMM_PAYLOAD;
                     if (pkg_nums == 0) {
-                        cout << "weight " << weight << " slice size " << slice_size
-                             << " slice size in bit " << slice_size_in_bit
-                             << " pkg nums " << pkg_nums << " end length "
-                             << end_length << endl;
+                        cout << "weight " << weight << " slice size "
+                             << slice_size << " slice size in bit "
+                             << slice_size_in_bit << " pkg nums " << pkg_nums
+                             << " end length " << end_length << endl;
                     }
                     temp->output_label = output_label_split.size() == 1
                                              ? output_label_split[0]
@@ -694,7 +694,7 @@ void config_helper_core::parse_done_msg(Event_engine *event_engine,
                             Trace_event_util());
 
     cout << "g_recv_done_cnt " << g_recv_done_cnt << " end " << end_cores
-         << " pipe " << pipeline << endl;
+         << " total pipe " << pipeline << endl;
 
     if (g_recv_done_cnt >= end_cores * pipeline) {
         cout << "Config helper DATAFLOW: all work done, end_core: " << end_cores

@@ -1,6 +1,6 @@
 {
     "x": 8,
-    "sram_size": 2097152,
+    "sram_size": 1048576,
     "cores": [
         {
             "id": 0,

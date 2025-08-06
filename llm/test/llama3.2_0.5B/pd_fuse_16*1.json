@@ -13,7 +13,8 @@
     "stage": 16,
     "batch": 2,
     "kv_heads": 8,
-    "head_size": 64
+    "head_size": 64,
+    "prefill_iters": 4
   },
   "chips": [
     {
@@ -60,6 +61,7 @@
                   "C": "3C-R",
                   "R": "R",
                   "NH": "NH",
+                  "chunk": "CHUNK",
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "rope1_out"

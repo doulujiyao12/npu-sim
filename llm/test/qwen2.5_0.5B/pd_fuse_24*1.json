@@ -13,7 +13,8 @@
     "head_size": 64,
     "eof_chance": 0.1,
     "stage": 4,
-    "batch": 2
+    "batch": 2,
+    "prefill_iters": 4
   },
   "chips": [
     {
@@ -44,7 +45,7 @@
                   "B": "B",
                   "T": "T",
                   "C": "C",
-                  "OC": "3CR",
+                  "OC": "3C-R",
                   "sram_address": {
                     "indata": "rmsnorm1_out",
                     "outdata": "matmul1_out"
@@ -57,9 +58,10 @@
                   "type": "rope_forward_pd",
                   "B": "B",
                   "T": "T",
-                  "C": "3CR",
+                  "C": "3C-R",
                   "NH": "NH",
                   "R": "R",
+                  "chunk": "CHUNK",
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "rope1_out"

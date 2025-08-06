@@ -33,6 +33,7 @@ public:
     int req_id;
     PD_PHASE type;
     int token_num;
+    int total_iter; // 用于prefill
 
     Stage() {}
     Stage(int id, PD_PHASE type, int token) : req_id(id), type(type), token_num(token) {}

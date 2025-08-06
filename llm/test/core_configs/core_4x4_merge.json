@@ -1,13 +1,13 @@
 {
-    "x": 8,
-    "sram_size": 2097152,
+    "x": 4,
+    "sram_size": 67108864,
     "cores": [
         {
             "id": 0,
             "exu_x": 128,
             "exu_y": 128,
             "sfu_x": 2048,
-            "sram_bitwidth": 128
+            "sram_bitwidth": 256
         }
     ]
 }

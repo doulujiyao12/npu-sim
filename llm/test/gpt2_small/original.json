@@ -4,7 +4,9 @@
     "T": 128,
     "C": 768,
     "NH": 12,
+    "DH": 64,
     "L": 12,
+    "loop": 1,
     "3C": 2304,
     "4C": 3072,
     "BTC": 98304,
@@ -29,7 +31,7 @@
     "residual2_out": 7220,
     "TODO": 110
   },
-  "pipeline": 1,
+  "pipeline": 10,
   "source": [
     {
       "dest": 0,
@@ -41,6 +43,7 @@
       "chip_id": 0,
       "cores": [
         {
+          "loop": "loop",
           "id": 0,
           "cast": [
             {
@@ -64,7 +67,7 @@
               }
             },
             {
-              "type": "Matmul_f",
+              "type": "Matmul_f_pd",
               "use_hw": false,
               "B": "B",
               "T": "T",
@@ -79,11 +82,12 @@
               }
             },
             {
-              "type": "Attention_f",
+              "type": "Attention_f_pd",
               "B": "B",
               "T": "T",
-              "C": "3C",
+              "C": "C",
               "NH": "NH",
+              "DH": "DH",
               "R": "R",
               "sram_address": {
                 "indata": "matmul1_out",
@@ -189,6 +193,7 @@
           ]
         },
         {
+          "loop": "loop",
           "id": 1,
           "cast": [
             {
@@ -200,6 +205,7 @@
           "prim_copy": 0
         },
         {
+          "loop": "loop",
           "id": 2,
           "cast": [
             {
@@ -211,6 +217,7 @@
           "prim_copy": 0
         },
         {
+          "loop": "loop",
           "id": 3,
           "cast": [
             {
@@ -222,6 +229,7 @@
           "prim_copy": 0
         },
         {
+          "loop": "loop",
           "id": 4,
           "cast": [
             {
@@ -233,6 +241,7 @@
           "prim_copy": 0
         },
         {
+          "loop": "loop",
           "id": 5,
           "cast": [
             {
@@ -244,6 +253,7 @@
           "prim_copy": 0
         },
         {
+          "loop": "loop",
           "id": 6,
           "cast": [
             {
@@ -255,6 +265,7 @@
           "prim_copy": 0
         },
         {
+          "loop": "loop",
           "id": 7,
           "cast": [
             {
@@ -266,6 +277,7 @@
           "prim_copy": 0
         },
         {
+          "loop": "loop",
           "id": 8,
           "cast": [
             {
@@ -277,6 +289,7 @@
           "prim_copy": 0
         },
         {
+          "loop": "loop",
           "id": 9,
           "cast": [
             {
@@ -288,6 +301,7 @@
           "prim_copy": 0
         },
         {
+          "loop": "loop",
           "id": 10,
           "cast": [
             {
@@ -299,10 +313,16 @@
           "prim_copy": 0
         },
         {
+          "loop": "loop",
           "id": 11,
           "cast": [
             {
-              "dest": -1
+              "dest": -1,
+              "loopout": "true"
+            },
+            {
+              "dest": 0,
+              "loopout": "false"
             }
           ],
           "recv_cnt": 1,
