@@ -6,6 +6,7 @@
 #include "memory/gpu/GPU_L1L2_Cache.h"
 #include "utils/file_utils.h"
 #include "utils/system_utils.h"
+#include "defs/global.h"
 
 
 #include "systemc.h"

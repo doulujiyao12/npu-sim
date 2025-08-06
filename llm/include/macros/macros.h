@@ -113,12 +113,12 @@
 #endif
 
 #ifndef L1CACHESIZE
-#define L1CACHESIZE 8388608
+#define L1CACHESIZE 4194304
 #endif
 
 
 #ifndef L2CACHESIZE
-#define L2CACHESIZE 301989888
+#define L2CACHESIZE 15099494
 #endif
 
 #ifndef ENABLE_COLORS
@@ -137,7 +137,7 @@
 
 
 #ifndef MSHRHIT
-#define MSHRHIT 1
+#define MSHRHIT 2
 #endif
 
 // 数据包占位

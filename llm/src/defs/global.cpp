@@ -58,6 +58,11 @@ bool use_node;
 bool use_DramSys;
 bool gpu_inner;
 float comp_util;
+bool gpu_clog;
+int gpu_bw;
+// int DRAM_BURST_BYTE;
+// int L1CACHELINESIZE;
+// int L2CACHELINESIZE;
 
 // 网络拓扑大小
 int GRID_X;

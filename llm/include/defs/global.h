@@ -81,7 +81,11 @@ extern bool use_node;
 extern bool use_DramSys;
 extern bool gpu_inner;
 extern float comp_util;
-
+extern bool gpu_clog;
+extern int gpu_bw;
+// extern int DRAM_BURST_BYTE;
+// extern int L1CACHELINESIZE;
+// extern int L2CACHELINESIZE;
 #define RESET "\x1B[0m"  // 重置颜色
 #define RED "\x1B[1;31m"   // 红色
 #define GREEN "\x1B[1;32m" // 绿色
