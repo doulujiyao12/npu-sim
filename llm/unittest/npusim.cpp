@@ -40,6 +40,8 @@ Define_bool_opt("--gpu_cachelog", g_gpu_clog, false,
                     "whether log gpu cache"); // 3145728
 Define_int64_opt("--gpu_dram_bw", g_gpu_bw, 512,
                         "GPU bandwidth"); // 3145728
+Define_int64_opt("--df_dram_bw", g_dram_bw, 8,
+                        "Dataflow per core bandwidth"); // 3145728
 Define_int64_opt("--dram_burst_byte", g_dram_burst_byte, 2048,
                     "gpu dram burst byte");                        
 Define_bool_opt("--gpu_inner", g_inner, false,
@@ -48,6 +50,8 @@ Define_int64_opt("--dram_aligned", g_dram_aligned, 64,
                     "gpu dram aligned");
 Define_string_opt("--gpu_dram_config", g_gpu_dram_config, "../DRAMSys/configs/hbm3-example.json",
                     "gpu dram config");
+Define_bool_opt("--use_gpu", g_use_gpu, false,
+                    "w/o use gpu mode");
 
 Define_int64_opt("--verbose-level", g_verbose_level, 1,
                  "verbose-level"); // 3145728
@@ -76,6 +80,53 @@ void delete_core_log_files() {
         std::cerr << "Error deleting log files: " << e.what() << std::endl;
     }
 }
+
+
+/**
+ * 修改JSON文件中的nbrOfDevices值
+ * @param inputPath 原JSON文件路径
+ * @param outputPath 新JSON文件路径
+ * @param x 要设置的nbrOfDevices值
+ * @return 成功返回true，失败返回false
+ */
+bool modifyNbrOfDevices(const std::string& inputPath, const std::string& outputPath, int x) {
+    // 读取原始 JSON 文件
+    std::ifstream infile(inputPath);
+    if (!infile.is_open()) {
+        std::cerr << "无法打开输入文件: " << inputPath << std::endl;
+        return false;
+    }
+
+    json j;
+    try {
+        infile >> j;
+    } catch (json::parse_error& e) {
+        std::cerr << "JSON 解析错误: " << e.what() << std::endl;
+        return false;
+    }
+    infile.close();
+
+    // 修改 nbrOfDevices 的值
+    j["memspec"]["memarchitecturespec"]["nbrOfDevices"] = x;
+
+    // 写入新文件
+    std::ofstream outfile(outputPath);
+    if (!outfile.is_open()) {
+        std::cerr << "无法创建输出文件: " << outputPath << std::endl;
+        return false;
+    }
+
+    try {
+        outfile << j.dump(4); // 格式化输出，缩进4个空格
+    } catch (const std::exception& e) {
+        std::cerr << "写入文件时发生错误: " << e.what() << std::endl;
+        return false;
+    }
+    
+    outfile.close();
+    return true;
+}
+
 
 
 void generateAddressMapping(int n, const std::string& outputFilename) {
@@ -109,6 +160,58 @@ void generateAddressMapping(int n, const std::string& outputFilename) {
 
     // PSEUDOCHANNEL_BIT (1 bit)
     addressmapping["PSEUDOCHANNEL_BIT"] = std::vector<int>{pseudo_start};
+
+    // ROW_BIT (15 bits)
+    std::vector<int> row_bits;
+    for (int i = 0; i < 15; ++i) {
+        int bit = row_start + i;
+        row_bits.push_back(bit);
+    }
+    addressmapping["ROW_BIT"] = row_bits;
+
+    // 写入文件
+    json root;
+    root["addressmapping"] = addressmapping;
+
+    std::ofstream outFile(outputFilename);
+    if (!outFile.is_open()) {
+        std::cerr << "Error: Cannot write to file " << outputFilename << std::endl;
+        return;
+    }
+    outFile << std::setw(4) << root << std::endl;
+    outFile.close();
+
+    std::cout << "Address mapping with n=" << n << " saved to " << outputFilename << std::endl;
+}
+
+
+void generateDFAddressMapping(int n, const std::string& outputFilename) {
+    // ROW_BIT 占 15 位，从 n+12 开始，最高位是 n+26，必须 <= 34
+    json addressmapping;
+
+    int byte_start = 0;
+    int column_start = n;
+    int bank_start = n + 27;
+    int bankgroup_start = n + 25;
+    int row_start = n + 10;
+
+    // BYTE_BIT
+    std::vector<int> byte_bits;
+    for (int i = 0; i < n; ++i) byte_bits.push_back(i);
+    addressmapping["BYTE_BIT"] = byte_bits;
+
+    // COLUMN_BIT (10 bits)
+    std::vector<int> column_bits;
+    for (int i = 0; i < 10; ++i) column_bits.push_back(column_start + i);
+    addressmapping["COLUMN_BIT"] = column_bits;
+
+    // BANK_BIT (2 bits)
+    std::vector<int> bank_bits = {bank_start, bank_start + 1};
+    addressmapping["BANK_BIT"] = bank_bits;
+
+    // BANKGROUP_BIT (2 bits)
+    std::vector<int> bankgroup_bits = {bankgroup_start, bankgroup_start + 1};
+    addressmapping["BANKGROUP_BIT"] = bankgroup_bits;
 
     // ROW_BIT (15 bits)
     std::vector<int> row_bits;
@@ -334,7 +437,13 @@ int sc_main(int argc, char *argv[]) {
     // L1CACHELINESIZE = g_dram_burst_byte;
     // L2CACHELINESIZE = g_dram_burst_byte;
 
+    gpu_bw = g_gpu_bw;
+    dram_bw = g_dram_bw;
+    use_gpu = g_use_gpu;
 
+    modifyNbrOfDevices("../DRAMSys/configs/memspec/JEDEC_4Gb_DDR4-1866_8bit_A.json", "../DRAMSys/configs/memspec/JEDEC_4Gb_DDR4-1866_8bit_DF.json", dram_bw);
+    int bytecount_df = static_cast<int>(log2(g_dram_bw));
+    generateDFAddressMapping(bytecount_df, "../DRAMSys/configs/addressmapping/am_ddr4_8x4Gbx8_df.json");
 
     if (g_gpu_bw == 512 || g_gpu_bw == 1024 || g_gpu_bw == 256 || g_gpu_bw == 128 || g_gpu_bw == 64 ){
         int numDevices = 32 * g_gpu_bw / 512; // 每个设备 32 个通道

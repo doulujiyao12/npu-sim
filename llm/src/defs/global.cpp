@@ -25,6 +25,7 @@ DramKVTable** g_dram_kvtable;
 int MAX_SRAM_SIZE;
 sc_event kv_event;
 int dram_aligned;
+bool use_gpu;
 
 int CORE_COMM_PAYLOAD = 1; // 一个时钟周期可以一次性发送多少数据包
 
@@ -62,6 +63,7 @@ bool gpu_inner;
 float comp_util;
 bool gpu_clog;
 int gpu_bw;
+int dram_bw;
 // int DRAM_BURST_BYTE;
 // int L1CACHELINESIZE;
 // int L2CACHELINESIZE;
