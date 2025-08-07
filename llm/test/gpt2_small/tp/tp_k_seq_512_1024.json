@@ -6,11 +6,11 @@
         "T/2": 256,
         "T/4": 128,
         "C": 1024,
-        "NH": 16,
-        "DH": 64,
-        "NH/2": 8,
-        "NH/4": 4,
-        "L": 5,
+        "NH": 8,
+        "DH": 128,
+        "NH/2": 4,
+        "NH/4": 2,
+        "L": 20,
         "3C": 3072,
         "4C": 4096,
         "BTC": 524288,
@@ -66,7 +66,8 @@
             "chip_id": 0,
             "cores": [
                 {
-                    "loop": "L","id": 0,
+                    "loop": "L",
+                    "id": 0,
                     "worklist": [
                         {
                             "recv_cnt": 1,
@@ -336,7 +337,7 @@
                                     "T": "T",
                                     "C": "C/4",
                                     "NH": "NH/4",
-"DH": "DH",
+                                    "DH": "DH",
                                     "R": "R",
                                     "sram_address": {
                                         "indata": "switch_out",
@@ -384,7 +385,7 @@
                             "prims": [
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -399,7 +400,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -418,7 +419,7 @@
                             "prims": [
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -433,7 +434,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -452,7 +453,7 @@
                             "prims": [
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -467,7 +468,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -486,7 +487,7 @@
                             "prims": [
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -501,7 +502,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -520,7 +521,7 @@
                             "prims": [
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -535,7 +536,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -554,7 +555,7 @@
                             "prims": [
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -569,7 +570,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -615,7 +616,7 @@
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
-                                    "OC": "4C",
+                                    "OC": "3C",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "matmul3_out"
@@ -626,8 +627,8 @@
                                 },
                                 {
                                     "type": "switch_data",
-                                    "IN": "4BTC",
-                                    "OUT": "BTC",
+                                    "IN": "3BTC",
+                                    "OUT": "3BTC/4",
                                     "sram_address": {
                                         "indata": "matmul3_out",
                                         "outdata": "switch_out"
@@ -646,7 +647,7 @@
                             "prims": [
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -661,7 +662,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -680,7 +681,7 @@
                             "prims": [
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -695,7 +696,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -714,7 +715,7 @@
                             "prims": [
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -729,7 +730,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -748,7 +749,7 @@
                             "prims": [
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -763,7 +764,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -782,7 +783,7 @@
                             "prims": [
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -797,7 +798,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -816,7 +817,7 @@
                             "prims": [
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -831,7 +832,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -839,7 +840,7 @@
                                 },
                                 {
                                     "type": "Gelu_f",
-                                    "N": "BTC",
+                                    "N": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "gelu1_out"
@@ -854,7 +855,7 @@
                                     "use_hw": false,
                                     "B": "B",
                                     "T": "T",
-                                    "C": "C",
+                                    "C": "3C/4",
                                     "OC": "C",
                                     "sram_address": {
                                         "indata": "gelu1_out",
@@ -1100,7 +1101,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 1,
+                    "loop": "L",
+                    "id": 1,
                     "worklist": [
                         {
                             "recv_cnt": 1,
@@ -1340,7 +1342,7 @@
                                     "T": "T",
                                     "C": "C/4",
                                     "NH": "NH/4",
-"DH": "DH",
+                                    "DH": "DH",
                                     "R": "R",
                                     "sram_address": {
                                         "indata": "switch_out",
@@ -1389,7 +1391,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1397,7 +1399,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1417,7 +1419,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1425,7 +1427,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1445,7 +1447,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1453,7 +1455,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1473,7 +1475,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1481,7 +1483,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1501,7 +1503,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1509,7 +1511,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1529,7 +1531,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1537,7 +1539,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1589,7 +1591,7 @@
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
-                                    "OC": "4C",
+                                    "OC": "3C",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "matmul3_out"
@@ -1600,8 +1602,8 @@
                                 },
                                 {
                                     "type": "switch_data",
-                                    "IN": "4BTC",
-                                    "OUT": "BTC",
+                                    "IN": "3BTC",
+                                    "OUT": "3BTC/4",
                                     "sram_address": {
                                         "indata": "matmul3_out",
                                         "outdata": "switch_out"
@@ -1621,7 +1623,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1629,7 +1631,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1649,7 +1651,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1657,7 +1659,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1677,7 +1679,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1685,7 +1687,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1705,7 +1707,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1713,7 +1715,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1733,7 +1735,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1741,7 +1743,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1761,7 +1763,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1769,7 +1771,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1783,7 +1785,7 @@
                             "prims": [
                                 {
                                     "type": "Gelu_f",
-                                    "N": "BTC",
+                                    "N": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "gelu1_out"
@@ -1798,7 +1800,7 @@
                                     "use_hw": false,
                                     "B": "B",
                                     "T": "T",
-                                    "C": "C",
+                                    "C": "3C/4",
                                     "OC": "C",
                                     "sram_address": {
                                         "indata": "gelu1_out",
@@ -1831,7 +1833,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1839,7 +1841,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1859,7 +1861,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1867,7 +1869,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1887,7 +1889,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1895,7 +1897,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1915,7 +1917,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1923,7 +1925,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1943,7 +1945,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1951,7 +1953,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1971,7 +1973,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -1979,7 +1981,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -2008,7 +2010,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 3,
+                    "loop": "L",
+                    "id": 3,
                     "worklist": [
                         {
                             "recv_cnt": 1,
@@ -2108,40 +2111,6 @@
                             "recv_cnt": 0,
                             "cast": [
                                 {
-                                   "dest": 2,
-                                    "tag": 23
-                                }
-                            ],
-                            "prims": [
-                                {
-                                    "type": "parse_output",
-                                    "size": "3BTC/4",
-                                    "sram_address": {
-                                        "indata": "switch_out",
-                                        "outdata": "switch_out"
-                                    }
-                                }
-                            ]
-                        },
-                        {
-                            "recv_cnt": 1,
-                            "recv_tag": 31,
-                            "cast": [],
-                            "prims": [
-                                {
-                                    "type": "parse_input",
-                                    "size": "3BTC/4",
-                                    "sram_address": {
-                                        "indata": "switch_out",
-                                        "outdata": "switch_out"
-                                    }
-                                }
-                            ]
-                        },
-                        {
-                            "recv_cnt": 0,
-                            "cast": [
-                                {
                                     "dest": 2,
                                     "tag": 23
                                 }
@@ -2206,7 +2175,41 @@
                                 }
                             ]
                         },
-                       {
+                        {
+                            "recv_cnt": 0,
+                            "cast": [
+                                {
+                                    "dest": 2,
+                                    "tag": 23
+                                }
+                            ],
+                            "prims": [
+                                {
+                                    "type": "parse_output",
+                                    "size": "3BTC/4",
+                                    "sram_address": {
+                                        "indata": "switch_out",
+                                        "outdata": "switch_out"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "recv_cnt": 1,
+                            "recv_tag": 31,
+                            "cast": [],
+                            "prims": [
+                                {
+                                    "type": "parse_input",
+                                    "size": "3BTC/4",
+                                    "sram_address": {
+                                        "indata": "switch_out",
+                                        "outdata": "switch_out"
+                                    }
+                                }
+                            ]
+                        },
+                        {
                             "recv_cnt": 0,
                             "cast": [
                                 {
@@ -2278,7 +2281,7 @@
                                     "T": "T",
                                     "C": "C/4",
                                     "NH": "NH/4",
-"DH": "DH",
+                                    "DH": "DH",
                                     "R": "R",
                                     "sram_address": {
                                         "indata": "switch_out",
@@ -2326,7 +2329,7 @@
                             "prims": [
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -2341,143 +2344,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
-                                    "sram_address": {
-                                        "indata": "switch_out",
-                                        "outdata": "switch_out"
-                                    }
-                                }
-                            ]
-                        },
-                         {
-                            "recv_cnt": 0,
-                            "cast": [
-                                {
-                                    "dest": 2,
-                                    "tag": 23
-                                }
-                            ],
-                            "prims": [
-                                {
-                                    "type": "parse_output",
-                                    "size": "3BTC/4",
-                                    "sram_address": {
-                                        "indata": "switch_out",
-                                        "outdata": "switch_out"
-                                    }
-                                }
-                            ]
-                        },
-                        {
-                            "recv_cnt": 1,
-                            "recv_tag": 31,
-                            "cast": [],
-                            "prims": [
-                                {
-                                    "type": "parse_input",
-                                    "size": "3BTC/4",
-                                    "sram_address": {
-                                        "indata": "switch_out",
-                                        "outdata": "switch_out"
-                                    }
-                                }
-                            ]
-                        },
-                         {
-                            "recv_cnt": 0,
-                            "cast": [
-                                {
-                                    "dest": 2,
-                                    "tag": 23
-                                }
-                            ],
-                            "prims": [
-                                {
-                                    "type": "parse_output",
-                                    "size": "3BTC/4",
-                                    "sram_address": {
-                                        "indata": "switch_out",
-                                        "outdata": "switch_out"
-                                    }
-                                }
-                            ]
-                        },
-                        {
-                            "recv_cnt": 1,
-                            "recv_tag": 31,
-                            "cast": [],
-                            "prims": [
-                                {
-                                    "type": "parse_input",
-                                    "size": "3BTC/4",
-                                    "sram_address": {
-                                        "indata": "switch_out",
-                                        "outdata": "switch_out"
-                                    }
-                                }
-                            ]
-                        },
-                         {
-                            "recv_cnt": 0,
-                            "cast": [
-                                {
-                                    "dest": 2,
-                                    "tag": 23
-                                }
-                            ],
-                            "prims": [
-                                {
-                                    "type": "parse_output",
-                                    "size": "3BTC/4",
-                                    "sram_address": {
-                                        "indata": "switch_out",
-                                        "outdata": "switch_out"
-                                    }
-                                }
-                            ]
-                        },
-                        {
-                            "recv_cnt": 1,
-                            "recv_tag": 31,
-                            "cast": [],
-                            "prims": [
-                                {
-                                    "type": "parse_input",
-                                    "size": "3BTC/4",
-                                    "sram_address": {
-                                        "indata": "switch_out",
-                                        "outdata": "switch_out"
-                                    }
-                                }
-                            ]
-                        },
- {
-                            "recv_cnt": 0,
-                            "cast": [
-                                {
-                                    "dest": 2,
-                                    "tag": 23
-                                }
-                            ],
-                            "prims": [
-                                {
-                                    "type": "parse_output",
-                                    "size": "3BTC/4",
-                                    "sram_address": {
-                                        "indata": "switch_out",
-                                        "outdata": "switch_out"
-                                    }
-                                }
-                            ]
-                        },
-                        {
-                            "recv_cnt": 1,
-                            "recv_tag": 31,
-                            "cast": [],
-                            "prims": [
-                                {
-                                    "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -2496,7 +2363,7 @@
                             "prims": [
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -2511,7 +2378,143 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
+                                    "sram_address": {
+                                        "indata": "switch_out",
+                                        "outdata": "switch_out"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "recv_cnt": 0,
+                            "cast": [
+                                {
+                                    "dest": 2,
+                                    "tag": 23
+                                }
+                            ],
+                            "prims": [
+                                {
+                                    "type": "parse_output",
+                                    "size": "BTC/4",
+                                    "sram_address": {
+                                        "indata": "switch_out",
+                                        "outdata": "switch_out"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "recv_cnt": 1,
+                            "recv_tag": 31,
+                            "cast": [],
+                            "prims": [
+                                {
+                                    "type": "parse_input",
+                                    "size": "BTC/4",
+                                    "sram_address": {
+                                        "indata": "switch_out",
+                                        "outdata": "switch_out"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "recv_cnt": 0,
+                            "cast": [
+                                {
+                                    "dest": 2,
+                                    "tag": 23
+                                }
+                            ],
+                            "prims": [
+                                {
+                                    "type": "parse_output",
+                                    "size": "BTC/4",
+                                    "sram_address": {
+                                        "indata": "switch_out",
+                                        "outdata": "switch_out"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "recv_cnt": 1,
+                            "recv_tag": 31,
+                            "cast": [],
+                            "prims": [
+                                {
+                                    "type": "parse_input",
+                                    "size": "BTC/4",
+                                    "sram_address": {
+                                        "indata": "switch_out",
+                                        "outdata": "switch_out"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "recv_cnt": 0,
+                            "cast": [
+                                {
+                                    "dest": 2,
+                                    "tag": 23
+                                }
+                            ],
+                            "prims": [
+                                {
+                                    "type": "parse_output",
+                                    "size": "BTC/4",
+                                    "sram_address": {
+                                        "indata": "switch_out",
+                                        "outdata": "switch_out"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "recv_cnt": 1,
+                            "recv_tag": 31,
+                            "cast": [],
+                            "prims": [
+                                {
+                                    "type": "parse_input",
+                                    "size": "BTC/4",
+                                    "sram_address": {
+                                        "indata": "switch_out",
+                                        "outdata": "switch_out"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "recv_cnt": 0,
+                            "cast": [
+                                {
+                                    "dest": 2,
+                                    "tag": 23
+                                }
+                            ],
+                            "prims": [
+                                {
+                                    "type": "parse_output",
+                                    "size": "BTC/4",
+                                    "sram_address": {
+                                        "indata": "switch_out",
+                                        "outdata": "switch_out"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "recv_cnt": 1,
+                            "recv_tag": 31,
+                            "cast": [],
+                            "prims": [
+                                {
+                                    "type": "parse_input",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -2557,7 +2560,7 @@
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
-                                    "OC": "4C",
+                                    "OC": "3C",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "matmul3_out"
@@ -2568,8 +2571,8 @@
                                 },
                                 {
                                     "type": "switch_data",
-                                    "IN": "4BTC",
-                                    "OUT": "BTC",
+                                    "IN": "3BTC",
+                                    "OUT": "3BTC/4",
                                     "sram_address": {
                                         "indata": "matmul3_out",
                                         "outdata": "switch_out"
@@ -2588,7 +2591,7 @@
                             "prims": [
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -2603,7 +2606,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -2622,7 +2625,7 @@
                             "prims": [
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -2637,7 +2640,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -2656,7 +2659,7 @@
                             "prims": [
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -2671,7 +2674,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -2690,7 +2693,7 @@
                             "prims": [
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -2705,7 +2708,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -2724,7 +2727,7 @@
                             "prims": [
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -2734,12 +2737,12 @@
                         },
                         {
                             "recv_cnt": 1,
-                            "recv_tag":31,
+                            "recv_tag": 31,
                             "cast": [],
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -2758,7 +2761,7 @@
                             "prims": [
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -2773,7 +2776,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -2781,7 +2784,7 @@
                                 },
                                 {
                                     "type": "Gelu_f",
-                                    "N": "BTC",
+                                    "N": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "gelu1_out"
@@ -2796,7 +2799,7 @@
                                     "use_hw": false,
                                     "B": "B",
                                     "T": "T",
-                                    "C": "C",
+                                    "C": "3C/4",
                                     "OC": "C",
                                     "sram_address": {
                                         "indata": "gelu1_out",
@@ -3042,7 +3045,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 2,
+                    "loop": "L",
+                    "id": 2,
                     "worklist": [
                         {
                             "recv_cnt": 1,
@@ -3282,7 +3286,7 @@
                                     "T": "T",
                                     "C": "C/4",
                                     "NH": "NH/4",
-"DH": "DH",
+                                    "DH": "DH",
                                     "R": "R",
                                     "sram_address": {
                                         "indata": "switch_out",
@@ -3320,7 +3324,7 @@
                             ]
                         },
                         {
-                           "recv_cnt": 1,
+                            "recv_cnt": 1,
                             "recv_tag": 23,
                             "cast": [
                                 {
@@ -3331,7 +3335,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3339,7 +3343,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3359,7 +3363,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3367,7 +3371,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3387,7 +3391,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3395,7 +3399,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3415,7 +3419,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3423,7 +3427,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3443,7 +3447,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3451,7 +3455,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3471,7 +3475,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3479,7 +3483,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3531,7 +3535,7 @@
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
-                                    "OC": "4C",
+                                    "OC": "3C",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "matmul3_out"
@@ -3542,8 +3546,8 @@
                                 },
                                 {
                                     "type": "switch_data",
-                                    "IN": "4BTC",
-                                    "OUT": "BTC",
+                                    "IN": "3BTC",
+                                    "OUT": "3BTC/4",
                                     "sram_address": {
                                         "indata": "matmul3_out",
                                         "outdata": "switch_out"
@@ -3563,7 +3567,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3571,7 +3575,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3591,7 +3595,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3599,7 +3603,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3619,7 +3623,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3627,7 +3631,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3647,7 +3651,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3655,7 +3659,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3675,7 +3679,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3683,7 +3687,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3703,7 +3707,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3711,7 +3715,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3725,7 +3729,7 @@
                             "prims": [
                                 {
                                     "type": "Gelu_f",
-                                    "N": "BTC",
+                                    "N": "3BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "gelu1_out"
@@ -3740,7 +3744,7 @@
                                     "use_hw": false,
                                     "B": "B",
                                     "T": "T",
-                                    "C": "C",
+                                    "C": "3C/4",
                                     "OC": "C",
                                     "sram_address": {
                                         "indata": "gelu1_out",
@@ -3773,7 +3777,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3781,7 +3785,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3801,7 +3805,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3809,7 +3813,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3829,7 +3833,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3837,7 +3841,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3857,7 +3861,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3865,7 +3869,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3885,7 +3889,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3893,7 +3897,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3913,7 +3917,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3921,7 +3925,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "BTC",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "switch_out",
                                         "outdata": "switch_out"
@@ -3950,7 +3954,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 8,
+                    "loop": "L",
+                    "id": 8,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -4256,7 +4261,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 9,
+                    "loop": "L",
+                    "id": 9,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -4478,7 +4484,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 11,
+                    "loop": "L",
+                    "id": 11,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -4784,7 +4791,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 10,
+                    "loop": "L",
+                    "id": 10,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -5006,7 +5014,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 16,
+                    "loop": "L",
+                    "id": 16,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -5312,7 +5321,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 17,
+                    "loop": "L",
+                    "id": 17,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -5534,7 +5544,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 19,
+                    "loop": "L",
+                    "id": 19,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -5840,7 +5851,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 18,
+                    "loop": "L",
+                    "id": 18,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -6062,7 +6074,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 24,
+                    "loop": "L",
+                    "id": 24,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -6368,7 +6381,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 25,
+                    "loop": "L",
+                    "id": 25,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -6590,7 +6604,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 27,
+                    "loop": "L",
+                    "id": 27,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -6896,7 +6911,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 26,
+                    "loop": "L",
+                    "id": 26,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -7118,7 +7134,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 32,
+                    "loop": "L",
+                    "id": 32,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -7424,7 +7441,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 33,
+                    "loop": "L",
+                    "id": 33,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -7646,7 +7664,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 35,
+                    "loop": "L",
+                    "id": 35,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -7952,7 +7971,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 34,
+                    "loop": "L",
+                    "id": 34,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -8174,7 +8194,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 40,
+                    "loop": "L",
+                    "id": 40,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -8480,7 +8501,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 41,
+                    "loop": "L",
+                    "id": 41,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -8702,7 +8724,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 43,
+                    "loop": "L",
+                    "id": 43,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -9008,7 +9031,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 42,
+                    "loop": "L",
+                    "id": 42,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -9230,7 +9254,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 48,
+                    "loop": "L",
+                    "id": 48,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -9536,7 +9561,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 49,
+                    "loop": "L",
+                    "id": 49,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -9758,7 +9784,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 51,
+                    "loop": "L",
+                    "id": 51,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -10064,7 +10091,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 50,
+                    "loop": "L",
+                    "id": 50,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -10286,7 +10314,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 56,
+                    "loop": "L",
+                    "id": 56,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -10592,7 +10621,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 57,
+                    "loop": "L",
+                    "id": 57,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -10814,7 +10844,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 59,
+                    "loop": "L",
+                    "id": 59,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -11120,7 +11151,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 58,
+                    "loop": "L",
+                    "id": 58,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -11342,7 +11374,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 60,
+                    "loop": "L",
+                    "id": 60,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -11648,7 +11681,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 61,
+                    "loop": "L",
+                    "id": 61,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -11870,7 +11904,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 63,
+                    "loop": "L",
+                    "id": 63,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -12176,7 +12211,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 62,
+                    "loop": "L",
+                    "id": 62,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -12398,7 +12434,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 52,
+                    "loop": "L",
+                    "id": 52,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -12704,7 +12741,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 53,
+                    "loop": "L",
+                    "id": 53,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -12926,7 +12964,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 55,
+                    "loop": "L",
+                    "id": 55,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -13232,7 +13271,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 54,
+                    "loop": "L",
+                    "id": 54,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -13454,7 +13494,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 44,
+                    "loop": "L",
+                    "id": 44,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -13760,7 +13801,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 45,
+                    "loop": "L",
+                    "id": 45,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -13982,7 +14024,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 47,
+                    "loop": "L",
+                    "id": 47,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -14288,7 +14331,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 46,
+                    "loop": "L",
+                    "id": 46,
                     "prim_copy": 2,
                     "worklist": [
                         {
@@ -14510,7 +14554,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 36,
+                    "loop": "L",
+                    "id": 36,
                     "prim_copy": 0,
                     "worklist": [
                         {
@@ -14821,7 +14866,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 37,
+                    "loop": "L",
+                    "id": 37,
                     "prim_copy": 1,
                     "worklist": [
                         {
@@ -15048,7 +15094,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 39,
+                    "loop": "L",
+                    "id": 39,
                     "prim_copy": 3,
                     "worklist": [
                         {
@@ -15359,7 +15406,8 @@
                     ]
                 },
                 {
-                    "loop": "L","id": 38,
+                    "loop": "L",
+                    "id": 38,
                     "prim_copy": 2,
                     "worklist": [
                         {

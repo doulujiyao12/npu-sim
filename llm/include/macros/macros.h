@@ -194,7 +194,7 @@
 #define KVCACHE_PREFIX "kvcache_"
 #define INPUT_LABEL "input_label"
 // 最大输入input数量
-#define MAX_SPLIT_NUM 10
+#define MAX_SPLIT_NUM 6
 
 // PD中的分块策略
 #define MAX_PREFILL_WORKLOAD 384

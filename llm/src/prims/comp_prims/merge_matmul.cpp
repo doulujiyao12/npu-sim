@@ -72,7 +72,7 @@ void Merge_matmul::deserialize(sc_bv<128> buffer) {
     T = buffer.range(71, 56).to_uint64();
     C = buffer.range(87, 72).to_uint64();
     dim = buffer.range(91, 88).to_uint64();
-    slice = buffer.range(95, 92).to_uint64();
+    slice = buffer.range(99, 92).to_uint64();
 
     initialize();
 }
@@ -86,7 +86,7 @@ sc_bv<128> Merge_matmul::serialize() {
     d.range(71, 56) = sc_bv<16>(T);
     d.range(87, 72) = sc_bv<16>(C);
     d.range(91, 88) = sc_bv<4>(dim);
-    d.range(95, 92) = sc_bv<4>(slice);
+    d.range(99, 92) = sc_bv<8>(slice);
 
     return d;
 }

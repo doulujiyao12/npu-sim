@@ -22,11 +22,11 @@ void Set_addr::deserialize(sc_bv<128> buffer) {
     int offset = 34;
     for (int i = 0; i < MAX_SPLIT_NUM; i++) {
         datapass_label->indata[i] = g_addr_label_table.findRecord(
-            buffer.range(offset + 7, offset).to_uint64());
-        offset += 8;
+            buffer.range(offset + 11, offset).to_uint64());
+        offset += 12;
     }
     datapass_label->outdata = g_addr_label_table.findRecord(
-        buffer.range(offset + 7, offset).to_uint64());
+        buffer.range(offset + 11, offset).to_uint64());
 }
 
 sc_bv<128> Set_addr::serialize() {
@@ -37,12 +37,12 @@ sc_bv<128> Set_addr::serialize() {
 
     int offset = 34;
     for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-        d.range(offset + 7, offset) =
-            sc_bv<8>(g_addr_label_table.addRecord(datapass_label->indata[i]));
-        offset += 8;
+        d.range(offset + 11, offset) =
+            sc_bv<12>(g_addr_label_table.addRecord(datapass_label->indata[i]));
+        offset += 12;
     }
-    d.range(offset + 7, offset) =
-        sc_bv<8>(g_addr_label_table.addRecord(datapass_label->outdata));
+    d.range(offset + 11, offset) =
+        sc_bv<12>(g_addr_label_table.addRecord(datapass_label->outdata));
 
     return d;
 }

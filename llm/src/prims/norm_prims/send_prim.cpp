@@ -40,7 +40,7 @@ void Send_prim::deserialize(sc_bv<128> buffer) {
 
     if (type == SEND_DATA)
         output_label =
-            g_addr_label_table.findRecord(buffer.range(31, 24).to_uint64());
+            g_addr_label_table.findRecord(buffer.range(39, 24).to_uint64());
 
     // local_offset = buffer.range(55, 40).to_uint64();
     type = SEND_TYPE(buffer.range(59, 56).to_uint64());
@@ -60,7 +60,7 @@ sc_bv<128> Send_prim::serialize() {
             cout << "[ERROR] SEND_DATA must have a set output_label\n";
             sc_stop();
         }
-        d.range(31, 24) = sc_bv<8>(g_addr_label_table.addRecord(output_label));
+        d.range(35, 24) = sc_bv<12>(g_addr_label_table.addRecord(output_label));
     }
 
     // d.range(55, 40) = sc_bv<16>(local_offset);

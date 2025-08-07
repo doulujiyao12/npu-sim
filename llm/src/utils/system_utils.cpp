@@ -178,6 +178,7 @@ void init_grid(string config_path, string core_config_path) {
 
     if (j2.contains("x"))
         GRID_X = j2["x"];
+        
     else
         GRID_X = 4;
 

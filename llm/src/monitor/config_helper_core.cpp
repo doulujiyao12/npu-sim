@@ -146,7 +146,6 @@ void config_helper_core::random_core(string font_ttf) {
 config_helper_core::config_helper_core(string filename, string font_ttf,
                                        int config_chip_id) {
     cout << "Loading config file " << filename << endl;
-    json j;
     plot_dataflow(filename, font_ttf);
     ifstream jfile(filename);
     if (!jfile.is_open()) {
@@ -154,7 +153,12 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
         sc_stop();
     }
 
-    jfile >> j;
+    json j;
+    try {
+        jfile >> j;
+    } catch (const json::parse_error &e) {
+        std::cerr << "Parse error: " << e.what() << std::endl;
+    }
 
     // 收集相关参数
     auto config_vars = j["vars"];
@@ -242,20 +246,20 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
         // coreconfigs[i].prims.size() << std::endl;
         generate_prims(i);
 
-        for (auto work : coreconfigs[i].worklist) {
-            cout << "work\n";
-            for (auto prim : work.prims_last_loop) {
-                prim->print_self("\t\t");
-            }
-        }
-        cout << "core\n";
+        // for (auto work : coreconfigs[i].worklist) {
+        //     cout << "work\n";
+        //     for (auto prim : work.prims_last_loop) {
+        //         prim->print_self("\t\t");
+        //     }
+        // }
+        // cout << "core\n";
     }
 
     // 再去重新填写send的收发地址
     calculate_address(true);
     calculate_address(false);
 
-    print_self();
+    // print_self();
 }
 
 void config_helper_core::fill_queue_config(queue<Msg> *q) {
@@ -386,8 +390,6 @@ void config_helper_core::generate_prims(int i) {
                 for (int i = 0; i < MAX_SPLIT_NUM; i++) {
                     label->indata[i] =
                         ((pd_base *)prim)->datapass_label.indata[i];
-                    cout << "Core " << c->id << " pd " << i << " "
-                         << label->indata[i] << endl;
                 }
                 label->outdata = ((pd_base *)prim)->datapass_label.outdata;
             }

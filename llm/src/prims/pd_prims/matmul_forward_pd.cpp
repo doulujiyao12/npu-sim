@@ -20,6 +20,20 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
     int data_size_bias = OC;
     int data_size_out = B * T * OC / 3;
 
+    bool need_multiply = false;
+    for (auto stage : batchInfo) {
+        if (stage.type == DECODE) {
+            need_multiply = true;
+            break;
+        }
+    }
+
+    if (!need_multiply) {
+        data_size_bias = data_size_bias / chunk;
+        data_size_weight = data_size_weight / chunk;
+    }
+    cout << data_size_bias << " bias weight " << data_size_weight << endl;
+
     // dram地址
     u_int64_t dram_addr_tile = 0; // cid * dataset_words_per_tile;
     u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;

@@ -16,6 +16,11 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
     // 收集相关参数
     auto config_reqs = j["requests"];
     int req_cnt = config_reqs["count"];
+    for (int i = 0; i < req_cnt; i++) {
+        vector<double> v;
+        token_record.push_back(v);
+    }
+
 
     heads = config_reqs["heads"];
     head_size = config_reqs["head_size"];
@@ -175,6 +180,7 @@ void config_helper_pds::iter_done(PD_JOB type) {
             case PREFILL:
                 if (++record.prefill_counter == record.prefill_iters) {
                     stage.type = record.phase = DECODE;
+                    token_record[id].push_back(sc_time_stamp().to_double());
                     stage.token_num = 1;
                     req_decode.push(stage.req_id);
                     if (!busy_d)
@@ -183,12 +189,19 @@ void config_helper_pds::iter_done(PD_JOB type) {
                 break;
             case DECODE:
                 record.decode_counter++;
+                token_record[id].push_back(sc_time_stamp().to_double());
                 if (msg.data.range(stage_count, stage_count).to_uint64() ||
                     record.decode_counter >= (1.5) / (eof_chance)) {
                     stage.type = record.phase = PD_DONE;
 
                     if (++decode_done == requestRecords.size()) {
                         cout << "All reqs done.\n";
+                        for (int i = 0; i < token_record.size(); i++) {
+                            cout << "Request " << i << ": \n";
+                            for (auto &record : token_record[i]) {
+                                cout << "Token " << i << ": " << record << "\n";
+                            }
+                        }
                         cout << "[CATCH TEST] " << sc_time_stamp() << endl;
                         sc_stop();
                     }
@@ -489,7 +502,10 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
                                             : (output_size / M_D_DATA);
     int end_length = output_size - (pkg_nums - 1) * M_D_DATA;
 
-    send_data->max_packet = pkg_nums;
+    send_data->max_packet = pkg_nums % CORE_COMM_PAYLOAD
+                                ? pkg_nums / CORE_COMM_PAYLOAD + 1
+                                : pkg_nums / CORE_COMM_PAYLOAD;
+    ;
     send_data->end_length = end_length;
 
     if (i < prefill_core && stage_index[i] == 1) {
@@ -617,19 +633,16 @@ void config_helper_pds::set_global_vars(int T) {
     vtable.clear();
     vtable.push_back(make_pair("B", 1));
     vtable.push_back(make_pair("T", T));
-    vtable.push_back(make_pair("C", heads * head_size / prefill_iters));
-    vtable.push_back(make_pair("NH", heads / prefill_iters));
+    vtable.push_back(make_pair("C", heads * head_size));
+    vtable.push_back(make_pair("NH", heads));
     vtable.push_back(make_pair("DH", head_size));
     vtable.push_back(make_pair("R", heads / kv_heads));
-    vtable.push_back(make_pair("3C", 3 * heads * head_size / prefill_iters));
-    vtable.push_back(make_pair("4C", 4 * heads * head_size / prefill_iters));
-    vtable.push_back(make_pair("BTC", T * heads * head_size / prefill_iters));
-    vtable.push_back(
-        make_pair("2BTC", 2 * T * heads * head_size / prefill_iters));
-    vtable.push_back(
-        make_pair("3BTC", 3 * T * heads * head_size / prefill_iters));
-    vtable.push_back(
-        make_pair("4BTC", 4 * T * heads * head_size / prefill_iters));
+    vtable.push_back(make_pair("3C", 3 * heads * head_size));
+    vtable.push_back(make_pair("4C", 4 * heads * head_size));
+    vtable.push_back(make_pair("BTC", T * heads * head_size));
+    vtable.push_back(make_pair("2BTC", 2 * T * heads * head_size));
+    vtable.push_back(make_pair("3BTC", 3 * T * heads * head_size));
+    vtable.push_back(make_pair("4BTC", 4 * T * heads * head_size));
     vtable.push_back(
         make_pair("3C-R", heads * head_size * (2 + heads / kv_heads) /
                               (heads / kv_heads)));
