@@ -27,7 +27,7 @@ sc_event kv_event;
 int dram_aligned;
 bool use_gpu;
 
-int CORE_COMM_PAYLOAD = 128; // 一个时钟周期可以一次性发送多少数据包
+int CORE_COMM_PAYLOAD = 1; // 一个时钟周期可以一次性发送多少数据包
 
 string gpu_dram_config;
 
