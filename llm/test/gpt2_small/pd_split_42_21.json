@@ -1065,7 +1065,7 @@
                   "type": "Residual_f",
                   "N": "BTC",
                   "sram_address": {
-                    "indata": "residual42_out matmul42_out",
+                    "indata": "residual32_out matmul42_out",
                     "outdata": "residual41_out"
                   },
                   "dram_address": {
