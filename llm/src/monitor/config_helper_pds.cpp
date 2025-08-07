@@ -180,7 +180,7 @@ void config_helper_pds::iter_done(PD_JOB type) {
             case PREFILL:
                 if (++record.prefill_counter == record.prefill_iters) {
                     stage.type = record.phase = DECODE;
-                    token_record[id].push_back(sc_time_stamp().to_double());
+                    token_record[record.id].push_back(sc_time_stamp().to_double());
                     stage.token_num = 1;
                     req_decode.push(stage.req_id);
                     if (!busy_d)
@@ -189,7 +189,7 @@ void config_helper_pds::iter_done(PD_JOB type) {
                 break;
             case DECODE:
                 record.decode_counter++;
-                token_record[id].push_back(sc_time_stamp().to_double());
+                token_record[record.id].push_back(sc_time_stamp().to_double());
                 if (msg.data.range(stage_count, stage_count).to_uint64() ||
                     record.decode_counter >= (1.5) / (eof_chance)) {
                     stage.type = record.phase = PD_DONE;
@@ -198,8 +198,8 @@ void config_helper_pds::iter_done(PD_JOB type) {
                         cout << "All reqs done.\n";
                         for (int i = 0; i < token_record.size(); i++) {
                             cout << "Request " << i << ": \n";
-                            for (auto &record : token_record[i]) {
-                                cout << "Token " << i << ": " << record << "\n";
+                            for (int j = 0; j < token_record[i].size(); j++) {
+                                cout << "Token " << j << ": " << token_record[i][j] << "\n";
                             }
                         }
                         cout << "[CATCH TEST] " << sc_time_stamp() << endl;

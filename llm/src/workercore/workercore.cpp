@@ -1145,7 +1145,7 @@ void WorkerCoreExecutor::recv_logic() {
                         }
                     }
 
-                    wait(CYCLE * (CORE_COMM_PAYLOAD), SC_NS);
+                    wait(CYCLE * (CORE_COMM_PAYLOAD - 1), SC_NS);
                 }
             }
 
