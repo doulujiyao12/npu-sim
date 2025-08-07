@@ -10,6 +10,7 @@
 #include "memory/MemoryManager_v2.h"
 #include "memory/dram/utils.h"
 #include "trace/Event_engine.h"
+#include "defs/global.h"
 
 
 // 定义 Request 结构体
@@ -73,6 +74,7 @@ public:
 #if DRAM_BURST_BYTE > 0 
         total_requests = (total_requests * data_length + DRAM_BURST_BYTE - 1) / DRAM_BURST_BYTE;
         data_length = DRAM_BURST_BYTE;
+        assert(data_length > 0);
 #endif
         current_request = 0;             // Reset request counter
         config_updated = true;           // Notify the main process

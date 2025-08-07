@@ -10,6 +10,7 @@
 #include "memory/MemoryManager_v2.h"
 #include "memory/dram/utils.h"
 #include "trace/Event_engine.h"
+#include "defs/global.h"
 
 
 
