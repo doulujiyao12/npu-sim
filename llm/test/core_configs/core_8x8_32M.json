@@ -1,7 +1,7 @@
 {
     "x": 8,
     "sram_size": 33554432,
-    "comm_payload": 1,
+    "comm_payload": 256,
     "cores": [
         {
             "id": 0,

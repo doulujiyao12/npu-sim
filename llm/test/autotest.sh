@@ -53,14 +53,15 @@ while IFS= read -r line || [[ -n "$line" ]]; do
     ORIGINAL_PWD=$(pwd)
     cd "${BUILD_DIR_ABS}"
 
-    if [ "$FIELD_COUNT" -eq 8 ]; then
-        echo "INFO: Detected 8 fields, using legacy mode."
-        read -r NPUSIM_MAIN_CONFIG_FILE JSON_X JSON_CORE_ID JSON_EXU_X JSON_EXU_Y JSON_SFU_X JSON_SRAM_BITWIDTH JSON_SRAM_MAX_SIZE <<<"$line"
+    if [ "$FIELD_COUNT" -eq 9 ]; then
+        echo "INFO: Detected 9 fields, using legacy mode."
+        read -r NPUSIM_MAIN_CONFIG_FILE JSON_X JSON_CORE_ID JSON_EXU_X JSON_EXU_Y JSON_SFU_X JSON_SRAM_BITWIDTH JSON_SRAM_MAX_SIZE JSON_COMM_PAYLOAD<<<"$line"
 
         CONFIG_CONTENT=$(
             cat <<EOF
 {
     "x": ${JSON_X},
+    "comm_payload": ${JSON_COMM_PAYLOAD},
     "cores": [
         {
             "id": ${JSON_CORE_ID},
