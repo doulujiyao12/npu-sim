@@ -634,6 +634,8 @@ void WorkerCoreExecutor::send_logic() {
 
                         job_done = true;
                     }
+
+                    wait(CYCLE * (CORE_COMM_PAYLOAD - 1), SC_NS);
 #if ROUTER_PIPE == 1
                 }
 #endif
@@ -1142,6 +1144,8 @@ void WorkerCoreExecutor::recv_logic() {
                             job_done = true;
                         }
                     }
+
+                    wait(CYCLE * (CORE_COMM_PAYLOAD), SC_NS);
                 }
             }
 

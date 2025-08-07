@@ -456,7 +456,10 @@ void config_helper_pd::generate_prims(int i) {
                                             : (output_size / M_D_DATA);
     int end_length = output_size - (pkg_nums - 1) * M_D_DATA;
 
-    send_data->max_packet = pkg_nums;
+    send_data->max_packet = pkg_nums % CORE_COMM_PAYLOAD
+                                ? pkg_nums / CORE_COMM_PAYLOAD + 1
+                                : pkg_nums / CORE_COMM_PAYLOAD;
+    cout << "sefawsefgaef pkg: " << pkg_nums << " " << send_data->max_packet << endl;
     send_data->end_length = end_length;
 
     if ((i + 1) % model_stage != 1) {
@@ -546,19 +549,21 @@ void config_helper_pd::set_global_vars(int T) {
     vtable.clear();
     vtable.push_back(make_pair("B", 1));
     vtable.push_back(make_pair("T", T));
-    vtable.push_back(make_pair("C", heads * head_size / prefill_iters));
-    vtable.push_back(make_pair("NH", heads / prefill_iters));
+    vtable.push_back(make_pair("C", heads * head_size));
+    vtable.push_back(make_pair("NH", heads));
     vtable.push_back(make_pair("DH", head_size));
     vtable.push_back(make_pair("R", heads / kv_heads));
-    vtable.push_back(make_pair("3C", 3 * heads * head_size / prefill_iters));
-    vtable.push_back(make_pair("4C", 4 * heads * head_size / prefill_iters));
-    vtable.push_back(make_pair("BTC", T * heads * head_size / prefill_iters));
+    vtable.push_back(make_pair("3C", 3 * heads * head_size));
+    vtable.push_back(make_pair("4C", 4 * heads * head_size));
+    vtable.push_back(make_pair("BTC", T * heads * head_size ));
     vtable.push_back(
-        make_pair("2BTC", 2 * T * heads * head_size / prefill_iters));
+        make_pair("2BTC", 2 * T * heads * head_size));
     vtable.push_back(
-        make_pair("3BTC", 3 * T * heads * head_size / prefill_iters));
+        make_pair("3BTC", 3 * T * heads * head_size));
     vtable.push_back(
-        make_pair("4BTC", 4 * T * heads * head_size / prefill_iters));
-    vtable.push_back(make_pair("3C-R", heads * head_size * (2 + heads / kv_heads) / (heads / kv_heads)));
+        make_pair("4BTC", 4 * T * heads * head_size));
+    vtable.push_back(
+        make_pair("3C-R", heads * head_size * (2 + heads / kv_heads) /
+                              (heads / kv_heads)));
     vtable.push_back(make_pair("CHUNK", prefill_iters));
 }

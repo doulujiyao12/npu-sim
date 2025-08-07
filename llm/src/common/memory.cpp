@@ -7,6 +7,7 @@
 using namespace std;
 
 int AddrLabelTable::addRecord(const std::string &key) {
+
     for (int i = 0; i < table.size(); i++) {
         if (table[i] == key) {
             // cout << "LabelTable: Find existing label: " << key << " at " << i
@@ -16,8 +17,8 @@ int AddrLabelTable::addRecord(const std::string &key) {
     }
 
     table.push_back(key);
-    cout << "[CONFIG] LabelTable: Add new label: " << key << " at "
-         << table.size() - 1 << endl;
+    // cout << "[CONFIG] LabelTable: Add new label: " << key << " at "
+    //      << table.size() - 1 << endl;
 
     return table.size() - 1;
 }

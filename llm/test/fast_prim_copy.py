@@ -1,95 +1,115 @@
-import sys
 import json
+import sys
 import copy
+import re
 
-def get_special_dest(A):
-    """根据特殊规则生成 worklist[-1]['cast'][0]['dest'] 的值"""
-    if A <= 51 and A % 8 <= 3:
-        dest = A + 8
-    elif 56 <= A <= 59:
-        dest = A + 4
-    else:
-        dest = A - 8
-    return dest if dest >= 0 else -1
+# recv_tag 替换映射
+RECV_TAG_MAP = {
+    0: 105, 1: 90, 2: 91, 3: 92,
+    4: 93, 5: 94, 6: 95, 7: 96,
+    8: 97, 9: 98, 10: 99, 11: 100,
+    12: 101, 13: 102, 14: 103, 15: 104
+}
 
-def modify_obj(obj, new_dest_func, skip_paths, path=()):
-    """递归修改'dest'字段，删除所有'prims'字段，跳过指定路径"""
+# cast tag/dest 映射
+CAST_RULES = {
+    0: (90, lambda k: k + 1),
+    1: (91, lambda k: k + 1),
+    2: (92, lambda k: k + 1),
+    3: (93, lambda k: k + 1),
+    4: (94, lambda k:k + 1),
+    5: (95, lambda k:k + 1),
+    6: (96, lambda k: k + 1),
+    7: (97, lambda k: k + 1),
+    8: (98, lambda k: k + 1),
+    9: (99, lambda k: k + 1),
+    10: (100, lambda k: k + 1),
+    11: (101, lambda k: k + 1),
+    12: (102, lambda k: k + 1),
+    13: (103, lambda k: k + 1),
+    14: (104, lambda k: k + 1),
+    15: (105, lambda k: k -15),
+}
+
+# 删除所有 "prims" 等字段的递归函数
+def remove_keys(obj):
     if isinstance(obj, dict):
-        keys_to_delete = []
-        for k, v in obj.items():
-            current_path = path + (k,)
-            if k == "dest" and isinstance(v, int) and current_path not in skip_paths:
-                obj[k] = new_dest_func(v)
-            elif k == "prims":
-                keys_to_delete.append(k)
-            else:
-                modify_obj(v, new_dest_func, skip_paths, current_path)
-        for k in keys_to_delete:
-            del obj[k]
+        return {
+            k: remove_keys(v)
+            for k, v in obj.items()
+            if k not in ("prims")
+        }
     elif isinstance(obj, list):
-        for i, item in enumerate(obj):
-            modify_obj(item, new_dest_func, skip_paths, path + (i,))
+        return [remove_keys(item) for item in obj]
+    else:
+        return obj
 
 def main():
     if len(sys.argv) < 3:
-        print("用法: python generate_elements.py input.json id1 id2 id3 ...")
+        print("Usage: script.py <input.json> <A>")
         return
 
-    input_file = sys.argv[1]
-    new_ids = list(map(int, sys.argv[2:]))
+    path = sys.argv[1]
+    A = int(sys.argv[2])
+    B = int(sys.argv[3])
 
-    with open(input_file, 'r') as f:
-        original_data = json.load(f)
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
 
-    id_map = {item['id']: item for item in original_data}
-    output_data = []
+    # 提取模板元素（id 0 和 2）
+    templates = {item["id"]: item for item in data if item["id"] in [0, 1]}
 
-    for A in new_ids:
-        base_id = A % 4
-        if base_id not in id_map:
-            print(f"错误: id = {base_id} 不存在于输入文件中")
-            return
+    output = []
 
-        base_element = copy.deepcopy(id_map[base_id])
-        base_element["id"] = A
-        base_element["prim_copy"] = base_id
+    for k in range(A, B + 1):
+        if k % 16 in {1, 3, 5, 7, 9, 11, 13, 15}:
+            prim_copy = 1
+        else:
+            prim_copy = 0
 
-        # 初始化需要跳过的路径
-        skip_paths = set()
+        template = copy.deepcopy(templates[prim_copy])
+        template["id"] = k
 
-        # 特殊处理 worklist[-1]["cast"][0]["dest"]
-        worklist = base_element.get("worklist", [])
-        if isinstance(worklist, list) and len(worklist) > 0:
-            last_idx = len(worklist) - 1
-            last = worklist[-1]
-            if isinstance(last, dict):
-                cast = last.get("cast")
-                if isinstance(cast, list) and len(cast) > 0 and isinstance(cast[0], dict):
-                    special_dest = get_special_dest(A)
-                    cast[0]["dest"] = special_dest
-                    # 标记需要跳过的路径：worklist[-1]["cast"][0]["dest"]
-                    skip_paths.add(("worklist", last_idx, "cast", 0, "dest"))
 
-        # 定义通用 dest 替换逻辑
-        def general_dest_func(_):
-            if A % 4 == 0:
-                return A + 1
-            elif A % 4 == 1:
-                return A + 2
-            elif A % 4 == 2:
-                return A - 2
-            else:
-                return A - 1
+        # 处理 prim_copy
+        if k % 16 in {1, 3, 5, 7, 9, 11, 13, 15}:
+            template["prim_copy"] = 1
+        else:
+            template["prim_copy"] = 0
 
-        # 修改所有 dest（除了跳过路径），并删除所有 prims
-        modify_obj(base_element, general_dest_func, skip_paths)
+        # 删除所有 prims、prim_copy、prim_tags 字段
+        template = remove_keys(template)       
+        template["prim_copy"] = prim_copy
 
-        output_data.append(base_element)
+        # 处理 worklist
+        if "worklist" in template:
+            for idx, witem in enumerate(template["worklist"]):
+                # 修改 recv_tag
+                if "recv_tag" in witem and isinstance(witem["recv_tag"], int):
+                    mod = k % 16
+                    witem["recv_tag"] = RECV_TAG_MAP.get(mod, witem["recv_tag"])
 
-    with open("output.json", "w") as f:
-        json.dump(output_data, f, indent=2)
+                # 修改 cast（数组）
+                if "cast" in witem and isinstance(witem["cast"], list):
+                    for i, c in enumerate(witem["cast"]):
+                        if not isinstance(c, dict):
+                            continue
+                        mod = k % 16
+                        tag, dest_fn = CAST_RULES.get(mod, (None, lambda k: k))
+                        if "dest" in c:
+                            if i == 0 and idx == len(template["worklist"]) - 1:
+                                # 最后一项的第一个 cast 的 dest 设置为 k+16
+                                c["dest"] = k + 16
+                            else:
+                                c["dest"] = dest_fn(k)
+                        if "tag" in c:
+                            c["tag"] = tag
 
-    print("生成完毕，结果保存在 output.json")
+        output.append(template)
+
+    # 写出结果
+    with open("output.json", "w", encoding="utf-8") as f:
+        json.dump(output, f, indent=2, ensure_ascii=False)
 
 if __name__ == "__main__":
     main()

@@ -92,6 +92,7 @@ void from_json(const json &j, CoreJob &c) {
             string type = prim.at("type");
 
             p = (comp_base *)new_prim(type);
+            cout << "Start prim type: " << type << endl;
             p->parse_json(prim);
 
             // 是否使用硬件
