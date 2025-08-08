@@ -168,7 +168,7 @@
 #define USE_CARIO 1
 
 // 默认计算核dram配置文件路径
-#define DEFAULT_DRAM_CONFIG_PATH "../DRAMSys/configs/ddr4-example-8bit.json"
+#define DEFAULT_DRAM_CONFIG_PATH "../DRAMSys/configs/ddr4-example-df.json"
 
 // sram配置相关
 #define SRAM_BITWIDTH 128

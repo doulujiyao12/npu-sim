@@ -370,14 +370,16 @@ void comp_base::check_static_data(TaskCoreContext &context, uint64_t &dram_time,
 #endif
 }
 
-void comp_base::write_output_data(TaskCoreContext &context, int exu_flops,
-                                  int sfu_flops, uint64_t dram_time,
+void comp_base::write_output_data(TaskCoreContext &context, uint64_t exu_flops,
+                                  uint64_t sfu_flops, uint64_t dram_time,
                                   uint64_t &overlap_time, int data_size_out,
                                   uint64_t out_global_addr) {
     int cycle = 0;
     int cid = context.cid;
     ExuConfig *exu = get_exu_config(cid);
     SfuConfig *sfu = get_sfu_config(cid);
+
+    cout << "exu_flops: " << exu_flops << " sfu_flops: " << sfu_flops << endl;
 
     if (exu->type == MAC_Array)
         cycle += exu_flops / (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
