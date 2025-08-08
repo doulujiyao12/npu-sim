@@ -35,8 +35,8 @@ public:
     void perf_read_data(TaskCoreContext &context, uint64_t &dram_time,
                            int data_size_label,
                            string label_name);
-    void write_output_data(TaskCoreContext &context, int exu_flops,
-                           int sfu_flops, uint64_t dram_time,
+    void write_output_data(TaskCoreContext &context, uint64_t exu_flops,
+                           uint64_t sfu_flops, uint64_t dram_time,
                            uint64_t &overlap_time, int data_size_out,
                            uint64_t out_global_addr);
 

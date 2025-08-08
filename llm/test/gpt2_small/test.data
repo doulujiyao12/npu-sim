@@ -1,4 +1,4 @@
-gpt2_small/pd_fuse/pd_fuse_36*1_256.json core_configs/core_8x8_64M.json	
+gpt2_small/pd_fuse/pd_fuse_36*1_256.json core_configs/core_8x8_64M.json
 gpt2_small/pd_fuse/pd_fuse_36*1_256.json core_configs/core_8x8_128M.json
 gpt2_small/pd_fuse/pd_fuse_36*1_256.json core_configs/core_8x8_192M.json
 gpt2_small/pd_fuse/pd_fuse_36*1_512.json core_configs/core_8x8_64M.json
