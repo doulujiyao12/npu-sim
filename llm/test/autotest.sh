@@ -81,7 +81,7 @@ EOF
         ./npusim --config-file="../llm/test/${NPUSIM_MAIN_CONFIG_FILE}" \
                  --core-config-file="../llm/test/${TEMP_JSON_CONFIG_BASENAME}" \
                  --sram-max="${JSON_SRAM_MAX_SIZE}" \
-                 --df_dram_bw="${JSON_DRAM_BANDWIDTH}"
+                 --df_dram_bw="${JSON_DRAM_BANDWIDTH}" \
                  >"${NPUSIM_STDOUT_TMP_BASENAME}"
 
     elif [ "$FIELD_COUNT" -eq 2 ]; then
