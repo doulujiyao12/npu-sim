@@ -84,6 +84,7 @@ extern bool gpu_inner;
 extern float comp_util;
 extern bool gpu_clog;
 extern int gpu_bw;
+extern string g_config_file;
 // extern int DRAM_BURST_BYTE;
 // extern int L1CACHELINESIZE;
 // extern int L2CACHELINESIZE;

@@ -354,6 +354,7 @@ int sc_main(int argc, char *argv[]) {
     remove_all_sram_log_files();
     remove_all_l1cache_log_files();
 
+    g_config_file = g_flag_config_file;
     init_grid(g_flag_config_file.c_str(), g_flag_core_config_file.c_str());
     init_global_members();
 

@@ -191,8 +191,7 @@ void config_helper_pds::iter_done(PD_JOB type) {
             case DECODE:
                 record.decode_counter++;
                 token_record[record.id].push_back(sc_time_stamp().to_double());
-                if (msg.data.range(stage_count, stage_count).to_uint64() ||
-                    record.decode_counter >= (1.5) / (eof_chance)) {
+                if (record.decode_counter >= (2) / (eof_chance)) {
                     stage.type = record.phase = PD_DONE;
 
                     if (++decode_done == requestRecords.size()) {
@@ -200,8 +199,7 @@ void config_helper_pds::iter_done(PD_JOB type) {
                         ofstream file("token_records.txt", ios::app);
 
                         if (!file.is_open()) {
-                            cerr << "Error: Cannot open file " << filename
-                                 << endl;
+                            cerr << "Error: Cannot open file "  << endl;
                             return;
                         }
 
@@ -210,7 +208,7 @@ void config_helper_pds::iter_done(PD_JOB type) {
                              << setprecision(
                                     6); // 设置小数点后6位精度，可根据需要调整
 
-                        file << "NEW RECORD ------"
+                        file << "*" << g_config_file << "*\n";
                         for (int i = 0; i < token_record.size(); i++) {
                             file << "Request " << i << ": \n";
                             for (int j = 0; j < token_record[i].size(); j++) {

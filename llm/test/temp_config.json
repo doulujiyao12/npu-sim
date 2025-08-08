@@ -1,11 +1,12 @@
 {
     "x": 8,
+    "comm_payload": 256,
     "cores": [
         {
             "id": 0,
             "exu_x": 64,
             "exu_y": 64,
-            "sfu_x": 1024,
+            "sfu_x": 2048,
             "sram_bitwidth": 64
         }
     ]
