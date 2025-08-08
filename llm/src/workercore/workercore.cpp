@@ -593,6 +593,8 @@ void WorkerCoreExecutor::send_logic() {
              << prim->max_packet << endl;
 
         while (true) {
+            bool need_long_wait = false;
+
             if (atomic_helper_lock(sc_time_stamp(), 0))
                 ev_send_helper.notify(0, SC_NS);
 
@@ -638,7 +640,7 @@ void WorkerCoreExecutor::send_logic() {
                         job_done = true;
                     }
 
-                    wait(CYCLE * (CORE_COMM_PAYLOAD - 1), SC_NS);
+                    need_long_wait = true;
 #if ROUTER_PIPE == 1
                 }
 #endif
@@ -696,6 +698,9 @@ void WorkerCoreExecutor::send_logic() {
                 break;
 
             wait(CYCLE, SC_NS);
+
+            if (need_long_wait)
+                wait(CYCLE * (CORE_COMM_PAYLOAD - 1), SC_NS);
         }
 
         ev_block.notify(CYCLE, SC_NS);
@@ -970,6 +975,8 @@ void WorkerCoreExecutor::recv_logic() {
             cout << "Core " << cid << " wait for 944 atomic_helper_lock"
                  << endl;
 #endif
+            bool need_long_wait = false;
+
             if (atomic_helper_lock(sc_time_stamp(), 0))
                 ev_send_helper.notify(0, SC_NS);
 
@@ -1148,7 +1155,7 @@ void WorkerCoreExecutor::recv_logic() {
                         }
                     }
 
-                    wait(CYCLE * (CORE_COMM_PAYLOAD - 1), SC_NS);
+                    need_long_wait = true;
                 }
             }
 
@@ -1202,6 +1209,9 @@ void WorkerCoreExecutor::recv_logic() {
 
             // 等待下一个时钟周期
             wait(CYCLE, SC_NS);
+
+            if (need_long_wait)
+                wait(CYCLE * (CORE_COMM_PAYLOAD - 1), SC_NS);
         }
 
         ev_block.notify(CYCLE, SC_NS);
