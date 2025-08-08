@@ -94,7 +94,8 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
         g_recv_done_cnt_p = 0;
     wait_schedule_p = true;
     wait_schedule_d = false;
-    wait_send_start = false;
+    wait_send_start_prefill = false;
+    wait_send_start_decode = false;
 
     ev_sig->notify(0, SC_NS);
 }
@@ -114,16 +115,25 @@ void config_helper_pds::fill_queue_start(queue<Msg> *q) {
     // 只有在stage 1的core进行prefill的时候，才需要发送start data
     // 在调用这个函数的时候，已经完成对core的config发放
     cout << "Prepare to send start data!\n";
-    if (!wait_send_start)
+    if (!wait_send_start_prefill && !wait_send_start_decode)
         return;
 
     for (auto status : coreStatus) {
         cout << "status " << status.id << endl;
-        if (status.id >= prefill_core || stage_index[status.id] != 1)
-            continue;
-
         int index = status.id / GRID_X;
         int total_pkg = 0;
+
+        cout << "wait send prefill: " << wait_send_start_prefill
+             << ", wait send decode: " << wait_send_start_decode
+             << ", status.id: " << status.id
+             << ", prefill core: " << prefill_core
+             << ", decode core: " << decode_core << endl;
+
+        if (!wait_send_start_prefill && status.id < prefill_core)
+            continue;
+
+        if (!wait_send_start_decode && status.id >= prefill_core)
+            continue;
 
         for (int i = 0; i < status.batchInfo.size(); i++) {
             auto stage = status.batchInfo[i];
@@ -134,6 +144,9 @@ void config_helper_pds::fill_queue_start(queue<Msg> *q) {
             int pkg_num = (send_size_in_bit % M_D_DATA)
                               ? (send_size_in_bit / M_D_DATA + 1)
                               : (send_size_in_bit / M_D_DATA);
+            pkg_num = pkg_num % CORE_COMM_PAYLOAD
+                          ? pkg_num / CORE_COMM_PAYLOAD + 1
+                          : pkg_num / CORE_COMM_PAYLOAD;
 
             for (int j = 1; j <= pkg_num; j++) {
                 sc_bv<M_D_DATA> d(0x1);
@@ -151,9 +164,15 @@ void config_helper_pds::fill_queue_start(queue<Msg> *q) {
         sc_bv<M_D_DATA> d(0x1);
         q[index].push(Msg(true, MSG_TYPE::S_DATA, total_pkg + 1, status.id, 0,
                           status.id, 1, d));
+
+        if (total_pkg == 0) {
+            sc_bv<M_D_DATA> d(0x1);
+            q[index].push(
+                Msg(true, MSG_TYPE::S_DATA, 1, status.id, 0, status.id, 1, d));
+        }
     }
 
-    wait_send_start = false;
+    wait_send_start_prefill = wait_send_start_decode = false;
 }
 
 void config_helper_pds::iter_done(PD_JOB type) {
@@ -199,7 +218,7 @@ void config_helper_pds::iter_done(PD_JOB type) {
                         ofstream file("token_records.txt", ios::app);
 
                         if (!file.is_open()) {
-                            cerr << "Error: Cannot open file "  << endl;
+                            cerr << "Error: Cannot open file " << endl;
                             return;
                         }
 
@@ -452,7 +471,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
     if (i < prefill_core && stage_index[i] == 1 && exist_prefill)
         work.recv_cnt = 1;
     else
-        work.recv_cnt = 0;
+        work.recv_cnt = 1;
 
     int index = i / GRID_X;
     int prim_seq = 0;
@@ -592,13 +611,14 @@ void config_helper_pds::parse_ack_msg(Event_engine *event_engine, int flow_id,
 
     if (g_recv_ack_cnt_p >= prefill_core) {
         g_recv_ack_cnt_p = 0;
-        wait_send_start = true;
+        wait_send_start_prefill = true;
         notify_event->notify(CYCLE, SC_NS);
     }
 
     if (g_recv_ack_cnt_d >= decode_core) {
         g_recv_ack_cnt_d = 0;
-        // notify_event->notify(CYCLE, SC_NS);
+        wait_send_start_decode = true;
+        notify_event->notify(CYCLE, SC_NS);
     }
 }
 

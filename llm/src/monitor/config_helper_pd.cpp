@@ -97,9 +97,6 @@ void config_helper_pd::fill_queue_start(queue<Msg> *q) {
     // 在调用这个函数的时候，已经完成对core的config发放
 
     for (auto status : coreStatus) {
-        if ((status.id + 1) % model_stage != 1)
-            continue;
-
         int index = status.id / GRID_X;
         int total_pkg = 0;
         bool has_prefill = false;
@@ -130,7 +127,7 @@ void config_helper_pd::fill_queue_start(queue<Msg> *q) {
             }
         }
 
-        if (has_prefill) {
+        if (has_prefill || total_pkg == 0) {
             sc_bv<M_D_DATA> d(0x1);
             q[index].push(Msg(true, MSG_TYPE::S_DATA, total_pkg + 1, status.id,
                               0, status.id, 1, d));
@@ -383,11 +380,11 @@ void config_helper_pd::generate_prims(int i) {
     // 手动填写recv_cnt
     work.recv_tag = i;
     if ((i + 1) % model_stage != 1)
-        work.recv_cnt = 0;
+        work.recv_cnt = 1;
     else if (exist_prefill)
         work.recv_cnt = 1;
     else
-        work.recv_cnt = 0;
+        work.recv_cnt = 1;
 
     int index = i / GRID_X;
     int prim_seq = 0;
@@ -459,7 +456,6 @@ void config_helper_pd::generate_prims(int i) {
     send_data->max_packet = pkg_nums % CORE_COMM_PAYLOAD
                                 ? pkg_nums / CORE_COMM_PAYLOAD + 1
                                 : pkg_nums / CORE_COMM_PAYLOAD;
-    cout << "sefawsefgaef pkg: " << pkg_nums << " " << send_data->max_packet << endl;
     send_data->end_length = end_length;
 
     if ((i + 1) % model_stage != 1) {

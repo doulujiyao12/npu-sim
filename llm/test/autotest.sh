@@ -53,9 +53,9 @@ while IFS= read -r line || [[ -n "$line" ]]; do
     ORIGINAL_PWD=$(pwd)
     cd "${BUILD_DIR_ABS}"
 
-    if [ "$FIELD_COUNT" -eq 9 ]; then
-        echo "INFO: Detected 9 fields, using legacy mode."
-        read -r NPUSIM_MAIN_CONFIG_FILE JSON_X JSON_CORE_ID JSON_EXU_X JSON_EXU_Y JSON_SFU_X JSON_SRAM_BITWIDTH JSON_SRAM_MAX_SIZE JSON_COMM_PAYLOAD<<<"$line"
+    if [ "$FIELD_COUNT" -eq 10 ]; then
+        echo "INFO: Detected 10 fields, using legacy mode."
+        read -r NPUSIM_MAIN_CONFIG_FILE JSON_X JSON_CORE_ID JSON_EXU_X JSON_EXU_Y JSON_SFU_X JSON_SRAM_BITWIDTH JSON_SRAM_MAX_SIZE JSON_COMM_PAYLOAD JSON_DRAM_BANDWIDTH<<<"$line"
 
         CONFIG_CONTENT=$(
             cat <<EOF
@@ -81,6 +81,7 @@ EOF
         ./npusim --config-file="../llm/test/${NPUSIM_MAIN_CONFIG_FILE}" \
                  --core-config-file="../llm/test/${TEMP_JSON_CONFIG_BASENAME}" \
                  --sram-max="${JSON_SRAM_MAX_SIZE}" \
+                 --df_dram_bw="${JSON_DRAM_BANDWIDTH}"
                  >"${NPUSIM_STDOUT_TMP_BASENAME}"
 
     elif [ "$FIELD_COUNT" -eq 2 ]; then
@@ -91,7 +92,7 @@ EOF
                  --core-config-file="../llm/test/${CORE_CONFIG_NAME}" \
                  >"${NPUSIM_STDOUT_TMP_BASENAME}"
     else
-        echo "ERROR: Line ${LINE_NUM} has invalid number of fields ${FIELD_COUNT} (expected 2 or 8)."
+        echo "ERROR: Line ${LINE_NUM} has invalid number of fields ${FIELD_COUNT} (expected 2 or 10)."
         echo -e "${line}\tERROR: Invalid parameter count" >>"${OUTPUT_BATCH_FILE}"
         cd "${ORIGINAL_PWD}"
         continue

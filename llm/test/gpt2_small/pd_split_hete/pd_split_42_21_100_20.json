@@ -11,11 +11,11 @@
     "eof_chance": 0.1,
     "prefill_stage": 7,
     "decode_stage": 7,
-    "prefill_cores": 28,
-    "decode_cores": 28,
-    "batch_size": 2,
+    "prefill_cores": 42,
+    "decode_cores": 21,
+    "batch_size": 1,
     "head_size": 64,
-    "prefill_iters": 4
+    "prefill_iters": 6
   },
   "chips": [
     {

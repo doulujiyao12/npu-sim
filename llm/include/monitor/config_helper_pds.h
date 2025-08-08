@@ -21,7 +21,8 @@ public:
 
     bool busy_p; // 此次iteration是否已经开始
     bool busy_d;
-    bool wait_send_start;
+    bool wait_send_start_prefill;
+    bool wait_send_start_decode;
     bool wait_schedule_p;
     bool wait_schedule_d;
     int g_recv_ack_cnt_p;
