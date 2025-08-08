@@ -1,7 +1,7 @@
 {
   "mode": "sched_pds",
   "requests": {
-    "count": 20,
+    "count": 200,
     "seq_len": 384,
     "arrival": [
       1
@@ -13,7 +13,7 @@
     "decode_stage": 7,
     "prefill_cores": 42,
     "decode_cores": 21,
-    "batch_size": 2,
+    "batch_size": 1,
     "head_size": 64,
     "prefill_iters": 6
   },

@@ -112,6 +112,10 @@ void config_helper_pd::fill_queue_start(queue<Msg> *q) {
                 int pkg_num = (send_size_in_bit % M_D_DATA)
                                   ? (send_size_in_bit / M_D_DATA + 1)
                                   : (send_size_in_bit / M_D_DATA);
+                pkg_num = pkg_num % CORE_COMM_PAYLOAD
+                              ? pkg_num / CORE_COMM_PAYLOAD + 1
+                              : pkg_num / CORE_COMM_PAYLOAD;
+
 
                 for (int j = 1; j <= pkg_num; j++) {
                     sc_bv<M_D_DATA> d(0x1);
@@ -551,13 +555,10 @@ void config_helper_pd::set_global_vars(int T) {
     vtable.push_back(make_pair("R", heads / kv_heads));
     vtable.push_back(make_pair("3C", 3 * heads * head_size));
     vtable.push_back(make_pair("4C", 4 * heads * head_size));
-    vtable.push_back(make_pair("BTC", T * heads * head_size ));
-    vtable.push_back(
-        make_pair("2BTC", 2 * T * heads * head_size));
-    vtable.push_back(
-        make_pair("3BTC", 3 * T * heads * head_size));
-    vtable.push_back(
-        make_pair("4BTC", 4 * T * heads * head_size));
+    vtable.push_back(make_pair("BTC", T * heads * head_size));
+    vtable.push_back(make_pair("2BTC", 2 * T * heads * head_size));
+    vtable.push_back(make_pair("3BTC", 3 * T * heads * head_size));
+    vtable.push_back(make_pair("4BTC", 4 * T * heads * head_size));
     vtable.push_back(
         make_pair("3C-R", heads * head_size * (2 + heads / kv_heads) /
                               (heads / kv_heads)));
