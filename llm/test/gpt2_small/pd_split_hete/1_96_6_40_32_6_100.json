@@ -1,0 +1,23 @@
+{
+    "x": 8,
+    "sram_size": 6291456,
+    "comm_payload": 256,
+    "cores": [
+        {
+            "id": 0,
+            "exu_x": 96,
+            "exu_y": 96,
+            "sfu_x": 1536,
+            "sram_bitwidth": 64,
+            "dram_config": "../DRAMSys/configs/DDR4_40GB.json"
+        },
+        {
+            "id": 42,
+            "exu_x": 32,
+            "exu_y": 32,
+            "sfu_x": 512,
+            "sram_bitwidth": 64,
+            "dram_config": "../DRAMSys/configs/DDR4_100GB.json"
+        }
+    ]
+}
