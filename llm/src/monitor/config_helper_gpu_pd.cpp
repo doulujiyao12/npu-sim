@@ -125,6 +125,15 @@ void config_helper_gpu_pd::iter_done(vector<Msg> done_msg) {
                     if (++decode_done == requestRecords.size()) {
                         cout << "All reqs done.\n";
                         cout << "[CATCH TEST] " << sc_time_stamp() << endl;
+                        ofstream outfile("simulation_result.txt", ios::app);
+                        if (outfile.is_open()) {
+                            outfile << "[CATCH TEST] " << sc_time_stamp() << "L1CACHESIZE " << L1CACHESIZE << " L2CACHESIZE "
+                            << L2CACHESIZE << " BANDWIDTH " << gpu_bw
+                            << endl;
+                            outfile.close();
+                        } else {
+                            cout << "Error: Unable to open file for writing timestamp." << endl;
+                        }
                         sc_stop();
                     }
                 }

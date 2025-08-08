@@ -15,6 +15,8 @@ int matmul_forward_gpu_pd::task_core(TaskCoreContext &context) {
     int data_size_bias = OC * data_byte;
     int data_size_out = B * T * OC * data_byte / (slice_x * slice_y) / 3;
 
+    
+
     int mem_time = 0;
     auto input_mem_offset = 0;
     if (!gpu_pos_locator->findPair(datapass_label.indata[0],
@@ -59,7 +61,11 @@ if (gpu_inner == true){
     gpu_read_generic(context,
                      input_mem_offset + data_size_input / slice_y * row_index,
                      data_size_input / slice_y, mem_time);
+#if GPU_CACHE_DEBUG == 1
 
+    cout << " data_size_weight / slice_x " << data_size_weight / slice_x << endl;
+
+#endif
     // weight 读入
     gpu_read_generic(context, w_key.pos + w_key.size / slice_x * col_index,
                      data_size_weight / slice_x, mem_time);
@@ -149,7 +155,12 @@ if (gpu_inner == true){
     gpu_read_generic(context,
         input_mem_offset + data_size_input / slice_total * fetch_index,
         data_size_input / slice_total, mem_time);
+#if GPU_CACHE_DEBUG == 1
 
+    LOG_VERBOSE(1, context.cid," data_size_weight / slice_x " << data_size_weight / slice_x);
+
+
+#endif
     // weight 读入
     gpu_read_generic(context, w_key.pos + w_key.size / slice_total * fetch_index,
             data_size_weight / slice_total, mem_time);
@@ -232,7 +243,8 @@ if (gpu_inner == true){
         LOG_VERBOSE(1, context.cid, "Prim name:" << name << GREEN << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
 
     }
-
+    // cout << "B: " << B << ", T: " << T << ", C: " << C << ", OC: " << OC << endl;
+    // assert(false);
 
 }
 #endif

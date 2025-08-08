@@ -209,6 +209,9 @@ int Matmul_f::task_core(TaskCoreContext &context) {
     int data_size_bias = OC;
     int data_size_out = B * T * OC;
 
+    // cout << "B: " << B << ", T: " << T << ", C: " << C << ", OC: " << OC << endl;
+    // assert(false);
+
     // dram地址
     u_int64_t dram_addr_tile = 0; // cid * dataset_words_per_tile;
     u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;

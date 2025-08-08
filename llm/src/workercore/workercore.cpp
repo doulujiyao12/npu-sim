@@ -59,6 +59,9 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
         dcache->dramSysWrapper->dramsys->getMemSpec().memorySizeBytes;
     executor->defaultDataLength =
         dcache->dramSysWrapper->dramsys->getMemSpec().defaultBytesPerBurst;
+    if (use_gpu == false){
+        dram_aligned = executor->defaultDataLength;
+    }
     assert(dataset_words_per_tile <
            dcache->dramSysWrapper->dramsys->getMemSpec().memorySizeBytes);
     g_dram_kvtable[cid] =

@@ -243,6 +243,10 @@ AllocationID alloc_id = 0;
         // cout << "Core " << context.cid << " end nbdram: " << sc_time_stamp().to_string() << endl;
 #endif
         u_int64_t nbdram_time = (end_nbdram - start_nbdram).to_seconds() * 1e9;
+#if NB_CACHE_DEBUG == 1
+        LOG_VERBOSE(1, context.cid," nbdram time: " << nbdram_time <<  " dma_read_count: " << dma_read_count <<  "cache_count" << cache_count << " cache_lines: " << cache_lines);
+
+#endif
 #if USE_BEHA_SRAM == 1
         for (int i = 0; i < dma_read_count; i++) {
             if (i != 0) {
@@ -1380,14 +1384,20 @@ void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
 void gpu_read_generic(TaskCoreContext &context, uint64_t global_addr,
                       int data_size_in_byte, int &mem_time) {
 
-    int inp_global_addr =
+    uint64_t inp_global_addr =
         (global_addr / dram_aligned) * dram_aligned; // 向下取整到dram 取址的整数倍，这里是32
-    int end_addr = global_addr + data_size_in_byte;
-    int end_global_addr = ((end_addr + dram_aligned - 1) / dram_aligned) * dram_aligned; // 尾地址向上取整
+    uint64_t end_addr = global_addr + data_size_in_byte;
+    uint64_t end_global_addr = ((end_addr + dram_aligned - 1) / dram_aligned) * dram_aligned; // 尾地址向上取整
 
-    int aligned_data_size_in_byte = end_global_addr - inp_global_addr;
-
-
+    uint64_t aligned_data_size_in_byte = end_global_addr - inp_global_addr;
+#if GPU_CACHE_DEBUG == 1    
+    LOG_VERBOSE(1, context.cid," aligned_data_size_in_byte: " << aligned_data_size_in_byte
+        << " data_size_in_byte " << data_size_in_byte
+        << " global_addr " << global_addr
+        << " inp_global_addr: " << inp_global_addr 
+           << " end_addr: " << end_addr 
+           << " end_global_addr: " << end_global_addr);                    
+#endif
     auto gpunb_dcache_if = context.gpunb_dcache_if;
 
     auto s_nbdram = context.start_nb_gpu_dram_event;
@@ -1401,11 +1411,9 @@ void gpu_read_generic(TaskCoreContext &context, uint64_t global_addr,
 
     sc_time start_first_write_time = sc_time_stamp();
 #if GPU_CACHE_DEBUG == 1
-
-    cout << "read cache_count: " << cache_count << "cache_lines " << cache_lines
-         << endl;
-    cout << "start gpu_nbdram: " << sc_time_stamp().to_string() << " id "
-         << gpunb_dcache_if->id << endl;
+    LOG_VERBOSE(1, context.cid," read cache_count: " << cache_count << "cache_lines " << cache_lines);
+    LOG_VERBOSE(1, context.cid," start gpu_nbdram: " << sc_time_stamp().to_string() << " id " << gpunb_dcache_if->id);                    
+         
 
 #endif
     gpunb_dcache_if->reconfigure(inp_global_addr, cache_count, cache_lines, 0);
@@ -1419,9 +1427,9 @@ void gpu_read_generic(TaskCoreContext &context, uint64_t global_addr,
                                     "read_gpu", "E",
                                     Trace_event_util("read_gpu"));
 #if GPU_CACHE_DEBUG == 1
-
-    cout << "end gpu_nbdram: " << sc_time_stamp().to_string() << " id "
-         << gpunb_dcache_if->id << endl;
+    LOG_VERBOSE(1, context.cid," end gpu_nbdram: " << sc_time_stamp().to_string() << " id " << gpunb_dcache_if->id);                    
+    LOG_VERBOSE(1, context.cid," end cache_count: " << cache_count << "cache_lines " << cache_lines << " id " << gpunb_dcache_if->id);                    
+    
 
 #endif
 
@@ -1429,6 +1437,7 @@ void gpu_read_generic(TaskCoreContext &context, uint64_t global_addr,
     sc_time end_first_write_time = sc_time_stamp();
     mem_time +=
         (end_first_write_time - start_first_write_time).to_seconds() * 1e9;
+    LOG_VERBOSE(1, context.cid," gpu_nbdram time: " << (end_first_write_time - start_first_write_time).to_string());                    
 
 #endif
 }
@@ -1436,12 +1445,12 @@ void gpu_read_generic(TaskCoreContext &context, uint64_t global_addr,
 void gpu_write_generic(TaskCoreContext &context, uint64_t global_addr,
                        int data_size_in_byte, int &mem_time) {
 
-    int inp_global_addr =
+    uint64_t inp_global_addr =
         (global_addr / dram_aligned) * dram_aligned; // 向下取整到dram 取址的整数倍，这里是32
-    int end_addr = global_addr + data_size_in_byte;
-    int end_global_addr = ((end_addr + dram_aligned - 1) / dram_aligned) * dram_aligned; // 尾地址向上取整
+    uint64_t end_addr = global_addr + data_size_in_byte;
+    uint64_t end_global_addr = ((end_addr + dram_aligned - 1) / dram_aligned) * dram_aligned; // 尾地址向上取整
 
-    int aligned_data_size_in_byte = end_global_addr - inp_global_addr;
+    uint64_t aligned_data_size_in_byte = end_global_addr - inp_global_addr;
 
 
     auto gpunb_dcache_if = context.gpunb_dcache_if;

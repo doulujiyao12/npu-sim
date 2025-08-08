@@ -150,10 +150,9 @@ private:
                 transactionPostponed = false;
             }
 #if GPU_CACHE_DEBUG == 1
-            cout << "GPUNB_dcacheIF[" << id
-                 << "] Begin resp finished=" << finished
+            LOG_VERBOSE(1, id,"End resp finished=" << finished
                  << " sent=" << transactionsSent
-                 << " received=" << transactionsReceived << endl;
+                 << " received=" << transactionsReceived);
 #endif
             // If all answers were received:
             if (finished && transactionsSent == transactionsReceived) {
@@ -162,7 +161,7 @@ private:
                 transactionsReceived = 0;
 #if GPU_CACHE_DEBUG == 1
 
-                cout << "end event notify begin resp" << endl;
+                LOG_VERBOSE(1, id,"end event notify begin resp");
 #endif
                 end_nb_dram_event->notify();
             }
@@ -188,11 +187,9 @@ private:
             }
             // 打印完成状态和事务计数信息
 #if GPU_CACHE_DEBUG == 1
-
-            cout << "GPUNB_dcacheIF[" << id
-                 << "] End resp finished=" << finished
+            LOG_VERBOSE(1, id,"End resp finished=" << finished
                  << " sent=" << transactionsSent
-                 << " received=" << transactionsReceived << endl;
+                 << " received=" << transactionsReceived);
 #endif
             // If all answers were received:
             if (finished && transactionsSent == transactionsReceived) {
@@ -200,8 +197,8 @@ private:
                 transactionsSent = 0;
                 transactionsReceived = 0;
 #if GPU_CACHE_DEBUG == 1
+                LOG_VERBOSE(1, id,"end event notify end resp");
 
-                cout << "end event notify end resp" << endl;
 #endif
                 end_nb_dram_event->notify();
             }
@@ -215,6 +212,9 @@ private:
     void generateRequests() {
         while (true) {
             wait(*start_nb_dram_event);
+#if GPU_CACHE_DEBUG == 1
+            LOG_VERBOSE(1, id,"total_requests  " << total_requests);
+#endif
             if (total_requests > 0) {
                 transactionsSent = total_requests; // Set transactionsSent to total_requests
                 while (current_request < total_requests) {
@@ -244,6 +244,10 @@ private:
 
                     // transactionsSent++;
                     finished = true;
+#if GPU_CACHE_DEBUG == 1
+            LOG_VERBOSE(1, id, " Event: next_dram_event notified at time "
+                    << sc_core::sc_time_stamp() << " current_request "<< current_request);
+#endif
 
                     // 打印事件通知信息
                     // std::cout << "Event: next_dram_event notified at time "
