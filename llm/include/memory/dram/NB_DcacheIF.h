@@ -71,6 +71,10 @@ public:
         total_requests = dma_read_cnt * cache_cnt;
         // cache_lines = line_size;
         data_length = line_size / 8;         // 假设每行按8字节分块
+#if NB_CACHE_DEBUG == 1
+        LOG_VERBOSE(1, c_id,"total_requests: " << total_requests << " line_size: " << line_size);
+#endif
+        
 #if DRAM_BURST_BYTE > 0 
         total_requests = (total_requests * data_length + DRAM_BURST_BYTE - 1) / DRAM_BURST_BYTE;
         data_length = DRAM_BURST_BYTE;
@@ -165,14 +169,18 @@ private:
                 next_dram_event->notify();
                 transactionPostponed = false;
             }
+#if NB_CACHE_DEBUG == 1
+            LOG_VERBOSE(1, c_id,"BEGIN_RESP transactionsSent: " << transactionsSent << " transactionsReceived: " << transactionsReceived << " finish" << finished);
 
+#endif
             // If all answers were received:
             if (finished && transactionsSent == transactionsReceived) {
                 finished = false;
                 transactionsSent = 0;
                 transactionsReceived = 0;
 #if NB_CACHE_DEBUG == 1
-                std::cout << "Core " << c_id << "BEGIN RESP DRAM EVENT" << std::endl;
+                LOG_VERBOSE(1, c_id,"BEGIN RESP DRAM EVENT");
+                
 #endif
                 end_nb_dram_event->notify();
             }
@@ -199,15 +207,16 @@ private:
 
             // If all answers were received:
 #if NB_CACHE_DEBUG == 1
-            cout << "transactionsSent: " << transactionsSent << " transactionsReceived: " << transactionsReceived << endl;
-            cout << "finish" << finished << endl;
+            LOG_VERBOSE(1, c_id,"END_RESP transactionsSent: " << transactionsSent << " transactionsReceived: " << transactionsReceived << " finish" << finished);
+
 #endif
             if (finished && transactionsSent == transactionsReceived) {
                 finished = false;
                 transactionsSent = 0;
                 transactionsReceived = 0;
 #if NB_CACHE_DEBUG == 1
-                std::cout << "Core " << c_id << "END RESP DRAM EVENT" << std::endl;
+                LOG_VERBOSE(1, c_id,"END RESP DRAM EVENT");
+
 #endif
                 end_nb_dram_event->notify();
             }
@@ -227,8 +236,8 @@ private:
 #if NB_CACHE_DEBUG == 1
             std::cout << "Event: start_nb_dram_event notified at time "
                       << sc_core::sc_time_stamp() << " total request " << total_requests << std::endl;
+            LOG_VERBOSE(1, c_id,"total_requests  " << total_requests);
 
-            cout << "Core " << c_id << "total_requests  " << total_requests << std::endl;
 #endif
             if (total_requests > 0) {
                 transactionsSent = total_requests;
@@ -271,8 +280,8 @@ private:
                     // transactionsSent++;
 #if NB_CACHE_DEBUG == 1
                     // 打印事件通知信息
-                    std::cout << "Event: next_dram_event notified at time "
-                    << sc_core::sc_time_stamp() << std::endl;
+                    LOG_VERBOSE(1, c_id,"Event: next_dram_event notified at time " << sc_core::sc_time_stamp());
+
 #endif
                     finished = true;
                     wait(*next_dram_event);

@@ -19,6 +19,7 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
     int data_size_weight = OC * C;
     int data_size_bias = OC;
     int data_size_out = B * T * OC / 3;
+    
 
     bool need_multiply = false;
     for (auto stage : batchInfo) {
@@ -61,6 +62,12 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
     BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
+#if NB_CACHE_DEBUG == 1
+    
+    LOG_VERBOSE(1, context.cid," data_size_weight " << data_size_weight);                    
+
+
+#endif
     auto label_weight = ETERNAL_PREFIX + prefix + "_w";
     check_static_data(context, dram_time, weight_global_addr, data_size_weight,
                       label_weight);
@@ -206,6 +213,8 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
     // overlap_time,
     //                   data_size_out, out_global_addr);
     BETTER_PRINT(overlap_time);
+    // cout << "B: " << B << ", T: " << T << ", C: " << C << ", OC: " << OC << endl;
+    // assert(false);
 
     return overlap_time;
 }

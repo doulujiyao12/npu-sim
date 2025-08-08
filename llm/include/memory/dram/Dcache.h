@@ -328,9 +328,10 @@ public:
 
             int pu_penalty = 0;
 #if DCACHE == 0
-            tlm_phase tPhase = END_RESP;
-            sc_time tDelay = sc_time(CYCLE, SC_NS);
-            return socket->nb_transport_bw(trans, tPhase, tDelay);
+            // tlm_phase tPhase = END_RESP;
+            // sc_time tDelay = sc_time(CYCLE, SC_NS);
+            // return socket->nb_transport_bw(trans, tPhase, tDelay);
+            return initiatorSocket->nb_transport_fw(trans, phase, delay);
 #endif
 
 #if DCACHE == 1
