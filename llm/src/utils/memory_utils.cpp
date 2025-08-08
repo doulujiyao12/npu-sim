@@ -219,19 +219,30 @@ AllocationID alloc_id = 0;
                                             alloc_id, sram_bitw, use_manager);
         
 #endif 
-        nb_dcache->reconfigure(inp_global_addr, dma_read_count, cache_count,
+
+        if (beha_dram == false) {
+            nb_dcache->reconfigure(inp_global_addr, dma_read_count, cache_count,
                                cache_lines, 0);
+        }
+        
         sc_time start_nbdram = sc_time_stamp();
         LOG_VERBOSE(1, context.cid," start sram first write nbdram: " << sc_time_stamp().to_string());
         // cout << "Core " << context.cid << " start nbdram: " << sc_time_stamp().to_string() << endl;
         context.event_engine->add_event("Core " + toHexString(context.cid),
                                     "R_Dram", "B",
                                     Trace_event_util("R_Dram"));
+if (beha_dram == false) {
 #if USE_BEHA_SRAM == 1
         wait(*e_nbdram);
 #else
         wait(ram_e);
 #endif
+}else{
+    auto require_byte = dma_read_count * cache_count * cache_lines / 8;
+    float need_NS = (float)require_byte / beha_dram_util / (15.0 * dram_bw / 8);
+    int need_cycles = need_NS;
+    wait(need_cycles, SC_NS);
+}
         context.event_engine->add_event("Core " + toHexString(context.cid),
                                     "R_Dram", "E",
                                     Trace_event_util("R_Dram"));
@@ -516,15 +527,24 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
                                     Trace_event_util("read_gpu"));
 
 #else
+if (beha_dram == false) {
     nb_dcache->reconfigure(inp_global_addr, dma_read_count, cache_count,
                            cache_lines, 0);
+    }
     sc_time start_nbdram = sc_time_stamp();
     LOG_VERBOSE(1, context.cid," start spill back nbdram: " << sc_time_stamp().to_string());
     // cout << "Core " << context.cid << " start spill back nbdram: " << sc_time_stamp().to_string() << endl;
     context.event_engine->add_event("Core " + toHexString(context.cid),
                                     "W_Dram", "B",
                                     Trace_event_util("W_Dram"));
+if (beha_dram == false) {
     wait(*e_nbdram);
+}else{
+    auto require_byte = dma_read_count * cache_count * cache_lines / 8;
+    float need_NS = (float)require_byte / beha_dram_util / (15.0 * dram_bw / 8);
+    int need_cycles = need_NS;
+    wait(need_cycles, SC_NS);
+}
     context.event_engine->add_event("Core " + toHexString(context.cid),
                                     "W_Dram", "E",
                                     Trace_event_util("W_Dram"));

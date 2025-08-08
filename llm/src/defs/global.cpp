@@ -65,6 +65,8 @@ bool gpu_clog;
 int gpu_bw;
 string g_config_file;
 int dram_bw;
+bool beha_dram;
+float beha_dram_util;
 // int DRAM_BURST_BYTE;
 // int L1CACHELINESIZE;
 // int L2CACHELINESIZE;

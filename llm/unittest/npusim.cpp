@@ -52,6 +52,11 @@ Define_string_opt("--gpu_dram_config", g_gpu_dram_config, "../DRAMSys/configs/hb
                     "gpu dram config");
 Define_bool_opt("--use_gpu", g_use_gpu, false,
                     "w/o use gpu mode");
+Define_bool_opt("--beha_dram", g_beha_dram, false,
+                    "whether use behavious dram"); // 3145728
+Define_float_opt("--beha_dram_util", g_beha_dram_util, 0.7,
+                 "dram bandwidth utilization in beha dram");
+
 
 Define_int64_opt("--verbose-level", g_verbose_level, 1,
                  "verbose-level"); // 3145728
@@ -440,6 +445,8 @@ int sc_main(int argc, char *argv[]) {
     gpu_bw = g_gpu_bw;
     dram_bw = g_dram_bw;
     use_gpu = g_use_gpu;
+    beha_dram_util = g_beha_dram_util;
+    beha_dram = g_beha_dram;
 
     modifyNbrOfDevices("../DRAMSys/configs/memspec/JEDEC_4Gb_DDR4-1866_8bit_A.json", "../DRAMSys/configs/memspec/JEDEC_4Gb_DDR4-1866_8bit_DF.json", dram_bw);
     int bytecount_df = static_cast<int>(log2(g_dram_bw));
