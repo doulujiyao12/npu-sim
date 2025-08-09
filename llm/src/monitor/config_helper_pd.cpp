@@ -184,6 +184,15 @@ void config_helper_pd::iter_done(vector<Msg> done_msg) {
                     if (++decode_done == requestRecords.size()) {
                         cout << "All reqs done.\n";
                         cout << "[CATCH TEST] " << sc_time_stamp() << endl;
+                        ofstream outfile("simulation_result_df_pd.txt", ios::app);
+                        if (outfile.is_open()) {
+                            outfile << "[CATCH TEST] " << sc_time_stamp() << "MAX_SRAM_SIZE " << MAX_SRAM_SIZE
+                            << " BANDWIDTH " << dram_bw
+                            << endl;
+                            outfile.close();
+                        } else {
+                            cout << "Error: Unable to open file for writing timestamp." << endl;
+                        }
                         sc_stop();
                     }
                 }
