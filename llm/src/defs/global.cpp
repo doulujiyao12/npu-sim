@@ -13,6 +13,7 @@ vector<pair<int, ExuConfig *>> tile_exu;
 vector<pair<int, SfuConfig *>> tile_sfu;
 vector<pair<int, int>> mem_sram_bw; // 用于记录每个核的sram bitwidth 
 vector<pair<int, string>> mem_dram_config_str; // 用于记录每个核的dram配置文件名
+vector<pair<int, int>> mem_dram_bw; // 记录每个核的dram带宽
 
 class prim_base;
 vector<prim_base *> global_prim_stash;

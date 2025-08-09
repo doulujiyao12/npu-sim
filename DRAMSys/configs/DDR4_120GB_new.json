@@ -1,8 +1,8 @@
 {
     "simulation": {
-        "addressmapping": "am_ddr4_8x4Gbx8_dimm_p1KB_brc.json",
+        "addressmapping": "ADDRMAP_120GB.json",
         "mcconfig": "fr_fcfs.json",
-        "memspec": "DDR4_150GB.json",
+        "memspec": "MEMSPEC_120GB.json",
         "simconfig": "example.json",
         "simulationid": "ddr4-example",
         "tracesetup": [

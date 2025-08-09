@@ -9,7 +9,15 @@
             "exu_y": 64,
             "sfu_x": 1024,
             "sram_bitwidth": 64,
-            "dram_config": "../DRAMSys/configs/DDR4_60GB_new.json"
+            "dram_bw": 32
+        },
+        {
+            "id": 42,
+            "exu_x": 64,
+            "exu_y": 64,
+            "sfu_x": 1024,
+            "sram_bitwidth": 64,
+            "dram_bw": 64
         }
     ]
 }

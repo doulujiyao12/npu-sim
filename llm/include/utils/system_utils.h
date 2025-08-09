@@ -15,6 +15,7 @@ ExuConfig *get_exu_config(int id);
 SfuConfig *get_sfu_config(int id);
 int get_sram_bitwidth(int id);
 string get_dram_config(int id);
+int get_dram_bw(int id);
 
 int ceiling_division(int a, int b);
 

@@ -1,14 +1,14 @@
 {
   "mode": "sched_pds",
   "requests": {
-    "count": 100,
+    "count": 200,
     "seq_len": 384,
     "arrival": [
       1
     ],
     "heads": 20,
     "kv_heads": 5,
-    "eof_chance": 0.1,
+    "eof_chance": 0.02,
     "prefill_stage": 7,
     "decode_stage": 7,
     "prefill_cores": 42,

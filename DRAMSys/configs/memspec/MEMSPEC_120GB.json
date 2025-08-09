@@ -5,12 +5,12 @@
             "dataRate": 2,
             "nbrOfBankGroups": 4,
             "nbrOfBanks": 16,
-            "nbrOfColumns": 1024,
+            "nbrOfChannels": 1,
+            "nbrOfColumns": 512,
+            "nbrOfDevices": 64,
             "nbrOfRanks": 1,
             "nbrOfRows": 32768,
-            "width": 8,
-            "nbrOfDevices": 8,
-            "nbrOfChannels": 1
+            "width": 8
         },
         "memoryId": "MICRON_4Gb_DDR4-1866_8bit_A",
         "memoryType": "DDR4",
@@ -32,6 +32,7 @@
             "vdd2": 2.5
         },
         "memtimingspec": {
+            "ACTPDEN": 1,
             "AL": 0,
             "CCD_L": 5,
             "CCD_S": 4,
@@ -40,20 +41,23 @@
             "CL": 13,
             "DQSCK": 2,
             "FAW": 22,
+            "PRPDEN": 1,
             "RAS": 32,
             "RC": 45,
             "RCD": 13,
-            "REFM": 1,
             "REFI": 7280,
+            "REFM": 1,
+            "REFPDEN": 1,
             "RFC": 243,
             "RFC2": 150,
             "RFC4": 103,
             "RL": 13,
-            "RPRE": 1,
             "RP": 13,
+            "RPRE": 1,
             "RRD_L": 5,
             "RRD_S": 4,
             "RTP": 8,
+            "RTRS": 1,
             "WL": 12,
             "WPRE": 1,
             "WR": 14,
@@ -63,11 +67,7 @@
             "XPDLL": 255,
             "XS": 252,
             "XSDLL": 512,
-            "ACTPDEN": 1,
-            "PRPDEN": 1,
-            "REFPDEN": 1,
-            "RTRS": 1,
-            "tCK": 106
+            "tCK": 1072
         }
     }
 }

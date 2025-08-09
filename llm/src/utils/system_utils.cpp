@@ -80,6 +80,18 @@ string get_dram_config(int id) {
     return DEFAULT_DRAM_CONFIG_PATH;
 }
 
+int get_dram_bw(int id) {
+    for (auto pair : mem_dram_bw) {
+        if (pair.first == id)
+            return pair.second;
+    }
+
+    cout << "[ERROR]: dram bw for id " << id << " not found!" << endl;
+    sc_stop();
+
+    return 32;
+}
+
 
 int ceiling_division(int a, int b) {
     if (b == 0) {
@@ -178,7 +190,7 @@ void init_grid(string config_path, string core_config_path) {
 
     if (j2.contains("x"))
         GRID_X = j2["x"];
-        
+
     else
         GRID_X = 4;
 
@@ -199,14 +211,13 @@ void init_grid(string config_path, string core_config_path) {
     for (auto core : config_cores) {
         CoreHWConfig c = core;
         for (int i = sample.id + 1; i < c.id; i++) {
-            tile_exu.push_back(
-                make_pair(i, new ExuConfig(MAC_Array, sample.exu_x,
-                                                   sample.exu_y)));
+            tile_exu.push_back(make_pair(
+                i, new ExuConfig(MAC_Array, sample.exu_x, sample.exu_y)));
             tile_sfu.push_back(
                 make_pair(i, new SfuConfig(Linear, sample.sfu_x)));
             mem_sram_bw.push_back(make_pair(i, sample.sram_bitwidth));
-            mem_dram_config_str.push_back(
-                make_pair(i, sample.dram_config));
+            mem_dram_config_str.push_back(make_pair(i, sample.dram_config));
+            mem_dram_bw.push_back(make_pair(i, sample.dram_bw));
         }
 
         tile_exu.push_back(
@@ -214,6 +225,7 @@ void init_grid(string config_path, string core_config_path) {
         tile_sfu.push_back(make_pair(c.id, new SfuConfig(Linear, c.sfu_x)));
         mem_sram_bw.push_back(make_pair(c.id, c.sram_bitwidth));
         mem_dram_config_str.push_back(make_pair(c.id, c.dram_config));
+        mem_dram_bw.push_back(make_pair(c.id, c.dram_bw));
 
         sample = c;
     }
@@ -224,6 +236,7 @@ void init_grid(string config_path, string core_config_path) {
         tile_sfu.push_back(make_pair(i, new SfuConfig(Linear, sample.sfu_x)));
         mem_sram_bw.push_back(make_pair(i, sample.sram_bitwidth));
         mem_dram_config_str.push_back(make_pair(i, sample.dram_config));
+        mem_dram_bw.push_back(make_pair(i, sample.dram_bw));
     }
 }
 
