@@ -181,7 +181,9 @@
 #define SIMU_WRITE_PORT 1
 #define ADDRESS_MAX (SRAM_BANKS * BANK_DEPTH)
 #define VERBOSE_PRINT 1
-#define PERFORMANCE_MODE 0
+#define PERFORMANCE_MODE 1
+#define KVCACHE_PRIOR_SPILL 1
+#define PERFORMANCE_MODE 1
 
 
 // mem_access_unit相关

@@ -10,7 +10,7 @@
         "NH": 64,
         "NH/2": 32,
         "NH/4": 16,
-        "L": 20,
+        "L": 5,
         "loop": 20,
         "3C": 15360,
         "4C": 20480,
@@ -17190,7 +17190,12 @@
                             "recv_tag": 42,
                             "cast": [
                                 {
-                                    "dest": -1
+                                    "dest": 0,
+                                    "loopout": "false"
+                                },
+                                {
+                                    "dest": -1,
+                                    "loopout": "true"
                                 }
                             ]
                         }
@@ -18177,7 +18182,12 @@
                             "recv_cnt": 0,
                             "cast": [
                                 {
-                                    "dest": -1
+                                    "dest": 1,
+                                    "loopout": "false"
+                                },
+                                {
+                                    "dest": -1,
+                                    "loopout": "true"
                                 }
                             ]
                         }
@@ -19164,7 +19174,12 @@
                             "recv_cnt": 0,
                             "cast": [
                                 {
-                                    "dest": -1
+                                    "dest": 2,
+                                    "loopout": "false"
+                                },
+                                {
+                                    "dest": -1,
+                                    "loopout": "true"
                                 }
                             ]
                         }
@@ -20039,7 +20054,12 @@
                             "recv_tag": 31,
                             "cast": [
                                 {
-                                    "dest": -1
+                                    "dest": 3,
+                                    "loopout": "false"
+                                },
+                                {
+                                    "dest": -1,
+                                    "loopout": "true"
                                 }
                             ]
                         }
