@@ -125,7 +125,7 @@ def calculate_metrics(configs):
 
 # 模拟数据（你需要用实际的parse_data_file函数替换这部分）
 # 这里使用符合你描述趋势的模拟数据
-a_config = parse_data_file('../../build/token_records_HETE.txt')
+a_config = parse_data_file('../../../../build/token_records_8_9.txt')
 metrics = calculate_metrics(a_config)
 
 # 按P核数量排序
