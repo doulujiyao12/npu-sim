@@ -263,15 +263,15 @@ int Matmul_f::task_core(TaskCoreContext &context) {
 
     ExuConfig *exu = get_exu_config(context.cid);
 
-    int weight_tile_x = (C + exu->x_dims - 1) / exu->x_dims;
-    int weight_tile_y = (OC + exu->y_dims - 1) / exu->y_dims;
+    uint64_t weight_tile_x = (C + exu->x_dims - 1) / exu->x_dims;
+    uint64_t weight_tile_y = (OC + exu->y_dims - 1) / exu->y_dims;
 
-    int padding_input_x = (T * B) > exu->x_dims ? T * B : exu->x_dims;
+    uint64_t padding_input_x = (T * B) > exu->x_dims ? T * B : exu->x_dims;
 
-    int performance_cycle = (exu->x_dims + exu->x_dims + padding_input_x) *
+    uint64_t performance_cycle = (exu->x_dims + exu->x_dims + padding_input_x) *
                             weight_tile_x * weight_tile_y;
 
-    int performance_comp =
+    uint64_t performance_comp =
         performance_cycle * exu->y_dims * exu->x_dims * comp_util;
     LOG_VERBOSE(1, context.cid,
                 "Prim name:" << name << " performance_cycle "

@@ -274,23 +274,23 @@ int matmul_forward_moe::task_core(TaskCoreContext &context) {
     }
 #endif
 
-    int flops;
+    uint64_t flops;
     if (is_merge)
-        flops = B * T * C * OC * 2 * K + B * T * OC * K;
+        flops = (uint64_t)B * T * C * OC * 2 * K + (uint64_t)B * T * OC * K;
     else
-        flops = B * T * C * OC * 2 * K;
+        flops = (uint64_t)B * T * C * OC * 2 * K;
 #if PERFORMANCE_MODE == 1
 
     ExuConfig *exu = get_exu_config(context.cid);
     
-    int weight_tile_x = (C + exu->x_dims - 1) / exu->x_dims;   
-    int weight_tile_y = (OC + exu->y_dims - 1) / exu->y_dims;
+    uint64_t weight_tile_x = (C + exu->x_dims - 1) / exu->x_dims;   
+    uint64_t weight_tile_y = (OC + exu->y_dims - 1) / exu->y_dims;
 
-    int padding_input_x = (T * B * K) > exu->x_dims ? T * B * K: exu->x_dims;
+    uint64_t padding_input_x = (T * B * K) > exu->x_dims ? T * B * K: exu->x_dims;
 
-    int performance_cycle = (exu->x_dims + exu->x_dims + padding_input_x) * weight_tile_x * weight_tile_y;
+    uint64_t performance_cycle = (exu->x_dims + exu->x_dims + padding_input_x) * weight_tile_x * weight_tile_y;
 
-    int performance_comp = performance_cycle * exu->y_dims * exu->x_dims * comp_util;
+    uint64_t performance_comp = performance_cycle * exu->y_dims * exu->x_dims * comp_util;
     LOG_VERBOSE(1, context.cid,"Prim name:" << name << " performance_cycle " << performance_cycle);
 
     int loop_input_count = weight_tile_y - 1; // read loop_input_count Repetitive input 

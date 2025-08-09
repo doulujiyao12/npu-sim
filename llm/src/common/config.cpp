@@ -248,5 +248,5 @@ void from_json(const json &j, CoreHWConfig &c) {
     if (j.contains("dram_bw"))
         j.at("dram_bw").get_to(c.dram_bw);
     else
-        c.dram_bw = 32;
+        c.dram_bw = dram_bw;
 }
