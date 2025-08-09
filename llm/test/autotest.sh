@@ -82,7 +82,7 @@ EOF
                  --core-config-file="../llm/test/${TEMP_JSON_CONFIG_BASENAME}" \
                  --sram-max="${JSON_SRAM_MAX_SIZE}" \
                  --df_dram_bw="${JSON_DRAM_BANDWIDTH}" \
-                 > /dev/null
+                 > "${NPUSIM_STDOUT_TMP_BASENAME}"
 
     elif [ "$FIELD_COUNT" -eq 2 ]; then
         echo "INFO: Detected 2 fields, using new direct mode."
