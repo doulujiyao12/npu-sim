@@ -1,21 +1,21 @@
 {
   "mode": "sched_pds",
   "requests": {
-    "count": 20,
+    "count": 600,
     "seq_len": 384,
     "arrival": [
       1
     ],
     "heads": 20,
     "kv_heads": 5,
-    "eof_chance": 0.02,
+    "eof_chance": 0.005,
     "prefill_stage": 7,
     "decode_stage": 7,
-    "prefill_cores": 42,
-    "decode_cores": 21,
-    
+    "prefill_cores": 28,
+    "decode_cores": 28,
+        "batch_size": 1,
     "head_size": 64,
-    "prefill_iters": 6
+    "prefill_iters": 4
   },
   "chips": [
     {

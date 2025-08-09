@@ -52,7 +52,7 @@ Define_string_opt("--gpu_dram_config", g_gpu_dram_config, "../DRAMSys/configs/hb
                     "gpu dram config");
 Define_bool_opt("--use_gpu", g_use_gpu, false,
                     "w/o use gpu mode");
-Define_bool_opt("--beha_dram", g_beha_dram, false,
+Define_bool_opt("--beha_dram", g_beha_dram, true,
                     "whether use behavious dram"); // 3145728
 Define_float_opt("--beha_dram_util", g_beha_dram_util, 0.7,
                  "dram bandwidth utilization in beha dram");
