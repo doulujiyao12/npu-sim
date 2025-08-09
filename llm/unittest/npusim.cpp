@@ -505,7 +505,13 @@ int sc_main(int argc, char *argv[]) {
 
     clock_t end = clock();
     cout << "花费了" << (double)(end - start) / CLOCKS_PER_SEC << "秒" << endl;
-
+    ofstream outfile("simulation_result_df_pd.txt", ios::app);
+    if (outfile.is_open()) {
+        outfile << "花费了" << (double)(end - start) / CLOCKS_PER_SEC << "秒" << endl;
+        outfile.close();
+    } else {
+        cout << "Error: Unable to open file for writing timestamp." << endl;
+    }
     delete event_engine;
     return 0;
 }

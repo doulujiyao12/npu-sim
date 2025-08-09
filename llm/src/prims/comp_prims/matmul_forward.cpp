@@ -298,7 +298,7 @@ int Matmul_f::task_core(TaskCoreContext &context) {
 #else
     // 计算overlap并写回output数据
     // cout << "matmul output data size: " << data_size_out << endl;
-    write_output_data(context, B * T * C * OC * 2, 0, dram_time, overlap_time,
+    write_output_data(context, (uint64_t)B * T * C * OC * 2, 0, dram_time, overlap_time,
                       data_size_out, out_global_addr);
 #endif
     BETTER_PRINT(overlap_time);

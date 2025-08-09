@@ -168,7 +168,7 @@
 #define USE_CARIO 1
 
 // 默认计算核dram配置文件路径
-#define DEFAULT_DRAM_CONFIG_PATH "../DRAMSys/configs/ddr4-example-8bit.json"
+#define DEFAULT_DRAM_CONFIG_PATH "../DRAMSys/configs/ddr4-example-df.json"
 
 // sram配置相关
 #define SRAM_BITWIDTH 128
@@ -181,8 +181,9 @@
 #define SIMU_WRITE_PORT 1
 #define ADDRESS_MAX (SRAM_BANKS * BANK_DEPTH)
 #define VERBOSE_PRINT 1
-#define PERFORMANCE_MODE 0
+#define PERFORMANCE_MODE 1
 #define KVCACHE_PRIOR_SPILL 1
+#define PERFORMANCE_MODE 1
 
 
 // mem_access_unit相关

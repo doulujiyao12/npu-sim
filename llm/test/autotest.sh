@@ -90,7 +90,8 @@ EOF
 
         ./npusim --config-file="../llm/test/${CONFIG_NAME}" \
                  --core-config-file="../llm/test/${CORE_CONFIG_NAME}" \
-                 > /dev/null
+                 --df_dram_bw 32 \
+                 >"${NPUSIM_STDOUT_TMP_BASENAME}"
     else
         echo "ERROR: Line ${LINE_NUM} has invalid number of fields ${FIELD_COUNT} (expected 2 or 10)."
         echo -e "${line}\tERROR: Invalid parameter count" >>"${OUTPUT_BATCH_FILE}"

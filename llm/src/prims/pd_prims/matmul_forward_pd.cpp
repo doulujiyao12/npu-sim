@@ -188,16 +188,17 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
     // write_output_data(context, B * T * C * OC * 2, 0, dram_time,
     // overlap_time,
     //                   data_size_out / 3, out_global_addr);
+    cout << "B: " << B << " T: " << T << " C: " << C << " OC: " << OC << endl;
 
     switch (job_type) {
 
     case JOB_PREFILL:
     case JOB_DECODE:
-        write_output_data(context, B * T * C * OC * 2, 0, dram_time,
+        write_output_data(context, (uint64_t)B * T * C * OC * 2, 0, dram_time,
                           overlap_time, data_size_out / 3, out_global_addr);
         break;
     case JOB_BOTH:
-        write_output_data(context, B * T * C * OC * 2, 0, dram_time,
+        write_output_data(context, (uint64_t)B * T * C * OC * 2, 0, dram_time,
                           overlap_time, data_size_out / 3, out_global_addr);
         break;
     default:

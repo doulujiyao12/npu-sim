@@ -186,7 +186,7 @@ int Attention_f::task_core(TaskCoreContext &context) {
 #endif
 
     // 计算overlap并写回output数据
-    write_output_data(context, B * NH * T * (T - 1) / 2 * (4 * C / NH + 5), 0,
+    write_output_data(context, (uint64_t)B * NH * T * (T - 1) / 2 * (4 * C / NH + 5), 0,
                       dram_time, overlap_time, data_size_out, out_global_addr);
 
     BETTER_PRINT(overlap_time);
