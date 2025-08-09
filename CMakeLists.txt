@@ -43,6 +43,7 @@ list(FILTER SRC_FILES EXCLUDE REGEX ".*/build/.*")
 list(FILTER SRC_FILES EXCLUDE REGEX ".*/test/.*")
 list(FILTER SRC_FILES EXCLUDE REGEX ".*/config_generation/.*")
 
+
 # # 定义生成的目标
 message(STATUS "Source files: ${SRC_FILES}")
 
@@ -50,6 +51,22 @@ message(STATUS "Source files: ${SRC_FILES}")
 # include_directories(${CAIRO_INCLUDE_DIRS})
 
 option(BUILD_DEBUG_TARGETS "Build debug versions of executables" ON)
+# 设置 L1/L2 缓存大小（支持命令行传入，带默认值）
+set(L1CACHESIZE ${L1CACHESIZE} CACHE STRING "L1 Cache Size in bytes")
+set(L2CACHESIZE ${L2CACHESIZE} CACHE STRING "L2 Cache Size in bytes")
+
+# 设置默认值（如果用户没传）
+if(NOT L1CACHESIZE)
+    set(L1CACHESIZE 4194304)
+endif()
+
+if(NOT L2CACHESIZE)
+    set(L2CACHESIZE 15099494)
+endif()
+
+# 输出用于调试
+message(STATUS "L1CACHESIZE: ${L1CACHESIZE}")
+message(STATUS "L2CACHESIZE: ${L2CACHESIZE}")
 
 function(add_test_executable target_name test_main_file)
     add_executable(${target_name} ${SRC_FILES} ${test_main_file})
@@ -73,6 +90,12 @@ function(add_test_executable target_name test_main_file)
         -Wno-unknown-attributes 
         -DBROAD_W=16
     )
+    # 传递 L1CACHESIZE 和 L2CACHESIZE 到编译器
+    target_compile_definitions(${target_name} PRIVATE
+        L1CACHESIZE=${L1CACHESIZE}
+        L2CACHESIZE=${L2CACHESIZE}
+    )
+
     
     # 如果启用了调试版本构建选项，则添加调试版本
     if(BUILD_DEBUG_TARGETS)
@@ -97,6 +120,10 @@ function(add_test_executable target_name test_main_file)
             -Wno-ignored-pragmas 
             -Wno-unknown-attributes  
             -DBROAD_W=16
+        )
+        target_compile_definitions(${target_name}_debug PRIVATE
+            L1CACHESIZE=${L1CACHESIZE}
+            L2CACHESIZE=${L2CACHESIZE}
         )
     endif()
 endfunction()
