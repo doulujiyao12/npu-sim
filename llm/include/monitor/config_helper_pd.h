@@ -16,6 +16,7 @@ public:
     vector<Msg> temp_config;        // 存放所有还没有发出去的config
     vector<queue<int>> idle_decode; // 由于超过credit而需要被stall的decode
     vector<queue<int>> unfinished_prefill; // 存储还没有完成的prefill任务
+    vector<vector<double>> token_record;
 
     bool busy;                // 此次iteration是否已经开始
     vector<int> arrival_time; // 记录所有req到达的时间
