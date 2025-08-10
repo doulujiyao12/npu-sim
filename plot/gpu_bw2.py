@@ -33,7 +33,7 @@ def parse_file(file_path, source_label):
 
 # === 读取两个文件 ===
 data1 = parse_file('../build/simulation_result1.txt', 'L1/L2 Cache')
-data2 = parse_file('../build/simulation_result_df_pd1.txt', 'MAX_SRAM')
+data2 = parse_file('../build/simulation_result_df_pd1.txt', 'Scratchpad')
 
 # 合并
 df = pd.DataFrame(data1 + data2)
@@ -49,8 +49,8 @@ df['bandwidth'] = pd.Categorical(df['bandwidth'], categories=[256, 512, 1024], o
 cache_values = sorted(df['CACHE'].unique())
 
 # === 颜色设置 ===
-colors = {'256': '#1f77b4', '512': '#ff7f0e', '1024': '#2ca02c'}
-hatches = {'L1/L2 Cache': '...', 'MAX_SRAM': '///'}
+colors = {'256': '#7E8CAD', '512': '#B37070', '1024': '#7A9273'}
+hatches = {'L1/L2 Cache': '...', 'Scratchpad': '///'}
 alpha = 0.8
 
 # === 计算全局 y 轴最大值 ===
@@ -70,7 +70,7 @@ else:
 pdf_path = 'combined_output_uniform_y.pdf'
 with PdfPages(pdf_path) as pdf:
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-    fig.suptitle("Execution Time Comparison: L1/L2 Cache vs MAX_SRAM\n(CACHE Size Variation)", fontsize=14)
+    # fig.suptitle("Execution Time Comparison: L1/L2 Cache vs Scratchpad\n(CACHE Size Variation)", fontsize=14)
 
     for idx, cache in enumerate(cache_values):
         ax = axes[idx]
@@ -80,10 +80,10 @@ with PdfPages(pdf_path) as pdf:
         x = range(len(requests_vals))  # x 轴：20, 40
         width = 0.1
         bw_offset = 0.4
-        source_offset_base = {'L1/L2 Cache': -bw_offset/2, 'MAX_SRAM': bw_offset/2}
+        source_offset_base = {'L1/L2 Cache': -bw_offset/2, 'Scratchpad': bw_offset/2}
 
         for bw in [256, 512, 1024]:
-            for source in ['L1/L2 Cache', 'MAX_SRAM']:
+            for source in ['L1/L2 Cache', 'Scratchpad']:
                 times = []
                 for req in requests_vals:
                     filtered = df_cache[
@@ -102,14 +102,17 @@ with PdfPages(pdf_path) as pdf:
                 ax.bar(positions, times, width=width, label=f'{source}, BW={bw}',
                        color=colors[str(bw)], alpha=alpha, hatch=hatches[source], edgecolor='black')
 
-        ax.set_xlabel('Number of Requests')
+        ax.set_xlabel('Number of Requests', fontsize=20)
         if idx == 0:
-            ax.set_ylabel('Time (ns)')
-        ax.set_title(f'CACHE = {cache}')
+            ax.set_ylabel('Time (ns)', fontsize=20)
+        ax.set_title(f'CACHE/SCRATCHPAD = {cache} MB', fontsize=20)
         ax.set_xticks(x)
         ax.set_xticklabels([str(r) for r in requests_vals])
+        ax.tick_params(axis='x', labelsize=20)
+        ax.tick_params(axis='y', labelsize=20)
         ax.grid(axis='y', alpha=0.3)
         ax.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
+        ax.yaxis.get_offset_text().set_fontsize(15)
 
         # ✅ 设置统一的 y 轴范围
         ax.set_ylim(0, max_time_rounded)
@@ -117,7 +120,7 @@ with PdfPages(pdf_path) as pdf:
     # 图例去重
     handles, labels = ax.get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
-    fig.legend(by_label.values(), by_label.keys(), loc='upper center', bbox_to_anchor=(0.5, 0.8), ncol=6)
+    fig.legend(by_label.values(), by_label.keys(), loc='upper center', bbox_to_anchor=(0.5, 0.8), ncol=6 , fontsize=12)
 
     plt.tight_layout()
     plt.subplots_adjust(top=0.8)

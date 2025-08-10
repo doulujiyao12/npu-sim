@@ -3,6 +3,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 
+
+font_options = {'family':'sans-serif'}
+font_legend_options = {'family':'sans-serif',
+       'size':25
+}
+font_text_options = {'family':'sans-serif',
+       'size':35
+}
+
 def parse_file(filepath):
     pattern = re.compile(
         r'\[CATCH TEST\]\s+(\d+)\s+nsMAX_SRAM_SIZE\s+(\d+)\s+BANDWIDTH\s+(\d+)\s+CASE\s+(\d+)'
@@ -17,7 +26,7 @@ def parse_file(filepath):
         match = pattern.search(line.strip())
         if match:
             ns_val = int(match.group(1))
-            bandwidth = int(match.group(3))
+            bandwidth = int(int(match.group(3)) * 256 /4)
             case_id = int(match.group(4))
             key = (case_id, bandwidth)
 
@@ -37,12 +46,13 @@ def parse_file(filepath):
     return data
 
 # 文件路径
-file_a = '../build/simulation_result_df_pd_time.txt'
-file_b = '../build/simulation_result_df_pd_time2.txt'
+file_a = '../build/simulation_result_df_pd_time_small.txt'
+file_b = '../build/simulation_result_df_pd_time2_small.txt'
 
 # 解析
 data_a = parse_file(file_a)
 data_b = parse_file(file_b)
+print(data_a.keys(), data_b.keys())
 
 # 共同 key
 common_keys = sorted(set(data_a.keys()) & set(data_b.keys()), key=lambda x: (x[0], x[1]))
@@ -67,31 +77,46 @@ for key in common_keys:
     speedups.append(speedup)
 
     case_id, bw = key
-    labels.append(f'C{case_id}\nBW{bw}')
+    labels.append(f'C{case_id}')
+    # labels.append(f'C{case_id}) \nBW{bw}')
 
 # --- 绘图设置 ---
 fig, ax1 = plt.subplots(figsize=(18, 8))
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
 
 x = np.arange(len(common_keys))  # 每个 CASE 的中心位置
 width = 0.35  # 柱子宽度
 
-color_ns = '#1f77b4'     # 蓝色 - ns error
-color_time = '#d62728'   # 红色 - time ratio
+color_ns = '#7E8CAD'     # 蓝色 - ns error
+color_time = '#B37070'   # 红色 - time ratio
 
 # --- 左 Y 轴：ns 误差 (%)
-bars1 = ax1.bar(x - width/2, ns_errors, width, color=color_ns, alpha=0.85,
-                edgecolor='black', linewidth=0.6,
-                label='[CATCH TEST] ns Error (%)')
+bars1 = ax1.bar(x - width/2 - 0.1, ns_errors, width, color=color_ns, alpha=0.85,
+                edgecolor='black', linewidth=0.6, hatch='\/\/',
+                label='Simulation Time(ns) Error (%)')
 
-ax1.set_ylabel('Relative Error (%)', color=color_ns, fontsize=12)
-ax1.set_xlabel('Test Case (CASE ID, BANDWIDTH)', fontsize=12)
-ax1.tick_params(axis='y', labelcolor=color_ns)
+ax1.set_ylabel('Relative Error (%)', color=color_ns, fontsize=25, fontdict=font_options)
+# ax1.set_xlabel('Test Case (CASE ID, BANDWIDTH)', fontsize=12)
+ax1.tick_params(axis='y', labelcolor=color_ns, labelsize=15)
+ax1.tick_params(axis='x', labelsize=15)
 ax1.axhline(0, color='gray', linewidth=1.0, linestyle='-', alpha=0.7)
 ax1.grid(axis='y', alpha=0.3, linestyle='--', linewidth=0.6)
 ax1.set_xticks(x)
 ax1.set_xticklabels(labels)
+
+# 左轴：正负误差独立扩展
+if ns_errors:
+    upper = max(ns_errors)
+    lower = min(ns_errors)
+    y1_top = upper * 4.3 if upper > 0 else upper * 0.7
+    y1_bottom = lower * 1.3 if lower < 0 else lower * 0.7
+    if abs(y1_top - y1_bottom) < 1:
+        center = (upper + lower) / 2
+        y1_top, y1_bottom = center + 0.6, center - 0.6
+else:
+    y1_top, y1_bottom = 1, -1
+ax1.set_ylim(bottom=y1_bottom, top=y1_top)
+
+
 
 # 添加 ns 误差标签
 for bar, val in zip(bars1, ns_errors):
@@ -99,38 +124,44 @@ for bar, val in zip(bars1, ns_errors):
     va = 'bottom' if height >= 0 else 'top'
     y_text = height + (0.015 * max([abs(v) for v in ns_errors] + [1])) * (1 if height >= 0 else -1)
     ax1.text(bar.get_x() + bar.get_width()/2., y_text, f'{val:+.2f}%',
-             ha='center', va=va, fontsize=8, fontweight='bold', color=color_ns)
+             ha='center', va=va, fontsize=14, fontweight='bold', color=color_ns)
 
 # --- 右 Y 轴：time ratio (A/B)
 ax2 = ax1.twinx()
-bars2 = ax2.bar(x + width/2, speedups, width, color=color_time, alpha=0.75,
+# 右轴：时间比，只扩展顶部
+max_speedup = max(speedups) if speedups else 1
+ax2.set_ylim(bottom=0, top=max_speedup * 1.3)
+bars2 = ax2.bar(x + width/2 + 0.1, speedups, width, color=color_time, alpha=0.75,
                 edgecolor='darkred', linewidth=0.8, hatch='//',
-                label='Time Ratio (A/B)')
+                label='Time Ratio (BeHa/TLM)')
 
-ax2.set_ylabel('Time Ratio (A / B)', color=color_time, fontsize=12)
-ax2.tick_params(axis='y', labelcolor=color_time)
+ax2.set_ylabel('Simulation time speed-up ratio', color=color_time, fontsize=25)
+ax2.tick_params(axis='y', labelcolor=color_time, labelsize=15)
 ax2.set_ylim(bottom=0)  # 时间比 ≥ 0
 
 # 添加 time ratio 标签
 for bar, val in zip(bars2, speedups):
     height = bar.get_height()
-    y_text = height * 1.05 if height > 0 else 0.1
+    # y_text = height * 1.05 if height > 0 else 0.1
+    y_text = height + 0.05 if height > 0 else 0.1
     ax2.text(bar.get_x() + bar.get_width()/2., y_text, f'{val:.2f}×',
-             ha='center', va='bottom', fontsize=8, fontweight='bold', color=color_time)
+             ha='center', va='bottom', fontsize=14, fontweight='bold', color=color_time)
+    
 
-# --- 标题与图例 ---
-plt.title('Comparison: A vs B\nBar1 (left): [CATCH TEST] ns Error % (A vs B)\nBar2 (right): Time Ratio A/B (×)',
-          fontsize=14, fontweight='bold', pad=20)
+
+# # --- 标题与图例 ---
+# plt.title('Comparison: A vs B\nBar1 (left): [CATCH TEST] ns Error % (A vs B)\nBar2 (right): Time Ratio A/B (×)',
+#           fontsize=14, fontweight='bold', pad=20)
 
 # 合并图例
 from matplotlib.patches import Patch
 legend_elements = [
     Patch(facecolor=color_ns, edgecolor='black', alpha=0.85,
-          label='[CATCH TEST] ns Error (%)'),
+          label='Simulation Time(ns) Error (%)'),
     Patch(facecolor=color_time, edgecolor='darkred', alpha=0.75, hatch='//',
-          label='Time Ratio A/B (×)')
+          label='Time Ratio BeHa/TLM ')
 ]
-ax1.legend(handles=legend_elements, loc='upper left', fontsize=11)
+ax1.legend(handles=legend_elements, loc='upper left', fontsize=16)
 
 # 布局优化
 fig.tight_layout()
