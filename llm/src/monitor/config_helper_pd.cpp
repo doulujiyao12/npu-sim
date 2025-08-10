@@ -31,6 +31,11 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
     else
         prefill_iters = 4;
 
+    for (int i = 0; i < req_cnt; i++) {
+        vector<double> v;
+        token_record.push_back(v);
+    }
+
     attend_cores = GRID_SIZE / model_stage * model_stage;
     for (int i = 0; i < attend_cores; i++) {
         CoreStatus status = CoreStatus(i, JOB_BOTH);
@@ -155,15 +160,18 @@ void config_helper_pd::iter_done(vector<Msg> done_msg) {
             switch (record.phase) {
             case PREFILL:
                 if (++record.prefill_counter == record.prefill_iters) {
+                    token_record[record.id].push_back(
+                        sc_time_stamp().to_double());
                     stage.type = record.phase = DECODE;
                     stage.token_num = 1;
                 }
                 break;
             case DECODE:
                 record.decode_counter++;
-                if (msg.data.range(stage_count, stage_count).to_uint64() ||
-                    record.decode_counter >= (1.5) / (eof_chance)) {
+                token_record[record.id].push_back(sc_time_stamp().to_double());
+                if (record.decode_counter >= 2 / (eof_chance)) {
                     stage.type = record.phase = PD_DONE;
+
                     char format_label_k[100];
                     sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX,
                             KVCACHE_PREFIX, stage.req_id);
@@ -184,15 +192,42 @@ void config_helper_pd::iter_done(vector<Msg> done_msg) {
                     if (++decode_done == requestRecords.size()) {
                         cout << "All reqs done.\n";
                         cout << "[CATCH TEST] " << sc_time_stamp() << endl;
-                        ofstream outfile("simulation_result_df_pd.txt", ios::app);
+                        ofstream outfile("simulation_result_df_pd.txt",
+                                         ios::app);
                         if (outfile.is_open()) {
-                            outfile << "[CATCH TEST] " << sc_time_stamp() << "MAX_SRAM_SIZE " << MAX_SRAM_SIZE
-                            << " BANDWIDTH " << dram_bw
-                            << endl;
+                            outfile << "[CATCH TEST] " << sc_time_stamp()
+                                    << "MAX_SRAM_SIZE " << MAX_SRAM_SIZE
+                                    << " BANDWIDTH " << dram_bw << endl;
                             outfile.close();
                         } else {
-                            cout << "Error: Unable to open file for writing timestamp." << endl;
+                            cout << "Error: Unable to open file for writing "
+                                    "timestamp."
+                                 << endl;
                         }
+
+                        ofstream file("token_records.txt", ios::app);
+
+                        if (!file.is_open()) {
+                            cerr << "Error: Cannot open file " << endl;
+                            return;
+                        }
+
+                        // 设置输出格式，避免科学计数法
+                        file << fixed
+                             << setprecision(
+                                    6); // 设置小数点后6位精度，可根据需要调整
+
+                        file << "*" << g_config_file << "*\n";
+                        for (int i = 0; i < token_record.size(); i++) {
+                            file << "Request " << i << ": \n";
+                            for (int j = 0; j < token_record[i].size(); j++) {
+                                file << "Token " << j << ": "
+                                     << token_record[i][j] << "\n";
+                            }
+                        }
+
+                        file << "\n\n";
+                        file.close();
                         sc_stop();
                     }
                 }
