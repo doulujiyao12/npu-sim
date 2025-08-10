@@ -146,11 +146,19 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
             if (!pair.second.valid &&
                 pair.second.spill_size == pair.second.size)
                 continue; // 已经全部spill到dram中去了
-            // if (pair.first ==
-            //         ETERNAL_PREFIX + string(KVCACHE_PREFIX) + string("k") ||
-            //     pair.first ==
-            //         ETERNAL_PREFIX + string(KVCACHE_PREFIX) + string("v"))
-            //     continue; // 简单策略：不spill kvcache
+
+#if KVCACHE_PRIOR_SPILL == 1
+            string k_prefix =
+                ETERNAL_PREFIX + string(KVCACHE_PREFIX) + string("k");
+            string v_prefix =
+                ETERNAL_PREFIX + string(KVCACHE_PREFIX) + string("v");
+
+            if ((pair.first.length() >= k_prefix.length() &&
+                 pair.first.substr(0, k_prefix.length()) == k_prefix) ||
+                (pair.first.length() >= v_prefix.length() &&
+                 pair.first.substr(0, v_prefix.length()) == v_prefix))
+                continue; // 简单策略：不spill kvcache
+#endif
 
             if (pair.second.record < min_record) {
                 min_record = pair.second.record;
@@ -164,6 +172,27 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
         //      << min_label << ", size " << data_map[min_label].size
         //      << ", spill_size: " << data_map[min_label].spill_size << endl;
 
+#if KVCACHE_PRIOR_SPILL == 1
+        if (min_record == 1e9 + 3) {
+            cout << "[SRAM] SRAM need to spill kvcache " << max_sram_size << "<"
+                 << used << endl;
+
+            for (auto pair : data_map) {
+                if (pair.first == key)
+                    continue; // 不能spill自己
+                if (!pair.second.valid &&
+                    pair.second.spill_size == pair.second.size)
+                    continue; // 已经全部spill到dram中去了
+
+                if (pair.second.record < min_record) {
+                    min_record = pair.second.record;
+                    min_label = pair.first;
+                    min_pos = pair.second.pos;
+                    sram_id = pair.second.alloc_id;
+                }
+            }
+        }
+#endif
         if (min_record == 1e9 + 3) {
             cout << "[ERROR] SRAM have no more data to spill " << max_sram_size
                  << "<" << used << endl;
@@ -332,7 +361,8 @@ void SramPosLocator::updateKVPair(TaskCoreContext &context, std::string &key,
         addPair(key, result, context, dram_time_tmp, false);
 
         auto sram_manager_ = context.sram_manager_;
-        // cout << "alignment_byte" << alignment_byte *tmp << "tmp " << tmp << " " << result.size << endl;
+        // cout << "alignment_byte" << alignment_byte *tmp << "tmp " << tmp << "
+        // " << result.size << endl;
         sram_manager_->allocate_append(alignment_byte * tmp, result.alloc_id);
 #if ASSERT == 1
         assert(validateTotalSize());
@@ -346,7 +376,8 @@ void SramPosLocator::updateKVPair(TaskCoreContext &context, std::string &key,
 #endif
 }
 
-void SramPosLocator::changePairName(std::string &old_key, std::string &new_key) { 
+void SramPosLocator::changePairName(std::string &old_key,
+                                    std::string &new_key) {
     // 将旧标签名修改为新标签名
     AddrPosKey result;
     auto it = data_map.find(old_key);
@@ -449,7 +480,8 @@ void GpuPosLocator::addPair(const std::string &key, AddrPosKey &value) {
     cout << "[GPU]: add pair: " << key << endl;
 }
 
-void GpuPosLocator::addPair(const std::string &key, AddrPosKey &value, int size) {
+void GpuPosLocator::addPair(const std::string &key, AddrPosKey &value,
+                            int size) {
     addr_top += size;
     data_map[key] = value;
 

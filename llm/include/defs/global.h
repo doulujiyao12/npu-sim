@@ -102,6 +102,7 @@ extern vector<pair<int, ExuConfig *>> tile_exu;
 extern vector<pair<int, SfuConfig *>> tile_sfu;
 extern vector<pair<int, int>> mem_sram_bw;
 extern vector<pair<int, string>> mem_dram_config_str;
+extern vector<pair<int, int>> mem_dram_bw;
 
 
 extern int verbose_level;

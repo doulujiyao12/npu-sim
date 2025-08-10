@@ -36,6 +36,7 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
     dcache = new DCache(sc_gen_unique_name("dcache"), cid, (int)cid / GRID_X,
                         (int)cid % GRID_X, this->event_engine, dram_config_name,
                         "../DRAMSys/configs");
+                        cout << "Workercore " << cid << " initialize: dram_string " << dram_config_name << endl;
     cout << " MaxAddr "
          << dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
     auto sram_bitw = get_sram_bitwidth(s_cid);

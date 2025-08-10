@@ -1,0 +1,23 @@
+{
+    "x": 8,
+    "sram_size": 8388608,
+    "comm_payload": 256,
+    "cores": [
+        {
+            "id": 0,
+            "exu_x": 64,
+            "exu_y": 64,
+            "sfu_x": 1024,
+            "sram_bitwidth": 64,
+            "dram_bw": 32
+        },
+        {
+            "id": 42,
+            "exu_x": 64,
+            "exu_y": 64,
+            "sfu_x": 1024,
+            "sram_bitwidth": 64,
+            "dram_bw": 128
+        }
+    ]
+}

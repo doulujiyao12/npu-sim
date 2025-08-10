@@ -239,7 +239,7 @@ if (beha_dram == false) {
 #endif
 }else{
     auto require_byte = dma_read_count * cache_count * cache_lines / 8;
-    float need_NS = (float)require_byte / beha_dram_util / (15.0 * dram_bw / 8);
+    float need_NS = (float)require_byte / beha_dram_util / (15.0 * get_dram_bw(context.cid) / 8);
     int need_cycles = need_NS;
     wait(need_cycles, SC_NS);
 }
@@ -541,7 +541,7 @@ if (beha_dram == false) {
     wait(*e_nbdram);
 }else{
     auto require_byte = dma_read_count * cache_count * cache_lines / 8;
-    float need_NS = (float)require_byte / beha_dram_util / (15.0 * dram_bw / 8);
+    float need_NS = (float)require_byte / beha_dram_util / (15.0 * get_dram_bw(context.cid) / 8);
     int need_cycles = need_NS;
     wait(need_cycles, SC_NS);
 }

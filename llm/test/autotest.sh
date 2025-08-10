@@ -82,7 +82,7 @@ EOF
                  --core-config-file="../llm/test/${TEMP_JSON_CONFIG_BASENAME}" \
                  --sram-max="${JSON_SRAM_MAX_SIZE}" \
                  --df_dram_bw="${JSON_DRAM_BANDWIDTH}" \
-                 >"${NPUSIM_STDOUT_TMP_BASENAME}"
+                 > "${NPUSIM_STDOUT_TMP_BASENAME}"
 
     elif [ "$FIELD_COUNT" -eq 2 ]; then
         echo "INFO: Detected 2 fields, using new direct mode."
@@ -91,7 +91,7 @@ EOF
         ./npusim --config-file="../llm/test/${CONFIG_NAME}" \
                  --core-config-file="../llm/test/${CORE_CONFIG_NAME}" \
                  --df_dram_bw 32 \
-                 >"${NPUSIM_STDOUT_TMP_BASENAME}"
+                 > /dev/null
     else
         echo "ERROR: Line ${LINE_NUM} has invalid number of fields ${FIELD_COUNT} (expected 2 or 10)."
         echo -e "${line}\tERROR: Invalid parameter count" >>"${OUTPUT_BATCH_FILE}"
