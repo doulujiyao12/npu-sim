@@ -36,7 +36,8 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
     dcache = new DCache(sc_gen_unique_name("dcache"), cid, (int)cid / GRID_X,
                         (int)cid % GRID_X, this->event_engine, dram_config_name,
                         "../DRAMSys/configs");
-                        cout << "Workercore " << cid << " initialize: dram_string " << dram_config_name << endl;
+    cout << "Workercore " << cid << " initialize: dram_string "
+         << dram_config_name << endl;
     cout << " MaxAddr "
          << dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
     auto sram_bitw = get_sram_bitwidth(s_cid);
@@ -60,7 +61,7 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
         dcache->dramSysWrapper->dramsys->getMemSpec().memorySizeBytes;
     executor->defaultDataLength =
         dcache->dramSysWrapper->dramsys->getMemSpec().defaultBytesPerBurst;
-    if (use_gpu == false){
+    if (use_gpu == false) {
         dram_aligned = executor->defaultDataLength;
     }
     assert(dataset_words_per_tile <
@@ -588,10 +589,10 @@ void WorkerCoreExecutor::send_logic() {
         prim->data_packet_id = 0;
         bool job_done = false; // 结束内圈循环的标志
 
-        cout << "[SEND] Core " << cid << ": running send "
+        cout << "[SEND START] Core " << cid << ": running send "
              << send_prim_type_to_string(prim->type) << ", destination "
              << prim->des_id << ", tag " << prim->tag_id << ", max packet "
-             << prim->max_packet << endl;
+             << prim->max_packet << " at " << sc_time_stamp() << endl;
 
         while (true) {
             bool need_long_wait = false;
@@ -695,8 +696,13 @@ void WorkerCoreExecutor::send_logic() {
                 sc_stop();
             }
 
-            if (job_done)
+            if (job_done) {
+                cout << "[SEND DONE] Core " << cid << ": running send "
+                     << send_prim_type_to_string(prim->type) << " done at "
+                     << sc_time_stamp() << "\n";
                 break;
+            }
+
 
             wait(CYCLE, SC_NS);
         }
