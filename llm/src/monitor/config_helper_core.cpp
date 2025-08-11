@@ -552,7 +552,7 @@ void config_helper_core::calculate_address(bool do_loop) {
                     cout << "[SIZE CHECK] name: " << prim->name << endl;
                     cout << "output_size: " << output_size
                          << ", slice_size: " << slice_size << endl;
-                    int slice_size_in_bit = slice_size * prim->datatype * 8;
+                    int slice_size_in_bit = slice_size * (prim->datatype ? 2 : 1) * 8;
                     int pkg_nums = (slice_size_in_bit % M_D_DATA)
                                        ? (slice_size_in_bit / M_D_DATA + 1)
                                        : (slice_size_in_bit / M_D_DATA);
