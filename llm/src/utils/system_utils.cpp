@@ -194,10 +194,10 @@ void init_grid(string config_path, string core_config_path) {
     else
         GRID_X = 4;
 
-    if (j2.contains("comm_payload"))
-        CORE_COMM_PAYLOAD = j2["comm_payload"];
+    if (j2.contains("comm_acc"))
+        CORE_ACC_PAYLOAD = j2["comm_acc"];
     else
-        CORE_COMM_PAYLOAD = 1;
+        CORE_ACC_PAYLOAD = 1;
 
     if (j2.contains("sram_size"))
         MAX_SRAM_SIZE = j2["sram_size"];

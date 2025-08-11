@@ -560,11 +560,11 @@ void config_helper_core::calculate_address(bool do_loop) {
                         slice_size_in_bit - (pkg_nums - 1) * M_D_DATA;
 
                     // max pkg nums
-                    temp->max_packet = pkg_nums % CORE_COMM_PAYLOAD
-                                           ? pkg_nums / CORE_COMM_PAYLOAD + 1
-                                           : pkg_nums / CORE_COMM_PAYLOAD;
+                    temp->max_packet = pkg_nums % (CORE_COMM_PAYLOAD*CORE_ACC_PAYLOAD)
+                                           ? pkg_nums / (CORE_COMM_PAYLOAD*CORE_ACC_PAYLOAD) + 1
+                                           : pkg_nums / (CORE_COMM_PAYLOAD*CORE_ACC_PAYLOAD);
                     cout << "max_packet: " << temp->max_packet
-                         << ", CORECOMM: " << CORE_COMM_PAYLOAD
+                         << ", COREACC: " << CORE_ACC_PAYLOAD
                          << ", pkg_nums: " << pkg_nums << endl;
                     if (pkg_nums == 0) {
                         cout << "weight " << weight << " slice size "
