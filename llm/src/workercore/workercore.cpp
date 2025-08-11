@@ -699,9 +699,6 @@ void WorkerCoreExecutor::send_logic() {
                 break;
 
             wait(CYCLE, SC_NS);
-
-            if (need_long_wait)
-                wait(CYCLE * (CORE_COMM_PAYLOAD - 1), SC_NS);
         }
 
         ev_block.notify(CYCLE, SC_NS);
@@ -1210,9 +1207,6 @@ void WorkerCoreExecutor::recv_logic() {
 
             // 等待下一个时钟周期
             wait(CYCLE, SC_NS);
-
-            if (need_long_wait)
-                wait(CYCLE * (CORE_COMM_PAYLOAD - 1), SC_NS);
         }
 
         ev_block.notify(CYCLE, SC_NS);
