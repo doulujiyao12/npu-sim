@@ -201,7 +201,7 @@
 // PD中的分块策略
 #define MAX_PREFILL_WORKLOAD 384
 #define PD_RATIO 4
-#define CORE_CREDIT 5
+#define CORE_CREDIT 4
 
 // 是否开启数据流模式中的流水线并行（此时循环PD将不能使用）
 #define PIPELINE_MODE 0
