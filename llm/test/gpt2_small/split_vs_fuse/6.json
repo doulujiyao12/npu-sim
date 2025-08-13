@@ -1,7 +1,7 @@
 {
     "x": 8,
     "sram_size": 8388608,
-    "comm_acc": 1,
+    "comm_acc": 256,
     "cores": [
         {
             "id": 0,
