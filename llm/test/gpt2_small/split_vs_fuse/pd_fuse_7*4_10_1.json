@@ -2,14 +2,14 @@
   "mode": "sched_pd",
   "requests": {
     "count": 200,
-    "seq_len": 400,
+    "seq_len": 1000,
     "arrival": [
       1
     ]
   },
   "model": {
     "heads": 20,
-    "eof_chance": 0.05,
+    "eof_chance": 0.02,
     "stage": 7,
     "batch": 2,
     "kv_heads": 5,
