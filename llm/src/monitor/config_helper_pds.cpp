@@ -144,9 +144,10 @@ void config_helper_pds::fill_queue_start(queue<Msg> *q) {
             int pkg_num = (send_size_in_bit % M_D_DATA)
                               ? (send_size_in_bit / M_D_DATA + 1)
                               : (send_size_in_bit / M_D_DATA);
-            pkg_num = pkg_num % CORE_COMM_PAYLOAD
-                          ? pkg_num / CORE_COMM_PAYLOAD + 1
-                          : pkg_num / CORE_COMM_PAYLOAD;
+            temp->max_packet =
+                pkg_nums % (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD)
+                    ? pkg_nums / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD) + 1
+                    : pkg_nums / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD);
 
             for (int j = 1; j <= pkg_num; j++) {
                 sc_bv<M_D_DATA> d(0x1);
