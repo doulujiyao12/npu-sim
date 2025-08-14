@@ -22,6 +22,7 @@ extern vector<chip_instr_base *> global_chip_prim_stash;
 
 extern int MAX_SRAM_SIZE;
 extern int CORE_COMM_PAYLOAD;
+extern int CORE_ACC_PAYLOAD;
 
 class DramKVTable;
 extern DramKVTable** g_dram_kvtable;

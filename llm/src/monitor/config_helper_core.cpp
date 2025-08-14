@@ -549,7 +549,10 @@ void config_helper_core::calculate_address(bool do_loop) {
                     int slice_size = (output_size % weight)
                                          ? (output_size / weight + 1)
                                          : (output_size / weight);
-                    int slice_size_in_bit = slice_size * sizeof(float);
+                    cout << "[SIZE CHECK] name: " << prim->name << endl;
+                    cout << "output_size: " << output_size
+                         << ", slice_size: " << slice_size << endl;
+                    int slice_size_in_bit = slice_size * (prim->datatype ? 2 : 1) * 8;
                     int pkg_nums = (slice_size_in_bit % M_D_DATA)
                                        ? (slice_size_in_bit / M_D_DATA + 1)
                                        : (slice_size_in_bit / M_D_DATA);
@@ -557,11 +560,11 @@ void config_helper_core::calculate_address(bool do_loop) {
                         slice_size_in_bit - (pkg_nums - 1) * M_D_DATA;
 
                     // max pkg nums
-                    temp->max_packet = pkg_nums % CORE_COMM_PAYLOAD
-                                           ? pkg_nums / CORE_COMM_PAYLOAD + 1
-                                           : pkg_nums / CORE_COMM_PAYLOAD;
-                    cout << "HERE?? max_packet: " << temp->max_packet
-                         << ", CORECOMM: " << CORE_COMM_PAYLOAD
+                    temp->max_packet = pkg_nums % (CORE_COMM_PAYLOAD*CORE_ACC_PAYLOAD)
+                                           ? pkg_nums / (CORE_COMM_PAYLOAD*CORE_ACC_PAYLOAD) + 1
+                                           : pkg_nums / (CORE_COMM_PAYLOAD*CORE_ACC_PAYLOAD);
+                    cout << "max_packet: " << temp->max_packet
+                         << ", COREACC: " << CORE_ACC_PAYLOAD
                          << ", pkg_nums: " << pkg_nums << endl;
                     if (pkg_nums == 0) {
                         cout << "weight " << weight << " slice size "
@@ -594,7 +597,7 @@ void config_helper_core::calculate_address(bool do_loop) {
                     int slice_size = (output_size % weight)
                                          ? (output_size / weight + 1)
                                          : (output_size / weight);
-                    int slice_size_in_bit = slice_size * sizeof(float);
+                    int slice_size_in_bit = slice_size * 8;
                     int pkg_nums = (slice_size_in_bit % M_D_DATA)
                                        ? (slice_size_in_bit / M_D_DATA + 1)
                                        : (slice_size_in_bit / M_D_DATA);
