@@ -193,11 +193,11 @@ def plot_experiment_group(ax1, metrics, group_id, subplot_idx, total_subplots):
     color4 = '#7A9273'  # 橙色 - TBT
     
     # 绘制平均延迟 (柱状图)
-    bars = ax1.bar(x_pos, latency, 0.4, label='Avg Latency (s)', 
+    bars = ax1.bar(x_pos, latency, 0.4, label='Avg Latency', 
                    color=color2, alpha=0.8, hatch="//", edgecolor='black', linewidth=0.8)
     
     # ax1.set_xlabel('Core Allocation (P/D)', fontsize=15, fontweight='bold')
-    ax1.set_ylabel('Avg Latency (mms)', fontsize=13, fontweight='bold')
+    ax1.set_ylabel('Avg Latency (ms)', fontsize=13, fontweight='bold')
     ax1.set_xticks(x_pos)
     ax1.set_xticklabels(config_labels, fontsize=9, rotation=0)
     ax1.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
@@ -217,9 +217,9 @@ def plot_experiment_group(ax1, metrics, group_id, subplot_idx, total_subplots):
                      label='TTFT', markerfacecolor='white', markeredgewidth=1.5)
     
     line2 = ax2.plot(x_pos, tbt, '^-', color=color4, linewidth=2, markersize=6,
-                     label='TBT (s)', markerfacecolor='white', markeredgewidth=1.5)
+                     label='TBT', markerfacecolor='white', markeredgewidth=1.5)
     
-    ax2.set_ylabel('TTFT & TBT (s)', color='black', fontsize=13, fontweight='bold')
+    ax2.set_ylabel('TTFT & TBT (ms)', color='black', fontsize=13, fontweight='bold')
     ax2.tick_params(axis='y', labelcolor='black', labelsize=13)
 
     ax2.tick_params(axis='x', labelsize=13)
@@ -241,7 +241,7 @@ def plot_experiment_group(ax1, metrics, group_id, subplot_idx, total_subplots):
         if len(group_parts) == 2:
             input_tokens = group_parts[0]
             output_tokens = group_parts[1]
-            title_text = f'Input: {input_tokens} tokens, Output: {output_tokens} tokens\n({avg_request_count} reqs/config)'
+            title_text = f'Prefill: {input_tokens} tokens, Decoding: {output_tokens} tokens\n({avg_request_count} reqs/config)'
         else:
             # 如果格式不符合预期，使用原始group_id
             title_text = f'Group: {group_id}\n(~{avg_token_count - 1} tokens/req, {avg_request_count} reqs/config)'
@@ -253,7 +253,7 @@ def plot_experiment_group(ax1, metrics, group_id, subplot_idx, total_subplots):
         if len(group_parts) == 2:
             input_tokens = group_parts[0]
             output_tokens = group_parts[1]
-            title_text = f'Input: {input_tokens} tokens, Output: {output_tokens} tokens'
+            title_text = f'Prefill: {input_tokens} tokens, Decoding: {output_tokens} tokens'
         else:
             title_text = f'Group: {group_id}'
         

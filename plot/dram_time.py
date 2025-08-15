@@ -94,10 +94,10 @@ bars1 = ax1.bar(x - width/2 - 0.1, ns_errors, width, color=color_ns, alpha=0.85,
                 edgecolor='black', linewidth=0.6, hatch='\/\/',
                 label='Simulation Time(ns) Error (%)')
 
-ax1.set_ylabel('Relative Error (%)', color=color_ns, fontsize=25, fontdict=font_options)
+ax1.set_ylabel('Relative Error (%)', fontsize=25, fontdict=font_options)
 # ax1.set_xlabel('Test Case (CASE ID, BANDWIDTH)', fontsize=12)
-ax1.tick_params(axis='y', labelcolor=color_ns, labelsize=15)
-ax1.tick_params(axis='x', labelsize=15)
+ax1.tick_params(axis='y', labelsize=20)
+ax1.tick_params(axis='x', labelsize=20)
 ax1.axhline(0, color='gray', linewidth=1.0, linestyle='-', alpha=0.7)
 ax1.grid(axis='y', alpha=0.3, linestyle='--', linewidth=0.6)
 ax1.set_xticks(x)
@@ -135,8 +135,8 @@ bars2 = ax2.bar(x + width/2 + 0.1, speedups, width, color=color_time, alpha=0.75
                 edgecolor='darkred', linewidth=0.8, hatch='//',
                 label='Time Ratio (BeHa/TLM)')
 
-ax2.set_ylabel('Simulation time speed-up ratio', color=color_time, fontsize=25)
-ax2.tick_params(axis='y', labelcolor=color_time, labelsize=15)
+ax2.set_ylabel('Simulation time speed-up ratio', fontsize=25)
+ax2.tick_params(axis='y',  labelsize=20)
 ax2.set_ylim(bottom=0)  # 时间比 ≥ 0
 
 # 添加 time ratio 标签
