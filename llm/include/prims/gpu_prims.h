@@ -110,7 +110,7 @@ class matmul_forward_gpu_pd : public gpu_base {
 public:
     int B, T, C, OC;
     int NH, DH, R;
-    PD_JOB job_type;
+    PD_JOB job_type = JOB_BOTH;
     int slice_x, slice_y;
 
     vector<Stage> batchInfo;

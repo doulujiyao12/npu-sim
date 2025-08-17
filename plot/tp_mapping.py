@@ -5,7 +5,7 @@ import pandas as pd
 # 设置学术风格
 plt.rcParams.update({
     'font.size': 11,
-    'font.family': 'serif',
+    # 'font.family': 'serif',
     'axes.linewidth': 1.2,
     'xtick.major.size': 4,
     'ytick.major.size': 4,
@@ -18,16 +18,15 @@ plt.rcParams.update({
 # 原始数据重新整理
 data = {
     # TP4配置
-    ('4B', 'TP4'): {'linear': 3103597501432, 'mesh': 2654077009608, 'ring': 2653918999736},
-    ('8B', 'TP4'): {'linear': 7739143066952, 'mesh': 6626662710744, 'ring': 6626515258840},
-    ('14B', 'TP4'): {'linear': 13251052648448, 'mesh': 11227448009744, 'ring': 11227428826128},
-    ('32B', 'TP4'): {'linear': 29044145083128, 'mesh': 24544866636952, 'ring': 24544617923128},
-    
+    ('4B', 'TP4'): {'linear-seq': 3096781356336, 'linear-interleave': 3103597501432, 'mesh': 2654077009608, 'ring': 2653918999736},
+    ('8B', 'TP4'): {'linear-seq': 7723939355336, 'linear-interleave': 7739143066952, 'mesh': 6626662710744, 'ring': 6626515258840},
+    ('14B', 'TP4'): {'linear-seq': 13237413817984, 'linear-interleave': 13251052648448, 'mesh': 11227448009744, 'ring': 11227428826128},
+    ('32B', 'TP4'): {'linear-seq': 28342358157432, 'linear-interleave': 29044145083128, 'mesh': 24544866636952, 'ring': 24544617923128},
     # TP16配置
-    ('4B', 'TP16'): {'linear': 2292628503368*2.25, 'mesh': 1875789295416*2.25, 'ring': 1783471877272*2.25},
-    ('8B', 'TP16'): {'linear': 5874787866656*2.25, 'mesh': 4801151673272*2.25, 'ring': 4563761690560*2.25},
-    ('14B', 'TP16'): {'linear': 8321854554300*2.5, 'mesh': 6739225041480*2.5, 'ring': 6374497972560*2.5},
-    ('32B', 'TP16'): {'linear': 11547585362720*4, 'mesh': 9259841090688*4, 'ring': 8753395376208*4}
+    ('4B', 'TP16'): {'linear-seq': 2016260619016*2.25, 'linear-interleave': 2292628503368*2.25, 'mesh': 1875789295416*2.25, 'ring': 1783471877272*2.25},
+    ('8B', 'TP16'): {'linear-seq': 5117723302416*2.25, 'linear-interleave': 5874787866656*2.25, 'mesh': 4801151673272*2.25, 'ring': 4563761690560*2.25},
+    ('14B', 'TP16'): {'linear-seq': 7198697055744*2.5, 'linear-interleave': 8321854554300*2.5, 'mesh': 6739225041480*2.5, 'ring': 6374497972560*2.5},
+    ('32B', 'TP16'): {'linear-seq': 9786089293540*4, 'linear-interleave': 11547585362720*4, 'mesh': 9259841090688*4, 'ring': 8753395376208*4}
 }
 
 # 转换数据
@@ -49,26 +48,29 @@ fig, ax1 = plt.subplots(figsize=(16, 5))
 
 # 定义颜色和样式
 colors = {
-    'linear': '#B37070',   # 红色
-    'mesh': '#7E8CAD',     # 橙色
-    'ring': '#7A9273'      # 绿色
+    'linear-interleave': '#B37070',   # 红色
+    'linear-seq': '#7E8CAD',
+    'mesh': '#7A9273',     # 橙色
+    'ring': '#A28CC2'      # 绿色
 }
 
 # 模型配置
 model_sizes = ['4B', '8B', '14B', '32B']
-strategies = ['linear', 'mesh', 'ring']
+model_names = ['Qwen3_4B', 'Qwen3_8B', 'Qwen3_14B', 'Qwen3_32B']
+strategies = ['linear-interleave', 'linear-seq', 'mesh', 'ring']
 tp_configs = ['TP4', 'TP16']
 
 # 设置x轴位置 - 每个模型有6个柱子（3个策略 × 2个TP配置）
 n_models = len(model_sizes)
 n_bars_per_model = len(strategies) * len(tp_configs)
-bar_width = 0.12
+bar_width = 0.08
 model_spacing = 1.0  # 模型间距
 
 # 计算每个模型组的中心位置
 model_centers = np.arange(n_models) * model_spacing
 all_positions = []
 all_labels = []
+bar_positions = {}
 
 # 为每个模型创建柱状图
 for model_idx, model_size in enumerate(model_sizes):
@@ -82,6 +84,10 @@ for model_idx, model_size in enumerate(model_sizes):
                           (n_bars_per_model * bar_width) / 2 + 
                           (tp_idx * len(strategies) + strategy_idx) * bar_width + 
                           bar_width / 2)
+            
+            # 存储位置信息
+            key = (model_size, tp_config, strategy)
+            bar_positions[key] = bar_position
             
             # 获取延迟数据
             subset = df[(df['model_size'] == model_size) & 
@@ -102,13 +108,13 @@ for model_idx, model_size in enumerate(model_sizes):
             all_labels.append(f'{model_size}-{tp_config}-{strategy}')
 
 # 设置左侧y轴
-# ax1.set_xlabel('Model Size and Configuration', fontweight='bold', fontsize=20)
-ax1.set_ylabel('Communication Latency (ms)', fontweight='bold', fontsize=20, color='black')
-ax1.tick_params(axis='y', labelcolor='black',labelsize=20)
+ax1.set_xlabel('Model Size', fontweight='bold', fontsize=30)
+ax1.set_ylabel('Latency (ms)', fontweight='bold', fontsize=30, color='black')
+ax1.tick_params(axis='y', labelcolor='black',labelsize=25)
 ax1.grid(True, alpha=0.3, axis='y')
 ax1.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
-ax1.yaxis.get_offset_text().set_fontsize(20)
-ax1.tick_params(axis='x', labelcolor='black',labelsize=20)
+ax1.yaxis.get_offset_text().set_fontsize(25)
+ax1.tick_params(axis='x', labelcolor='black',labelsize=25)
 # 设置x轴标签
 ax1.set_xticks(model_centers)
 ax1.set_xticklabels(model_sizes, fontweight='bold')
@@ -141,7 +147,11 @@ for model_idx, model_size in enumerate(model_sizes):
         # 获取该模型该TP配置下的所有策略数据
         linear_latency = df[(df['model_size'] == model_size) & 
                            (df['tp_config'] == tp_config) & 
-                           (df['strategy'] == 'linear')]['latency_ms'].values[0]
+                           (df['strategy'] == 'linear-interleave')]['latency_ms'].values[0]
+        
+        linear_seq_latency = df[(df['model_size'] == model_size) & 
+                           (df['tp_config'] == tp_config) & 
+                           (df['strategy'] == 'linear-seq')]['latency_ms'].values[0]
         
         mesh_latency = df[(df['model_size'] == model_size) & 
                          (df['tp_config'] == tp_config) & 
@@ -152,11 +162,20 @@ for model_idx, model_size in enumerate(model_sizes):
                          (df['strategy'] == 'ring')]['latency_ms'].values[0]
         
         # 计算加速比
-        speedups = [1.0, linear_latency / mesh_latency, linear_latency / ring_latency]
+        speedups = [
+            1.0, 
+            linear_latency / linear_seq_latency, 
+            linear_latency / mesh_latency, 
+            linear_latency / ring_latency
+        ]
         
-        # 设置该组折线的x位置
-        group_center = model_center + (tp_idx - 0.5) * bar_width * 3
-        x_positions = [group_center + (i - 1) * bar_width for i in range(3)]
+        # 使用柱状图的实际x位置
+        x_positions = [
+            bar_positions[(model_size, tp_config, 'linear-interleave')],
+            bar_positions[(model_size, tp_config, 'linear-seq')],
+            bar_positions[(model_size, tp_config, 'mesh')],
+            bar_positions[(model_size, tp_config, 'ring')]
+        ]
         
         # 绘制折线
         line_color = 'blue' if tp_config == 'TP4' else 'purple'
@@ -167,7 +186,7 @@ for model_idx, model_size in enumerate(model_sizes):
         
         # 在显著的加速比点上添加标注
         # for i, (x_pos, speedup) in enumerate(zip(x_positions, speedups)):
-        #     if speedup > 1.2:  # 只标注显著的加速比
+        #     if speedup > 1.1:  # 只标注显著的加速比
         #         ax2.annotate(f'{speedup:.2f}×', 
         #                    xy=(x_pos, speedup), 
         #                    xytext=(x_pos, speedup * 1.1),
@@ -177,8 +196,8 @@ for model_idx, model_size in enumerate(model_sizes):
         #                            facecolor='white', alpha=0.8, edgecolor='gray'))
 
 # 设置右侧y轴
-ax2.set_ylabel('Speedup vs Linear Strategy', fontweight='bold', fontsize=20)
-ax2.tick_params(axis='y',labelsize=20)
+ax2.set_ylabel('Speedup vs.\nInterleave', fontweight='bold', fontsize=30, color='black')
+ax2.tick_params(axis='y',labelsize=25)
 ax2.set_ylim(0.8, 3.2)
 ax2.axhline(y=1.0, color='gray', linestyle=':', alpha=0.5, linewidth=1)
 
@@ -194,25 +213,25 @@ speedup_handles = ax2.get_legend_handles_labels()[0]
 
 # 分别放置图例
 legend1 = ax1.legend(latency_handles, [h.get_label() for h in latency_handles],
-                    loc='upper left', title='Communication Strategy', 
-                    frameon=True, edgecolor='black',fontsize=16)
+                    loc='upper left', title='Core Placement', 
+                    frameon=True, edgecolor='black',fontsize=22)
 
 legend2 = ax1.legend(style_handles, [h.get_label() for h in style_handles],
-                    loc='upper left', bbox_to_anchor=(0, 0.55), title='Tensor Parallel',
-                    frameon=True, edgecolor='black',fontsize=16)
+                    loc='upper left', bbox_to_anchor=(0.59, 1), title='TP',
+                    frameon=True, edgecolor='black',fontsize=25)
 
-legend3 = ax2.legend(speedup_handles, [f'Speedup {tp}' for tp in tp_configs],
-                    loc='upper left', bbox_to_anchor=(0.3, 1), title='Speedup Lines',
-                    frameon=True, edgecolor='black',fontsize=16)
+legend3 = ax2.legend(speedup_handles, [f'{tp}' for tp in tp_configs],
+                    loc='upper left', bbox_to_anchor=(0.315, 1), title='Speedup Ratio',
+                    frameon=True, edgecolor='black',fontsize=25)
 
 # 添加第一个图例回来
 ax1.add_artist(legend1)
 legend1.get_title().set_fontweight('bold')
-legend1.get_title().set_fontsize(16)
+legend1.get_title().set_fontsize(25)
 legend2.get_title().set_fontweight('bold')
-legend2.get_title().set_fontsize(16)
+legend2.get_title().set_fontsize(25)
 legend3.get_title().set_fontweight('bold')
-legend3.get_title().set_fontsize(16)
+legend3.get_title().set_fontsize(25)
 
 # 标题和总结
 # plt.title('Communication Strategy Performance: Latency and Speedup Analysis by Model Size and TP Configuration\n' +
@@ -229,8 +248,7 @@ legend3.get_title().set_fontsize(16)
 # plt.figtext(0.02, 0.02, insight_text, fontsize=10,
 #            bbox=dict(boxstyle='round,pad=0.5', facecolor='lightcyan', alpha=0.9))
 
-# plt.tight_layout()
-plt.show()
+plt.subplots_adjust(left=0.06, bottom=0.2, top=0.9) 
 fig.savefig('tp_mapping.pdf', format='pdf')
 # 详细性能报告
 print("Comprehensive Performance Analysis:")
@@ -245,7 +263,7 @@ for model_size in model_sizes:
         
         linear_latency = df[(df['model_size'] == model_size) & 
                            (df['tp_config'] == tp_config) & 
-                           (df['strategy'] == 'linear')]['latency_ms'].values[0]
+                           (df['strategy'] == 'linear-interleave')]['latency_ms'].values[0]
         
         mesh_latency = df[(df['model_size'] == model_size) & 
                          (df['tp_config'] == tp_config) & 

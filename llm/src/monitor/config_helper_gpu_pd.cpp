@@ -298,7 +298,8 @@ void config_helper_gpu_pd::generate_prims(int i) {
         prim_base *recv_data_1 = new Recv_prim(RECV_TYPE::RECV_START, c, 1);
         temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, c,
                                   recv_data_1->serialize()));
-        prim_base *set_batch = new Set_batch(iter_status.batchInfo);
+
+        prim_base *set_batch = new Set_batch(iter_status.batchInfo, false);
         temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, c,
                                   set_batch->serialize()));
 

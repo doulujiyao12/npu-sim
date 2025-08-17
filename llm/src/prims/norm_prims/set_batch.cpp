@@ -6,9 +6,13 @@ int Set_batch::task_core(TaskCoreContext &context) {
     (*stage_cnt)++;
 
     target->clear();
+    cout << "Core " << cid << " into set_batch\n";
     for (auto stage : batchInfo) {
-        if (auto_pd && *stage_cnt > 1)
+        cout << "stage " << stage.req_id << " " << stage.token_num << "\n";
+        if (auto_pd && *stage_cnt > 1) {
+            cout << "Auto PD: " << *stage_cnt << endl;
             target->push_back(Stage(stage.req_id, PD_PHASE(DECODE), 1));
+        }
         else
             target->push_back(stage);
     }

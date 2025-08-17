@@ -23,7 +23,7 @@ df['latency_ms'] = df['latency_ns'] / 1e6  # 转换为毫秒
 
 # 设置学术风格
 plt.rcParams.update({
-    'font.family': 'serif',
+    # 'font.family': 'serif',
     'font.size': 12,
     'axes.labelsize': 14,
     'axes.titlesize': 16,
@@ -32,15 +32,19 @@ plt.rcParams.update({
     'legend.fontsize': 11,
     'figure.titlesize': 18,
     'axes.linewidth': 1.2,
-    'grid.alpha': 0.3
+    'grid.alpha': 0.3,
+        'legend.frameon': True,
+    'legend.fancybox': False,
+    'legend.shadow': False,
+    'legend.edgecolor': 'black',
 })
 
-
 # 创建图形
-fig, ax1 = plt.subplots(figsize=(16, 8))
+fig, ax1 = plt.subplots(figsize=(16, 7))
 
 # 定义颜色和样式
 colors = {'k': '#7A9273', 'mn': '#B37070', 'mnk': '#7E8CAD'}
+color_line = {'k': '#1A8C5C', 'mn': '#EE4266', 'mnk': '#5A35FF'}
 patterns = {'k': '///', 'mn': '...', 'mnk': 'xxx'}
 line_styles = {'k': '-', 'mn': '--', 'mnk': '-.'}
 markers = {'k': 'o', 'mn': '^', 'mnk': 's'}
@@ -59,7 +63,7 @@ group_positions = []
 for i, hidden_size in enumerate(hidden_sizes):
     group_start = pos
     for j, seq_len in enumerate(seq_lengths):
-        x_labels.append(f'H{hidden_size}\nS{seq_len}')
+        x_labels.append(f'S{seq_len}')
         x_positions.append(pos)
         pos += 1
     pos += 0.5  # 组间间距
@@ -84,10 +88,10 @@ for i, method in enumerate(methods):
                    alpha=0.7, hatch=patterns[method], edgecolor='black', linewidth=0.8)
 
 # 设置柱状图的x轴
-ax1.set_xlabel('Configuration (Hidden Size & Sequence Length)', fontweight='bold', fontsize=20)
-ax1.set_ylabel('Latency (ms)', fontweight='bold', color='black', fontsize=20)
+ax1.set_xlabel('Configuration (Model Params. & Sequence Length)', fontweight='bold', fontsize=30)
+ax1.set_ylabel('Latency (ms)', fontweight='bold', color='black', fontsize=30)
 ax1.set_xticks(x_pos_array + bar_width)
-ax1.set_xticklabels(x_labels, rotation=45, ha='right', fontsize=16)
+ax1.set_xticklabels(x_labels, rotation=45, ha='right', fontsize=25)
 
 # 添加组分隔线和标签
 for i in range(len(hidden_sizes)-1):
@@ -98,9 +102,11 @@ for i in range(len(hidden_sizes)-1):
 hidd_layer = ['Qwen3_1.7B', 'Qwen3_4B', 'Qwen3_8B']
 for i, (pos, hidden_size) in enumerate(zip(group_positions, hidden_sizes)):
     ax1.text(pos, ax1.get_ylim()[1] * 0.95, f'{hidd_layer[i]}', 
-             ha='center', va='top', fontweight='bold', fontsize=16,
+             ha='center', va='top', fontweight='bold', fontsize=25,
              bbox=dict(boxstyle="round,pad=0.3", facecolor='lightgray', alpha=0.8))
-ax1.tick_params(axis='y', labelsize=16)
+
+ax1.tick_params(axis='y', labelsize=25)
+
 # 创建第二个y轴用于折线图显示相对性能
 ax2 = ax1.twinx()
 
@@ -120,13 +126,13 @@ for method in methods:
     
     # 绘制折线图
     ax2.plot(x_pos_array + bar_width, relative_performance, 
-             color=colors[method], linestyle=line_styles[method], 
+             color=color_line[method], linestyle=line_styles[method], 
              marker=markers[method], linewidth=3, markersize=8, alpha=0.9,
-             markerfacecolor='white', markeredgecolor=colors[method], 
+             markerfacecolor='white', markeredgecolor=color_line[method], 
              markeredgewidth=2)
 
-ax2.set_ylabel('Relative Performance (×)', fontweight='bold', fontsize=20)
-ax2.tick_params(axis='y', labelsize=16)
+ax2.set_ylabel('Relative Perf.', fontweight='bold', fontsize=30)
+ax2.tick_params(axis='y', labelsize=25)
 
 # 设置标题和网格
 # ax1.set_title('Tensor Parallelism Performance Analysis: Latency vs. Relative Performance\nfor Qwen3 Series Model', 
@@ -135,30 +141,31 @@ ax1.grid(True, alpha=0.3, axis='y')
 
 # 创建组合图例
 # 柱状图图例
-bar_legend = ax1.legend(loc='upper left', bbox_to_anchor=(0.02, 0.85), 
-                       title='Absolute Latency', fontsize=14)
+bar_legend = ax1.legend(loc='upper left', bbox_to_anchor=(0.215, 0.85), frameon=True, edgecolor='black',
+                       title='Latency', fontsize=23)
+ax1.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
+ax1.yaxis.get_offset_text().set_fontsize(25)
 bar_legend.get_title().set_fontweight('bold')
-bar_legend.get_title().set_fontsize(14)
+bar_legend.get_title().set_fontsize(25)
 
-# 折线图图例
+# 折线图图例 - 修复了这里的错误
 line_handles = []
 for method in methods:
-    line = plt.Line2D([0], [0], color=colors[method], linestyle=line_styles[method],
-                     marker=markers[method], linewidth=3, markersize=8,
-                     markerfacecolor='white', markeredgecolor=colors[method],
+    line = plt.Line2D([0], [0], color=color_line[method], linestyle=line_styles[method],
+                     marker=markers[method], linewidth=5, markersize=10,
+                     markerfacecolor='white', markeredgecolor=color_line[method],  # 修复：使用正确的颜色值
                      markeredgewidth=2, label=f'TP-{method.upper()}')
     line_handles.append(line)
 
-line_legend = ax2.legend(handles=line_handles, loc='upper left', 
-                        bbox_to_anchor=(0.02, 0.65), title='Relative Performance', fontsize=14)
+line_legend = ax2.legend(handles=line_handles, loc='upper left', frameon=True, edgecolor='black',
+                        bbox_to_anchor=(0, 0.85), title='Relative Perf.', fontsize=23)
 line_legend.get_title().set_fontweight('bold')
-line_legend.get_title().set_fontsize(14)
+line_legend.get_title().set_fontsize(23)
 
 # 调整布局
 plt.tight_layout()
 
-# plt.show()
-
+# 保存为PDF
 output_pdf = 'tp_dimention.pdf'
 with PdfPages(output_pdf) as pdf:
     pdf.savefig(fig)
@@ -172,3 +179,6 @@ print(f"Sequence length scaling: TP-K shows best scaling with sequence length")
 print(f"Hidden size scaling: TP-MN performance degrades most with larger hidden sizes")
 fastest_config = df.loc[df['latency_ms'].idxmin()]
 print(f"Fastest configuration: TP-{fastest_config['tp_method'].upper()}, H{fastest_config['hidden_size']}, S{fastest_config['seq_len']} ({fastest_config['latency_ms']:.0f}ms)")
+
+# 显示图形（如果需要）
+# plt.show()
