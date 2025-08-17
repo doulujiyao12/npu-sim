@@ -1262,11 +1262,17 @@ void WorkerCoreExecutor::task_logic() {
             moe->prefetched_experts = &prefetched_experts;
         }
 
-        if (typeid(p) == typeid(matmul_forward_gpu_pd)) {
+        if (typeid(*p) == typeid(matmul_forward_gpu_pd)) {
             matmul_forward_gpu_pd *matmul = (matmul_forward_gpu_pd *)p;
             matmul->batchInfo = *batchInfo;
+
             matmul->decode_done = &decode_done;
-        } else if (typeid(p) == typeid(attention_forward_gpu_pd)) {
+
+            cout << "?>????\n";
+            for (auto b : *batchInfo) {
+                cout << b.req_id << endl;
+            }
+        } else if (typeid(*p) == typeid(attention_forward_gpu_pd)) {
             attention_forward_gpu_pd *attention = (attention_forward_gpu_pd *)p;
             attention->decode_done = &decode_done;
             attention->batchInfo = *batchInfo;

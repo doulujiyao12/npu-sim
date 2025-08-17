@@ -88,6 +88,8 @@ if (gpu_inner == true){
             assert(false && "Unsupported job type");
         }
 
+        cout << "[GPU MATMUL PD]: size: " << size << endl;
+
         char format_label_k[100];
         sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
                 stage.req_id);
