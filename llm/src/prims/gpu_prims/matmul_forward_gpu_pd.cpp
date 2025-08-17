@@ -8,6 +8,7 @@ int matmul_forward_gpu_pd::task_core(TaskCoreContext &context) {
         data_byte = 1;
     else if (datatype == FP16)
         data_byte = 2;
+    B = B * gpu_B;
 
     // 这里记录的是总大小，实际取用的时候需要除以slice大小
     int data_size_input = B * T * C * data_byte;
@@ -108,9 +109,9 @@ if (gpu_inner == true){
         gpu_pos_locator->findPair(label_v, key_v);
 
         gpu_write_generic(context, key_k.pos + (key_k.size - size), size,
-                          mem_time);
+                          mem_time, false);
         gpu_write_generic(context, key_v.pos + (key_v.size - size), size,
-                          mem_time);
+                          mem_time, false);
     }
 
 
@@ -203,9 +204,9 @@ if (gpu_inner == true){
         gpu_pos_locator->findPair(label_v, key_v);
 
         gpu_write_generic(context, key_k.pos + (key_k.size - size), size,
-                          mem_time);
+                          mem_time, false);
         gpu_write_generic(context, key_v.pos + (key_v.size - size), size,
-                          mem_time);
+                          mem_time, false);
     }
 
 
@@ -253,7 +254,8 @@ if (gpu_inner == true){
 
     cout << cid << " [matmul_forward_gpu_pd] after write: " << mem_time
          << " at addr " << out_key.pos << endl;
-
+    B = B / gpu_B;
+    assert(B > 0);
     return overlap_time;
 }
 

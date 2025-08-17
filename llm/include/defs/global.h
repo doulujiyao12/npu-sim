@@ -86,6 +86,7 @@ extern bool gpu_inner;
 extern float comp_util;
 extern bool gpu_clog;
 extern int gpu_bw;
+extern int gpu_B;
 extern string g_config_file;
 extern int dram_bw;
 extern bool beha_dram;

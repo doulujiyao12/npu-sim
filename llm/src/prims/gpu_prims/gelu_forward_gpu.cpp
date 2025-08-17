@@ -52,6 +52,7 @@ int Gelu_f_gpu::task_core(TaskCoreContext &context) {
     } else if (datatype == FP16) {
         data_byte = 2;
     }
+    N = N * gpu_B;
 
     int data_size_input = N * data_byte;
     int data_size_out = data_byte * N / (slice_x * slice_y);
@@ -112,7 +113,8 @@ int Gelu_f_gpu::task_core(TaskCoreContext &context) {
 #endif
 
     cout << "[Gelu_f_gpu] after write: " << overlap_time << endl;
-
+    N = N / gpu_B;
+    assert(N > 0);
     return overlap_time;
 }
 

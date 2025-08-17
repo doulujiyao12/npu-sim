@@ -1474,7 +1474,7 @@ if (beha_dram == false) {
 }
 
 void gpu_write_generic(TaskCoreContext &context, uint64_t global_addr,
-                       int data_size_in_byte, int &mem_time) {
+                       int data_size_in_byte, int &mem_time, bool cache_write) {
 
     uint64_t inp_global_addr =
         (global_addr / dram_aligned) * dram_aligned; // 向下取整到dram 取址的整数倍，这里是32
@@ -1513,7 +1513,11 @@ if (beha_dram == false) {
     auto require_byte = cache_count * cache_lines / 8;
     float need_NS = (float)require_byte / beha_dram_util / (gpu_bw) * GRID_SIZE;
     int need_cycles = need_NS;
-    wait(need_cycles, SC_NS);
+    if (cache_write == true){
+        wait(0, SC_NS);
+    }else{
+        wait(need_cycles, SC_NS);
+    }
 }
 
 #if GPU_CACHE_DEBUG == 1

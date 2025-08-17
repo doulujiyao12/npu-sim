@@ -10,6 +10,7 @@ int Layernorm_f_gpu::task_core(TaskCoreContext &context) {
     } else if (datatype == FP16) {
         data_byte = 2;
     }
+    B = B * gpu_B;
 
     int data_size_input = data_byte * B * T * C;
     int data_size_weight = data_byte * C;
@@ -108,7 +109,8 @@ int Layernorm_f_gpu::task_core(TaskCoreContext &context) {
 #endif
 
     cout << "[Layernorm_f_gpu] after write: " << overlap_time << endl;
-
+    B = B / gpu_B;
+    assert(B > 0);
     return overlap_time;
 }
 

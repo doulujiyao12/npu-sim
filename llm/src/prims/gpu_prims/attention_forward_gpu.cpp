@@ -10,6 +10,7 @@ int Attention_f_gpu::task_core(TaskCoreContext &context) {
     } else if (datatype == FP16) {
         data_byte = 2;
     }
+    B = B * gpu_B;
 
     int data_size_input = data_byte * B * T * C;       // QKV input
     int data_size_preatt = data_byte * B * NH * T * T; // preatt
@@ -127,7 +128,8 @@ int Attention_f_gpu::task_core(TaskCoreContext &context) {
 #endif
 
     cout << cid << " [Attention_f_gpu] after write: " << overlap_time << endl;
-
+    B = B / gpu_B;
+    assert(B > 0);
     return overlap_time;
 }
 

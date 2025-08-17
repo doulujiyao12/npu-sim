@@ -56,7 +56,8 @@ Define_bool_opt("--beha_dram", g_beha_dram, true,
                     "whether use behavious dram"); // 3145728
 Define_float_opt("--beha_dram_util", g_beha_dram_util, 0.7,
                  "dram bandwidth utilization in beha dram");
-
+Define_int64_opt("--gpu_B", g_gpu_B, 1,
+                 "gpu batch size");
 
 Define_int64_opt("--verbose-level", g_verbose_level, 1,
                  "verbose-level"); // 3145728
@@ -447,6 +448,7 @@ int sc_main(int argc, char *argv[]) {
     use_gpu = g_use_gpu;
     beha_dram_util = g_beha_dram_util;
     beha_dram = g_beha_dram;
+    gpu_B = g_gpu_B;
 
     modifyNbrOfDevices("../DRAMSys/configs/memspec/JEDEC_4Gb_DDR4-1866_8bit_A.json", "../DRAMSys/configs/memspec/JEDEC_4Gb_DDR4-1866_8bit_DF.json", dram_bw);
     int bytecount_df = static_cast<int>(log2(g_dram_bw));
@@ -462,7 +464,7 @@ int sc_main(int argc, char *argv[]) {
         generateGPUCacheJsonFile(numDevices,"../DRAMSys/configs/memspec/HBM2_GPU.json");
         generateAddressMapping(bytecount, "../DRAMSys/configs/addressmapping/am_hbm2_gpu.json");
         gpu_dram_config = "../DRAMSys/configs/gpu_hbm2.json";
-    }else
+    }else if (beha_dram != true)
     {
         assert(false && "gpu bandwidth must be 512 1024 256");
     }

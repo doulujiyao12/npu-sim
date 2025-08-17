@@ -9,6 +9,7 @@ int Residual_f_gpu::task_core(TaskCoreContext &context) {
     } else if (datatype == FP16) {
         data_byte = 2;
     }
+    N = N * gpu_B;
 
     int data_size_input = 2 * N * data_byte;
     int data_size_single_input = N * data_byte;
@@ -90,7 +91,8 @@ int Residual_f_gpu::task_core(TaskCoreContext &context) {
 #endif
 
     cout << "[Residual_f_gpu] after write: " << overlap_time << endl;
-
+    N = N / gpu_B;
+    assert(N > 0);
     return overlap_time;
 }
 

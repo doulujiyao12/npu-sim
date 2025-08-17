@@ -9,6 +9,7 @@ int Matmul_f_gpu::task_core(TaskCoreContext &context) {
     } else if (datatype == FP16) {
         data_byte = 2;
     }
+    B = B * gpu_B;
 
     int data_size_input = B * T * C * data_byte;
     int data_size_weight = OC * C * data_byte;
@@ -162,7 +163,8 @@ if (gpu_inner == true){
 #endif
 
     cout << cid << " [Matmul_f_gpu] after write: " << overlap_time << endl;
-
+    B = B / gpu_B;
+    assert(B > 0);
     return overlap_time;
 }
 

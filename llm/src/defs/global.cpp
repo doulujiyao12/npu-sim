@@ -65,6 +65,7 @@ bool gpu_inner;
 float comp_util;
 bool gpu_clog;
 int gpu_bw;
+int gpu_B;
 string g_config_file;
 int dram_bw;
 bool beha_dram;

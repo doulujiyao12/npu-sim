@@ -290,6 +290,15 @@ void config_helper_gpu::parse_done_msg(Event_engine *event_engine,
             if (done_loop == streams[0].loop) {
                 cout << "Config helper GPU: all work done.\n";
                 cout << "[CATCH TEST] " << sc_time_stamp() << endl;
+                ofstream outfile("simulation_result_gpu.txt", ios::app);
+                if (outfile.is_open()) {
+                    outfile << "[CATCH TEST] " << sc_time_stamp() << "L1CACHESIZE " << L1CACHESIZE << " L2CACHESIZE "
+                    << L2CACHESIZE << " BANDWIDTH " << gpu_bw
+                    << endl;
+                    outfile.close();
+                } else {
+                    cout << "Error: Unable to open file for writing timestamp." << endl;
+                }
                 sc_stop();
             }
         }
