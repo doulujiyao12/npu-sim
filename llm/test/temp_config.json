@@ -1,6 +1,6 @@
 {
     "x": 8,
-    "comm_payload": 256,
+    "comm_acc": 1,
     "cores": [
         {
             "id": 0,

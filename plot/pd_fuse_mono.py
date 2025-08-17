@@ -6,12 +6,15 @@ from collections import defaultdict
 # 设置学术风格的字体和参数
 plt.rcParams.update({
     'font.size': 10,
-    'font.family': 'serif',
     'axes.linewidth': 1.2,
     'axes.grid': True,
     'grid.alpha': 0.3,
     'lines.linewidth': 2,
-    'lines.markersize': 6
+    'lines.markersize': 6,
+    'legend.frameon': True,
+    'legend.fancybox': False,
+    'legend.shadow': False,
+    'legend.edgecolor': 'black',
 })
 
 def parse_data_file(file_path):
@@ -106,7 +109,7 @@ def calculate_metrics(configs):
             if len(request_tokens) > 0:
                 all_start_times.append(request_tokens[0])
         
-        earliest_start = min(all_start_times) if all_start_times else 0
+        earliest_start = 0
         
         for request_tokens in requests:
             if len(request_tokens) >= 2:  # 确保有足够的token
@@ -120,7 +123,7 @@ def calculate_metrics(configs):
                     for i in range(len(request_tokens)-1):
                         decode_times.append((request_tokens[i+1] - request_tokens[i]) / 1e9)
                     if decode_times:
-                        tbts.append(np.mean(decode_times))
+                        tbts.append(np.min(decode_times))
                 
                 # 总延迟
                 total_latency = (request_tokens[-1] - 0) / 1e9
@@ -165,8 +168,41 @@ def calculate_metrics(configs):
     
     return metrics
 
-def plot_experiment_group(ax1, metrics, group_id, subplot_idx, total_subplots):
-    """为单个实验组绘制图表"""
+def get_string_ratio(input, output):
+    # if input == output:
+    #     return "1:1 (" + input + " tokens)"
+    # input = int(input)
+    # output = int(output)
+    # if input > output:
+    #     input /= output
+    #     return str(int(input)) + ":1"
+    # else:
+    #     output /= input
+    #     return "1:" + str(int(output))
+    return input + ":" + output
+
+def calculate_global_y_ranges(metrics_by_group):
+    """计算所有组中的最大值，用于统一y轴刻度"""
+    all_latencies = []
+    all_ttfts = []
+    all_tbts = []
+    
+    for group_id, metrics in metrics_by_group.items():
+        for config_name, data in metrics.items():
+            all_latencies.append(data['latency_mean'])
+            all_ttfts.append(data['ttft_mean'])
+            all_tbts.append(data['tbt_mean'])
+    
+    # 计算范围，添加10%的余量
+    max_latency = max(all_latencies) * 1.1 if all_latencies else 0
+    max_ttft_tbt = max(max(all_ttfts) if all_ttfts else [0], 
+                       max(all_tbts) if all_tbts else [0]) * 1.1
+    
+    return max_latency, max_ttft_tbt
+
+def plot_experiment_group(ax1, metrics, group_id, subplot_idx, total_subplots, rows, cols, 
+                         global_latency_max, global_ttft_tbt_max):
+    """为单个实验组绘制图表，使用统一的y轴刻度"""
     # 按P核数量排序（P核多的在前）
     sorted_configs = sorted(metrics.items(), key=lambda x: (-x[1]['p_cores'], x[1]['d_cores']))
     config_names = [item[0] for item in sorted_configs]
@@ -188,26 +224,33 @@ def plot_experiment_group(ax1, metrics, group_id, subplot_idx, total_subplots):
     config_labels = [f"P{p}/D{d}" for p, d in zip(p_cores, d_cores)]
     
     # 颜色设置
-    color1 = '#B37070'  # 蓝色 - TTFT
+    color1 = '#EE4266'  # 蓝色 - TTFT
     color2 = '#7E8CAD'  # 红色 - 延迟
-    color4 = '#7A9273'  # 橙色 - TBT
+    color4 = '#1A8C5C'  # 橙色 - TBT
     
     # 绘制平均延迟 (柱状图)
-    bars = ax1.bar(x_pos, latency, 0.4, label='Avg Latency (s)', 
+    bars = ax1.bar(x_pos, latency, 0.4, label='Avg. Latency', 
                    color=color2, alpha=0.8, hatch="//", edgecolor='black', linewidth=0.8)
     
-    # ax1.set_xlabel('Core Allocation (P/D)', fontsize=15, fontweight='bold')
-    ax1.set_ylabel('Avg Latency (mms)', fontsize=13, fontweight='bold')
-    ax1.set_xticks(x_pos)
-    ax1.set_xticklabels(config_labels, fontsize=9, rotation=0)
-    ax1.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
-    ax1.yaxis.get_offset_text().set_fontsize(13)
-    ax1.tick_params(axis='y', labelsize=13)
-    ax1.tick_params(axis='x', labelsize=13)
-
+    # 判断是否显示左侧y轴标签（只有最左侧列显示）
+    current_col = subplot_idx % cols
+    # if current_col == 0:  # 最左侧列
+    #     ax1.set_ylabel('Avg. Latency (ms)', fontsize=22, fontweight='bold')
     
-    if latency:
-        ax1.set_ylim(0, max(latency) * 1.1)
+    ax1.set_xticks(x_pos)
+    ax1.set_xticklabels(config_labels, fontsize=18, rotation=30)
+    current_row = subplot_idx // cols
+    if current_row != rows - 1:  # 不是最后一行
+        ax1.tick_params(axis='x', bottom=True, labelbottom=False)
+    ax1.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
+    ax1.yaxis.get_offset_text().set_fontsize(0)
+    ax1.tick_params(axis='y', labelsize=25)
+    ax1.tick_params(axis='x', labelsize=20)
+
+    # 设置统一的左y轴范围
+    ax1.set_ylim(0, global_latency_max)
+    if current_col != 0:
+        ax1.tick_params(axis='y', left=False, labelleft=False)
     
     # 右y轴 - TTFT和TBT
     ax2 = ax1.twinx()
@@ -217,15 +260,19 @@ def plot_experiment_group(ax1, metrics, group_id, subplot_idx, total_subplots):
                      label='TTFT', markerfacecolor='white', markeredgewidth=1.5)
     
     line2 = ax2.plot(x_pos, tbt, '^-', color=color4, linewidth=2, markersize=6,
-                     label='TBT (s)', markerfacecolor='white', markeredgewidth=1.5)
+                     label='TBT (ms)', markerfacecolor='white', markeredgewidth=1.5)
     
-    ax2.set_ylabel('TTFT & TBT (s)', color='black', fontsize=13, fontweight='bold')
-    ax2.tick_params(axis='y', labelcolor='black', labelsize=13)
-
-    ax2.tick_params(axis='x', labelsize=13)
+    # 判断是否显示右侧y轴标签（只有最右侧列显示）
+    # if current_col == cols - 1:  # 最右侧列
+    #     ax2.set_ylabel('TTFT & TBT (ms)', color='black', fontsize=22, fontweight='bold')
     
-    if ttft and tbt:
-        ax2.set_ylim(0, max(max(ttft), max(tbt)) * 1.1)
+    ax2.tick_params(axis='y', labelcolor='black', labelsize=25)
+    ax2.tick_params(axis='x', labelsize=14)
+    
+    # 设置统一的右y轴范围
+    ax2.set_ylim(0, global_ttft_tbt_max)
+    if current_col != cols - 1:
+        ax2.tick_params(axis='y', right=False, labelright=False)
     
     # 添加网格
     ax1.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
@@ -241,33 +288,23 @@ def plot_experiment_group(ax1, metrics, group_id, subplot_idx, total_subplots):
         if len(group_parts) == 2:
             input_tokens = group_parts[0]
             output_tokens = group_parts[1]
-            title_text = f'Input: {input_tokens} tokens, Output: {output_tokens} tokens\n({avg_request_count} reqs/config)'
+            title_text = f'P:D = {get_string_ratio(input_tokens, output_tokens)}'
         else:
             # 如果格式不符合预期，使用原始group_id
             title_text = f'Group: {group_id}\n(~{avg_token_count - 1} tokens/req, {avg_request_count} reqs/config)'
         
-        ax1.set_title(title_text, fontsize=13, fontweight='bold', pad=10)
+        ax1.set_title(title_text, fontsize=25, fontweight='bold', pad=10)
     else:
         # 尝试解析group_id
         group_parts = group_id.split('_')
         if len(group_parts) == 2:
             input_tokens = group_parts[0]
             output_tokens = group_parts[1]
-            title_text = f'Input: {input_tokens} tokens, Output: {output_tokens} tokens'
+            title_text = f'Prefill:Decode = {get_string_ratio(input_tokens, output_tokens)}'
         else:
             title_text = f'Group: {group_id}'
         
         ax1.set_title(title_text, fontsize=11, fontweight='bold', pad=10)
-    
-    # 添加数值标签
-    # for i, bar in enumerate(bars):
-    #     height = bar.get_height()
-    #     if height > 0:
-    #         ax1.annotate(f'{height:.1f}', 
-    #                     xy=(bar.get_x() + bar.get_width()/2, height),
-    #                     xytext=(0, 2), textcoords="offset points", 
-    #                     ha='center', va='bottom',
-    #                     fontsize=8, color=color2)
     
     # 打印统计信息
     print(f"\nGroup '{group_id}' Performance:")
@@ -298,6 +335,12 @@ num_experiments = len(metrics_by_group)
 if num_experiments == 0:
     print("No data found!")
     exit()
+
+# 计算全局y轴范围
+global_latency_max, global_ttft_tbt_max = calculate_global_y_ranges(metrics_by_group)
+print(f"\nGlobal Y-axis ranges:")
+print(f"  Left axis (Latency): 0 - {global_latency_max:.4f}")
+print(f"  Right axis (TTFT/TBT): 0 - {global_ttft_tbt_max:.4f}")
 
 # 计算子图布局
 if num_experiments <= 2:
@@ -335,7 +378,8 @@ first_ax1, first_ax2 = None, None
 for idx, group_id in enumerate(sorted_groups):
     if idx < len(axes):
         ax1, ax2 = plot_experiment_group(axes[idx], metrics_by_group[group_id], 
-                                         group_id, idx, num_experiments)
+                                         group_id, idx, num_experiments, rows, cols,
+                                         global_latency_max, global_ttft_tbt_max)
         if idx == 0:
             first_ax1, first_ax2 = ax1, ax2
 
@@ -350,27 +394,29 @@ if first_ax1 and first_ax2:
     lines2, labels2 = first_ax2.get_legend_handles_labels()
     fig.legend(lines1 + lines2, labels1 + labels2, 
               loc='upper center', 
-              bbox_to_anchor=(0.5, 0.94),
+              bbox_to_anchor=(0.5, 0.97),
               ncol=3,  # 水平排列
-              fontsize=13, 
-              framealpha=0.9, 
+              fontsize=25, 
+              frameon=True,
               edgecolor='black',
-              fancybox=True,
-              shadow=True)
+              fancybox=False,
+              shadow=False)
+    
 
-# # 添加总标题
-# fig.suptitle('Performance Analysis of P/D Core Allocation Strategies\nAcross Different Experiment Groups', 
-#              fontsize=14, fontweight='bold', y=1.00)
 
 # 调整布局
 plt.tight_layout()
-plt.subplots_adjust(top=0.8, hspace=0.45, wspace=0.4)
+plt.subplots_adjust(top=0.8, hspace=0.35, wspace=0.1, left=0.12, right=0.88)
+
+# 在图的外部统一加 y 轴标签（居中）
+fig.text(0.04, 0.5, 'Avg. Latency (×10⁴ms)', va='center', rotation='vertical',
+         fontsize=30, fontweight='bold')
+fig.text(0.96, 0.5, 'TTFT & TBT (ms)', va='center', rotation='vertical',
+         fontsize=30, fontweight='bold')
 
 # 显示图表
-plt.show()
-
 # 保存图表
-plt.savefig('pd_core_allocation_multi_experiments.png', dpi=300, bbox_inches='tight')
+# plt.savefig('pd_core_allocation_multi_experiments.png', dpi=300, bbox_inches='tight')
 plt.savefig('pd_core_allocation_multi_experiments.pdf', dpi=300, bbox_inches='tight')
 
 print("\nFigures saved as 'pd_core_allocation_multi_experiments.png' and '.pdf'")

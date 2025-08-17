@@ -7,6 +7,12 @@ plt.rcParams['font.size'] = 11
 plt.rcParams['axes.linewidth'] = 0.8
 plt.rcParams['xtick.major.width'] = 0.8
 plt.rcParams['ytick.major.width'] = 0.8
+plt.rcParams.update({
+    'legend.frameon': True,
+    'legend.fancybox': False,
+    'legend.shadow': False,
+    'legend.edgecolor': 'black',
+})
 
 # 数据整理 - 32B模型
 data_32B = {
@@ -97,7 +103,7 @@ all_models = {
 dram_bw = [16, 32, 64]
 
 # 创建图表
-fig, ax = plt.subplots(1, 1, figsize=(16, 5))
+fig, ax = plt.subplots(1, 1, figsize=(16, 4))
 
 # 配色方案
 model_colors = {
@@ -155,7 +161,7 @@ for model_idx, (model_name, model_data) in enumerate(all_models.items()):
             # 为每个模型都添加x轴标签
             # 格式化SRAM大小（去掉MB）
             sram_size = sram_name.replace('MB', '')
-            label = f'S{sram_size}C{compute}'
+            label = f'S{sram_size}A{compute}'
             all_group_centers.append(group_center)
             all_group_labels.append(label)
             
@@ -200,22 +206,22 @@ for key, (center_x, speedup_values) in speedup_data.items():
             markeredgewidth=1.2, alpha=0.9, zorder=10)
 
 # 设置主y轴（柱状图）
-ax.set_ylabel('Latency (seconds)', fontsize=16, fontweight='bold')
+ax.set_ylabel('Latency (s)', fontsize=22, fontweight='bold')
 ax.set_ylim(0, max(all_values) * 1.15)
 
 # 设置第二y轴（折线图）
-ax2.set_ylabel('Speedup', fontsize=16, fontweight='bold')
+ax2.set_ylabel('Speedup', fontsize=22, fontweight='bold')
 ax2.set_ylim(0.95, 1.7)
-ax2.tick_params(axis='y', labelsize=16)
+ax2.tick_params(axis='y', labelsize=25)
 
 # 设置x轴 - 使用所有收集的标签
 ax.set_xticks(all_group_centers)
-ax.set_xticklabels(all_group_labels, fontsize=9, rotation=45, ha='right')
-# ax.set_xlabel('SRAM Size and Compute Configuration', fontsize=14, fontweight='bold')
+ax.set_xticklabels(all_group_labels, fontsize=8, rotation=30, ha='right')
+ax.set_xlabel('SRAM Size and Compute Configuration', fontsize=22, fontweight='bold')
 
 
-ax.tick_params(axis='y', labelsize=16)
-ax.tick_params(axis='x', labelsize=12)
+ax.tick_params(axis='y', labelsize=25)
+ax.tick_params(axis='x', labelsize=14)
 # # 添加标题
 # ax.set_title('Multi-Model Performance Analysis: Latency and Speedup Comparison', 
 #              fontsize=15, fontweight='bold', pad=20)
@@ -237,11 +243,11 @@ for i, bw in enumerate(dram_bw):
 
 legend2 = ax.legend(dram_legend_elements, 
                    [f'DRAM: {bw} GB/s' for bw in dram_bw],
-                   loc='upper right', title='DRAM Bandwidth',
-                   fontsize=13, title_fontsize=13,
-                   frameon=True, fancybox=False,
-                   edgecolor='black', framealpha=0.95,
-                   bbox_to_anchor=(0.75, 0.82))
+                   loc='upper right', title='DRAM bandwidth',
+                   fontsize=12, title_fontsize=12,
+                   frameon=True,
+                   edgecolor='black',
+                   bbox_to_anchor=(0.76, 0.82))
 
 # 加速比图例
 speedup_legend_elements = [
@@ -252,11 +258,11 @@ speedup_legend_elements = [
 
 legend3 = ax2.legend(speedup_legend_elements, 
                     ['128MB', '64MB', '32MB'],
-                    loc='upper right', title='DRAM bandwidth speedup',
-                    fontsize=13, title_fontsize=13,
-                    frameon=True, fancybox=False,
-                    edgecolor='black', framealpha=0.95,
-                    ncol=1,bbox_to_anchor=(1, 0.82))
+                    loc='upper right', title='DRAM speedup',
+                    fontsize=12, title_fontsize=12,
+                    frameon=True,
+                    edgecolor='black',
+                    ncol=1,bbox_to_anchor=(0.91, 0.82))
 
 # 添加模型分隔线
 model_boundaries = []
@@ -286,8 +292,7 @@ for model_name, model_data in all_models.items():
 ax.add_artist(legend2)
 
 # 调整布局，为旋转的x轴标签留出空间
-plt.tight_layout()
-plt.subplots_adjust(bottom=0.20)
+plt.subplots_adjust(left=0.08, bottom=0.3, top=0.9)
 
 fig.savefig('qwen_bundle_20.pdf', format='pdf')
 
