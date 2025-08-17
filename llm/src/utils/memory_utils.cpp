@@ -1436,13 +1436,24 @@ void gpu_read_generic(TaskCoreContext &context, uint64_t global_addr,
          
 
 #endif
+
+if (beha_dram == false) {
     gpunb_dcache_if->reconfigure(inp_global_addr, cache_count, cache_lines, 0);
+}
 
     context.event_engine->add_event("Core " + toHexString(context.cid),
                                     "read_gpu", "B",
                                     Trace_event_util("read_gpu"));
-
+if (beha_dram == false) {
     wait(*e_nbdram);
+}else{
+    
+    auto require_byte = cache_count * cache_lines / 8;
+    float need_NS = (float)require_byte / beha_dram_util / (gpu_bw) * GRID_SIZE;
+    int need_cycles = need_NS;
+    wait(need_cycles, SC_NS);
+}
+
     context.event_engine->add_event("Core " + toHexString(context.cid),
                                     "read_gpu", "E",
                                     Trace_event_util("read_gpu"));
@@ -1491,8 +1502,20 @@ void gpu_write_generic(TaskCoreContext &context, uint64_t global_addr,
     cout << "start gpu_nbdram: " << sc_time_stamp().to_string() << " id "
          << gpunb_dcache_if->id << endl;
 #endif
+if (beha_dram == false) {
     gpunb_dcache_if->reconfigure(inp_global_addr, cache_count, cache_lines, 1);
+}
+
+if (beha_dram == false) {
     wait(*e_nbdram);
+}else{
+    
+    auto require_byte = cache_count * cache_lines / 8;
+    float need_NS = (float)require_byte / beha_dram_util / (gpu_bw) * GRID_SIZE;
+    int need_cycles = need_NS;
+    wait(need_cycles, SC_NS);
+}
+
 #if GPU_CACHE_DEBUG == 1
 
     cout << "end gpu_nbdram: " << sc_time_stamp().to_string() << " id "

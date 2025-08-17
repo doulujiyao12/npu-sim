@@ -23,3 +23,5 @@ aaa.cpp
 !**/CMakeLists.txt
 !CMakeLists.txt
 !/doc/requirements.txt
+./DRAMSys/configs/memspec/JEDEC_4Gb_DDR4-1866_8bit_DF.json
+./DRAMSys/configs/addressmapping/am_ddr4_8x4Gbx8_df.json
