@@ -68,9 +68,9 @@ if (gpu_inner == true){
 
 #endif
     // weight 读入
+
     gpu_read_generic(context, w_key.pos + w_key.size / slice_x * col_index,
                      data_size_weight / slice_x, mem_time);
-
     // bias 读入
     gpu_read_generic(context, b_key.pos + b_key.size / slice_x * col_index,
                      data_size_bias / slice_x, mem_time);
@@ -165,9 +165,11 @@ if (gpu_inner == true){
 
 #endif
     // weight 读入
+    // LOG_VERBOSE(1, context.cid," data_size_weight / slice_x " << data_size_weight / slice_x);
+
     gpu_read_generic(context, w_key.pos + w_key.size / slice_total * fetch_index,
             data_size_weight / slice_total, mem_time);
-
+    // assert(false && "Unsupported job type");
     // bias 读入
     gpu_read_generic(context, b_key.pos + b_key.size / slice_total * fetch_index,
             data_size_bias / slice_total, mem_time);
@@ -186,13 +188,13 @@ if (gpu_inner == true){
             assert(false && "Unsupported job type");
         }
 
-        char format_label_k[100];
-        sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+        char format_label_k[1000];
+        sprintf(format_label_k, "%s%s%sk#%d", prefix.c_str(), ETERNAL_PREFIX, KVCACHE_PREFIX,
                 stage.req_id);
         string label_k = format_label_k;
 
-        char format_label_v[100];
-        sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+        char format_label_v[1000];
+        sprintf(format_label_v, "%s%s%sv#%d", prefix.c_str(), ETERNAL_PREFIX, KVCACHE_PREFIX,
                 stage.req_id);
         string label_v = format_label_v;
 
@@ -202,6 +204,8 @@ if (gpu_inner == true){
         AddrPosKey key_k, key_v;
         gpu_pos_locator->findPair(label_k, key_k);
         gpu_pos_locator->findPair(label_v, key_v);
+
+        // LOG_VERBOSE(1, context.cid," matmul kv " << " prefix "<< prefix << " " << size << " key size " << key_k.size << " " << label_k);
 
         gpu_write_generic(context, key_k.pos + (key_k.size - size), size,
                           mem_time, false);

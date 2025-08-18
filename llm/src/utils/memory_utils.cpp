@@ -1452,6 +1452,7 @@ if (beha_dram == false) {
     float need_NS = (float)require_byte / beha_dram_util / (gpu_bw) * GRID_SIZE;
     int need_cycles = need_NS;
     wait(need_cycles, SC_NS);
+    // LOG_VERBOSE(1, context.cid," beha gpu: " << "require_byte " << require_byte << gpunb_dcache_if->id);                    
 }
 
     context.event_engine->add_event("Core " + toHexString(context.cid),
@@ -1505,6 +1506,9 @@ void gpu_write_generic(TaskCoreContext &context, uint64_t global_addr,
 if (beha_dram == false) {
     gpunb_dcache_if->reconfigure(inp_global_addr, cache_count, cache_lines, 1);
 }
+context.event_engine->add_event("Core " + toHexString(context.cid),
+                                    "write_gpu", "B",
+                                    Trace_event_util("write_gpu"));
 
 if (beha_dram == false) {
     wait(*e_nbdram);
@@ -1519,6 +1523,9 @@ if (beha_dram == false) {
         wait(need_cycles, SC_NS);
     }
 }
+context.event_engine->add_event("Core " + toHexString(context.cid),
+                                    "write_gpu", "E",
+                                    Trace_event_util("write_gpu"));
 
 #if GPU_CACHE_DEBUG == 1
 

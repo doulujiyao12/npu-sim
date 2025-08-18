@@ -3,7 +3,7 @@
 #include "prims/gpu_prims.h"
 #include "utils/memory_utils.h"
 #include "utils/system_utils.h"
-
+#include <regex>
 int attention_forward_gpu_pd::task_core(TaskCoreContext &context) {
     int data_byte = 0;
     if (datatype == INT8) {
@@ -52,19 +52,35 @@ int attention_forward_gpu_pd::task_core(TaskCoreContext &context) {
     int overlap_time = 0;
 #if USE_L1L2_CACHE == 1
     for (auto stage : batchInfo) {
-        char format_label_k[100];
-        sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+        char format_label_k[1000];
+        // const std::string oldPrefix = "attention_";
+        // const std::string newPrefix = "matmul_";
+        // string result;
+        // // 检查是否以 "matmul_" 开头
+        // if (prefix.substr(0, oldPrefix.length()) == oldPrefix) {
+        //     result =  newPrefix + prefix.substr(oldPrefix.length());
+        // }else{
+        //     result = prefix; 
+        // }
+        std::regex pattern("attention");  // 因为是字面量，不需要复杂正则
+
+        // 替换为目标字符串
+        std::string result = std::regex_replace(prefix, pattern, "matmul");
+
+        
+        sprintf(format_label_k, "%s%s%sk#%d", result.c_str(), ETERNAL_PREFIX, KVCACHE_PREFIX,
                 stage.req_id);
         string label_k = format_label_k;
 
-        char format_label_v[100];
-        sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+        char format_label_v[1000];
+        sprintf(format_label_v, "%s%s%sv#%d", result.c_str(), ETERNAL_PREFIX, KVCACHE_PREFIX,
                 stage.req_id);
         string label_v = format_label_v;
 
         AddrPosKey k_key, v_key;
         gpu_pos_locator->findPair(label_k, k_key);
         gpu_pos_locator->findPair(label_v, v_key);
+        // LOG_VERBOSE(1, context.cid," atten kv prefix " << prefix << " key size" << k_key.size<< " " << label_k);
 
         gpu_read_generic(
             context, k_key.pos + k_key.size / (slice_x * slice_y) * fetch_index,
