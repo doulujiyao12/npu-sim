@@ -13,6 +13,7 @@ public:
 
     int inp_size;
     int out_size;
+    // int prefill_count = 0;
 
     bool mock;
     int req_sm;

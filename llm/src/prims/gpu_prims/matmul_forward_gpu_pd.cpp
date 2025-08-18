@@ -9,7 +9,10 @@ int matmul_forward_gpu_pd::task_core(TaskCoreContext &context) {
     else if (datatype == FP16)
         data_byte = 2;
     B = B * gpu_B;
-
+    // int origin_T = T;
+    // if (prefill_count == JOB_DECODE){
+    //     T = 1;
+    // }
     // 这里记录的是总大小，实际取用的时候需要除以slice大小
     int data_size_input = B * T * C * data_byte;
     int data_size_weight = OC * C * data_byte;
