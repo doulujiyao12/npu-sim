@@ -99,7 +99,7 @@ if (gpu_inner == true){
         string label_k = format_label_k;
 
         char format_label_v[100];
-        sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+        sprintf(format_label_v, "%s%s%sv#%d", prefix, ETERNAL_PREFIX, KVCACHE_PREFIX,
                 stage.req_id);
         string label_v = format_label_v;
 
