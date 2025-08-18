@@ -103,7 +103,7 @@ all_models = {
 dram_bw = [16, 32, 64]
 
 # 创建图表
-fig, ax = plt.subplots(1, 1, figsize=(16, 4))
+fig, ax = plt.subplots(1, 1, figsize=(24,6))
 
 # 配色方案
 model_colors = {
@@ -206,25 +206,21 @@ for key, (center_x, speedup_values) in speedup_data.items():
             markeredgewidth=1.2, alpha=0.9, zorder=10)
 
 # 设置主y轴（柱状图）
-ax.set_ylabel('Latency (s)', fontsize=22, fontweight='bold')
+ax.set_ylabel('Latency (s)', fontsize=30, fontweight='bold')
 ax.set_ylim(0, max(all_values) * 1.15)
 
 # 设置第二y轴（折线图）
-ax2.set_ylabel('Speedup', fontsize=22, fontweight='bold')
+ax2.set_ylabel('Speedup', fontsize=30, fontweight='bold')
 ax2.set_ylim(0.95, 1.7)
 ax2.tick_params(axis='y', labelsize=25)
 
 # 设置x轴 - 使用所有收集的标签
 ax.set_xticks(all_group_centers)
-ax.set_xticklabels(all_group_labels, fontsize=8, rotation=30, ha='right')
-ax.set_xlabel('SRAM Size and Compute Configuration', fontsize=22, fontweight='bold')
-
+ax.set_xticklabels(all_group_labels, fontsize=22, rotation=45, ha='right')
+ax.set_xlabel('SRAM Size and Compute Configuration', fontsize=30, fontweight='bold')
 
 ax.tick_params(axis='y', labelsize=25)
-ax.tick_params(axis='x', labelsize=14)
-# # 添加标题
-# ax.set_title('Multi-Model Performance Analysis: Latency and Speedup Comparison', 
-#              fontsize=15, fontweight='bold', pad=20)
+ax.tick_params(axis='x', labelsize=20)
 
 # 添加网格
 ax.grid(True, axis='y', linestyle='--', alpha=0.3, linewidth=0.5)
@@ -241,13 +237,15 @@ for i, bw in enumerate(dram_bw):
                     edgecolor='black', linewidth=0.5, alpha=0.85)
     dram_legend_elements.append(rect)
 
+# 将DRAM带宽图例放在顶部左侧
 legend2 = ax.legend(dram_legend_elements, 
-                   [f'DRAM: {bw} GB/s' for bw in dram_bw],
-                   loc='upper right', title='DRAM bandwidth',
-                   fontsize=12, title_fontsize=12,
+                   [f'{bw} GB/s' for bw in dram_bw],
+                   loc='lower left', title='DRAM bandwidth',
+                   fontsize=24, title_fontsize=25,
                    frameon=True,
                    edgecolor='black',
-                   bbox_to_anchor=(0.76, 0.82))
+                   bbox_to_anchor=(-0.01, 1.02),
+                   ncol=3)
 
 # 加速比图例
 speedup_legend_elements = [
@@ -256,13 +254,15 @@ speedup_legend_elements = [
     Line2D([0], [0], color='#e74c3c', linewidth=2.0, linestyle=':', marker='o', markersize=7),
 ]
 
+# 将加速比图例放在顶部右侧
 legend3 = ax2.legend(speedup_legend_elements, 
-                    ['128MB', '64MB', '32MB'],
-                    loc='upper right', title='DRAM speedup',
-                    fontsize=12, title_fontsize=12,
+                    ['128MB SRAM', '64MB SRAM', '32MB SRAM'],
+                    loc='lower right', title='Speedup vs. original DRAM bandwidth',
+                    fontsize=24, title_fontsize=25,
                     frameon=True,
                     edgecolor='black',
-                    ncol=1,bbox_to_anchor=(0.91, 0.82))
+                    ncol=3,
+                    bbox_to_anchor=(1.01, 1.02))
 
 # 添加模型分隔线
 model_boundaries = []
@@ -276,23 +276,23 @@ for model_idx, (model_name, model_data) in enumerate(all_models.items()):
     num_groups = sum(len(sram_data) for sram_data in model_data.values())
     current_x += num_groups * (3 * bar_width + group_spacing) + model_spacing
 
-# 添加模型标签
-model_label_y = max(all_values) * 1.0
+# 添加模型标签 - 调整位置避免与顶部图例重叠
+model_label_y = max(all_values) * 0.9  # 降低模型标签位置
 current_x = 0
 for model_name, model_data in all_models.items():
     num_groups = sum(len(sram_data) for sram_data in model_data.values())
     model_center = current_x + num_groups * (3 * bar_width + group_spacing) / 2
     ax.text(model_center, model_label_y, f'Qwen3_{model_name}', 
-           ha='center', va='bottom', fontsize=16, fontweight='bold',
+           ha='center', va='bottom', fontsize=22, fontweight='bold',
            bbox=dict(boxstyle='round,pad=0.3', facecolor='white', 
                     edgecolor=model_colors[model_name]['base'], linewidth=1.5))
     current_x += num_groups * (3 * bar_width + group_spacing) + model_spacing
 
-# 添加图例
+# 添加图例到图表
 ax.add_artist(legend2)
 
 # 调整布局，为旋转的x轴标签留出空间
-plt.subplots_adjust(left=0.08, bottom=0.3, top=0.9)
+plt.subplots_adjust(left=0.08, bottom=0.3, top=0.77)  # 调整top值为图例留出空间
 
 fig.savefig('qwen_bundle_20.pdf', format='pdf')
 

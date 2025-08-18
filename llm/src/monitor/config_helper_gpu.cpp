@@ -91,20 +91,20 @@ void config_helper_gpu::fill_queue_config(queue<Msg> *q) {
             batchInfo.push_back(Stage(i + 1, PREFILL, find_var("T")));
 
         prim_base *set_batch = new Set_batch(batchInfo, true);
-        q[index].push(Msg(false, MSG_TYPE::CONFIG, 2, config.id,
+        single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, single_rep.size() + 1, config.id,
                           set_batch->serialize()));
 
         for (auto work : config.worklist) {
             for (auto prim : work.prims_last_loop)
                 single_rep.push_back(Msg(false, MSG_TYPE::CONFIG,
-                                         single_rep.size() + 2, config.id,
+                                         single_rep.size() + 1, config.id,
                                          prim->serialize()));
         }
 
         for (int i = 0; i < streams[0].loop; i++) {
             for (int j = 1; j <= single_rep.size(); j++) {
                 Msg m = single_rep[j - 1];
-                m.seq_id = j + single_rep.size() * i + 2;
+                m.seq_id = j + single_rep.size() * i + 1;
 
                 if (i == streams[0].loop - 1 && j == single_rep.size()) {
                     m.is_end = true;

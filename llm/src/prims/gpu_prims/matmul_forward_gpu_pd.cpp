@@ -30,6 +30,7 @@ int matmul_forward_gpu_pd::task_core(TaskCoreContext &context) {
     }
 
     // 获取前缀label
+    cout << "[GPU MATMUL PDS]: output label: " << datapass_label.outdata << endl;
     std::size_t pos = datapass_label.outdata.find_last_of('_');
     std::string prefix;
     if (pos != std::string::npos) {
@@ -37,6 +38,7 @@ int matmul_forward_gpu_pd::task_core(TaskCoreContext &context) {
     } else {
         prefix = datapass_label.outdata;
     }
+    cout << "[GPU MATMUL PDS]: prefix: " << prefix << endl;
 
     auto label_weight = prefix + "_w";
     AddrPosKey w_key = AddrPosKey(0, data_size_weight);
@@ -92,7 +94,7 @@ if (gpu_inner == true){
         cout << "[GPU MATMUL PD]: size: " << size << endl;
 
         char format_label_k[100];
-        sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+        sprintf(format_label_k, "%s%s%sk#%d", prefix, ETERNAL_PREFIX, KVCACHE_PREFIX,
                 stage.req_id);
         string label_k = format_label_k;
 
