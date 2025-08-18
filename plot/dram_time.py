@@ -63,8 +63,9 @@ if not common_keys:
 ns_errors = []
 speedups = []
 labels = []
-
+count = 0;
 for key in common_keys:
+    count+= 1
     a_ns, a_time = data_a[key]
     b_ns, b_time = data_b[key]
 
@@ -78,12 +79,14 @@ for key in common_keys:
 
     case_id, bw = key
     labels.append(f'C{case_id}')
+    if count == 6:
+        break
     # labels.append(f'C{case_id}) \nBW{bw}')
 
 # --- 绘图设置 ---
 fig, ax1 = plt.subplots(figsize=(18, 8))
 
-x = np.arange(len(common_keys))  # 每个 CASE 的中心位置
+x = np.arange(6)  # 每个 CASE 的中心位置
 width = 0.35  # 柱子宽度
 
 color_ns = '#7E8CAD'     # 蓝色 - ns error
@@ -133,7 +136,7 @@ max_speedup = max(speedups) if speedups else 1
 ax2.set_ylim(bottom=0, top=max_speedup * 1.3)
 bars2 = ax2.bar(x + width/2 + 0.1, speedups, width, color=color_time, alpha=0.75,
                 edgecolor='darkred', linewidth=0.8, hatch='//',
-                label='Time Ratio (BeHa/TLM)')
+                label='Time Ratio (Perf/TLM)')
 
 ax2.set_ylabel('Simulation time speed-up ratio', fontsize=25)
 ax2.tick_params(axis='y',  labelsize=20)
@@ -159,7 +162,7 @@ legend_elements = [
     Patch(facecolor=color_ns, edgecolor='black', alpha=0.85,
           label='Simulation Time(ns) Error (%)'),
     Patch(facecolor=color_time, edgecolor='darkred', alpha=0.75, hatch='//',
-          label='Time Ratio BeHa/TLM ')
+          label='Time Ratio Perf/TLM ')
 ]
 ax1.legend(handles=legend_elements, loc='upper left', fontsize=16)
 
