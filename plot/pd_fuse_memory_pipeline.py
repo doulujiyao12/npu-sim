@@ -14,7 +14,11 @@ plt.rcParams.update({
     "legend.fontsize": 12,
     "xtick.labelsize": 12,
     "ytick.labelsize": 12,
-    "font.family": "serif"
+    # "font.family": "serif"
+    'legend.frameon': True,
+    'legend.fancybox': False,
+    'legend.shadow': False,
+    'legend.edgecolor': 'black',
 })
 
 # 数据（单位 ns）
@@ -44,7 +48,7 @@ hatches = ['--', '//', 'xx']  # 花纹代表内存
 
 # 改进颜色方案（明亮有区分度）
 bar_colors = ['#7E8CAD', '#7A9273', '#a28cc2', '#B37070']  # pp对应柱子颜色
-line_colors = ['#ff7f0e', '#A58778']  # 折线颜色
+line_colors = ['#ff7f0e', '#ee4266']  # 折线颜色
 
 bar_width = 0.2
 bar_positions = np.arange(len(seq_lens))
@@ -89,52 +93,60 @@ for sl in seq_lens:
              color=line_colors[0],
              marker='o',
              linewidth=2,
-             label='Speedup 128M/64M' if sl == 128 else None)
+             label='Speedup 32M/16M' if sl == 128 else None)
     
     ax2.plot(x_128M_center[sl],
              speedup_192M[sl],
              color=line_colors[1],
              marker='s',
              linewidth=2,
-             label='Speedup 192M/64M' if sl == 128 else None)
+             label='Speedup 48M/16M' if sl == 128 else None)
 
 # 设置坐标轴
-ax1.set_xlabel("Input Sequence Length", fontsize=20)
-ax1.set_ylabel("Latency (ms)", fontsize=20)
-ax2.set_ylabel("Speedup (vs. 64M)", fontsize=20)
+ax1.set_xlabel("Input Sequence Length", fontsize=30, fontweight='bold')
+ax1.set_ylabel("Latency (ms)", fontsize=30, fontweight='bold')
+ax2.set_ylabel("Speedup", fontsize=30, fontweight='bold')
+ax2.set_ylim(0, 8)
+ax1.set_ylim(0, 3.5e6)
 
 ax1.set_xticks(bar_positions)
 ax1.set_xticklabels([str(sl) for sl in seq_lens])
 ax1.grid(True, linestyle='--', alpha=0.5)
-ax1.tick_params(axis='x', labelsize=16)
-ax1.tick_params(axis='y', labelsize=16)
-ax2.tick_params(axis='y', labelsize=16)
-# ax.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
-ax1.yaxis.get_offset_text().set_fontsize(15)
-# 构造图例：只保留内存大小和折线图图例
+ax1.tick_params(axis='x', labelsize=25)
+ax1.tick_params(axis='y', labelsize=25)
+ax2.tick_params(axis='y', labelsize=25)
+ax1.yaxis.get_offset_text().set_fontsize(25)
+
+# 优化图例布局
+# 将所有图例元素合并到一个图例中，使用更合理的布局
 legend_elements = [
-    Patch(facecolor='white', edgecolor='black', hatch=hatches[0], label='64M'),
-    Patch(facecolor='white', edgecolor='black', hatch=hatches[1], label='128M'),
-    Patch(facecolor='white', edgecolor='black', hatch=hatches[2], label='192M'),
-    Line2D([0], [0], color=line_colors[0], marker='o', label='Speedup ratio 128M/64M'),
-    Line2D([0], [0], color=line_colors[1], marker='s', label='Speedup ratio 192M/64M'),
-    Patch(facecolor=bar_colors[0], label='pipeline stage=36'),
-    Patch(facecolor=bar_colors[1], label='pipeline stage=18'),
-    Patch(facecolor=bar_colors[2], label='pipeline stage=12'),
+    # Pipeline配置
+    Patch(facecolor=bar_colors[0], label='36 stages'),
+    Patch(facecolor=bar_colors[1], label='18 stages'), 
+    Patch(facecolor=bar_colors[2], label='12 stages'),
+    # 添加分隔符（空白元素）
+    
+    # SRAM大小
+    Patch(facecolor='white', edgecolor='black', hatch=hatches[0], label='16M SRAM'),
+    Patch(facecolor='white', edgecolor='black', hatch=hatches[1], label='32M SRAM'),
+    Patch(facecolor='white', edgecolor='black', hatch=hatches[2], label='48M SRAM'),
+    # 添加分隔符
+    Patch(facecolor='none', edgecolor='none', label=''),
+    # 加速比线条
+    Line2D([0], [0], color=line_colors[0], marker='o', label='Speedup 32M/16M'),
+    Line2D([0], [0], color=line_colors[1], marker='s', label='Speedup 48M/16M'),
 ]
 
-ax1.legend(handles=legend_elements,
-           ncol=3, bbox_to_anchor=(0.5, -0.2), loc='upper center', fontsize=14)
+# 创建一个统一的图例，使用3列布局
+ax1.legend(handles=legend_elements, 
+          ncol=3, 
+          bbox_to_anchor=(0.5, 1.65), 
+          loc='upper center', 
+          fontsize=25,frameon=True,
+                   edgecolor='black',
+          columnspacing=1.5,
+          handletextpad=0.5)
 
-# ax1.set_title("Latency and Memory-based Speedup across Pipeline Configurations")
-
-# plt.tight_layout(pad = 0.1)
-# plt.show()
-fig.set_size_inches(12,6)
-plt.subplots_adjust(bottom=0.33, left=0.08, right=0.93, top=0.95)
+fig.set_size_inches(16,6)
+plt.subplots_adjust(bottom=0.15, left=0.08, right=0.93, top=0.65)
 fig.savefig('pd_fuse_memory_pipeline.pdf', format='pdf')
-# output_pdf = 'pd_fuse_memory_pipeline.pdf'
-# with PdfPages(output_pdf) as pdf:
-#     
-#     pdf.savefig(fig)
-#     plt.close()

@@ -7,7 +7,6 @@ import seaborn as sns
 
 # 设置学术会议风格
 plt.rcParams.update({
-
     'font.size': 12,
     'axes.labelsize': 14,
     'axes.titlesize': 16,
@@ -91,6 +90,7 @@ def create_subplot(ax, ax2, file_data, scenarios, plot_type, file_keys, file_col
     
     if plot_type == 'throughput':
         # 绘制柱状图 (显示 throughput)
+        max_bar_value = 0  # 记录最大柱状图值
         for file_idx, file_key in enumerate(file_keys):
             throughput_values = []
             bar_positions = []
@@ -104,6 +104,7 @@ def create_subplot(ax, ax2, file_data, scenarios, plot_type, file_keys, file_col
                     throughput_value = file_data[file_key][scenario]['throughput']
                     throughput_values.append(throughput_value)
                     bar_positions.append(bar_pos)
+                    max_bar_value = max(max_bar_value, throughput_value)
             
             # 绘制该文件的所有柱子
             if throughput_values:  # 只有当有数据时才绘制
@@ -111,14 +112,9 @@ def create_subplot(ax, ax2, file_data, scenarios, plot_type, file_keys, file_col
                              label=f'File {file_key} (Throughput)', 
                              color=file_color_map[file_key], alpha=0.8, 
                              edgecolor='black', linewidth=0.8, hatch="//")
-                
-                # # 添加数值标签
-                # for bar, value in zip(bars, throughput_values):
-                #     ax.text(bar.get_x() + bar.get_width()/2, 
-                #            bar.get_height() + max([max(file_data[fk].get(s, {'throughput': 0})['throughput'] for s in scenarios) for fk in file_keys])*0.01,
-                #            f'{value:.2f}', ha='center', va='bottom', fontsize=8, rotation=0)
         
         # 绘制折线图 (throughput/area)
+        max_line_value = 0  # 记录最大折线值
         for file_idx, file_key in enumerate(file_keys):
             line_x = []
             line_y = []
@@ -126,7 +122,11 @@ def create_subplot(ax, ax2, file_data, scenarios, plot_type, file_keys, file_col
             for scenario_idx, scenario in enumerate(scenarios):
                 if scenario in file_data[file_key]:
                     line_x.append(group_positions[scenario_idx])
-                    line_y.append(file_data[file_key][scenario]['throughput_per_area'])
+                    throughput_per_area = file_data[file_key][scenario]['throughput_per_area']
+                    line_y.append(throughput_per_area)
+                    max_line_value = max(max_line_value, throughput_per_area)
+                
+            print(line_y)
             
             if len(line_x) > 0:
                 ax2.plot(line_x, line_y, marker='o', linewidth=3, markersize=8,
@@ -135,18 +135,20 @@ def create_subplot(ax, ax2, file_data, scenarios, plot_type, file_keys, file_col
                         markerfacecolor='white', markeredgecolor=line_color_map[file_key],
                         markeredgewidth=2, zorder=10)
         
+        # 设置y轴上限，增加15%的留白空间
+        ax.set_ylim(0, max_bar_value * 1.15)
+        ax2.set_ylim(0, max_line_value * 1.15)
+        
         # 设置标签
-        ax.set_ylabel('Throughput (tokens/s)', fontweight='bold', fontsize=35)
-        ax2.set_ylabel('Throughput/Area (tokens/s/mm²)', fontweight='bold', fontsize=30)
-        ax.set_title('Throughput', fontweight='bold', pad=15, fontsize=35)
+        ax.set_ylabel('Throughput (tokens/s)', fontweight='bold', fontsize=30)
+        ax2.set_ylabel('Throughput/Area\n(tokens/s/mm²)', fontweight='bold', fontsize=30)
+        ax.set_title('(a) Throughput', fontweight='bold', pad=15, fontsize=30)
         ax2.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
         ax2.yaxis.get_offset_text().set_fontsize(30)
-
-        # ax.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
-        # ax.yaxis.get_offset_text().set_fontsize(15)
         
     elif plot_type == 'tbt':
         # 绘制柱状图 (显示 TBT)
+        max_bar_value = 0  # 记录最大柱状图值
         for file_idx, file_key in enumerate(file_keys):
             tbt_values = []
             bar_positions = []
@@ -159,20 +161,16 @@ def create_subplot(ax, ax2, file_data, scenarios, plot_type, file_keys, file_col
                     tbt_value = file_data[file_key][scenario]['tbt_mean']
                     tbt_values.append(tbt_value)
                     bar_positions.append(bar_pos)
+                    max_bar_value = max(max_bar_value, tbt_value)
             
             if tbt_values:
                 bars = ax.bar(bar_positions, tbt_values, bar_width, 
                              label=f'File {file_key} (TBT)', 
                              color=file_color_map[file_key], alpha=0.8, 
                              edgecolor='black', linewidth=0.8,hatch="--")
-                
-                # # 添加数值标签
-                # for bar, value in zip(bars, tbt_values):
-                #     ax.text(bar.get_x() + bar.get_width()/2, 
-                #            bar.get_height() + max([max(file_data[fk].get(s, {'tbt_mean': 0})['tbt_mean'] for s in scenarios) for fk in file_keys])*0.01,
-                #            f'{value:.1f}', ha='center', va='bottom', fontsize=8, rotation=0)
         
         # 绘制折线图 (tbt/area)
+        max_line_value = 0  # 记录最大折线值
         for file_idx, file_key in enumerate(file_keys):
             line_x = []
             line_y = []
@@ -180,7 +178,9 @@ def create_subplot(ax, ax2, file_data, scenarios, plot_type, file_keys, file_col
             for scenario_idx, scenario in enumerate(scenarios):
                 if scenario in file_data[file_key]:
                     line_x.append(group_positions[scenario_idx])
-                    line_y.append(file_data[file_key][scenario]['tbt_area'])
+                    tbt_area = file_data[file_key][scenario]['tbt_area']
+                    line_y.append(tbt_area)
+                    max_line_value = max(max_line_value, tbt_area)
             
             if len(line_x) > 0:
                 ax2.plot(line_x, line_y, marker='o', linewidth=3, markersize=8,
@@ -189,35 +189,36 @@ def create_subplot(ax, ax2, file_data, scenarios, plot_type, file_keys, file_col
                         markerfacecolor='white', markeredgecolor=line_color_map[file_key],
                         markeredgewidth=2, zorder=10)
         
+        # 设置y轴上限，增加15%的留白空间
+        ax.set_ylim(0, max_bar_value * 1.2)
+        ax2.set_ylim(0, max_line_value * 1.2)
+        
         # 设置标签
-        ax.set_ylabel('Time Between Tokens (s)', fontweight='bold', fontsize=35)
-        ax2.set_ylabel('TBT/Area (s/mm²)', fontweight='bold', fontsize=35)
-        ax.set_title('TBT', fontweight='bold', pad=15, fontsize=35)
+        ax.set_ylabel('TBT (s)', fontweight='bold', fontsize=28)
+        ax2.set_ylabel('TBT/Area (s/mm²)', fontweight='bold', fontsize=28)
+        ax.set_title('(b) Time between tokens', fontweight='bold', pad=15, fontsize=30)
         ax2.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
         ax2.yaxis.get_offset_text().set_fontsize(30)
     
     # 通用设置
     ax.set_xticks(group_positions)
-    ax.set_xticklabels([f'P/D {s}' for s in scenarios], fontsize=10)
+    ax.set_xticklabels([f'P:D {":".join(s.split("_"))}' for s in scenarios], fontsize=18, rotation=30)
     
     # 在场景组之间添加分隔线
     for i in range(len(group_positions) - 1):
         separator_x = (group_positions[i] + group_positions[i+1]) / 2
         ax.axvline(x=separator_x, color='gray', linestyle=':', alpha=0.5, linewidth=1)
     
-    # ax.set_xlabel('Scenarios', fontweight='bold', fontsize=12)
     ax.tick_params(axis='y', labelsize=30)
     ax2.tick_params(axis='y', labelsize=30)
     ax.tick_params(axis='x', labelsize=30)
-    ax.set_ylim(bottom=0)
-    ax2.set_ylim(bottom=0)
     ax.grid(True, alpha=0.3, linestyle='--')
     ax.set_xlim(-0.5, group_positions[-1] + 0.5)
 
 def create_combined_plot(file_data, scenarios):
     """创建合并的双子图"""
     # 创建主图形和子图
-    fig, (ax1, ax3) = plt.subplots(1, 2, figsize=(30, 10))
+    fig, (ax1, ax3) = plt.subplots(1, 2, figsize=(24, 7))
     
     # 创建双y轴
     ax2 = ax1.twinx()
@@ -236,27 +237,11 @@ def create_combined_plot(file_data, scenarios):
     # 创建右侧子图 (TBT)
     create_subplot(ax3, ax4, file_data, scenarios, 'tbt', file_keys, file_color_map, line_color_map)
     
-    # # 设置总标题
-    # fig.suptitle('Performance Analysis: Throughput vs TBT by Scenario', 
-    #             fontweight='bold', fontsize=20, y=0.98)
-    
     # 创建统一的图例
-    bar_legend_elements = []
-    line_legend_elements = []
     legend_handles = []
     legend_labels = []
     
     for file_key in file_keys:
-        # bar_legend_elements.append(plt.Rectangle((0,0),1,1, 
-        #                                         fc=file_color_map[file_key], 
-        #                                         alpha=0.8, 
-        #                                         label=file_key.removesuffix('.json')))
-        # line_legend_elements.append(plt.Line2D([0], [0], 
-        #                                      color=line_color_map[file_key], 
-        #                                      linewidth=3, marker='o', markersize=6,
-        #                                      markerfacecolor='white',
-        #                                      markeredgecolor=line_color_map[file_key],
-        #                                      label=file_key.removesuffix('.json')))
         rect = plt.Rectangle((0,0),1,1, 
                                                 fc=file_color_map[file_key], 
                                                 alpha=0.8, 
@@ -270,24 +255,15 @@ def create_combined_plot(file_data, scenarios):
         legend_handles.append((rect, line))
         legend_labels.append(file_key.removesuffix('.json'))
 
-    # 在图的底部中央添加图例
-    # legend1 = fig.legend(handles=bar_legend_elements, loc='lower left', 
-    #                     bbox_to_anchor=(0.15, 0.01), ncol=2,
-    #                     frameon=True, fancybox=True, shadow=True,
-    #                     title='Bar Charts (Left Axis)', title_fontsize=25, fontsize=25)
-    # legend2 = fig.legend(handles=line_legend_elements, loc='lower right', 
-    #                     bbox_to_anchor=(0.85, 0.01), ncol=2,
-    #                     frameon=True, fancybox=True, shadow=True,
-    #                     title='Line Charts (Right Axis)', title_fontsize=25, fontsize=25)
     fig.legend(handles=legend_handles,
            labels=legend_labels,
            loc='lower left', 
-            bbox_to_anchor=(0.3, 0.01), ncol=2,
-            frameon=True, fancybox=True, shadow=True,
-             title_fontsize=30, fontsize=30)
+            bbox_to_anchor=(0.2, 0.8), ncol=2,
+            frameon=True, fancybox=False, shadow=False, edgecolor='black',
+             title_fontsize=25, fontsize=25)
     
     plt.tight_layout()
-    plt.subplots_adjust(bottom=0.15, top=0.93)  # 为图例和标题留出空间
+    plt.subplots_adjust(bottom=0.1, top=0.7, wspace=0.4)  # 为图例和标题留出空间
     return fig
 
 def load_json_files(file_paths):
@@ -306,7 +282,7 @@ if __name__ == "__main__":
     file_data, scenarios = load_and_process_data(json_files)
     fig = create_combined_plot(file_data, scenarios)
     plt.subplots_adjust(bottom=0.25)
-    plt.show()
+    # plt.show()
     fig.savefig('split_vs_fuse.pdf', format='pdf')
     
     # 保存图表
