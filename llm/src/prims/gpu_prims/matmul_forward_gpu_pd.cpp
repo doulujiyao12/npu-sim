@@ -66,7 +66,7 @@ if (gpu_inner == true){
     // input 读入
     gpu_read_generic(context,
                      input_mem_offset + data_size_input / slice_y * row_index,
-                     data_size_input / slice_y, mem_time);
+                     data_size_input / slice_y, mem_time, true);
 #if GPU_CACHE_DEBUG == 1
 
     cout << " data_size_weight / slice_x " << data_size_weight / slice_x << endl;
@@ -162,7 +162,7 @@ if (gpu_inner == true){
     // input 读入
     gpu_read_generic(context,
         input_mem_offset + data_size_input / slice_total * fetch_index,
-        data_size_input / slice_total, mem_time);
+        data_size_input / slice_total, mem_time, true);
 #if GPU_CACHE_DEBUG == 1
 
     LOG_VERBOSE(1, context.cid," data_size_weight / slice_x " << data_size_weight / slice_x);

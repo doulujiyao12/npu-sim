@@ -73,7 +73,7 @@ int Gelu_f_gpu::task_core(TaskCoreContext &context) {
     gpu_read_generic(context,
                      input_mem_offset +
                          data_size_input / (slice_x * slice_y) * fetch_index,
-                     data_size_input / (slice_x * slice_y), mem_time);
+                     data_size_input / (slice_x * slice_y), mem_time, true);
 
     // overlap_time = mem_time;
     AddrPosKey out_key;

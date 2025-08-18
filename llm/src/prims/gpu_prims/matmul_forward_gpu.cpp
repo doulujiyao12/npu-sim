@@ -57,7 +57,7 @@ if (gpu_inner == true){
     // input 读入
     gpu_read_generic(context,
                      input_mem_offset + data_size_input / slice_y * row_index,
-                     data_size_input / slice_y, mem_time);
+                     data_size_input / slice_y, mem_time, true);
 
     // weight 读入
     gpu_read_generic(context, w_key.pos + w_key.size / slice_x * col_index,
@@ -112,7 +112,7 @@ if (gpu_inner == true){
     // input 读入
     gpu_read_generic(context,
         input_mem_offset + data_size_input / slice_total * fetch_index,
-        data_size_input / slice_total, mem_time);
+        data_size_input / slice_total, mem_time, true);
 
     // weight 读入
     gpu_read_generic(context, w_key.pos + w_key.size / slice_total * fetch_index,

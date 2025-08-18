@@ -33,7 +33,7 @@ int check_dcache(int tX, int tY, u_int64_t array, u_int64_t timer,
 
 #if USE_L1L2_CACHE == 1
 void gpu_read_generic(TaskCoreContext &context, uint64_t addr, int size,
-                      int &mem_time);
+                      int &mem_time, bool cache_read = false);
 void gpu_write_generic(TaskCoreContext &context, uint64_t addr, int size,
                        int &mem_time, bool cache_write = true);
 #endif

@@ -50,7 +50,7 @@ int Residual_f_gpu::task_core(TaskCoreContext &context) {
             context,
             input_mem_offset[i] +
                 data_size_single_input / (slice_x * slice_y) * fetch_index,
-            data_size_single_input / (slice_x * slice_y), mem_time);
+            data_size_single_input / (slice_x * slice_y), mem_time, true);
     }
 
     // overlap_time = mem_time;

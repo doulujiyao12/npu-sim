@@ -57,13 +57,13 @@ int Attention_f_gpu::task_core(TaskCoreContext &context) {
                      input_mem_offset + data_size_input / 3 * 2 +
                          data_size_input / (3 * slice_x * slice_y) *
                              fetch_index,
-                     data_size_input / (3 * slice_x * slice_y), mem_time);
+                     data_size_input / (3 * slice_x * slice_y), mem_time, true);
     // K
     gpu_read_generic(context,
                      input_mem_offset + data_size_input / 3 +
                          data_size_input / (3 * slice_x * slice_y) *
                              fetch_index,
-                     data_size_input / (3 * slice_x * slice_y), mem_time);
+                     data_size_input / (3 * slice_x * slice_y), mem_time, true);
 
     cout << cid << " [Attention_f_gpu] after read1: " << mem_time << endl;
     cout << cid << " [Attention_f_gpu] before write1: " << mem_time
