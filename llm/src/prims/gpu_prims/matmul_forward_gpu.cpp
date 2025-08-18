@@ -10,6 +10,7 @@ int Matmul_f_gpu::task_core(TaskCoreContext &context) {
         data_byte = 2;
     }
     B = B * gpu_B;
+    T = find_var("T");
 
     int data_size_input = B * T * C * data_byte;
     int data_size_weight = OC * C * data_byte;

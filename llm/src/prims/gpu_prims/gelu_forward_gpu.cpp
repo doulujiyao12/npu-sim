@@ -52,6 +52,7 @@ int Gelu_f_gpu::task_core(TaskCoreContext &context) {
     } else if (datatype == FP16) {
         data_byte = 2;
     }
+    N = find_var("T") * find_var("C");
     N = N * gpu_B;
 
     int data_size_input = N * data_byte;

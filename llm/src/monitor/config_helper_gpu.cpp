@@ -91,8 +91,8 @@ void config_helper_gpu::fill_queue_config(queue<Msg> *q) {
             batchInfo.push_back(Stage(i + 1, PREFILL, find_var("T")));
 
         prim_base *set_batch = new Set_batch(batchInfo, true);
-        single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, single_rep.size() + 1, config.id,
-                          set_batch->serialize()));
+        single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, single_rep.size() + 1,
+                                 config.id, set_batch->serialize()));
 
         for (auto work : config.worklist) {
             for (auto prim : work.prims_last_loop)
@@ -287,17 +287,24 @@ void config_helper_gpu::parse_done_msg(Event_engine *event_engine,
             done_loop++;
             cout << "Config helper GPU: one loop done. " << done_loop << " of "
                  << streams[0].loop << endl;
+
+            for (auto &pair : vtable) {
+                if (pair.first == "T")
+                    pair.second = 1;
+            }
+            
             if (done_loop == streams[0].loop) {
                 cout << "Config helper GPU: all work done.\n";
                 cout << "[CATCH TEST] " << sc_time_stamp() << endl;
                 ofstream outfile("simulation_result_gpu.txt", ios::app);
                 if (outfile.is_open()) {
-                    outfile << "[CATCH TEST] " << sc_time_stamp() << "L1CACHESIZE " << L1CACHESIZE << " L2CACHESIZE "
-                    << L2CACHESIZE << " BANDWIDTH " << gpu_bw
-                    << endl;
+                    outfile << "[CATCH TEST] " << sc_time_stamp()
+                            << "L1CACHESIZE " << L1CACHESIZE << " L2CACHESIZE "
+                            << L2CACHESIZE << " BANDWIDTH " << gpu_bw << endl;
                     outfile.close();
                 } else {
-                    cout << "Error: Unable to open file for writing timestamp." << endl;
+                    cout << "Error: Unable to open file for writing timestamp."
+                         << endl;
                 }
                 sc_stop();
             }

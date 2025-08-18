@@ -9,6 +9,7 @@ int matmul_forward_gpu_pd::task_core(TaskCoreContext &context) {
     else if (datatype == FP16)
         data_byte = 2;
     B = B * gpu_B;
+    T = find_var("T");
     // int origin_T = T;
     // if (prefill_count == JOB_DECODE){
     //     T = 1;
@@ -19,8 +20,7 @@ int matmul_forward_gpu_pd::task_core(TaskCoreContext &context) {
     int data_size_bias = OC * data_byte;
     int data_size_out = B * T * OC * data_byte / (slice_x * slice_y) / 3;
 
-    
-
+    cout << "[GPU MATMUL PDS]: data size: T: " << T << endl;
     int mem_time = 0;
     auto input_mem_offset = 0;
     if (!gpu_pos_locator->findPair(datapass_label.indata[0],

@@ -96,12 +96,12 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
         }
 
         char format_label_k[100];
-        sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+        sprintf(format_label_k, "%s%s%sk#%d", prefix.c_str(), ETERNAL_PREFIX, KVCACHE_PREFIX,
                 stage.req_id);
         string label_k = format_label_k;
 
         char format_label_v[100];
-        sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+        sprintf(format_label_v, "%s%s%sv#%d", prefix.c_str(), ETERNAL_PREFIX, KVCACHE_PREFIX,
                 stage.req_id);
         string label_v = format_label_v;
 
