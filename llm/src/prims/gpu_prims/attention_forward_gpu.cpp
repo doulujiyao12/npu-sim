@@ -11,6 +11,7 @@ int Attention_f_gpu::task_core(TaskCoreContext &context) {
         data_byte = 2;
     }
     B = B * gpu_B;
+    T = find_var("T");
 
     int data_size_input = data_byte * B * T * C;       // QKV input
     int data_size_preatt = data_byte * B * NH * T * T; // preatt
