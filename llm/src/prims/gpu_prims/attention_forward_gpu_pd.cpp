@@ -85,10 +85,10 @@ int attention_forward_gpu_pd::task_core(TaskCoreContext &context) {
 
         gpu_read_generic(
             context, k_key.pos + k_key.size / (slice_x * slice_y) * fetch_index,
-            k_key.size / (slice_x * slice_y), mem_time);
+            k_key.size / (slice_x * slice_y), mem_time,true);
         gpu_read_generic(
             context, v_key.pos + v_key.size / (slice_x * slice_y) * fetch_index,
-            v_key.size / (slice_x * slice_y), mem_time);
+            v_key.size / (slice_x * slice_y), mem_time, true);
     }
 
     gpu_write_generic(context,

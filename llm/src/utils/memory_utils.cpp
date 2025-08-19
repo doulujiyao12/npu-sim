@@ -1452,7 +1452,7 @@ if (beha_dram == false) {
     float need_NS = (float)require_byte / beha_dram_util / (gpu_bw) * GRID_SIZE;
     int need_cycles = need_NS;
     if (cache_read == true){
-        wait(need_cycles / 10, SC_NS);
+        wait(need_cycles / 5, SC_NS);
     }else{
     wait(need_cycles, SC_NS);
     }
