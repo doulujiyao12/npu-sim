@@ -10,17 +10,17 @@ void Dummy_p::print_self(string prefix) {
     cout << prefix << "\t;)\n";
 }
 
-void Dummy_p::parse_json(json j) {
+void Dummy_p::parseJson(json j) {
     out_size = 80;
     inp_size = 80;
-    p_inp_size = 80;
+    input_size = 80;
 
     if (j.contains("dram_address")) {
-        parse_address(j["dram_address"]);
+        parseAddress(j["dram_address"]);
     }
 
     if (j.contains("sram_address")) {
-        parse_sram_label(j["sram_address"]);
+        parseSramLabel(j["sram_address"]);
     }
 }
 int Dummy_p::sram_utilization(DATATYPE datatype, int cid) {

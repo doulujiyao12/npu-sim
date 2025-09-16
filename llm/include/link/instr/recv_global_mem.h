@@ -19,7 +19,7 @@ public:
         id = i;
     }
 
-    void parse_json(json j) override {
+    void parseJson(json j) override {
         seq = j.contains("seq") ? j["seq"].get<int>() : -1;
     }
 

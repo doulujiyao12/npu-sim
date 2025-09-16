@@ -10,23 +10,23 @@ void Batchnorm_f::print_self(string prefix) {
     cout << prefix << "\tB: " << B << ", H: " << H << ", W: " << W
          << ", C: " << C << endl;
     cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size
-         << ", previous_inp_size: " << p_inp_size << endl;
+         << ", previous_inp_size: " << input_size << endl;
     cout << prefix << "\toutput_offset: " << out_offset
          << ", input_offset: " << inp_offset << endl;
 }
 
-void Batchnorm_f::parse_json(json j) {
-    B = find_var(j["B"]);
-    H = find_var(j["H"]);
-    W = find_var(j["W"]);
-    C = find_var(j["C"]);
+void Batchnorm_f::parseJson(json j) {
+    B = GetDefinedParam(j["B"]);
+    H = GetDefinedParam(j["H"]);
+    W = GetDefinedParam(j["W"]);
+    C = GetDefinedParam(j["C"]);
 
     out_size = B * H * W * C;
-    p_inp_size = B * H * W * C;
+    input_size = B * H * W * C;
     inp_size = B * H * W * C + C + C;
 
     if (j.contains("dram_address")) {
-        parse_address(j["dram_address"]);
+        parseAddress(j["dram_address"]);
     }
 
 
@@ -43,7 +43,7 @@ void Batchnorm_f::parse_json(json j) {
     // cout << "data_offset: " << data_offset << endl;
 
     if (j.contains("sram_address")) {
-        parse_sram_label(j["sram_address"]);
+        parseSramLabel(j["sram_address"]);
     }
 }
 

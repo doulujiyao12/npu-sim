@@ -21,7 +21,7 @@ using json_order = nlohmann::ordered_json;
 
 class CorePrims {
 public:
-    vector<prim_base *> prims;
+    vector<PrimBase *> prims;
 
 
     void print_self();
@@ -34,14 +34,14 @@ void from_json(const json &j, CorePrims &c) {
     if (j.contains("prims")) {
         auto prims = j["prims"];
         for (auto prim : prims) {
-            comp_base *p = nullptr;
+            CompBase *p = nullptr;
             string type = prim.at("type");
 
-            p = (comp_base *)new_prim(type);
-            p->parse_json(prim);
+            p = (CompBase *)new_prim(type);
+            p->parseJson(prim);
             p->initialize();
 
-            c.prims.push_back((prim_base *)p);
+            c.prims.push_back((PrimBase *)p);
         }
     }
 }

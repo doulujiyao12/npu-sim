@@ -32,7 +32,7 @@ int Recv_prim::sram_utilization(DATATYPE datatype, int cid) {
     return total_sram;
 }
 
-void Recv_prim::parse_json(json j, vector<pair<string, int>> vtable) {}
+void Recv_prim::parseJson(json j, vector<pair<string, int>> vtable) {}
 
 Recv_prim::Recv_prim(RECV_TYPE type) {
     this->type = type;

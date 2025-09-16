@@ -62,8 +62,8 @@ int sc_main(int argc, char *argv[]) {
 
     comp_util = g_flag_comp_util;
 
-    init_grid(g_flag_config_file.c_str(), g_flag_core_config_file.c_str());
-    init_global_members();
+    InitGrid(g_flag_config_file.c_str(), g_flag_core_config_file.c_str());
+    InitGlobalMembers();
     init_dram_areas();
     initialize_cache_structures();
     init_perf_counters();
@@ -84,7 +84,7 @@ int sc_main(int argc, char *argv[]) {
     destroy_dram_areas();
     destroy_cache_structures();
     // sc_close_vcd_trace_file(tf);
-    system_cleanup();
+    SystemCleanup();
 
 
     delete event_engine;

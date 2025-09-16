@@ -16,7 +16,7 @@ void Max_pool::print_self(string prefix) {
     cout << prefix << "\toW: " << oW << ", oH: " << oH << ", oC: " << oC
          << endl;
     cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size
-         << ", previous_inp_size: " << p_inp_size << endl;
+         << ", previous_inp_size: " << input_size << endl;
     cout << prefix << "\toutput_offset: " << out_offset
          << ", input_offset: " << inp_offset << endl;
 }
@@ -27,7 +27,7 @@ void Max_pool::initialize() {
     oC = C;
 
     out_size = B * oC * oH * oW;
-    p_inp_size = B * C * H * W;
+    input_size = B * C * H * W;
     inp_size = B * C * H * W;
 
     if (datatype == INT8)
@@ -39,27 +39,27 @@ void Max_pool::initialize() {
     b_offset = 1 * C * kX * kY + k_offset;
 }
 
-void Max_pool::parse_json(json j) {
-    B = find_var(j["B"]);
-    W = find_var(j["W"]);
-    H = find_var(j["H"]);
-    C = find_var(j["C"]);
-    pX = find_var(j["pX"]);
-    pY = find_var(j["pY"]);
-    sX = find_var(j["sX"]);
-    sY = find_var(j["sY"]);
-    kX = find_var(j["kX"]);
-    kY = find_var(j["kY"]);
+void Max_pool::parseJson(json j) {
+    B = GetDefinedParam(j["B"]);
+    W = GetDefinedParam(j["W"]);
+    H = GetDefinedParam(j["H"]);
+    C = GetDefinedParam(j["C"]);
+    pX = GetDefinedParam(j["pX"]);
+    pY = GetDefinedParam(j["pY"]);
+    sX = GetDefinedParam(j["sX"]);
+    sY = GetDefinedParam(j["sY"]);
+    kX = GetDefinedParam(j["kX"]);
+    kY = GetDefinedParam(j["kY"]);
 
 
     initialize();
 
     if (j.contains("dram_address")) {
-        parse_address(j["dram_address"]);
+        parseAddress(j["dram_address"]);
     }
 
     if (j.contains("sram_address")) {
-        parse_sram_label(j["sram_address"]);
+        parseSramLabel(j["sram_address"]);
     }
 }
 
@@ -69,13 +69,13 @@ int Max_pool::sram_utilization(DATATYPE datatype, int cid) {
     int total_sram = 0;
 
     int p_inp_sram =
-        ceiling_division(B * C * H * W * data_byte * 8, get_sram_bitwidth(cid));
+        CeilingDivision(B * C * H * W * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
     int out_sram =
-        ceiling_division(out_size * data_byte * 8, get_sram_bitwidth(cid));
+        CeilingDivision(out_size * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
 
 
     total_sram = p_inp_sram + out_sram;
-    total_sram *= get_sram_bitwidth(cid) / 8;
+    total_sram *= GetCoreHWConfig(cid).sram_bitwidth / 8;
 
     return total_sram;
 }
@@ -152,7 +152,7 @@ int Max_pool::task_core(TaskCoreContext &context) {
         prefix = datapass_label.outdata;
 
     // 读入input数据
-    check_input_data(context, dram_time, inp_global_addr, data_size_input);
+    checkInputData(context, dram_time, inp_global_addr, data_size_input);
     BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
@@ -165,7 +165,7 @@ int Max_pool::task_core(TaskCoreContext &context) {
 #endif
 
     // 计算overlap并写回output数据
-    write_output_data(context, 0, B * oC * oH * oW * kX * kY, dram_time,
+    writeOutputData(context, 0, B * oC * oH * oW * kX * kY, dram_time,
                       overlap_time, data_size_out, out_global_addr);
     BETTER_PRINT(overlap_time);
 

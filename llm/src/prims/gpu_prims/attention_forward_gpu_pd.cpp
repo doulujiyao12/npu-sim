@@ -12,7 +12,7 @@ int attention_forward_gpu_pd::task_core(TaskCoreContext &context) {
         data_byte = 2;
     }
     B = B * gpu_B;
-    T = find_var("T");
+    T = GetDefinedParam("T");
 
     int data_size_input = data_byte * B * T * C;       // QKV input
     int data_size_preatt = data_byte * B * NH * T * T; // preatt
@@ -122,8 +122,10 @@ int attention_forward_gpu_pd::task_core(TaskCoreContext &context) {
     gpu_write_generic(context, out_key.pos, data_size_out, mem_time);
     int cycle = 0;
     int cid = context.cid;
-    ExuConfig *exu = get_exu_config(cid);
-    SfuConfig *sfu = get_sfu_config(cid);
+
+    CoreHWConfig core_config = GetCoreHWConfig(cid);
+    ExuConfig *exu = core_config.exu;
+    SfuConfig *sfu = core_config.sfu;
                   
     if (exu->type == MAC_Array)
         cycle += B * NH * T * (T - 1) / 2 * (4 * C / NH + 5) / (slice_x * slice_y) / (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
@@ -201,11 +203,11 @@ gpu_base *attention_forward_gpu_pd::clone() {
     return new attention_forward_gpu_pd(*this);
 }
 
-void attention_forward_gpu_pd::parse_json(json j) {
-    B = find_var(j["B"]);
-    T = find_var(j["T"]);
-    C = find_var(j["C"]);
-    NH = find_var(j["NH"]);
+void attention_forward_gpu_pd::parseJson(json j) {
+    B = GetDefinedParam(j["B"]);
+    T = GetDefinedParam(j["T"]);
+    C = GetDefinedParam(j["C"]);
+    NH = GetDefinedParam(j["NH"]);
     slice_x = j["slice_x"];
     slice_y = j["slice_y"];
 

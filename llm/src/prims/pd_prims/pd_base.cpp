@@ -3,13 +3,13 @@
 
 #include <sstream>
 
-void pd_base::parse_address(json j) {
+void pd_base::parseAddress(json j) {
     if (j.contains("input")) {
         const auto &inputVal = j["input"];
         if (inputVal.is_number_integer())
             inp_offset = inputVal;
         else
-            inp_offset = find_var(j["input"]);
+            inp_offset = GetDefinedParam(j["input"]);
     } else
         inp_offset = 0;
 
@@ -18,7 +18,7 @@ void pd_base::parse_address(json j) {
         if (dataVal.is_number_integer())
             data_offset = dataVal;
         else
-            data_offset = find_var(j["data"]);
+            data_offset = GetDefinedParam(j["data"]);
     } else
         data_offset = 0;
 
@@ -27,12 +27,12 @@ void pd_base::parse_address(json j) {
         if (outputVal.is_number_integer())
             out_offset = outputVal;
         else
-            out_offset = find_var(j["out"]);
+            out_offset = GetDefinedParam(j["out"]);
     } else
         out_offset = 0;
 }
 
-void pd_base::parse_sram_label(json j) {
+void pd_base::parseSramLabel(json j) {
     string in_label = j["indata"];
     datapass_label.outdata = j["outdata"];
 

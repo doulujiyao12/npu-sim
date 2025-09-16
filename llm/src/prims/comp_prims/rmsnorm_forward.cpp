@@ -8,14 +8,14 @@ void rmsnorm_forward::print_self(string prefix) {
     cout << prefix << "<rmsnorm_forward>\n";
     cout << prefix << "\tB: " << B << ", T: " << T << ", C: " << C << endl;
     cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size
-         << ", previous_inp_size: " << p_inp_size << endl;
+         << ", previous_inp_size: " << input_size << endl;
     cout << prefix << "\toutput_offset: " << out_offset
          << ", input_offset: " << inp_offset << endl;
 }
 
 void rmsnorm_forward::initialize() {
     out_size = B * T * C;
-    p_inp_size = B * T * C;
+    input_size = B * T * C;
     inp_size = B * T * C + C;
 
     dram_inp_size = (B * T * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
@@ -30,13 +30,13 @@ void rmsnorm_forward::initialize() {
     w_offset = B * T * C + inp_offset;
 }
 
-void rmsnorm_forward::parse_json(json j) {
-    B = find_var(j["B"]);
-    T = find_var(j["T"]);
-    C = find_var(j["C"]);
+void rmsnorm_forward::parseJson(json j) {
+    B = GetDefinedParam(j["B"]);
+    T = GetDefinedParam(j["T"]);
+    C = GetDefinedParam(j["C"]);
 
     if (j.contains("dram_address"))
-        parse_address(j["dram_address"]);
+        parseAddress(j["dram_address"]);
 
     if (inp_offset == -1 && out_offset == -1 && data_offset == -1)
         assert(0 && "no dram address found");
@@ -54,7 +54,7 @@ void rmsnorm_forward::parse_json(json j) {
     cout << "data_offset: " << data_offset << endl;
 
     if (j.contains("sram_address"))
-        parse_sram_label(j["sram_address"]);
+        parseSramLabel(j["sram_address"]);
 
     initialize();
 }
@@ -63,13 +63,13 @@ int rmsnorm_forward::sram_utilization(DATATYPE datatype, int cid) {
     int total_sram = 0;
 
     int p_inp_sram =
-        ceiling_division(B * T * C * data_byte * 8, get_sram_bitwidth(cid));
-    int w_sram = ceiling_division(C * data_byte * 8, get_sram_bitwidth(cid));
+        CeilingDivision(B * T * C * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
+    int w_sram = CeilingDivision(C * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
     int out_sram =
-        ceiling_division(out_size * data_byte * 8, get_sram_bitwidth(cid));
+        CeilingDivision(out_size * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
 
     total_sram = p_inp_sram + w_sram + out_sram;
-    total_sram *= get_sram_bitwidth(cid) / 8;
+    total_sram *= GetCoreHWConfig(cid).sram_bitwidth / 8;
 
     return total_sram;
 }
@@ -132,13 +132,13 @@ int rmsnorm_forward::task_core(TaskCoreContext &context) {
         prefix = datapass_label.outdata;
 
     // 读入input数据
-    check_input_data(context, dram_time, inp_global_addr, data_size_input);
+    checkInputData(context, dram_time, inp_global_addr, data_size_input);
     BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
     // 读入weight数据
     auto label_weight = ETERNAL_PREFIX + prefix + "_w";
-    check_static_data(context, dram_time, weight_global_addr, data_size_weight,
+    checkStaticData(context, dram_time, weight_global_addr, data_size_weight,
                       label_weight);
 
     // 删除标签
@@ -149,7 +149,7 @@ int rmsnorm_forward::task_core(TaskCoreContext &context) {
 #endif
 
     // 计算overlap并写回output数据
-    write_output_data(context, B * T * (4 * C + 3), 0, dram_time, overlap_time,
+    writeOutputData(context, B * T * (4 * C + 3), 0, dram_time, overlap_time,
                       data_size_out, out_global_addr);
     BETTER_PRINT(overlap_time);
 

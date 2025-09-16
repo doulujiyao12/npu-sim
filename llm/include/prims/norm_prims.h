@@ -5,7 +5,7 @@
 #include "common/pd.h"
 #include "prims/prim_base.h"
 
-class Clear_sram : public prim_base {
+class Clear_sram : public PrimBase {
 public:
     SramPosLocator *sram_pos_locator;
     int *loop_cnt;
@@ -26,7 +26,7 @@ public:
 };
 
 
-class Load_prim : public prim_base {
+class Load_prim : public PrimBase {
 public:
     int dram_addr;
     int sram_addr;
@@ -38,7 +38,7 @@ public:
     void deserialize(sc_bv<128> buffer);
     sc_bv<128> serialize();
 
-    void parse_json(json j, vector<pair<string, int>> vtable);
+    void parseJson(json j, vector<pair<string, int>> vtable);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize() {};
@@ -48,7 +48,7 @@ public:
 };
 
 
-class Recv_prim : public prim_base {
+class Recv_prim : public PrimBase {
 public:
     RECV_TYPE type;
     int tag_id;   // 和send原语对应的tag
@@ -60,7 +60,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j, vector<pair<string, int>> vtable);
+    void parseJson(json j, vector<pair<string, int>> vtable);
     void print_self(string prefix) override;
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -74,7 +74,7 @@ public:
 };
 
 
-class Send_prim : public prim_base {
+class Send_prim : public PrimBase {
 public:
     SEND_TYPE type;
     int des_id; // 目标id
@@ -95,7 +95,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j, vector<pair<string, int>> vtable);
+    void parseJson(json j, vector<pair<string, int>> vtable);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize() {};
@@ -117,7 +117,7 @@ public:
 };
 
 
-class Set_addr : public prim_base {
+class Set_addr : public PrimBase {
 public:
     AddrDatapassLabel *target;
     AddrDatapassLabel *datapass_label;
@@ -128,7 +128,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize() {};
@@ -145,7 +145,7 @@ public:
     }
 };
 
-class Set_batch : public prim_base {
+class Set_batch : public PrimBase {
 public:
     vector<Stage> *target;
     vector<Stage> batchInfo;
@@ -158,7 +158,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize() {};
@@ -179,7 +179,7 @@ public:
     }
 };
 
-class Store_prim : public prim_base {
+class Store_prim : public PrimBase {
 public:
     int dram_addr;
     int sram_addr;
@@ -191,7 +191,7 @@ public:
     void deserialize(sc_bv<128> buffer);
     sc_bv<128> serialize();
 
-    void parse_json(json j, vector<pair<string, int>> vtable);
+    void parseJson(json j, vector<pair<string, int>> vtable);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize() {};

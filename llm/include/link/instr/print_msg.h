@@ -19,7 +19,7 @@ public:
         instr_type = SEQ_EXEC;
     }
 
-    void parse_json(json j) override {
+    void parseJson(json j) override {
         // Basic implementation - can be expanded based on needs
         seq = j.contains("seq") ? j["seq"].get<int>() : -1;
         if (j.contains("message")) {

@@ -10,7 +10,7 @@ void switch_data::print_self(string prefix) {
 void switch_data::initialize() {
     out_size = OUT;
     inp_size = IN;
-    p_inp_size = IN;
+    input_size = IN;
 
     if (datatype == INT8)
         data_byte = 1;
@@ -18,15 +18,15 @@ void switch_data::initialize() {
         data_byte = 2;
 }
 
-void switch_data::parse_json(json j) {
-    IN = find_var(j["IN"]);
-    OUT = find_var(j["OUT"]);
+void switch_data::parseJson(json j) {
+    IN = GetDefinedParam(j["IN"]);
+    OUT = GetDefinedParam(j["OUT"]);
 
     if (j.contains("dram_address"))
-        parse_address(j["dram_address"]);
+        parseAddress(j["dram_address"]);
 
     if (j.contains("sram_address"))
-        parse_sram_label(j["sram_address"]);
+        parseSramLabel(j["sram_address"]);
 
     initialize();
 }
@@ -87,7 +87,7 @@ int switch_data::task_core(TaskCoreContext &context) {
         prefix = datapass_label.outdata;
 
     // 读入input数据
-    check_input_data(context, dram_time, inp_global_addr, data_size_input);
+    checkInputData(context, dram_time, inp_global_addr, data_size_input);
     BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
@@ -101,7 +101,7 @@ int switch_data::task_core(TaskCoreContext &context) {
 #endif
 
     // 计算overlap并写回output数据
-    write_output_data(context, 0, 0, dram_time, overlap_time, data_size_out,
+    writeOutputData(context, 0, 0, dram_time, overlap_time, data_size_out,
                       out_global_addr);
     BETTER_PRINT(overlap_time);
 

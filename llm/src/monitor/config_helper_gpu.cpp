@@ -87,10 +87,10 @@ void config_helper_gpu::fill_queue_config(queue<Msg> *q) {
                           recv_weight->serialize()));
 
         vector<Stage> batchInfo;
-        for (int i = 0; i < find_var("B"); i++)
-            batchInfo.push_back(Stage(i + 1, PREFILL, find_var("T")));
+        for (int i = 0; i < GetDefinedParam("B"); i++)
+            batchInfo.push_back(Stage(i + 1, PREFILL, GetDefinedParam("T")));
 
-        prim_base *set_batch = new Set_batch(batchInfo, true);
+        PrimBase *set_batch = new Set_batch(batchInfo, true);
         single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, single_rep.size() + 1,
                                  config.id, set_batch->serialize()));
 
@@ -133,7 +133,7 @@ void config_helper_gpu::generate_prims(int i) {
             int repeat = sms / GRID_SIZE + (sms % GRID_SIZE > i);
 
             for (int r = 0; r < repeat; r++) {
-                prim_base *p = new_prim("Set_addr");
+                PrimBase *p = new_prim("Set_addr");
                 auto label = ((Set_addr *)p)->datapass_label;
 
                 // Set_addr 的label 指向其后面的那条原语

@@ -7,14 +7,14 @@ void swiglu_forward::print_self(string prefix) {
     cout << prefix << "<swiglu_forward>\n";
     cout << prefix << "\tN: " << N << endl;
     cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size
-         << ", previous_inp_size: " << p_inp_size << endl;
+         << ", previous_inp_size: " << input_size << endl;
     cout << prefix << "\toutput_offset: " << out_offset
          << ", input_offset: " << inp_offset << endl;
 }
 
 void swiglu_forward::initialize() {
     out_size = N;
-    p_inp_size = 2 * N;
+    input_size = 2 * N;
     inp_size = 2 * N;
 
     if (datatype == INT8)
@@ -25,27 +25,27 @@ void swiglu_forward::initialize() {
     inp2_offset = inp_offset + N * data_byte;
 }
 
-void swiglu_forward::parse_json(json j) {
-    N = find_var(j["N"]);
+void swiglu_forward::parseJson(json j) {
+    N = GetDefinedParam(j["N"]);
 
     initialize();
 
     if (j.contains("dram_address"))
-        parse_address(j["dram_address"]);
+        parseAddress(j["dram_address"]);
 
     if (j.contains("sram_address"))
-        parse_sram_label(j["sram_address"]);
+        parseSramLabel(j["sram_address"]);
 }
 
 int swiglu_forward::sram_utilization(DATATYPE datatype, int cid) {
     int total_sram = 0;
 
     int inp_sram =
-        ceiling_division(2 * N * data_byte * 8, get_sram_bitwidth(cid));
-    int out_sram = ceiling_division(N * data_byte * 8, get_sram_bitwidth(cid));
+        CeilingDivision(2 * N * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
+    int out_sram = CeilingDivision(N * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
 
     total_sram = inp_sram + out_sram;
-    total_sram *= get_sram_bitwidth(cid) / 8;
+    total_sram *= GetCoreHWConfig(cid).sram_bitwidth / 8;
 
     return total_sram;
 }
@@ -116,7 +116,7 @@ int swiglu_forward::task_core(TaskCoreContext &context) {
         data_size_input.push_back(data_size_single_input);
 
     // 读入input数据
-    check_input_data(context, dram_time, inp_global_addr, data_size_input);
+    checkInputData(context, dram_time, inp_global_addr, data_size_input);
     BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
@@ -131,7 +131,7 @@ int swiglu_forward::task_core(TaskCoreContext &context) {
 #endif
 
     // 计算overlap并写回output数据
-    write_output_data(context, 12 * N, 0, dram_time, overlap_time,
+    writeOutputData(context, 12 * N, 0, dram_time, overlap_time,
                       data_size_out, out_global_addr);
     BETTER_PRINT(overlap_time);
 

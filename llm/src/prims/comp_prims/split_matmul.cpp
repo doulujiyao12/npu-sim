@@ -10,7 +10,7 @@ void Split_matmul::print_self(string prefix) {
     cout << prefix << "<split_matmul>\n";
     cout << prefix << "\tslice: " << slice << ", dim: " << dim << endl;
     cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size
-         << ", previous_inp_size: " << p_inp_size << endl;
+         << ", previous_inp_size: " << input_size << endl;
     cout << prefix << "\toutput_offset: " << out_offset
          << ", input_offset: " << inp_offset << endl;
 }
@@ -18,7 +18,7 @@ void Split_matmul::print_self(string prefix) {
 void Split_matmul::initialize() {
     inp_size = B * T * C;
     out_size = B * T * C;
-    p_inp_size = inp_size;
+    input_size = inp_size;
 
     if (datatype == INT8)
         data_byte = 1;
@@ -29,10 +29,10 @@ void Split_matmul::initialize() {
     out_offset *= 1024;
 }
 
-void Split_matmul::parse_json(json j) {
-    B = find_var(j["B"]);
-    T = find_var(j["T"]);
-    C = find_var(j["C"]);
+void Split_matmul::parseJson(json j) {
+    B = GetDefinedParam(j["B"]);
+    T = GetDefinedParam(j["T"]);
+    C = GetDefinedParam(j["C"]);
 
     dim = j["dim"];
     slice = j["slice"];
@@ -41,10 +41,10 @@ void Split_matmul::parse_json(json j) {
     initialize();
 
     if (j.contains("dram_address"))
-        parse_address(j["dram_address"]);
+        parseAddress(j["dram_address"]);
 
     if (j.contains("sram_address"))
-        parse_sram_label(j["sram_address"]);
+        parseSramLabel(j["sram_address"]);
 }
 
 void Split_matmul::parse_matmul(Matmul_f *p) {
@@ -52,7 +52,7 @@ void Split_matmul::parse_matmul(Matmul_f *p) {
 
     inp_size = B * T * C;
     out_size = B * T * C;
-    p_inp_size = inp_size;
+    input_size = inp_size;
 }
 
 void Split_matmul::deserialize(sc_bv<128> buffer) {
@@ -107,7 +107,7 @@ int Split_matmul::task_core(TaskCoreContext &context) {
     // 此原语不支持获取前缀，也无需获取
 
     // 读入input数据
-    check_input_data(context, dram_time, inp_global_addr, data_size_input);
+    checkInputData(context, dram_time, inp_global_addr, data_size_input);
     BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
@@ -121,7 +121,7 @@ int Split_matmul::task_core(TaskCoreContext &context) {
 #endif
 
     // 计算overlap并写回output数据
-    write_output_data(context, 0, B * T * (8 * C + 5), dram_time, overlap_time,
+    writeOutputData(context, 0, B * T * (8 * C + 5), dram_time, overlap_time,
                       data_size_out, out_global_addr);
     BETTER_PRINT(overlap_time);
 

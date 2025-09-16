@@ -6,7 +6,7 @@
 #include <vector>
 using namespace std;
 
-class moe_base : public comp_base {
+class moe_base : public CompBase {
 public:
     bool need_choose;              // 是否需要重选专家
     vector<int> *selected_experts; // 选中的专家列表

@@ -38,7 +38,7 @@ int rope_forward_pd::task_core(TaskCoreContext &context) {
 
     // 读入input数据
     // cout << "rope data input size: " << data_size_input << endl;
-    check_input_data(context, dram_time, inp_global_addr, data_size_input);
+    checkInputData(context, dram_time, inp_global_addr, data_size_input);
     BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
@@ -55,7 +55,7 @@ int rope_forward_pd::task_core(TaskCoreContext &context) {
 
     // 读入sincos数据
     auto label_sincos = ETERNAL_PREFIX + prefix + "_sc";
-    check_static_data(context, dram_time, sincos_global_addr, data_size_sincos,
+    checkStaticData(context, dram_time, sincos_global_addr, data_size_sincos,
                       label_sincos);
 
     // 在这里写回kvcache
@@ -129,7 +129,7 @@ int rope_forward_pd::task_core(TaskCoreContext &context) {
 #endif
 
     // 计算overlap并写回output数据
-    write_output_data(context, 6 * total_tokens * C, 0, dram_time, overlap_time,
+    writeOutputData(context, 6 * total_tokens * C, 0, dram_time, overlap_time,
                       data_size_out, out_global_addr);
     BETTER_PRINT(overlap_time);
 
@@ -165,13 +165,13 @@ void rope_forward_pd::deserialize(sc_bv<128> buffer) {
     initialize();
 }
 
-void rope_forward_pd::parse_json(json j) {
-    B = find_var(j["B"]);
-    T = find_var(j["T"]);
-    C = find_var(j["C"]);
-    NH = find_var(j["NH"]);
-    R = find_var(j["R"]);
-    chunk = find_var(j["chunk"]);
+void rope_forward_pd::parseJson(json j) {
+    B = GetDefinedParam(j["B"]);
+    T = GetDefinedParam(j["T"]);
+    C = GetDefinedParam(j["C"]);
+    NH = GetDefinedParam(j["NH"]);
+    R = GetDefinedParam(j["R"]);
+    chunk = GetDefinedParam(j["chunk"]);
 
     auto job_str = j["job_type"];
     if (job_str == "prefill")
@@ -186,10 +186,10 @@ void rope_forward_pd::parse_json(json j) {
     initialize();
 
     if (j.contains("dram_address"))
-        parse_address(j["dram_address"]);
+        parseAddress(j["dram_address"]);
 
     if (j.contains("sram_address"))
-        parse_sram_label(j["sram_address"]);
+        parseSramLabel(j["sram_address"]);
 }
 
 void rope_forward_pd::print_self(string prefix) {
@@ -200,7 +200,7 @@ int rope_forward_pd::sram_utilization(DATATYPE datatype, int cid) { return 0; }
 
 void rope_forward_pd::initialize() {
     inp_size = B * T * C;
-    p_inp_size = inp_size;
+    input_size = inp_size;
     out_size = B * T * C / (1 + 2 / R);
 
     if (datatype == INT8)

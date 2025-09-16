@@ -27,9 +27,9 @@ chip_config_helper::chip_config_helper(string filename, string font_ttf, int cid
                 string type = p.at("type");
 
                 instr = new_chip_prim(type);
-                instr->parse_json(p);
+                instr->parseJson(p);
                 instr_list.push_back(instr);
-                // instr->parse_json(p);
+                // instr->parseJson(p);
 
                 // if (!p.contains("type")) continue;
                 // string type = p["type"].get<string>();

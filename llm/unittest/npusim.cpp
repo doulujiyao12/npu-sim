@@ -444,7 +444,7 @@ int sc_main(int argc, char *argv[]) {
     // L2CACHELINESIZE = g_dram_burst_byte;
 
     gpu_bw = g_gpu_bw;
-    dram_bw = g_dram_bw;
+    g_default_dram_bw = g_dram_bw;
     use_gpu = g_use_gpu;
     beha_dram_util = g_beha_dram_util;
     beha_dram = g_beha_dram;
@@ -473,12 +473,11 @@ int sc_main(int argc, char *argv[]) {
     remove_all_l1cache_log_files();
 
     g_config_file = g_flag_config_file;
-    init_grid(g_flag_config_file.c_str(), g_flag_core_config_file.c_str());
-    init_global_members();
+    InitGrid(g_flag_config_file.c_str(), g_flag_core_config_file.c_str());
+    InitGlobalMembers();
 
     init_dram_areas();
     initialize_cache_structures();
-    init_perf_counters();
 
     Event_engine *event_engine =
         new Event_engine("event-engine", g_flag_trace_window);
@@ -502,7 +501,7 @@ int sc_main(int argc, char *argv[]) {
     // event_engine->dump_traced_file();
     sc_close_vcd_trace_file(tf);
 
-    system_cleanup();
+    SystemCleanup();
     close_log_files();
 
     clock_t end = clock();

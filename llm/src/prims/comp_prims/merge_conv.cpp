@@ -6,13 +6,13 @@
 
 void Merge_conv::print_self(string prefix) {}
 
-void Merge_conv::parse_json(json j) {
+void Merge_conv::parseJson(json j) {
     if (j.contains("dram_address")) {
-        parse_address(j["dram_address"]);
+        parseAddress(j["dram_address"]);
     }
 
     if (j.contains("sram_address")) {
-        parse_sram_label(j["sram_address"]);
+        parseSramLabel(j["sram_address"]);
     }
 }
 

@@ -14,7 +14,7 @@ void Merge_matmul::print_self(string prefix) {
          << endl;
     cout << prefix << "\tslice: " << slice << endl;
     cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size
-         << ", previous_inp_size: " << p_inp_size << endl;
+         << ", previous_inp_size: " << input_size << endl;
     cout << prefix << "\toutput_offset: " << out_offset
          << ", input_offset: " << inp_offset << endl;
 }
@@ -23,7 +23,7 @@ void Merge_matmul::parse_matmul(Matmul_f *p) {
     B = p->B, T = p->T, C = p->C;
 
     inp_size = B * T * C * slice;
-    p_inp_size = inp_size;
+    input_size = inp_size;
 
     if (dim == 1)
         out_size = slice * B * T * C;
@@ -31,10 +31,10 @@ void Merge_matmul::parse_matmul(Matmul_f *p) {
         out_size = B * T * C;
 }
 
-void Merge_matmul::parse_json(json j) {
-    B = find_var(j["B"]);
-    T = find_var(j["T"]);
-    C = find_var(j["C"]);
+void Merge_matmul::parseJson(json j) {
+    B = GetDefinedParam(j["B"]);
+    T = GetDefinedParam(j["T"]);
+    C = GetDefinedParam(j["C"]);
 
     dim = j["dim"];
     slice = j["slice"];
@@ -42,15 +42,15 @@ void Merge_matmul::parse_json(json j) {
     initialize();
 
     if (j.contains("dram_address"))
-        parse_address(j["dram_address"]);
+        parseAddress(j["dram_address"]);
 
     if (j.contains("sram_address"))
-        parse_sram_label(j["sram_address"]);
+        parseSramLabel(j["sram_address"]);
 }
 
 void Merge_matmul::initialize() {
     inp_size = B * T * C * slice;
-    p_inp_size = inp_size;
+    input_size = inp_size;
 
     if (dim == 1)
         out_size = slice * B * T * C;
@@ -144,7 +144,7 @@ int Merge_matmul::task_core(TaskCoreContext &context) {
     }
 
     // 读入input数据
-    check_input_data(context, dram_time, inp_global_addr, data_size_input);
+    checkInputData(context, dram_time, inp_global_addr, data_size_input);
     BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
@@ -160,7 +160,7 @@ int Merge_matmul::task_core(TaskCoreContext &context) {
 #endif
 
     // 计算overlap并写回output数据
-    write_output_data(context, 0, B * T * C, dram_time, overlap_time,
+    writeOutputData(context, 0, B * T * C, dram_time, overlap_time,
                       data_size_out, out_global_addr);
     BETTER_PRINT(overlap_time);
 

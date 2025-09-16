@@ -16,7 +16,7 @@ public:
 
     void initialize();
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -39,7 +39,7 @@ public:
 
     void initialize();
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -61,7 +61,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize();

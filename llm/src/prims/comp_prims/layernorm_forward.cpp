@@ -11,7 +11,7 @@ void Layernorm_f::print_self(string prefix) {
     cout << prefix << "<layernorm_forward>\n";
     cout << prefix << "\tB: " << B << ", T: " << T << ", C: " << C << endl;
     cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size
-         << ", previous_inp_size: " << p_inp_size << endl;
+         << ", previous_inp_size: " << input_size << endl;
     cout << prefix << "\toutput_offset: " << out_offset
          << ", input_offset: " << inp_offset << endl;
 }
@@ -19,7 +19,7 @@ void Layernorm_f::print_self(string prefix) {
 
 void Layernorm_f::initialize() {
     out_size = B * T * C;
-    p_inp_size = B * T * C;
+    input_size = B * T * C;
     inp_size = B * T * C + C + C;
 
     dram_inp_size = (B * T * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
@@ -35,21 +35,21 @@ void Layernorm_f::initialize() {
     b_offset = C + w_offset;
 }
 
-void Layernorm_f::parse_json(json j) {
+void Layernorm_f::parseJson(json j) {
     /*
     inp_offset（选填） 可以根据 data_offset 计算，也可以手动设置 inp_offset
     data_offset（必要） matmul 需要指定权重位置
     out_offset（选填）: 可以根据 data_offset 计算，也可以手动设置 out_offset
     */
 
-    B = find_var(j["B"]);
-    T = find_var(j["T"]);
-    C = find_var(j["C"]);
+    B = GetDefinedParam(j["B"]);
+    T = GetDefinedParam(j["T"]);
+    C = GetDefinedParam(j["C"]);
 
     initialize();
 
     if (j.contains("dram_address"))
-        parse_address(j["dram_address"]);
+        parseAddress(j["dram_address"]);
 
     if (inp_offset == -1 && out_offset == -1 && data_offset == -1)
         assert(0 && "no dram address found");
@@ -67,21 +67,21 @@ void Layernorm_f::parse_json(json j) {
     cout << "data_offset: " << data_offset << endl;
 
     if (j.contains("sram_address"))
-        parse_sram_label(j["sram_address"]);
+        parseSramLabel(j["sram_address"]);
 }
 
 int Layernorm_f::sram_utilization(DATATYPE datatype, int cid) {
     int total_sram = 0;
 
     int p_inp_sram =
-        ceiling_division(B * T * C * data_byte * 8, get_sram_bitwidth(cid));
-    int w_sram = ceiling_division(C * data_byte * 8, get_sram_bitwidth(cid));
-    int b_sram = ceiling_division(C * data_byte * 8, get_sram_bitwidth(cid));
+        CeilingDivision(B * T * C * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
+    int w_sram = CeilingDivision(C * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
+    int b_sram = CeilingDivision(C * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
     int out_sram =
-        ceiling_division(out_size * data_byte * 8, get_sram_bitwidth(cid));
+        CeilingDivision(out_size * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
 
     total_sram = p_inp_sram + w_sram + b_sram + out_sram;
-    total_sram *= get_sram_bitwidth(cid) / 8;
+    total_sram *= GetCoreHWConfig(cid).sram_bitwidth / 8;
 
     return total_sram;
 }
@@ -146,17 +146,17 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
         prefix = datapass_label.outdata;
 
     // 读入input数据
-    check_input_data(context, dram_time, inp_global_addr, data_size_input);
+    checkInputData(context, dram_time, inp_global_addr, data_size_input);
     BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
     {
         auto label_weight = ETERNAL_PREFIX + prefix + "_w";
-        check_static_data(context, dram_time, weight_global_addr,
+        checkStaticData(context, dram_time, weight_global_addr,
                           data_size_weight, label_weight);
 
         auto label_bias = ETERNAL_PREFIX + prefix + "_b";
-        check_static_data(context, dram_time, bias_global_addr, data_size_bias,
+        checkStaticData(context, dram_time, bias_global_addr, data_size_bias,
                           label_bias);
 
         // 删除标签
@@ -168,7 +168,7 @@ int Layernorm_f::task_core(TaskCoreContext &context) {
 #endif
 
     // 计算overlap并写回output数据
-    write_output_data(context, 0, B * T * (8 * C + 5), dram_time, overlap_time,
+    writeOutputData(context, 0, B * T * (8 * C + 5), dram_time, overlap_time,
                       data_size_out, out_global_addr);
     BETTER_PRINT(overlap_time);
 

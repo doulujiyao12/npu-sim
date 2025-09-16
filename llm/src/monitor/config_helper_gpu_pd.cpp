@@ -83,7 +83,7 @@ void config_helper_gpu_pd::fill_queue_start(queue<Msg> *q) {
     // 发送数据的大小等于通过source查找
     if (prim_index == 0 && has_prefill) {
         for (auto source : source_info) {
-            AddrPosKey source_key = AddrPosKey(0, find_var(source.second));
+            AddrPosKey source_key = AddrPosKey(0, GetDefinedParam(source.second));
             gpu_pos_locator->addPair(source.first, source_key);
         }
     }
@@ -295,17 +295,17 @@ void config_helper_gpu_pd::generate_prims(int i) {
         if (c >= sms)
             continue;
 
-        prim_base *recv_data_1 = new Recv_prim(RECV_TYPE::RECV_START, c, 1);
+        PrimBase *recv_data_1 = new Recv_prim(RECV_TYPE::RECV_START, c, 1);
         temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, c,
                                   recv_data_1->serialize()));
 
-        prim_base *set_batch = new Set_batch(iter_status.batchInfo, false);
+        PrimBase *set_batch = new Set_batch(iter_status.batchInfo, false);
         temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, c,
                                   set_batch->serialize()));
 
         // 只需要看单个原语重复次数
         int repeat = sms / GRID_SIZE + (sms % GRID_SIZE > c);
-        prim_base *set_addr = new_prim("Set_addr");
+        PrimBase *set_addr = new_prim("Set_addr");
         auto label = ((Set_addr *)set_addr)->datapass_label;
 
         for (int r = 0; r < repeat; r++) {
@@ -324,7 +324,7 @@ void config_helper_gpu_pd::generate_prims(int i) {
         }
 
         // 发送DONE信号
-        prim_base *send_done = new Send_prim(SEND_TYPE::SEND_DONE);
+        PrimBase *send_done = new Send_prim(SEND_TYPE::SEND_DONE);
         Msg m =
             Msg(true, MSG_TYPE::CONFIG, ++prim_seq, c, send_done->serialize());
         m.refill = false;

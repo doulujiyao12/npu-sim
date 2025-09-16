@@ -17,7 +17,7 @@ void Matmul_f::print_self(string prefix) {
     cout << prefix << "\tB: " << B << ", T: " << T << ", C: " << C
          << ", OC: " << OC << endl;
     cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size
-         << ", previous_inp_size: " << p_inp_size << endl;
+         << ", previous_inp_size: " << input_size << endl;
     cout << prefix << "\toutput_offset: " << out_offset
          << ", input_offset: " << inp_offset << endl;
 }
@@ -29,7 +29,7 @@ void Matmul_f::print_dim(int cid) {
     LOG_VERBOSE(1, cid,
                 "Prim name:" << name << " " << "\tout_size: " << out_size
                              << " , inp_size: " << inp_size
-                             << ", previous_inp_size: " << p_inp_size);
+                             << ", previous_inp_size: " << input_size);
     LOG_VERBOSE(1, cid,
                 "Prim name:" << name << " " << "\toutput_offset: " << out_offset
                              << ", input_offset: " << inp_offset);
@@ -37,7 +37,7 @@ void Matmul_f::print_dim(int cid) {
 
 void Matmul_f::initialize() {
     out_size = B * T * OC;
-    p_inp_size = B * T * C;
+    input_size = B * T * C;
     inp_size = B * T * C + OC * C + OC;
     dram_inp_size = (B * T * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
     dram_out_size = (B * T * OC + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
@@ -78,25 +78,25 @@ HardwareTaskConfig *Matmul_f::generate_hw_config() {
     return config;
 }
 
-void Matmul_f::parse_json(json j) {
+void Matmul_f::parseJson(json j) {
     /*
     inp_offset（选填） 可以根据 data_offset 计算，也可以手动设置 inp_offset
     data_offset（必要） matmul 需要指定权重位置
     out_offset（选填）: 可以根据 data_offset 计算，也可以手动设置 out_offset
     */
 
-    B = find_var(j["B"]);
-    T = find_var(j["T"]);
-    C = find_var(j["C"]);
-    OC = find_var(j["OC"]);
-    // NH = find_var(j["NH"]);
-    // DH = find_var(j["DH"]);
-    // R = find_var(j["R"]);
+    B = GetDefinedParam(j["B"]);
+    T = GetDefinedParam(j["T"]);
+    C = GetDefinedParam(j["C"]);
+    OC = GetDefinedParam(j["OC"]);
+    // NH = GetDefinedParam(j["NH"]);
+    // DH = GetDefinedParam(j["DH"]);
+    // R = GetDefinedParam(j["R"]);
 
     initialize();
 
     if (j.contains("dram_address"))
-        parse_address(j["dram_address"]);
+        parseAddress(j["dram_address"]);
 
     if (inp_offset == -1 && out_offset == -1 && data_offset == -1)
         assert(0 && "no dram address found");
@@ -114,7 +114,7 @@ void Matmul_f::parse_json(json j) {
     cout << "data_offset: " << data_offset << endl;
 
     if (j.contains("sram_address"))
-        parse_sram_label(j["sram_address"]);
+        parseSramLabel(j["sram_address"]);
 }
 
 int Matmul_f::sram_utilization(DATATYPE datatype, int cid) {
@@ -127,12 +127,12 @@ int Matmul_f::sram_utilization(DATATYPE datatype, int cid) {
     }
 
     int p_inp_sram =
-        ceiling_division(B * T * C * data_byte * 8, get_sram_bitwidth(cid));
+        CeilingDivision(B * T * C * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
     int w1_inps_sram =
-        ceiling_division(OC * C * data_byte * 8, get_sram_bitwidth(cid));
-    int b_sram = ceiling_division(OC * data_byte * 8, get_sram_bitwidth(cid));
+        CeilingDivision(OC * C * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
+    int b_sram = CeilingDivision(OC * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
     int out_sram =
-        ceiling_division(out_size * data_byte * 8, get_sram_bitwidth(cid));
+        CeilingDivision(out_size * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
 
     // if (datatype == DATATYPE::FP16) {
     //     total_sram = 2 * (out_size + inp_size);
@@ -141,7 +141,7 @@ int Matmul_f::sram_utilization(DATATYPE datatype, int cid) {
     // }
 
     total_sram = p_inp_sram + w1_inps_sram + b_sram + out_sram;
-    total_sram *= get_sram_bitwidth(cid) / 8;
+    total_sram *= GetCoreHWConfig(cid).sram_bitwidth / 8;
     return total_sram;
 }
 
@@ -235,18 +235,18 @@ int Matmul_f::task_core(TaskCoreContext &context) {
         prefix = datapass_label.outdata;
 
     // 读入input数据
-    check_input_data(context, dram_time, inp_global_addr, data_size_input);
+    checkInputData(context, dram_time, inp_global_addr, data_size_input);
     BETTER_PRINT(dram_time);
     print_dim(context.cid);
 
 #if USE_SRAM == 1
     {
         auto label_weight = ETERNAL_PREFIX + prefix + "_w";
-        check_static_data(context, dram_time, weight_global_addr,
+        checkStaticData(context, dram_time, weight_global_addr,
                           data_size_weight, label_weight, false);
 
         auto label_bias = ETERNAL_PREFIX + prefix + "_b";
-        check_static_data(context, dram_time, bias_global_addr, data_size_bias,
+        checkStaticData(context, dram_time, bias_global_addr, data_size_bias,
                           label_bias, false);
         BETTER_PRINT(dram_time);
 
@@ -261,7 +261,7 @@ int Matmul_f::task_core(TaskCoreContext &context) {
 
 #if PERFORMANCE_MODE == 1
 
-    ExuConfig *exu = get_exu_config(context.cid);
+    ExuConfig *exu = GetCoreHWConfig(context.cid).exu;
 
     uint64_t weight_tile_x = (C + exu->x_dims - 1) / exu->x_dims;
     uint64_t weight_tile_y = (OC + exu->y_dims - 1) / exu->y_dims;
@@ -285,20 +285,20 @@ int Matmul_f::task_core(TaskCoreContext &context) {
             if (datapass_label.indata[p].find(DRAM_LABEL) == 0) {
                 cout << "[MATMUL] Core " << cid << ": Checking input "
                      << datapass_label.indata[p] << "..." << endl;
-                perf_read_data(context, dram_time, data_size_input[p],
+                prefReadData(context, dram_time, data_size_input[p],
                                datapass_label.indata[p]);
             }
         }
     }
 
 
-    write_output_data(context, performance_comp, 0, dram_time, overlap_time,
+    writeOutputData(context, performance_comp, 0, dram_time, overlap_time,
                       data_size_out, out_global_addr);
 
 #else
     // 计算overlap并写回output数据
     // cout << "matmul output data size: " << data_size_out << endl;
-    write_output_data(context, (uint64_t)B * T * C * OC * 2, 0, dram_time, overlap_time,
+    writeOutputData(context, (uint64_t)B * T * C * OC * 2, 0, dram_time, overlap_time,
                       data_size_out, out_global_addr);
 #endif
     BETTER_PRINT(overlap_time);

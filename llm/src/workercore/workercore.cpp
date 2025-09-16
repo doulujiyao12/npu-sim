@@ -40,7 +40,7 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
          << dram_config_name << endl;
     cout << " MaxAddr "
          << dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
-    auto sram_bitw = get_sram_bitwidth(s_cid);
+    auto sram_bitw = 
     ram_array = new DynamicBandwidthRamRow<sc_bv<SRAM_BITWIDTH>, SRAM_BANKS>(
         sc_gen_unique_name("ram_array"), 0,
         MAX_SRAM_SIZE * 8 / sram_bitw / SRAM_BANKS, SIMU_READ_PORT,
@@ -230,7 +230,7 @@ void WorkerCoreExecutor::end_of_elaboration() {
 
 void WorkerCoreExecutor::worker_core_execute() {
     while (true) {
-        prim_base *p = nullptr; // 下一个要执行的原语
+        PrimBase *p = nullptr; // 下一个要执行的原语
 
         if (prim_queue.size() == 0) {
             // 队列中没有指令，意味着现在是初始状态或者所有原语都被执行完了（假设所有原语只做一轮），默认作recv，直到config发进来
@@ -253,13 +253,13 @@ void WorkerCoreExecutor::worker_core_execute() {
 #if SR_PARA == 0
             ev_send.notify(CYCLE, SC_NS);
             event_engine->add_event(
-                "Core " + toHexString(cid), "Send_prim", "B",
+                "Core " + ToHexString(cid), "Send_prim", "B",
                 Trace_event_util(
                     "Send_prim" +
                     get_send_type_name(dynamic_cast<Send_prim *>(p)->type)));
             wait(prim_block.negedge_event());
             event_engine->add_event(
-                "Core " + toHexString(cid), "Send_prim", "E",
+                "Core " + ToHexString(cid), "Send_prim", "E",
                 Trace_event_util(
                     "Send_prim" +
                     get_send_type_name(dynamic_cast<Send_prim *>(p)->type)));
@@ -297,13 +297,13 @@ void WorkerCoreExecutor::worker_core_execute() {
         } else if (typeid(*p) == typeid(Recv_prim)) {
             ev_recv.notify(CYCLE, SC_NS);
             event_engine->add_event(
-                "Core " + toHexString(cid), "Receive_prim", "B",
+                "Core " + ToHexString(cid), "Receive_prim", "B",
                 Trace_event_util(
                     "Receive_prim" +
                     get_recv_type_name(dynamic_cast<Recv_prim *>(p)->type)));
             wait(prim_block.negedge_event());
             event_engine->add_event(
-                "Core " + toHexString(cid), "Receive_prim", "E",
+                "Core " + ToHexString(cid), "Receive_prim", "E",
                 Trace_event_util(
                     "Receive_prim" +
                     get_recv_type_name(dynamic_cast<Recv_prim *>(p)->type)));
@@ -318,7 +318,7 @@ void WorkerCoreExecutor::worker_core_execute() {
             }
 
             ev_comp.notify(CYCLE, SC_NS);
-            event_engine->add_event("Core " + toHexString(cid), "Comp_prim",
+            event_engine->add_event("Core " + ToHexString(cid), "Comp_prim",
                                     "B", Trace_event_util(p->name));
             wait(prim_block.negedge_event());
 
@@ -328,7 +328,7 @@ void WorkerCoreExecutor::worker_core_execute() {
                 ev_send_last_packet.notify(CYCLE, SC_NS);
             }
 
-            event_engine->add_event("Core " + toHexString(cid), "Comp_prim",
+            event_engine->add_event("Core " + ToHexString(cid), "Comp_prim",
                                     "E", Trace_event_util(p->name));
         }
 
@@ -373,8 +373,8 @@ void WorkerCoreExecutor::switch_prim_block() {
 }
 
 // 指令被 RECV_CONF发送过来后，会在本地核实例化对应的指令类
-prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
-    prim_base *task = nullptr;
+PrimBase *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
+    PrimBase *task = nullptr;
     int type = buffer.range(7, 0).to_uint64();
 
     switch (type) {
@@ -517,7 +517,7 @@ prim_base *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     task->cid = cid;
 
     if (task->prim_type == COMP_PRIM) {
-        comp_base *comp = (comp_base *)task;
+        CompBase *comp = (CompBase *)task;
         comp->sram_pos_locator = sram_pos_locator;
         comp->sram_pos_locator->cid = cid;
     }
@@ -718,14 +718,14 @@ void WorkerCoreExecutor::send_logic() {
 void WorkerCoreExecutor::send_para_logic() {
     while (true) {
         while (send_para_queue.size()) {
-            prim_base *prim = send_para_queue.front();
+            PrimBase *prim = send_para_queue.front();
             send_para_queue.pop();
 
             if (typeid(*prim) == typeid(Send_prim)) {
                 ((Send_prim *)prim)->data_packet_id = 0;
                 cout << "Core " << cid << " going para send\n";
                 event_engine->add_event(
-                    "Core " + toHexString(cid), "Send_prim", "B",
+                    "Core " + ToHexString(cid), "Send_prim", "B",
                     Trace_event_util(
                         "Send_prim" +
                         get_send_type_name(
@@ -733,7 +733,7 @@ void WorkerCoreExecutor::send_para_logic() {
             } else if (typeid(*prim) == typeid(Recv_prim)) {
                 cout << "Core " << cid << " going para recv\n";
                 event_engine->add_event(
-                    "Core " + toHexString(cid), "Recv_prim", "B",
+                    "Core " + ToHexString(cid), "Recv_prim", "B",
                     Trace_event_util(
                         "Recv_prim" +
                         get_recv_type_name(
@@ -941,14 +941,14 @@ void WorkerCoreExecutor::send_para_logic() {
 
             if (typeid(*prim) == typeid(Send_prim)) {
                 event_engine->add_event(
-                    "Core " + toHexString(cid), "Send_prim", "E",
+                    "Core " + ToHexString(cid), "Send_prim", "E",
                     Trace_event_util(
                         "Send_prim" +
                         get_send_type_name(
                             dynamic_cast<Send_prim *>(prim)->type)));
             } else {
                 event_engine->add_event(
-                    "Core " + toHexString(cid), "Recv_prim", "E",
+                    "Core " + ToHexString(cid), "Recv_prim", "E",
                     Trace_event_util(
                         "Recv_prim" +
                         get_recv_type_name(
@@ -1228,7 +1228,7 @@ void WorkerCoreExecutor::recv_logic() {
 
 void WorkerCoreExecutor::task_logic() {
     while (true) {
-        prim_base *p = prim_queue.front();
+        PrimBase *p = prim_queue.front();
 
         int delay = 0;
         TaskCoreContext context = generate_context(this);
@@ -1237,7 +1237,7 @@ void WorkerCoreExecutor::task_logic() {
         // end_global_event);
 
         if (p->prim_type == COMP_PRIM) {
-            comp_base *comp = (comp_base *)p;
+            CompBase *comp = (CompBase *)p;
             comp->datapass_label = *next_datapass_label;
         }
 #if USE_L1L2_CACHE == 1
@@ -1368,7 +1368,7 @@ void WorkerCoreExecutor::req_logic() {
 
     while (true) {
         if (prim_queue.size()) {
-            prim_base *p = prim_queue.front();
+            PrimBase *p = prim_queue.front();
 
             if (typeid(*p) == typeid(Recv_prim)) {
                 Recv_prim *prim = (Recv_prim *)p;

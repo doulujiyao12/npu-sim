@@ -16,7 +16,7 @@
 //     bool judge_is_end(int i);
 
 //     void generate_prims(int i);
-//     comp_base *parse_prim(json j);
+//     CompBase *parse_prim(json j);
 //     void calculate_address(bool do_loop);
 
 //     void print_self();
@@ -70,7 +70,7 @@
 
 //     auto st = j["source"];
 //     for (auto s : st) {
-//         source_info.push_back(make_pair(s["dest"], find_var(s["size"])));
+//         source_info.push_back(make_pair(s["dest"], GetDefinedParam(s["size"])));
 //     }
 
 //     // 处理layer信息
@@ -83,13 +83,13 @@
 
 //         // 配置layer的循环信息
 //         if (lt[i].contains("loop")) {
-//             layer.loop = find_var(lt[i]["loop"]);
+//             layer.loop = GetDefinedParam(lt[i]["loop"]);
 //         } else {
 //             layer.loop = 1;
 //         }
 
 //         if (lt[i].contains("repeat")) {
-//             layer.repeat = find_var(lt[i]["repeat"]);
+//             layer.repeat = GetDefinedParam(lt[i]["repeat"]);
 //         } else {
 //             layer.repeat = 1;
 //         }
@@ -103,7 +103,7 @@
 //         sm_flag[i] = false;
 
 //         LayerConfig layer = layers[i];
-//         comp_base *prim = layer.prim;
+//         CompBase *prim = layer.prim;
 //         if (layer.split != NO_SPLIT) {
 //             // 进行拆分
 //             sm_flag[i] = true;
@@ -233,9 +233,9 @@
 //     for (int i = 0; i < layers.size(); i++) {
 //         if (layers[i].split == NO_SPLIT) continue;
 
-//         comp_base *prim = layers[i].prim;
-//         comp_base *split_prim = nullptr;
-//         comp_base *merge_prim = nullptr;
+//         CompBase *prim = layers[i].prim;
+//         CompBase *split_prim = nullptr;
+//         CompBase *merge_prim = nullptr;
 //         // 这里是在需要split的计算原语前后增加 split 和 merge 原语
 //         // DTODO连续两个需要split 计算原语
 //         if (typeid(*prim) == typeid(Matmul_f)) {
@@ -260,7 +260,7 @@
 //                 }
 //                 for (auto c : layer_sm[i+1]) {
 //                     // merge
-//                     vector<prim_base *> new_prims;
+//                     vector<PrimBase *> new_prims;
 //                     new_prims.push_back(vp);
 //                     for (auto p : coreconfigs[c].prims) {
 //                         new_prims.push_back(p);
@@ -278,7 +278,7 @@
 //                 }
 //                 for (auto c : layer_sm[i+1]) {
 //                     // merge
-//                     vector<prim_base *> new_prims;
+//                     vector<PrimBase *> new_prims;
 //                     new_prims.push_back(vp);
 //                     for (auto p : coreconfigs[c].prims) {
 //                         new_prims.push_back(p);
@@ -307,8 +307,8 @@
 //     print_self();
 // }
 
-// comp_base *Config_helper::parse_prim(json j) {
-//     comp_base *p = nullptr;
+// CompBase *Config_helper::parse_prim(json j) {
+//     CompBase *p = nullptr;
 //     string type = j.at("type");
 
 //     if (type == "Dummy_p") p = new Dummy_p();
@@ -327,7 +327,7 @@
 //         sc_stop();
 //     }
 
-//     p->parse_json(j.at("var"));
+//     p->parseJson(j.at("var"));
 
 //     return p;
 // }
@@ -421,7 +421,7 @@
 
 //     // 首先填写comp原语
 //     for (int i = 0; i < coreconfigs.size(); i++) {
-//         vector<prim_base *> *v = nullptr;
+//         vector<PrimBase *> *v = nullptr;
 //         if (do_loop) v = &(coreconfigs[i].prims_in_loop);
 //         else v = &(coreconfigs[i].prims_last_loop);
 
@@ -429,7 +429,7 @@
 //             auto p = (*v)[j];
 //             if (!is_comp_prim(p)) continue;
 
-//             comp_base *cp = (comp_base *) p;
+//             CompBase *cp = (CompBase *) p;
 
 //             // 从后往前填写
 //             if (j < v->size()-1 && !is_comp_prim((*v)[j+1])) {
@@ -439,7 +439,7 @@
 //             } else {
 //                 // out在下一个原语in的开头，in在下一个原语in的结尾
 
-//                 comp_base *next_cp = (comp_base *) (*v)[j+1];
+//                 CompBase *next_cp = (CompBase *) (*v)[j+1];
 //                 cp->out_offset = next_cp->inp_offset;
 
 //                 // inp_size 是 输入 input + 权重 data 的大小之和
@@ -452,13 +452,13 @@
 //                 delta_offset[coreconfigs[i].id] = cp->inp_offset;
 //             }
 
-//             cp->data_offset = cp->inp_offset + cp->p_inp_size;
+//             cp->data_offset = cp->inp_offset + cp->input_size;
 //         }
 //     }
 
 //     for (int i = 0; i < coreconfigs.size(); i++) {
 //         // 遍历每一个核中的send原语
-//         vector<prim_base *> *v = nullptr;
+//         vector<PrimBase *> *v = nullptr;
 //         if (do_loop) v = &(coreconfigs[i].prims_in_loop);
 //         else v = &(coreconfigs[i].prims_last_loop);
 
@@ -473,7 +473,7 @@
 //         for (int j = v->size()-1; j >= 0; j--) {
 //             auto p = (*v)[j];
 //             if (is_comp_prim(p)) {
-//                 comp_base *cp = (comp_base *) p;
+//                 CompBase *cp = (CompBase *) p;
 //                 output_size = cp->out_size;
 //                 output_offset = cp->out_offset;
 //                 break;

@@ -4,7 +4,7 @@
 #include "common/system.h"
 #include "prims/comp_base.h"
 
-class Attention_f : public comp_base {
+class Attention_f : public CompBase {
 public:
     int B, T, C, NH;
     int R;
@@ -16,7 +16,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize();
@@ -25,7 +25,7 @@ public:
 };
 
 
-class Batchnorm_f : public comp_base {
+class Batchnorm_f : public CompBase {
 public:
     int B, H, W, C;
     int gamma_offset, beta_offset;
@@ -36,7 +36,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -44,7 +44,7 @@ public:
 };
 
 
-class Conv_f : public comp_base {
+class Conv_f : public CompBase {
 public:
     int inp_offset; // 16 16
     int out_offset;
@@ -62,7 +62,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -71,7 +71,7 @@ public:
 };
 
 
-class Dummy_p : public comp_base {
+class Dummy_p : public CompBase {
 public:
     int task();
     int task_core(TaskCoreContext &context);
@@ -79,7 +79,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -87,7 +87,7 @@ public:
     Dummy_p() { name = "Dummy_p"; }
 };
 
-class gate_forward : public comp_base {
+class gate_forward : public CompBase {
 public:
     int B, T, C, E_N; // 专家个数
     int K;            // 选中的专家个数
@@ -98,7 +98,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize();
@@ -106,7 +106,7 @@ public:
     gate_forward() { name = "gate_forward"; }
 };
 
-class Gelu_f : public comp_base {
+class Gelu_f : public CompBase {
 public:
     int N;
 
@@ -116,7 +116,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize();
@@ -125,7 +125,7 @@ public:
 };
 
 
-class Layernorm_f : public comp_base {
+class Layernorm_f : public CompBase {
 public:
     int B, T, C;
     int w_offset, b_offset;
@@ -136,7 +136,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize();
@@ -145,7 +145,7 @@ public:
 };
 
 
-class Matmul_f : public comp_base {
+class Matmul_f : public CompBase {
 public:
     int B, T, C, OC;
     int NH, DH, R;
@@ -160,7 +160,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -173,7 +173,7 @@ public:
 };
 
 
-class switch_data : public comp_base {
+class switch_data : public CompBase {
 public:
     int IN, OUT;
 
@@ -183,7 +183,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -192,7 +192,7 @@ public:
 };
 
 
-class Max_pool : public comp_base {
+class Max_pool : public CompBase {
 public:
     int inp_offset; // 16 16
     int out_offset;
@@ -210,7 +210,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -219,7 +219,7 @@ public:
 };
 
 
-class Merge_conv : public comp_base {
+class Merge_conv : public CompBase {
 public:
     int B, T, C;
 
@@ -232,7 +232,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -242,7 +242,7 @@ public:
 };
 
 
-class Merge_matmul : public comp_base {
+class Merge_matmul : public CompBase {
 public:
     int B, T, C;
 
@@ -255,7 +255,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -266,7 +266,7 @@ public:
 };
 
 
-class Relu_f : public comp_base {
+class Relu_f : public CompBase {
 public:
     int N;
 
@@ -276,7 +276,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -285,27 +285,26 @@ public:
 };
 
 
-class Residual_f : public comp_base {
+class Residual_f : public CompBase {
 public:
-    int N;
-    int inp2_offset;
-
-    int task();
     int task_core(TaskCoreContext &context);
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
     void initialize();
-    Residual_f() { name = "Residual_f"; }
+    Residual_f() {
+        name = "Residual_f";
+        prim_type_code = RESIDUAL_F_TYPE;
+    }
 };
 
 
-class rmsnorm_forward : public comp_base {
+class rmsnorm_forward : public CompBase {
 public:
     int B, T, C;
     int w_offset;
@@ -316,7 +315,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -325,7 +324,7 @@ public:
 };
 
 
-class rope_forward : public comp_base {
+class rope_forward : public CompBase {
 public:
     int B, T, C, NH;
     int sc_offset;
@@ -336,7 +335,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize();
@@ -345,7 +344,7 @@ public:
 };
 
 
-class silu_forward : public comp_base {
+class silu_forward : public CompBase {
 public:
     int N;
 
@@ -355,7 +354,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -364,7 +363,7 @@ public:
 };
 
 
-class Split_conv : public comp_base {
+class Split_conv : public CompBase {
 public:
     int W, H, C, B;
     int pX, pY, S, K;
@@ -378,7 +377,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -388,7 +387,7 @@ public:
 };
 
 
-class Split_matmul : public comp_base {
+class Split_matmul : public CompBase {
 public:
     int B, T, C;
     int dim;
@@ -400,7 +399,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -411,7 +410,7 @@ public:
 };
 
 
-class swiglu_forward : public comp_base {
+class swiglu_forward : public CompBase {
 public:
     int N;
     int inp2_offset;
@@ -422,7 +421,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -431,7 +430,7 @@ public:
 };
 
 
-class Send_global_memory : public comp_base {
+class Send_global_memory : public CompBase {
 public:
     GLOBAL_SEND_TYPE type;
     int enable;
@@ -450,14 +449,14 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
     Send_global_memory() { name = "Send_global_memory"; }
 };
 
-class Recv_global_memory : public comp_base {
+class Recv_global_memory : public CompBase {
 public:
     GLOBAL_RECV_TYPE type;
     int tag_id;
@@ -469,14 +468,14 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
     Recv_global_memory() { name = "Recv_global_memory"; }
 };
 
-class parse_input : public comp_base {
+class parse_input : public CompBase {
 public:
     int size;
 
@@ -486,7 +485,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize();
@@ -494,7 +493,7 @@ public:
     parse_input() { name = "parse_input"; }
 };
 
-class parse_output : public comp_base {
+class parse_output : public CompBase {
 public:
     int size;
 
@@ -504,7 +503,7 @@ public:
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
 
-    void parse_json(json j);
+    void parseJson(json j);
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
     void initialize();

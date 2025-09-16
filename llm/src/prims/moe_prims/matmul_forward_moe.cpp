@@ -1,13 +1,14 @@
 #include "prims/moe_prims.h"
 #include "utils/memory_utils.h"
 #include "utils/system_utils.h"
+#include "utils/print_utils.h"
 
 void matmul_forward_moe::print_self(string prefix) {
     cout << prefix << "<matmul_forward_moe>\n";
     cout << prefix << "\tB: " << B << ", T: " << T << ", C: " << C
          << ", OC: " << OC << endl;
     cout << prefix << "\tout_size: " << out_size << ", inp_size: " << inp_size
-         << ", previous_inp_size: " << p_inp_size << endl;
+         << ", previous_inp_size: " << input_size << endl;
     cout << prefix << "\toutput_offset: " << out_offset
          << ", input_offset: " << inp_offset << ", weight_offset: " << w_offset
          << ", bias_offset: " << b_offset << endl;
@@ -15,7 +16,7 @@ void matmul_forward_moe::print_self(string prefix) {
 
 void matmul_forward_moe::initialize() {
     out_size = B * T * OC;
-    p_inp_size = B * T * C;
+    input_size = B * T * C;
     inp_size = B * T * C;
 
     dram_inp_size = (B * T * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
@@ -31,13 +32,13 @@ void matmul_forward_moe::initialize() {
     b_offset = w_offset + C * OC * E_N;
 }
 
-void matmul_forward_moe::parse_json(json j) {
-    B = find_var(j["B"]);
-    T = find_var(j["T"]);
-    C = find_var(j["C"]);
-    OC = find_var(j["OC"]);
-    E_N = find_var(j["E_N"]); // 专家个数
-    K = find_var(j["K"]);     // 选取的专家个数
+void matmul_forward_moe::parseJson(json j) {
+    B = GetDefinedParam(j["B"]);
+    T = GetDefinedParam(j["T"]);
+    C = GetDefinedParam(j["C"]);
+    OC = GetDefinedParam(j["OC"]);
+    E_N = GetDefinedParam(j["E_N"]); // 专家个数
+    K = GetDefinedParam(j["K"]);     // 选取的专家个数
 
     if (j.contains("choose"))
         need_choose = j["choose"].get<bool>();
@@ -52,7 +53,7 @@ void matmul_forward_moe::parse_json(json j) {
     initialize();
 
     if (j.contains("dram_address"))
-        parse_address(j["dram_address"]);
+        parseAddress(j["dram_address"]);
 
     if (inp_offset == -1)
         inp_offset = (out_offset * 1024 - B * T * C) / 1024;
@@ -65,24 +66,24 @@ void matmul_forward_moe::parse_json(json j) {
     cout << "out_offset: " << out_offset << endl;
 
     if (j.contains("sram_address"))
-        parse_sram_label(j["sram_address"]);
+        parseSramLabel(j["sram_address"]);
 }
 
 int matmul_forward_moe::sram_utilization(DATATYPE datatype, int cid) {
     int total_sram = 0;
 
     int p_inp_sram =
-        ceiling_division(B * T * C * data_byte * 8, get_sram_bitwidth(cid));
+        CeilingDivision(B * T * C * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
     int w_sram =
-        ceiling_division(B * T * C * K * data_byte * 8, get_sram_bitwidth(cid));
+        CeilingDivision(B * T * C * K * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
     int b_sram =
-        ceiling_division(OC * K * data_byte * 8, get_sram_bitwidth(cid));
+        CeilingDivision(OC * K * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
 
-    int out_sram = ceiling_division(B * T * OC * K * data_byte * 8,
-                                    get_sram_bitwidth(cid));
+    int out_sram = CeilingDivision(B * T * OC * K * data_byte * 8,
+                                    GetCoreHWConfig(cid).sram_bitwidth);
 
     total_sram += p_inp_sram + w_sram + b_sram + out_sram;
-    total_sram *= get_sram_bitwidth(cid) / 8;
+    total_sram *= GetCoreHWConfig(cid).sram_bitwidth / 8;
 
     return total_sram;
 }
@@ -165,7 +166,7 @@ int matmul_forward_moe::task_core(TaskCoreContext &context) {
         prefix = datapass_label.outdata;
 
     // 读入input数据
-    check_input_data(context, dram_time, inp_global_addr, data_size_input);
+    checkInputData(context, dram_time, inp_global_addr, data_size_input);
     BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
@@ -185,7 +186,7 @@ int matmul_forward_moe::task_core(TaskCoreContext &context) {
                 exp_flag[e] = true;
 
             for (auto &e : *selected_experts) {
-                if (rand_result(50))
+                if (RandResult(50))
                     continue; // 50%概率不重选
 
                 exp_flag[e] = false;
@@ -235,12 +236,12 @@ int matmul_forward_moe::task_core(TaskCoreContext &context) {
                 continue;
 
             auto label_weight = ETERNAL_PREFIX + prefix + "_w_" + to_string(e);
-            check_static_data(context, dram_time,
+            checkStaticData(context, dram_time,
                               weight_global_addr + e * data_size_weight_single,
                               data_size_weight_single, label_weight);
 
             auto label_bias = ETERNAL_PREFIX + prefix + "_b_" + to_string(e);
-            check_static_data(context, dram_time,
+            checkStaticData(context, dram_time,
                               bias_global_addr + e * data_size_bias_single,
                               data_size_bias_single, label_bias);
 
@@ -252,12 +253,12 @@ int matmul_forward_moe::task_core(TaskCoreContext &context) {
                 continue;
 
             auto label_weight = ETERNAL_PREFIX + prefix + "_w_" + to_string(e);
-            check_static_data(context, dram_time,
+            checkStaticData(context, dram_time,
                               weight_global_addr + e * data_size_weight_single,
                               data_size_weight_single, label_weight);
 
             auto label_bias = ETERNAL_PREFIX + prefix + "_b_" + to_string(e);
-            check_static_data(context, dram_time,
+            checkStaticData(context, dram_time,
                               bias_global_addr + e * data_size_bias_single,
                               data_size_bias_single, label_bias);
 
@@ -281,7 +282,7 @@ int matmul_forward_moe::task_core(TaskCoreContext &context) {
         flops = (uint64_t)B * T * C * OC * 2 * K;
 #if PERFORMANCE_MODE == 1
 
-    ExuConfig *exu = get_exu_config(context.cid);
+    ExuConfig *exu = GetCoreHWConfig(context.cid).exu;
     
     uint64_t weight_tile_x = (C + exu->x_dims - 1) / exu->x_dims;   
     uint64_t weight_tile_y = (OC + exu->y_dims - 1) / exu->y_dims;
@@ -299,19 +300,19 @@ int matmul_forward_moe::task_core(TaskCoreContext &context) {
         for (int p = 0; p < data_size_input.size(); p++) {
             if (datapass_label.indata[p].find(DRAM_LABEL) == 0) {
 
-                perf_read_data(context, dram_time, data_size_input[p], datapass_label.indata[p]);
+                prefReadData(context, dram_time, data_size_input[p], datapass_label.indata[p]);
             }
         }
     }
 
     
 
-    write_output_data(context, performance_comp, 0, dram_time, overlap_time,
+    writeOutputData(context, performance_comp, 0, dram_time, overlap_time,
                       data_size_out, out_global_addr);
 
 #else
     // 计算overlap并写回output数据
-    write_output_data(context, flops, 0, dram_time, overlap_time, data_size_out,
+    writeOutputData(context, flops, 0, dram_time, overlap_time, data_size_out,
                       out_global_addr);
 #endif 
     

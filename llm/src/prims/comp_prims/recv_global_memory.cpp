@@ -24,7 +24,7 @@ void Recv_global_memory::deserialize(sc_bv<128> buffer) {
     datatype = DATATYPE(buffer.range(31, 28).to_uint64());
 }
 
-void Recv_global_memory::parse_json(json j) {
+void Recv_global_memory::parseJson(json j) {
     assert(false && "Recv_global_memory is not implemented");
 }
 

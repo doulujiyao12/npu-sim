@@ -8,7 +8,7 @@ void parse_input::print_self(string prefix) {
 
 void parse_input::initialize() {
     out_size = size;
-    p_inp_size = size;
+    input_size = size;
     inp_size = size;
 
     if (datatype == INT8)
@@ -17,16 +17,16 @@ void parse_input::initialize() {
         data_byte = 2;
 }
 
-void parse_input::parse_json(json j) {
-    size = find_var(j["size"]);
+void parse_input::parseJson(json j) {
+    size = GetDefinedParam(j["size"]);
 
     initialize();
 
     if (j.contains("dram_address"))
-        parse_address(j["dram_address"]);
+        parseAddress(j["dram_address"]);
 
     if (j.contains("sram_address"))
-        parse_sram_label(j["sram_address"]);
+        parseSramLabel(j["sram_address"]);
 }
 
 int parse_input::sram_utilization(DATATYPE datatype, int cid) { return 0; }

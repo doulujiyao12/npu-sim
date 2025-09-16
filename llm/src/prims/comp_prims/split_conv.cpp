@@ -8,18 +8,18 @@ void Split_conv::print_self(string prefix) {
     cout << prefix << "<split_conv>\n";
     cout << prefix << "\tslice: " << slice << ", new_H: " << new_H << endl;
     cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size
-         << ", previous_inp_size: " << p_inp_size << endl;
+         << ", previous_inp_size: " << input_size << endl;
     cout << prefix << "\toutput_offset: " << out_offset
          << ", input_offset: " << inp_offset << endl;
 }
 
-void Split_conv::parse_json(json j) {
+void Split_conv::parseJson(json j) {
     if (j.contains("dram_address")) {
-        parse_address(j["dram_address"]);
+        parseAddress(j["dram_address"]);
     }
 
     if (j.contains("sram_address")) {
-        parse_sram_label(j["sram_address"]);
+        parseSramLabel(j["sram_address"]);
     }
 }
 
@@ -29,7 +29,7 @@ void Split_conv::parse_conv(Conv_f *p) {
     S = p->sY, K = p->kY;
 
     inp_size = W * H * C * B;
-    p_inp_size = W * H * C * B;
+    input_size = W * H * C * B;
 
     int oH = (H + 2 * pY - K) / S + 1;
     int pH = oH / slice;

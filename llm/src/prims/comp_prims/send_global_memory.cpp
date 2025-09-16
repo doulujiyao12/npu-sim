@@ -67,7 +67,7 @@ int Send_global_memory::task_core(TaskCoreContext &context) {
     return static_cast<int>(delay.to_seconds() * 1e9);
 }
 
-void Send_global_memory::parse_json(json j) {
+void Send_global_memory::parseJson(json j) {
     // assert(0 && "Not Implemented yet");
 
     enable = 0;
@@ -79,7 +79,7 @@ void Send_global_memory::parse_json(json j) {
     if(j.contains("addr")) {
         auto &addr_field = j["addr"];
         if (addr_field.is_string()) {
-            des_offset = find_var(addr_field.get<string>());
+            des_offset = GetDefinedParam(addr_field.get<string>());
         } else {
             des_offset = addr_field.get<int>();
         }
@@ -125,6 +125,6 @@ int Send_global_memory::sram_utilization(DATATYPE datatype, int cid) {
 //     // // 返回模拟的写延迟（纳秒）
 //     // return static_cast<uint64_t>(delay.to_seconds() * 1e9);
 // }
-// void Send_global_memory::parse_json(json j) {
+// void Send_global_memory::parseJson(json j) {
 //     assert(0 && "Not Implemented yet");
 // }

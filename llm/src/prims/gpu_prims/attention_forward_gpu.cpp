@@ -11,7 +11,7 @@ int Attention_f_gpu::task_core(TaskCoreContext &context) {
         data_byte = 2;
     }
     B = B * gpu_B;
-    T = find_var("T");
+    T = GetDefinedParam("T");
 
     int data_size_input = data_byte * B * T * C;       // QKV input
     int data_size_preatt = data_byte * B * NH * T * T; // preatt
@@ -99,11 +99,15 @@ int Attention_f_gpu::task_core(TaskCoreContext &context) {
     gpu_write_generic(context, out_key.pos, data_size_out, mem_time);
     int cycle = 0;
     int cid = context.cid;
-    ExuConfig *exu = get_exu_config(cid);
-    SfuConfig *sfu = get_sfu_config(cid);
-                  
+
+    CoreHWConfig core_config = GetCoreHWConfig(cid);
+    ExuConfig *exu = core_config.exu;
+    SfuConfig *sfu = core_config.sfu;
+
     if (exu->type == MAC_Array)
-        cycle += B * NH * T * (T - 1) / 2 * (4 * C / NH + 5) / (slice_x * slice_y) / (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+        cycle += B * NH * T * (T - 1) / 2 * (4 * C / NH + 5) /
+                 (slice_x * slice_y) /
+                 (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
     else
         assert(false && "Unsupported tile type");
 
@@ -111,20 +115,24 @@ int Attention_f_gpu::task_core(TaskCoreContext &context) {
         cycle += 0 / (slice_x * slice_y) / sfu->x_dims * CYCLE;
     else
         assert(false && "Unsupported tile type");
-                  
+
 
     if (mem_time > cycle) {
         // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
         overlap_time = 0;
-        LOG_VERBOSE(1, context.cid, "Prim name:" << name << RED << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
+        LOG_VERBOSE(1, context.cid,
+                    "Prim name:" << name << RED << " cycle: " << cycle
+                                 << ", dram_time: " << mem_time << RESET);
 
-        // std::cout << RED << "cycle: " << cycle << ", dram_time: " << dram_time
+        // std::cout << RED << "cycle: " << cycle << ", dram_time: " <<
+        // dram_time
         //           << RESET << std::endl;
 
     } else {
         overlap_time = cycle - mem_time;
-        LOG_VERBOSE(1, context.cid, "Prim name:" << name << GREEN << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
-
+        LOG_VERBOSE(1, context.cid,
+                    "Prim name:" << name << GREEN << " cycle: " << cycle
+                                 << ", dram_time: " << mem_time << RESET);
     }
 #endif
 
@@ -173,11 +181,11 @@ void Attention_f_gpu::print_self(string prefix) {
 
 gpu_base *Attention_f_gpu::clone() { return new Attention_f_gpu(*this); }
 
-void Attention_f_gpu::parse_json(json j) {
-    B = find_var(j["B"]);
-    T = find_var(j["T"]);
-    C = find_var(j["C"]);
-    NH = find_var(j["NH"]);
+void Attention_f_gpu::parseJson(json j) {
+    B = GetDefinedParam(j["B"]);
+    T = GetDefinedParam(j["T"]);
+    C = GetDefinedParam(j["C"]);
+    NH = GetDefinedParam(j["NH"]);
     slice_x = j["slice_x"];
     slice_y = j["slice_y"];
 

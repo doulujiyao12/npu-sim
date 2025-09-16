@@ -17,7 +17,7 @@ public:
     GpuPosLocator *gpu_pos_locator;
 
     int prim_index;               // 正在执行的原语编号
-    vector<prim_base *> prim_list; // 所有需要执行的原语内容（每一个iter刷新）
+    vector<PrimBase *> prim_list; // 所有需要执行的原语内容（每一个iter刷新）
 
     // 模型配置
     int heads;

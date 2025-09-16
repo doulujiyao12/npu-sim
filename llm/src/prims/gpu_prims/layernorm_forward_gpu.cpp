@@ -11,7 +11,7 @@ int Layernorm_f_gpu::task_core(TaskCoreContext &context) {
         data_byte = 2;
     }
     B = B * gpu_B;
-    T = find_var("T");
+    T = GetDefinedParam("T");
 
     int data_size_input = data_byte * B * T * C;
     int data_size_weight = data_byte * C;
@@ -75,37 +75,45 @@ int Layernorm_f_gpu::task_core(TaskCoreContext &context) {
     cout << "out_pos: " << out_key.pos << " out_size: " << out_key.size << "\n";
     cout << "fetch_index: " << fetch_index << endl;
 
-    gpu_write_generic(context, out_key.pos + data_size_out * fetch_index, data_size_out, mem_time);
+    gpu_write_generic(context, out_key.pos + data_size_out * fetch_index,
+                      data_size_out, mem_time);
     cout << "Core " << cid << ": layernorm after write\n";
 
     int cycle = 0;
     int cid = context.cid;
-    ExuConfig *exu = get_exu_config(cid);
-    SfuConfig *sfu = get_sfu_config(cid);
-                  
+
+    CoreHWConfig core_config = GetCoreHWConfig(cid);
+    ExuConfig *exu = core_config.exu;
+    SfuConfig *sfu = core_config.sfu;
+
     if (exu->type == MAC_Array)
         cycle += 0 / (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
     else
         assert(false && "Unsupported tile type");
 
     if (sfu->type == Linear)
-        cycle += B * T * (8 * C + 5) / (slice_x * slice_y) / sfu->x_dims * CYCLE;
+        cycle +=
+            B * T * (8 * C + 5) / (slice_x * slice_y) / sfu->x_dims * CYCLE;
     else
         assert(false && "Unsupported tile type");
-                  
+
 
     if (mem_time > cycle) {
         // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
         overlap_time = 0;
-        LOG_VERBOSE(1, context.cid, "Prim name:" << name << RED << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
+        LOG_VERBOSE(1, context.cid,
+                    "Prim name:" << name << RED << " cycle: " << cycle
+                                 << ", dram_time: " << mem_time << RESET);
 
-        // std::cout << RED << "cycle: " << cycle << ", dram_time: " << dram_time
+        // std::cout << RED << "cycle: " << cycle << ", dram_time: " <<
+        // dram_time
         //           << RESET << std::endl;
 
     } else {
         overlap_time = cycle - mem_time;
-        LOG_VERBOSE(1, context.cid, "Prim name:" << name << GREEN << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
-
+        LOG_VERBOSE(1, context.cid,
+                    "Prim name:" << name << GREEN << " cycle: " << cycle
+                                 << ", dram_time: " << mem_time << RESET);
     }
 #endif
 
@@ -150,10 +158,10 @@ void Layernorm_f_gpu::print_self(string prefix) {
          << endl;
 }
 
-void Layernorm_f_gpu::parse_json(json j) {
-    B = find_var(j["B"]);
-    T = find_var(j["T"]);
-    C = find_var(j["C"]);
+void Layernorm_f_gpu::parseJson(json j) {
+    B = GetDefinedParam(j["B"]);
+    T = GetDefinedParam(j["T"]);
+    C = GetDefinedParam(j["C"]);
     slice_x = j["slice_x"];
     slice_y = j["slice_y"];
 

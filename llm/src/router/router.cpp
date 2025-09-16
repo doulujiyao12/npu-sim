@@ -38,7 +38,7 @@ RouterUnit::RouterUnit(const sc_module_name &n, int rid,
         output_lock_ref[i] = 0;
     }
 
-    if (is_margin_core(rid)) {
+    if (IsMarginCore(rid)) {
         host_buffer_i = new queue<sc_bv<256>>;
         host_buffer_o = new queue<sc_bv<256>>;
         host_channel_i = new sc_in<sc_bv<256>>;
@@ -52,7 +52,7 @@ RouterUnit::RouterUnit(const sc_module_name &n, int rid,
     sensitive << data_sent_i[WEST].pos() << data_sent_i[EAST].pos()
               << data_sent_i[CENTER].pos() << data_sent_i[SOUTH].pos()
               << data_sent_i[NORTH].pos();
-    if (is_margin_core(rid))
+    if (IsMarginCore(rid))
         sensitive << host_data_sent_i->pos();
     sensitive << channel_avail_i[WEST].pos() << channel_avail_i[EAST].pos()
               << channel_avail_i[SOUTH].pos() << channel_avail_i[NORTH].pos();
@@ -71,7 +71,7 @@ void RouterUnit::end_of_elaboration() {
         data_sent_o[i].write(false);
     }
 
-    if (is_margin_core(rid)) {
+    if (IsMarginCore(rid)) {
         host_channel_avail_o->write(true);
         host_data_sent_o->write(false);
     }
@@ -104,7 +104,7 @@ void RouterUnit::router_execute() {
         }
 
         // [input] host
-        // if is_margin_core
+        // if IsMarginCore
         if (host_buffer_i) {
             // host send data to core
             if (host_data_sent_i->read()) {
@@ -151,7 +151,7 @@ void RouterUnit::router_execute() {
         }
 
         // [output] host
-        // if is_margin_core
+        // if IsMarginCore
         if (host_channel_i) {
             host_data_sent_o->write(false);
             // 输出到host方向上的buffer非空
@@ -197,7 +197,7 @@ void RouterUnit::router_execute() {
             sc_bv<256> temp = host_buffer_i->front();
             int d = get_msg_des_id(temp);
             // 先x后y的路由
-            Directions next = get_next_hop(d, rid);
+            Directions next = GetNextHop(d, rid);
 
             if (buffer_o[next].size() < MAX_BUFFER_PACKET_SIZE &&
                 output_lock[next] == -1) {
@@ -214,7 +214,7 @@ void RouterUnit::router_execute() {
             auto req = *it;
             int des = req.des;
             int source = req.source;
-            Directions next = get_next_hop(des, source);
+            Directions next = GetNextHop(des, source);
 
             if (output_lock[next] == -1 || output_lock[next] == req.tag_id) {
                 cout << "[INFO] Router " << rid << ", checking req from "
@@ -238,7 +238,7 @@ void RouterUnit::router_execute() {
 
             sc_bv<256> temp = buffer_i[i].front();
             Msg m = deserialize_msg(temp);
-            Directions out = get_next_hop(m.des, rid);
+            Directions out = GetNextHop(m.des, rid);
 
             // 是否能发送 不能发送的情况是上锁了以后，并且tag一样
             // 注意：REQUEST包若终点为本core，则会优先进入req_buffer；否则按照正常数据流转
@@ -301,7 +301,7 @@ void RouterUnit::router_execute() {
             if (m.msg_type == DATA && m.is_end && m.source != GRID_SIZE &&
                 m.des != GRID_SIZE) {
                 // i 是 data 的进入方向，需要计算 data 的输出方向
-                out = get_next_hop(m.des, rid);
+                out = GetNextHop(m.des, rid);
 
                 output_lock_ref[out]--;
 

@@ -9,9 +9,9 @@ void load_expert::print_self(string prefix) {
 
 void load_expert::initialize() {}
 
-void load_expert::parse_json(json j) {
-    E_N = find_var(j["E_N"]);
-    K = find_var(j["K"]);
+void load_expert::parseJson(json j) {
+    E_N = GetDefinedParam(j["E_N"]);
+    K = GetDefinedParam(j["K"]);
 
     if (j.contains("strategy")) {
         string str_strategy = j["strategy"];
@@ -27,10 +27,10 @@ void load_expert::parse_json(json j) {
         strategy = MOE_LOAD_STRATEGY_NONE;
 
     if (j.contains("dram_address"))
-        parse_address(j["dram_address"]);
+        parseAddress(j["dram_address"]);
 
     if (j.contains("sram_address"))
-        parse_sram_label(j["sram_address"]);
+        parseSramLabel(j["sram_address"]);
 }
 
 int load_expert::sram_utilization(DATATYPE datatype, int cid) {
@@ -107,17 +107,17 @@ int load_expert::task_core(TaskCoreContext &context) {
     prefetched_experts->push_back(exp_1);
 
     // 将单个专家的所有数据load到sram中
-    check_static_data(context, dram_time, dram_addr_tile,
+    checkStaticData(context, dram_time, dram_addr_tile,
                       data_size_weight_single, label_weight_prefix_1 + to_string(exp_1));
-    check_static_data(context, dram_time, dram_addr_tile, data_size_bias_single,
+    checkStaticData(context, dram_time, dram_addr_tile, data_size_bias_single,
                       label_bias_prefix_1 + to_string(exp_1));
-    check_static_data(context, dram_time, dram_addr_tile,
+    checkStaticData(context, dram_time, dram_addr_tile,
                       data_size_weight_single, label_weight_prefix_2 + to_string(exp_1));
-    check_static_data(context, dram_time, dram_addr_tile, data_size_bias_single,
+    checkStaticData(context, dram_time, dram_addr_tile, data_size_bias_single,
                       label_bias_prefix_2 + to_string(exp_1));
-    check_static_data(context, dram_time, dram_addr_tile,
+    checkStaticData(context, dram_time, dram_addr_tile,
                       data_size_weight_single, label_weight_prefix_3 + to_string(exp_1));
-    check_static_data(context, dram_time, dram_addr_tile, data_size_bias_single,
+    checkStaticData(context, dram_time, dram_addr_tile, data_size_bias_single,
                       label_bias_prefix_3 + to_string(exp_1));
 
     cout << "[load_expert] Prefetch expert: " << exp_1 << endl;

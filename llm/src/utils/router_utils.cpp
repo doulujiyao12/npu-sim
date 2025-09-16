@@ -4,22 +4,7 @@
 #include <queue>
 #include <fstream>
 
-Directions get_oppose_direction(Directions dir) {
-    switch (dir) {
-    case WEST:
-        return EAST;
-    case EAST:
-        return WEST;
-    case NORTH:
-        return SOUTH;
-    case SOUTH:
-        return NORTH;
-    default:
-        return CENTER;
-    }
-}
-
-int get_input_source(Directions dir, int pos) {
+int GetInputSource(Directions dir, int pos) {
     int x = pos % GRID_X;
     int y = pos / GRID_X;
 
@@ -43,20 +28,11 @@ int get_input_source(Directions dir, int pos) {
     return y * GRID_X + x;
 }
 
-bool is_margin_core(int id) { return id % GRID_X == 0; }
+bool IsMarginCore(int id) { return id % GRID_X == 0; }
 
-int decide_next_hop(int id) {
-    // 这个函数仅供测试使用
-    // if (id / GRID_X % 2 == 0) return id+GRID_X;
-    // if (id % 32 == 31) return id+1;
-    // return id-GRID_X+1;
-
-    return id + 1;
-}
-
-Directions get_next_hop(int des, int pos) {
+Directions GetNextHop(int des, int pos) {
     // 从pos发往des的下一个方向, 先X后Y
-    if (is_margin_core(pos) && des == GRID_SIZE)
+    if (IsMarginCore(pos) && des == GRID_SIZE)
         return HOST;
     if (des == GRID_SIZE)
         return WEST; // CTODO: fix this
@@ -84,9 +60,9 @@ Directions get_next_hop(int des, int pos) {
     }
 }
 
-Directions get_next_hop_r(int des, int pos) {
+Directions GetNextHopReverse(int des, int pos) {
     // 从pos发往des的下一个方向, 先Y后X
-    if (is_margin_core(pos) && des == GRID_SIZE)
+    if (IsMarginCore(pos) && des == GRID_SIZE)
         return HOST;
     if (des == GRID_SIZE)
         return WEST; // CTODO: fix this
@@ -111,5 +87,20 @@ Directions get_next_hop_r(int des, int pos) {
         } else {
             return WEST;
         }
+    }
+}
+
+Directions GetOpposeDirection(Directions dir) {
+    switch (dir) {
+    case WEST:
+        return EAST;
+    case EAST:
+        return WEST;
+    case NORTH:
+        return SOUTH;
+    case SOUTH:
+        return NORTH;
+    default:
+        return CENTER;
     }
 }

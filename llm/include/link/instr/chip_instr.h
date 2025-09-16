@@ -40,7 +40,7 @@ public:
         instr_type = SEQ_EXEC;
     }
 
-    virtual void parse_json(json j) = 0;
+    virtual void parseJson(json j) = 0;
     virtual int task_core(TaskChipContext &context) = 0;
 
     virtual ~chip_instr_base() = default;

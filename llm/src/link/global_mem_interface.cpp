@@ -151,10 +151,10 @@ void GlobalMemInterface::instr_executor() {
         } else{
             p = global_instrs_queue.front();
             ev_task.notify(CYCLE, SC_NS);
-            event_engine->add_event("Chip " + toHexString(cid), "Comp_prim",
+            event_engine->add_event("Chip " + ToHexString(cid), "Comp_prim",
                                     "B", Trace_event_util(p->name));
             wait(chip_prim_block.negedge_event());
-            event_engine->add_event("Chip " + toHexString(cid), "Comp_prim",
+            event_engine->add_event("Chip " + ToHexString(cid), "Comp_prim",
                                     "E", Trace_event_util(p->name));
                                     
             if(chip_prim_refill){

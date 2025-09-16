@@ -179,14 +179,14 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
     auto config_source = j["source"];
     for (auto source : config_source) {
         if (source.contains("loop")) {
-            int loop_cnt = find_var(source["loop"]);
+            int loop_cnt = GetDefinedParam(source["loop"]);
             for (int i = 0; i < loop_cnt; i++) {
                 source_info.push_back(
-                    make_pair(source["dest"], find_var(source["size"])));
+                    make_pair(source["dest"], GetDefinedParam(source["size"])));
             }
         } else {
             source_info.push_back(
-                make_pair(source["dest"], find_var(source["size"])));
+                make_pair(source["dest"], GetDefinedParam(source["size"])));
         }
     }
 
@@ -294,7 +294,7 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
                     config.id, prim->serialize()));
         }
 
-        prim_base *recv_weight = new Recv_prim(RECV_TYPE::RECV_WEIGHT,
+        PrimBase *recv_weight = new Recv_prim(RECV_TYPE::RECV_WEIGHT,
                                                config.worklist[0].recv_tag, 0);
         q[index].push(Msg(false, MSG_TYPE::CONFIG, 1, config.id,
                           recv_weight->serialize()));
@@ -304,7 +304,7 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
         for (int i = 0; i < batch_size; i++)
             batchInfo.push_back(Stage(i + 1, PREFILL, seq_len));
 
-        prim_base *set_batch = new Set_batch(batchInfo, true);
+        PrimBase *set_batch = new Set_batch(batchInfo, true);
 
         cout << "core " << config.id << ", loop: " << config.loop << endl;
         int seq_cnt = 2;
@@ -369,15 +369,15 @@ void config_helper_core::generate_prims(int i) {
 
         // 然后是comp，直接推c中的对应队列即可
         for (auto prim : work.prims) {
-            prim_base *p = new_prim("Set_addr");
+            PrimBase *p = new_prim("Set_addr");
             auto label = ((Set_addr *)p)->datapass_label;
             // Set_addr 的label 指向其后面的那条原语
             if (prim->prim_type == COMP_PRIM) {
                 for (int i = 0; i < MAX_SPLIT_NUM; i++) {
                     label->indata[i] =
-                        ((comp_base *)prim)->datapass_label.indata[i];
+                        ((CompBase *)prim)->datapass_label.indata[i];
                 }
-                label->outdata = ((comp_base *)prim)->datapass_label.outdata;
+                label->outdata = ((CompBase *)prim)->datapass_label.outdata;
             } else if (prim->prim_type == MOE_PRIM) {
                 for (int i = 0; i < MAX_SPLIT_NUM; i++) {
                     label->indata[i] =
@@ -435,13 +435,13 @@ void config_helper_core::generate_prims(int i) {
 
         for (auto prim : work.prims) {
             // 在Set_addr里面复制一份计算原语的datapass_label
-            prim_base *p = new_prim("Set_addr");
+            PrimBase *p = new_prim("Set_addr");
             auto label = ((Set_addr *)p)->datapass_label;
             for (int i = 0; i < MAX_SPLIT_NUM; i++) {
                 label->indata[i] =
-                    ((comp_base *)prim)->datapass_label.indata[i];
+                    ((CompBase *)prim)->datapass_label.indata[i];
             }
-            label->outdata = ((comp_base *)prim)->datapass_label.outdata;
+            label->outdata = ((CompBase *)prim)->datapass_label.outdata;
 
             // 这里直接推入字符串形式的label，之后会在序列化的时候转化为整形label
             work.prims_last_loop.push_back(p);
@@ -499,14 +499,14 @@ void config_helper_core::calculate_address(bool do_loop) {
         // 初始化
         // id 表示实际的core id
         delta_offset[coreconfigs[i].id] =
-            ((comp_base *)coreconfigs[i].worklist[0].prims[0])->inp_offset;
+            ((CompBase *)coreconfigs[i].worklist[0].prims[0])->inp_offset;
     }
 
     // 自动设置 send 和 receive 的地址
     for (int i = 0; i < coreconfigs.size(); i++) {
         for (auto &work : coreconfigs[i].worklist) {
             // 遍历每一个核中的send原语
-            vector<prim_base *> *v = nullptr;
+            vector<PrimBase *> *v = nullptr;
             if (do_loop)
                 v = &(work.prims_in_loop);
             else
@@ -524,7 +524,7 @@ void config_helper_core::calculate_address(bool do_loop) {
             for (int j = v->size() - 1; j >= 0; j--) {
                 auto p = (*v)[j];
                 if (p->prim_type == COMP_PRIM) {
-                    comp_base *cp = (comp_base *)p;
+                    CompBase *cp = (CompBase *)p;
                     output_size = cp->out_size;
                     // output_offset = cp->out_offset;
                     output_label = cp->datapass_label.outdata;

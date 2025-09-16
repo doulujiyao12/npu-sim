@@ -7,7 +7,7 @@ void gpu_base::parse_compose(json j) {
         if (data_gx.is_number_integer())
             grid_x = data_gx;
         else
-            grid_x = find_var(j["grid_x"]);
+            grid_x = GetDefinedParam(j["grid_x"]);
     }
 
     if (j.contains("grid_y")) {
@@ -15,7 +15,7 @@ void gpu_base::parse_compose(json j) {
         if (data_gy.is_number_integer())
             grid_y = data_gy;
         else
-            grid_y = find_var(j["grid_y"]);
+            grid_y = GetDefinedParam(j["grid_y"]);
     }
 
     if (j.contains("block_x")) {
@@ -23,7 +23,7 @@ void gpu_base::parse_compose(json j) {
         if (data_bx.is_number_integer())
             block_x = data_bx;
         else
-            block_x = find_var(j["block_x"]);
+            block_x = GetDefinedParam(j["block_x"]);
     }
 
     if (j.contains("block_y")) {
@@ -31,14 +31,14 @@ void gpu_base::parse_compose(json j) {
         if (data_by.is_number_integer())
             block_y = data_by;
         else
-            block_y = find_var(j["block_y"]);
+            block_y = GetDefinedParam(j["block_y"]);
     }
 
     auto &data_req_sm = j["require_sm"];
     if (data_req_sm.is_number_integer())
         req_sm = data_req_sm;
     else
-        req_sm = find_var(j["require_sm"]);
+        req_sm = GetDefinedParam(j["require_sm"]);
 }
 
 void gpu_base::parse_addr_label(json j) {

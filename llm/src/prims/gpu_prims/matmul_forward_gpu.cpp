@@ -10,7 +10,7 @@ int Matmul_f_gpu::task_core(TaskCoreContext &context) {
         data_byte = 2;
     }
     B = B * gpu_B;
-    T = find_var("T");
+    T = GetDefinedParam("T");
 
     int data_size_input = B * T * C * data_byte;
     int data_size_weight = OC * C * data_byte;
@@ -49,117 +49,135 @@ int Matmul_f_gpu::task_core(TaskCoreContext &context) {
 
     int overlap_time = 0;
 #if USE_L1L2_CACHE == 1
-if (gpu_inner == true){
-    // 通过fetch_index计算位置
-    int row_index = fetch_index / slice_x;
-    int col_index = fetch_index % slice_x;
+    if (gpu_inner == true) {
+        // 通过fetch_index计算位置
+        int row_index = fetch_index / slice_x;
+        int col_index = fetch_index % slice_x;
 
-    // input 读入
-    gpu_read_generic(context,
-                     input_mem_offset + data_size_input / slice_y * row_index,
-                     data_size_input / slice_y, mem_time);
+        // input 读入
+        gpu_read_generic(
+            context, input_mem_offset + data_size_input / slice_y * row_index,
+            data_size_input / slice_y, mem_time);
 
-    // weight 读入
-    gpu_read_generic(context, w_key.pos + w_key.size / slice_x * col_index,
-                     data_size_weight / slice_x, mem_time);
+        // weight 读入
+        gpu_read_generic(context, w_key.pos + w_key.size / slice_x * col_index,
+                         data_size_weight / slice_x, mem_time);
 
-    // bias 读入
-    gpu_read_generic(context, b_key.pos + b_key.size / slice_x * col_index,
-                     data_size_bias / slice_x, mem_time);
+        // bias 读入
+        gpu_read_generic(context, b_key.pos + b_key.size / slice_x * col_index,
+                         data_size_bias / slice_x, mem_time);
 
-    // TODO: 模拟计算cycle数
-    // overlap_time = mem_time;
-    AddrPosKey out_key;
-    gpu_pos_locator->updatePair(datapass_label.outdata, data_size_out * (slice_x * slice_y));
-    gpu_pos_locator->findPair(datapass_label.outdata, out_key);
-    cout << cid << " [Matmul_f_gpu] before write: " << mem_time << " at addr "
-         << out_key.pos << endl;
-    gpu_write_generic(context, out_key.pos + data_size_out * fetch_index,
-                      data_size_out, mem_time);
+        // TODO: 模拟计算cycle数
+        // overlap_time = mem_time;
+        AddrPosKey out_key;
+        gpu_pos_locator->updatePair(datapass_label.outdata,
+                                    data_size_out * (slice_x * slice_y));
+        gpu_pos_locator->findPair(datapass_label.outdata, out_key);
+        cout << cid << " [Matmul_f_gpu] before write: " << mem_time
+             << " at addr " << out_key.pos << endl;
+        gpu_write_generic(context, out_key.pos + data_size_out * fetch_index,
+                          data_size_out, mem_time);
 
-    int cycle = 0;
-    int cid = context.cid;
-    ExuConfig *exu = get_exu_config(cid);
-    SfuConfig *sfu = get_sfu_config(cid);
-                  
-    if (exu->type == MAC_Array)
-        cycle += (B * T * C * OC * 2 / (slice_x * slice_y)) / (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
-    else
-        assert(false && "Unsupported tile type");
+        int cycle = 0;
+        int cid = context.cid;
 
-    if (sfu->type == Linear)
-        cycle += 0 / sfu->x_dims * CYCLE;
-    else
-        assert(false && "Unsupported tile type");
-                  
+        CoreHWConfig core_config = GetCoreHWConfig(cid);
+        ExuConfig *exu = core_config.exu;
+        SfuConfig *sfu = core_config.sfu;
 
-    if (mem_time > cycle) {
-        // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
-        overlap_time = 0;
-        LOG_VERBOSE(1, context.cid, "Prim name:" << name << RED << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
+        if (exu->type == MAC_Array)
+            cycle += (B * T * C * OC * 2 / (slice_x * slice_y)) /
+                     (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+        else
+            assert(false && "Unsupported tile type");
 
-        // std::cout << RED << "cycle: " << cycle << ", dram_time: " << dram_time
-        //           << RESET << std::endl;
+        if (sfu->type == Linear)
+            cycle += 0 / sfu->x_dims * CYCLE;
+        else
+            assert(false && "Unsupported tile type");
 
+
+        if (mem_time > cycle) {
+            // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
+            overlap_time = 0;
+            LOG_VERBOSE(1, context.cid,
+                        "Prim name:" << name << RED << " cycle: " << cycle
+                                     << ", dram_time: " << mem_time << RESET);
+
+            // std::cout << RED << "cycle: " << cycle << ", dram_time: " <<
+            // dram_time
+            //           << RESET << std::endl;
+
+        } else {
+            overlap_time = cycle - mem_time;
+            LOG_VERBOSE(1, context.cid,
+                        "Prim name:" << name << GREEN << " cycle: " << cycle
+                                     << ", dram_time: " << mem_time << RESET);
+        }
     } else {
-        overlap_time = cycle - mem_time;
-        LOG_VERBOSE(1, context.cid, "Prim name:" << name << GREEN << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
 
-    }
-    }else{
-    
-    int slice_total = slice_x * slice_y;
-    // input 读入
-    gpu_read_generic(context,
-        input_mem_offset + data_size_input / slice_total * fetch_index,
-        data_size_input / slice_total, mem_time);
+        int slice_total = slice_x * slice_y;
+        // input 读入
+        gpu_read_generic(context,
+                         input_mem_offset +
+                             data_size_input / slice_total * fetch_index,
+                         data_size_input / slice_total, mem_time);
 
-    // weight 读入
-    gpu_read_generic(context, w_key.pos + w_key.size / slice_total * fetch_index,
-            data_size_weight / slice_total, mem_time);
+        // weight 读入
+        gpu_read_generic(context,
+                         w_key.pos + w_key.size / slice_total * fetch_index,
+                         data_size_weight / slice_total, mem_time);
 
-    // bias 读入
-    gpu_read_generic(context, b_key.pos + b_key.size / slice_total * fetch_index,
-            data_size_bias / slice_total, mem_time);
+        // bias 读入
+        gpu_read_generic(context,
+                         b_key.pos + b_key.size / slice_total * fetch_index,
+                         data_size_bias / slice_total, mem_time);
 
-    AddrPosKey out_key;
-    gpu_pos_locator->updatePair(datapass_label.outdata, data_size_out * slice_total);
-    gpu_pos_locator->findPair(datapass_label.outdata, out_key);
-    cout << cid << " [Matmul_f_gpu] before write: " << mem_time << " at addr "
-            << out_key.pos << endl;
-    gpu_write_generic(context, out_key.pos,
-                        data_size_out * slice_total, mem_time);
+        AddrPosKey out_key;
+        gpu_pos_locator->updatePair(datapass_label.outdata,
+                                    data_size_out * slice_total);
+        gpu_pos_locator->findPair(datapass_label.outdata, out_key);
+        cout << cid << " [Matmul_f_gpu] before write: " << mem_time
+             << " at addr " << out_key.pos << endl;
+        gpu_write_generic(context, out_key.pos, data_size_out * slice_total,
+                          mem_time);
 
-    int cycle = 0;
-    int cid = context.cid;
-    ExuConfig *exu = get_exu_config(cid);
-    SfuConfig *sfu = get_sfu_config(cid);
-                    
-    if (exu->type == MAC_Array)
-        cycle += (B * T * C * OC * 2 / (slice_x * slice_y)) / (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
-    else
-        assert(false && "Unsupported tile type");
+        int cycle = 0;
+        int cid = context.cid;
 
-    if (sfu->type == Linear)
-        cycle += 0 / sfu->x_dims * CYCLE;
-    else
-        assert(false && "Unsupported tile type");
-                    
+        CoreHWConfig core_config = GetCoreHWConfig(cid);
+        ExuConfig *exu = core_config.exu;
+        SfuConfig *sfu = core_config.sfu;
 
-    if (mem_time > cycle) {
-        // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
-        overlap_time = 0;
-        LOG_VERBOSE(1, context.cid, "Prim name:" << name << RED << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
+        if (exu->type == MAC_Array)
+            cycle += (B * T * C * OC * 2 / (slice_x * slice_y)) /
+                     (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+        else
+            assert(false && "Unsupported tile type");
 
-        // std::cout << RED << "cycle: " << cycle << ", dram_time: " << dram_time
-        //           << RESET << std::endl;
+        if (sfu->type == Linear)
+            cycle += 0 / sfu->x_dims * CYCLE;
+        else
+            assert(false && "Unsupported tile type");
 
-    } else {
-        overlap_time = cycle - mem_time;
-        LOG_VERBOSE(1, context.cid, "Prim name:" << name << GREEN << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
 
-    }
+        if (mem_time > cycle) {
+            // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
+            overlap_time = 0;
+            LOG_VERBOSE(1, context.cid,
+                        "Prim name:" << name << RED << " cycle: " << cycle
+                                     << ", dram_time: " << mem_time << RESET);
 
+            // std::cout << RED << "cycle: " << cycle << ", dram_time: " <<
+            // dram_time
+            //           << RESET << std::endl;
+
+        } else {
+            overlap_time = cycle - mem_time;
+            LOG_VERBOSE(1, context.cid,
+                        "Prim name:" << name << GREEN << " cycle: " << cycle
+                                     << ", dram_time: " << mem_time << RESET);
+        }
     }
 #endif
 
@@ -211,11 +229,11 @@ void Matmul_f_gpu::print_self(string prefix) {
 
 gpu_base *Matmul_f_gpu::clone() { return new Matmul_f_gpu(*this); }
 
-void Matmul_f_gpu::parse_json(json j) {
-    B = find_var(j["B"]);
-    T = find_var(j["T"]);
-    C = find_var(j["C"]);
-    OC = find_var(j["OC"]);
+void Matmul_f_gpu::parseJson(json j) {
+    B = GetDefinedParam(j["B"]);
+    T = GetDefinedParam(j["T"]);
+    C = GetDefinedParam(j["C"]);
+    OC = GetDefinedParam(j["OC"]);
     slice_x = j["slice_x"];
     slice_y = j["slice_y"];
 

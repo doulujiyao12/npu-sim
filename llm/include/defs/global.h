@@ -15,10 +15,10 @@
 using namespace std;
 
 // 全局的原语数组
-class prim_base;
+class PrimBase;
 class chip_instr_base;
-extern vector<prim_base *> global_prim_stash;
-extern vector<chip_instr_base *> global_chip_prim_stash;
+extern vector<PrimBase *> g_prim_stash;
+extern vector<chip_instr_base *> g_chip_prim_stash;
 
 extern int MAX_SRAM_SIZE;
 extern int CORE_COMM_PAYLOAD;
@@ -47,7 +47,6 @@ extern int GRID_X;
 extern int GRID_Y;
 extern int GRID_SIZE;
 extern int CORE_PER_SM;
-// extern int BOARD_W;
 
 // 模拟模式（数据流/gpu/pd serving）
 extern SIM_MODE SYSTEM_MODE;
@@ -55,18 +54,13 @@ extern SIM_MODE SYSTEM_MODE;
 // 模拟dram数组
 #if DUMMY == 1
 extern uint32_t *dram_array;
-#else
-// used for DRAM on cores
-// uint32_t *dram_array[GRID_SIZE];
 #endif
 
 // dcache相关
 #if DCACHE == 1
-// u_int16_t * dcache_freq;
 extern std::unordered_map<u_int64_t, u_int16_t> dcache_freq_v2;
 
 extern std::unordered_set<uint64_t> *dcache_dirty;
-// extern bool **dcache_dirty;
 extern uint64_t **dcache_tags;
 extern uint32_t *dcache_occupancy;
 extern uint32_t *dcache_last_evicted;
@@ -88,37 +82,20 @@ extern bool gpu_clog;
 extern int gpu_bw;
 extern int gpu_B;
 extern string g_config_file;
-extern int dram_bw;
+extern int g_default_dram_bw;
 extern bool beha_dram;
 extern float beha_dram_util;
-// extern int DRAM_BURST_BYTE;
-// extern int L1CACHELINESIZE;
-// extern int L2CACHELINESIZE;
+
 #define RESET "\x1B[0m"  // 重置颜色
 #define RED "\x1B[1;31m"   // 红色
 #define GREEN "\x1B[1;32m" // 绿色
 
 class ExuConfig;
 class SfuConfig;
-extern vector<pair<int, ExuConfig *>> tile_exu;
-extern vector<pair<int, SfuConfig *>> tile_sfu;
-extern vector<pair<int, int>> mem_sram_bw;
-extern vector<pair<int, string>> mem_dram_config_str;
-extern vector<pair<int, int>> mem_dram_bw;
-
+class CoreHWConfig;
+extern vector<pair<int, CoreHWConfig>> g_core_hw_config;
 
 extern int verbose_level;
-
-// #define LOG_VERBOSE(level, core_id, message) \
-//     do { \
-//         if (verbose_level >= (level)) { \
-//             std::ostringstream __log_stream; \
-//             __log_stream << "[INFO] Core " << (core_id) << " " << message; \
-//             std::cout << __log_stream.str() << std::endl; \
-//         } \
-//     } while (0)
-
-// utils/logging.cpp 或 memory_utils.cpp 中添加
 
 const char* get_core_color(int core_id);
 void close_log_files();

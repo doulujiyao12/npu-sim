@@ -438,12 +438,12 @@ void config_helper_pd::generate_prims(int i) {
     int prim_seq = 0;
     string output_label = "";
 
-    prim_base *recv_data_1 = new Recv_prim(work.recv_cnt ? RECV_TYPE::RECV_START
+    PrimBase *recv_data_1 = new Recv_prim(work.recv_cnt ? RECV_TYPE::RECV_START
                                                          : RECV_TYPE::RECV_DATA,
                                            work.recv_tag, work.recv_cnt);
     temp_config.push_back(
         Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, recv_data_1->serialize()));
-    prim_base *set_batch = new Set_batch(status.batchInfo);
+    PrimBase *set_batch = new Set_batch(status.batchInfo);
     temp_config.push_back(
         Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, set_batch->serialize()));
 
@@ -451,7 +451,7 @@ void config_helper_pd::generate_prims(int i) {
         for (int loop = 0; loop < core.loop; loop++) {
             for (int p = 0; p < work.prims.size(); p++) {
                 auto prim = work.prims[p];
-                prim_base *set_addr = new_prim("Set_addr");
+                PrimBase *set_addr = new_prim("Set_addr");
                 auto label = ((Set_addr *)set_addr)->datapass_label;
 
                 for (int i = 0; i < MAX_SPLIT_NUM; i++) {
@@ -460,14 +460,14 @@ void config_helper_pd::generate_prims(int i) {
                             ((pd_base *)prim)->datapass_label.indata[i];
                     } else if (prim->prim_type == COMP_PRIM) {
                         label->indata[i] =
-                            ((comp_base *)prim)->datapass_label.indata[i];
+                            ((CompBase *)prim)->datapass_label.indata[i];
                     }
                 }
                 if (prim->prim_type == PD_PRIM) {
                     label->outdata = ((pd_base *)prim)->datapass_label.outdata;
                 } else if (prim->prim_type == COMP_PRIM) {
                     label->outdata =
-                        ((comp_base *)prim)->datapass_label.outdata;
+                        ((CompBase *)prim)->datapass_label.outdata;
                 }
 
                 temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
@@ -487,11 +487,11 @@ void config_helper_pd::generate_prims(int i) {
         send_dest -= model_stage;
     int send_tag = send_dest;
 
-    prim_base *recv_data_2 =
+    PrimBase *recv_data_2 =
         new Recv_prim(RECV_TYPE::RECV_DATA, work.recv_tag, 1);
-    prim_base *send_req =
+    PrimBase *send_req =
         new Send_prim(SEND_TYPE::SEND_REQ, send_dest, send_tag);
-    prim_base *recv_ack = new Recv_prim(RECV_TYPE::RECV_ACK);
+    PrimBase *recv_ack = new Recv_prim(RECV_TYPE::RECV_ACK);
     Send_prim *send_data =
         new Send_prim(SEND_TYPE::SEND_DATA, send_dest, send_tag);
     send_data->output_label = output_label;
@@ -531,7 +531,7 @@ void config_helper_pd::generate_prims(int i) {
     }
 
     // 每一个核都需要向memInterface发送DONE信号
-    prim_base *send_done = new Send_prim(SEND_TYPE::SEND_DONE);
+    PrimBase *send_done = new Send_prim(SEND_TYPE::SEND_DONE);
     Msg m = Msg(true, MSG_TYPE::CONFIG, ++prim_seq, i, send_done->serialize());
     m.refill = false;
     temp_config.push_back(m);

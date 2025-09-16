@@ -97,8 +97,8 @@ public:
         ev_send_last_packet; // send和recv并行，只有在comp执行完毕之后，send才能发送最后一个数据包。
 
     bool comp_done;                     // 并行策略：comp和send并行
-    deque<prim_base *> prim_queue;      // 用于存储所有需要依次执行的原语
-    queue<prim_base *> send_para_queue; // 并行策略：send和recv并行
+    deque<PrimBase *> prim_queue;      // 用于存储所有需要依次执行的原语
+    queue<PrimBase *> send_para_queue; // 并行策略：send和recv并行
 
     /* ----------------Config----------------------- */
     HardwareTaskConfig *systolic_config;
@@ -213,7 +213,7 @@ public:
 
     bool atomic_helper_lock(sc_time try_time, int status, bool force = false);
 
-    prim_base *parse_prim(sc_bv<128> buffer);
+    PrimBase *parse_prim(sc_bv<128> buffer);
 
     void end_of_elaboration();
 };

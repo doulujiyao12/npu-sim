@@ -109,7 +109,7 @@ Configuration from_path(std::string_view path, std::string_view resourceDirector
         if (event == parse_event_t::value && current_sub_config != SubConfig::Unkown)
         {
             // Replace name of json file with actual json data
-            auto parse_json = [&parser_callback,
+            auto parseJson = [&parser_callback,
                                resourceDirectory](std::string_view base_dir,
                                                   std::string_view sub_config_key,
                                                   const std::string& filename) -> json_t
@@ -129,15 +129,15 @@ Configuration from_path(std::string_view path, std::string_view resourceDirector
             };
 
             if (current_sub_config == SubConfig::MemSpec)
-                parsed = parse_json(MemSpec::SUB_DIR, MemSpec::KEY, parsed);
+                parsed = parseJson(MemSpec::SUB_DIR, MemSpec::KEY, parsed);
             else if (current_sub_config == SubConfig::AddressMapping)
-                parsed = parse_json(AddressMapping::SUB_DIR, AddressMapping::KEY, parsed);
+                parsed = parseJson(AddressMapping::SUB_DIR, AddressMapping::KEY, parsed);
             else if (current_sub_config == SubConfig::McConfig)
-                parsed = parse_json(McConfig::SUB_DIR, McConfig::KEY, parsed);
+                parsed = parseJson(McConfig::SUB_DIR, McConfig::KEY, parsed);
             else if (current_sub_config == SubConfig::SimConfig)
-                parsed = parse_json(SimConfig::SUB_DIR, SimConfig::KEY, parsed);
+                parsed = parseJson(SimConfig::SUB_DIR, SimConfig::KEY, parsed);
             else if (current_sub_config == SubConfig::TraceSetup)
-                parsed = parse_json(TraceSetupConstants::SUB_DIR, TraceSetupConstants::KEY, parsed);
+                parsed = parseJson(TraceSetupConstants::SUB_DIR, TraceSetupConstants::KEY, parsed);
         }
 
         return true;

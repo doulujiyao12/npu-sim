@@ -16,7 +16,7 @@ void Conv_f::print_self(string prefix) {
     cout << prefix << "\toW: " << oW << ", oH: " << oH << ", oC: " << oC
          << endl;
     cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size
-         << ", previous_inp_size: " << p_inp_size << endl;
+         << ", previous_inp_size: " << input_size << endl;
     cout << prefix << "\toutput_offset: " << out_offset
          << ", input_offset: " << inp_offset << endl;
 }
@@ -27,7 +27,7 @@ void Conv_f::initialize() {
     oC = F;
 
     out_size = B * oC * oH * oW;
-    p_inp_size = B * C * H * W;
+    input_size = B * C * H * W;
     inp_size = B * C * H * W + F * C * kX * kY + F;
 
     if (datatype == INT8)
@@ -36,18 +36,18 @@ void Conv_f::initialize() {
         data_byte = 2;
 }
 
-void Conv_f::parse_json(json j) {
-    B = find_var(j["B"]);
-    W = find_var(j["W"]);
-    H = find_var(j["H"]);
-    C = find_var(j["C"]);
-    pX = find_var(j["pX"]);
-    pY = find_var(j["pY"]);
-    sX = find_var(j["sX"]);
-    sY = find_var(j["sY"]);
-    kX = find_var(j["kX"]);
-    kY = find_var(j["kY"]);
-    F = find_var(j["F"]);
+void Conv_f::parseJson(json j) {
+    B = GetDefinedParam(j["B"]);
+    W = GetDefinedParam(j["W"]);
+    H = GetDefinedParam(j["H"]);
+    C = GetDefinedParam(j["C"]);
+    pX = GetDefinedParam(j["pX"]);
+    pY = GetDefinedParam(j["pY"]);
+    sX = GetDefinedParam(j["sX"]);
+    sY = GetDefinedParam(j["sY"]);
+    kX = GetDefinedParam(j["kX"]);
+    kY = GetDefinedParam(j["kY"]);
+    F = GetDefinedParam(j["F"]);
     std::cout << "Variables_p:" << std::endl;
     std::cout << "B (Batch size): " << B << std::endl;
     std::cout << "C (Input Channels): " << C << std::endl;
@@ -60,24 +60,24 @@ void Conv_f::parse_json(json j) {
     initialize();
 
     if (j.contains("dram_address"))
-        parse_address(j["dram_address"]);
+        parseAddress(j["dram_address"]);
 
     if (j.contains("sram_address"))
-        parse_sram_label(j["sram_address"]);
+        parseSramLabel(j["sram_address"]);
 }
 int Conv_f::sram_utilization(DATATYPE datatype, int cid) {
     int total_sram = 0;
 
     int p_inp_sram_byte = B * C * H * W * data_byte * 8;
-    int p_inp_sram = ceiling_division(p_inp_sram_byte, get_sram_bitwidth(cid));
-    int w1_inps_sram = ceiling_division(F * C * kX * kY * data_byte * 8,
-                                        get_sram_bitwidth(cid));
-    int b_sram = ceiling_division(F * data_byte * 8, get_sram_bitwidth(cid));
+    int p_inp_sram = CeilingDivision(p_inp_sram_byte, GetCoreHWConfig(cid).sram_bitwidth);
+    int w1_inps_sram = CeilingDivision(F * C * kX * kY * data_byte * 8,
+                                        GetCoreHWConfig(cid).sram_bitwidth);
+    int b_sram = CeilingDivision(F * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
     int out_sram =
-        ceiling_division(out_size * data_byte * 8, get_sram_bitwidth(cid));
+        CeilingDivision(out_size * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
 
 
-    total_sram = (p_inp_sram + w1_inps_sram + b_sram + out_sram) * get_sram_bitwidth(cid) / 8;
+    total_sram = (p_inp_sram + w1_inps_sram + b_sram + out_sram) * GetCoreHWConfig(cid).sram_bitwidth / 8;
 
     // std::cout << "Variables1:" << std::endl;
     // std::cout << "B (Batch size): " << B << std::endl;
@@ -192,16 +192,16 @@ int Conv_f::task_core(TaskCoreContext &context) {
         prefix = datapass_label.outdata;
 
     // 读入input数据
-    check_input_data(context, dram_time, inp_global_addr, data_size_input);
+    checkInputData(context, dram_time, inp_global_addr, data_size_input);
     BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
     auto label_weight = ETERNAL_PREFIX + prefix + "_w";
-    check_static_data(context, dram_time, weight_global_addr, data_size_weight,
+    checkStaticData(context, dram_time, weight_global_addr, data_size_weight,
                       label_weight);
 
     auto label_bias = ETERNAL_PREFIX + prefix + "_b";
-    check_static_data(context, dram_time, bias_global_addr, data_size_bias,
+    checkStaticData(context, dram_time, bias_global_addr, data_size_bias,
                       label_bias);
 
     BETTER_PRINT(dram_time);
@@ -215,7 +215,7 @@ int Conv_f::task_core(TaskCoreContext &context) {
     assert(false && "Unsupported USE_SRAM == 0");
 #endif
 
-    write_output_data(context, B * C * oC * oH * oW * kX * kY * 2, 0, dram_time,
+    writeOutputData(context, B * C * oC * oH * oW * kX * kY * 2, 0, dram_time,
                       overlap_time, data_size_out, out_global_addr);
     BETTER_PRINT(overlap_time);
 

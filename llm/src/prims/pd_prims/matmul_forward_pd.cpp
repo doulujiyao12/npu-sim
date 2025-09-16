@@ -2,6 +2,8 @@
 #include "prims/pd_prims.h"
 #include "utils/memory_utils.h"
 #include "utils/system_utils.h"
+#include "utils/print_utils.h"
+#include "utils/print_utils.h"
 
 int matmul_forward_pd::task() { return 0; }
 
@@ -58,7 +60,7 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
         prefix = datapass_label.outdata;
 
     // 读入input数据
-    check_input_data(context, dram_time, inp_global_addr, data_size_input);
+    checkInputData(context, dram_time, inp_global_addr, data_size_input);
     BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
@@ -69,11 +71,11 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
 
 #endif
     auto label_weight = ETERNAL_PREFIX + prefix + "_w";
-    check_static_data(context, dram_time, weight_global_addr, data_size_weight,
+    checkStaticData(context, dram_time, weight_global_addr, data_size_weight,
                       label_weight);
 
     auto label_bias = ETERNAL_PREFIX + prefix + "_b";
-    check_static_data(context, dram_time, bias_global_addr, data_size_bias,
+    checkStaticData(context, dram_time, bias_global_addr, data_size_bias,
                       label_bias);
     BETTER_PRINT(dram_time);
 
@@ -133,7 +135,7 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
     // 决定是否终止（需要放在别的原语中）
     decode_done->clear();
     for (auto stage : batchInfo) {
-        if (stage.type == DECODE && rand_result(2))
+        if (stage.type == DECODE && RandResult(2))
             decode_done->push_back(true);
         else
             decode_done->push_back(false);
@@ -149,7 +151,7 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
 
 #if PERFORMANCE_MODE == 1
 
-    ExuConfig *exu = get_exu_config(context.cid);
+    ExuConfig *exu = GetCoreHWConfig(context.cid).exu;
 
     uint64_t weight_tile_x = (C + exu->x_dims - 1) / exu->x_dims;
     uint64_t weight_tile_y = (OC + exu->y_dims - 1) / exu->y_dims;
@@ -172,20 +174,20 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
         for (int p = 0; p < data_size_input.size(); p++) {
             if (datapass_label.indata[p].find(DRAM_LABEL) == 0) {
 
-                perf_read_data(context, dram_time, data_size_input[p],
+                prefReadData(context, dram_time, data_size_input[p],
                                datapass_label.indata[p]);
             }
         }
     }
 
 
-    write_output_data(context, performance_comp, 0, dram_time, overlap_time,
+    writeOutputData(context, performance_comp, 0, dram_time, overlap_time,
                       data_size_out / 3, out_global_addr);
 
 #else
     // // 计算overlap并写回output数据
     // // cout << "matmul output data size: " << data_size_out << endl;
-    // write_output_data(context, B * T * C * OC * 2, 0, dram_time,
+    // writeOutputData(context, B * T * C * OC * 2, 0, dram_time,
     // overlap_time,
     //                   data_size_out / 3, out_global_addr);
     cout << "B: " << B << " T: " << T << " C: " << C << " OC: " << OC << endl;
@@ -194,11 +196,11 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
 
     case JOB_PREFILL:
     case JOB_DECODE:
-        write_output_data(context, (uint64_t)B * T * C * OC * 2, 0, dram_time,
+        writeOutputData(context, (uint64_t)B * T * C * OC * 2, 0, dram_time,
                           overlap_time, data_size_out / 3, out_global_addr);
         break;
     case JOB_BOTH:
-        write_output_data(context, (uint64_t)B * T * C * OC * 2, 0, dram_time,
+        writeOutputData(context, (uint64_t)B * T * C * OC * 2, 0, dram_time,
                           overlap_time, data_size_out / 3, out_global_addr);
         break;
     default:
@@ -210,7 +212,7 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
 
 
     // // 计算overlap并写回output数据
-    // write_output_data(context, B * T * C * OC * 2, 0, dram_time,
+    // writeOutputData(context, B * T * C * OC * 2, 0, dram_time,
     // overlap_time,
     //                   data_size_out, out_global_addr);
     BETTER_PRINT(overlap_time);
@@ -226,7 +228,7 @@ void matmul_forward_pd::print_self(string prefix) {
 
 void matmul_forward_pd::initialize() {
     out_size = B * T * OC;
-    p_inp_size = B * T * C;
+    input_size = B * T * C;
     inp_size = B * T * C + OC * C + OC;
 
     if (datatype == INT8)
@@ -238,14 +240,14 @@ void matmul_forward_pd::initialize() {
     b_offset = OC * C + w_offset;
 }
 
-void matmul_forward_pd::parse_json(json j) {
-    B = find_var(j["B"]);
-    T = find_var(j["T"]);
-    C = find_var(j["C"]);
-    OC = find_var(j["OC"]);
+void matmul_forward_pd::parseJson(json j) {
+    B = GetDefinedParam(j["B"]);
+    T = GetDefinedParam(j["T"]);
+    C = GetDefinedParam(j["C"]);
+    OC = GetDefinedParam(j["OC"]);
 
     if (j.contains("chunk"))
-        chunk = find_var(j["chunk"]);
+        chunk = GetDefinedParam(j["chunk"]);
     else
         chunk = 1;
 
@@ -262,25 +264,25 @@ void matmul_forward_pd::parse_json(json j) {
     initialize();
 
     if (j.contains("dram_address"))
-        parse_address(j["dram_address"]);
+        parseAddress(j["dram_address"]);
 
     if (j.contains("sram_address"))
-        parse_sram_label(j["sram_address"]);
+        parseSramLabel(j["sram_address"]);
 }
 
 int matmul_forward_pd::sram_utilization(DATATYPE datatype, int cid) {
     int total_sram = 0;
 
     int p_inp_sram =
-        ceiling_division(B * T * C * data_byte * 8, get_sram_bitwidth(cid));
+        CeilingDivision(B * T * C * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
     int w1_inps_sram =
-        ceiling_division(OC * C * data_byte * 8, get_sram_bitwidth(cid));
-    int b_sram = ceiling_division(OC * data_byte * 8, get_sram_bitwidth(cid));
+        CeilingDivision(OC * C * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
+    int b_sram = CeilingDivision(OC * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
     int out_sram =
-        ceiling_division(out_size * data_byte * 8, get_sram_bitwidth(cid));
+        CeilingDivision(out_size * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
 
     total_sram = p_inp_sram + w1_inps_sram + b_sram + out_sram;
-    total_sram *= get_sram_bitwidth(cid) / 8;
+    total_sram *= GetCoreHWConfig(cid).sram_bitwidth / 8;
     return total_sram;
 }
 

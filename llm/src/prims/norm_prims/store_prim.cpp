@@ -5,7 +5,7 @@
 
 void Store_prim::print_self(string prefix) {}
 
-void Store_prim::parse_json(json j, vector<pair<string, int>> vtable) {}
+void Store_prim::parseJson(json j, vector<pair<string, int>> vtable) {}
 
 void Store_prim::deserialize(sc_bv<128> buffer) {
     dram_addr = buffer.range(23, 8).to_uint64();

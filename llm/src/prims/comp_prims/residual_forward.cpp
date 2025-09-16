@@ -10,7 +10,7 @@ void Residual_f::print_self(string prefix) {
     cout << prefix << "<residual_forward>\n";
     cout << prefix << "\tN: " << N << endl;
     cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size
-         << ", previous_inp_size: " << p_inp_size << endl;
+         << ", previous_inp_size: " << input_size << endl;
     cout << prefix << "\toutput_offset: " << out_offset
          << ", input_offset: " << inp_offset
          << ", input2_offset: " << inp2_offset << endl;
@@ -18,7 +18,7 @@ void Residual_f::print_self(string prefix) {
 
 void Residual_f::initialize() {
     out_size = N;
-    p_inp_size = 2 * N;
+    input_size = 2 * N;
     inp_size = 2 * N;
 
     dram_inp_size = (2 * N + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
@@ -34,13 +34,13 @@ void Residual_f::initialize() {
 }
 
 
-void Residual_f::parse_json(json j) {
-    N = find_var(j["N"]);
+void Residual_f::parseJson(json j) {
+    N = GetDefinedParam(j["N"]);
 
     initialize();
 
     if (j.contains("dram_address"))
-        parse_address(j["dram_address"]);
+        parseAddress(j["dram_address"]);
 
     if (inp_offset == -1)
         inp_offset = (out_offset * 1024 - 2 * N) / 1024;
@@ -55,18 +55,18 @@ void Residual_f::parse_json(json j) {
 
 
     if (j.contains("sram_address"))
-        parse_sram_label(j["sram_address"]);
+        parseSramLabel(j["sram_address"]);
 }
 
 int Residual_f::sram_utilization(DATATYPE datatype, int cid) {
     int total_sram = 0;
 
     int inp_sram =
-        ceiling_division(2 * N * data_byte * 8, get_sram_bitwidth(cid));
-    int out_sram = ceiling_division(N * data_byte * 8, get_sram_bitwidth(cid));
+        CeilingDivision(2 * N * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
+    int out_sram = CeilingDivision(N * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
 
     total_sram = inp_sram + out_sram;
-    total_sram *= get_sram_bitwidth(cid) / 8;
+    total_sram *= GetCoreHWConfig(cid).sram_bitwidth / 8;
 
     return total_sram;
 }
@@ -137,7 +137,7 @@ int Residual_f::task_core(TaskCoreContext &context) {
         data_size_input.push_back(data_size_single_input);
 
     // 读入input数据
-    check_input_data(context, dram_time, inp1_global_addr, data_size_input);
+    checkInputData(context, dram_time, inp1_global_addr, data_size_input);
     BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
@@ -153,7 +153,7 @@ int Residual_f::task_core(TaskCoreContext &context) {
 #endif
 
     // 计算overlap并写回output数据
-    write_output_data(context, N, 0, dram_time, overlap_time, data_size_out,
+    writeOutputData(context, N, 0, dram_time, overlap_time, data_size_out,
                       out_global_addr);
     BETTER_PRINT(overlap_time);
 

@@ -4,7 +4,7 @@
 #include "common/memory.h"
 #include "prims/prim_base.h"
 
-class gpu_base : public prim_base {
+class gpu_base : public PrimBase {
 public:
     int grid_x;
     int grid_y;
@@ -25,7 +25,7 @@ public:
     void parse_compose(json j);
     void parse_addr_label(json j);
 
-    virtual void parse_json(json j) = 0;
+    virtual void parseJson(json j) = 0;
     virtual gpu_base *clone() = 0;
     void initialize() {}
 

@@ -9,7 +9,7 @@ int matmul_forward_gpu_pd::task_core(TaskCoreContext &context) {
     else if (datatype == FP16)
         data_byte = 2;
     B = B * gpu_B;
-    T = find_var("T");
+    T = GetDefinedParam("T");
     // int origin_T = T;
     // if (prefill_count == JOB_DECODE){
     //     T = 1;
@@ -33,7 +33,8 @@ int matmul_forward_gpu_pd::task_core(TaskCoreContext &context) {
     }
 
     // 获取前缀label
-    cout << "[GPU MATMUL PDS]: output label: " << datapass_label.outdata << endl;
+    cout << "[GPU MATMUL PDS]: output label: " << datapass_label.outdata
+         << endl;
     std::size_t pos = datapass_label.outdata.find_last_of('_');
     std::string prefix;
     if (pos != std::string::npos) {
@@ -51,214 +52,236 @@ int matmul_forward_gpu_pd::task_core(TaskCoreContext &context) {
     AddrPosKey b_key = AddrPosKey(0, data_size_bias);
     gpu_pos_locator->fetchPair(label_bias, b_key);
 
-    cout << cid << " [matmul_forward_gpu_pd] before read1: " << mem_time << " at addr "
-         << input_mem_offset << endl;
+    cout << cid << " [matmul_forward_gpu_pd] before read1: " << mem_time
+         << " at addr " << input_mem_offset << endl;
 
     int overlap_time = 0;
     AddrPosKey out_key;
 
 #if USE_L1L2_CACHE == 1
-if (gpu_inner == true){
-    // 通过fetch_index计算位置
-    int row_index = fetch_index / slice_x;
-    int col_index = fetch_index % slice_x;
+    if (gpu_inner == true) {
+        // 通过fetch_index计算位置
+        int row_index = fetch_index / slice_x;
+        int col_index = fetch_index % slice_x;
 
-    // input 读入
-    gpu_read_generic(context,
-                     input_mem_offset + data_size_input / slice_y * row_index,
-                     data_size_input / slice_y, mem_time);
+        // input 读入
+        gpu_read_generic(
+            context, input_mem_offset + data_size_input / slice_y * row_index,
+            data_size_input / slice_y, mem_time);
 #if GPU_CACHE_DEBUG == 1
 
-    cout << " data_size_weight / slice_x " << data_size_weight / slice_x << endl;
+        cout << " data_size_weight / slice_x " << data_size_weight / slice_x
+             << endl;
 
 #endif
-    // weight 读入
+        // weight 读入
 
-    gpu_read_generic(context, w_key.pos + w_key.size / slice_x * col_index,
-                     data_size_weight / slice_x, mem_time);
-    // bias 读入
-    gpu_read_generic(context, b_key.pos + b_key.size / slice_x * col_index,
-                     data_size_bias / slice_x, mem_time);
+        gpu_read_generic(context, w_key.pos + w_key.size / slice_x * col_index,
+                         data_size_weight / slice_x, mem_time);
+        // bias 读入
+        gpu_read_generic(context, b_key.pos + b_key.size / slice_x * col_index,
+                         data_size_bias / slice_x, mem_time);
 
-    for (auto stage : batchInfo) {
-        int size = 0;
-        switch (job_type) {
-        case JOB_PREFILL:
-        case JOB_BOTH:
-            size = data_byte * B * OC * stage.token_num / (slice_y * slice_x) / 3;
-            break;
-        case JOB_DECODE:
-            size = data_byte * B * OC * 1 / (slice_y * slice_x) / 3;
-            break;
-        default:
-            assert(false && "Unsupported job type");
+        for (auto stage : batchInfo) {
+            int size = 0;
+            switch (job_type) {
+            case JOB_PREFILL:
+            case JOB_BOTH:
+                size = data_byte * B * OC * stage.token_num /
+                       (slice_y * slice_x) / 3;
+                break;
+            case JOB_DECODE:
+                size = data_byte * B * OC * 1 / (slice_y * slice_x) / 3;
+                break;
+            default:
+                assert(false && "Unsupported job type");
+            }
+
+            cout << "[GPU MATMUL PD]: size: " << size << endl;
+
+            char format_label_k[100];
+            sprintf(format_label_k, "%s%s%sk#%d", prefix, ETERNAL_PREFIX,
+                    KVCACHE_PREFIX, stage.req_id);
+            string label_k = format_label_k;
+
+            char format_label_v[100];
+            sprintf(format_label_v, "%s%s%sv#%d", prefix, ETERNAL_PREFIX,
+                    KVCACHE_PREFIX, stage.req_id);
+            string label_v = format_label_v;
+
+            gpu_pos_locator->updatePair(label_k, size);
+            gpu_pos_locator->updatePair(label_v, size);
+
+            AddrPosKey key_k, key_v;
+            gpu_pos_locator->findPair(label_k, key_k);
+            gpu_pos_locator->findPair(label_v, key_v);
+
+            gpu_write_generic(context, key_k.pos + (key_k.size - size), size,
+                              mem_time, false);
+            gpu_write_generic(context, key_v.pos + (key_v.size - size), size,
+                              mem_time, false);
         }
 
-        cout << "[GPU MATMUL PD]: size: " << size << endl;
 
-        char format_label_k[100];
-        sprintf(format_label_k, "%s%s%sk#%d", prefix, ETERNAL_PREFIX, KVCACHE_PREFIX,
-                stage.req_id);
-        string label_k = format_label_k;
+        gpu_pos_locator->updatePair(datapass_label.outdata, data_size_out);
+        gpu_pos_locator->findPair(datapass_label.outdata, out_key);
 
-        char format_label_v[100];
-        sprintf(format_label_v, "%s%s%sv#%d", prefix, ETERNAL_PREFIX, KVCACHE_PREFIX,
-                stage.req_id);
-        string label_v = format_label_v;
+        cout << cid << " [matmul_forward_gpu_pd] before write: " << mem_time
+             << " at addr " << out_key.pos << endl;
+        gpu_write_generic(context, out_key.pos + data_size_out * fetch_index,
+                          data_size_out, mem_time);
+        int cycle = 0;
+        int cid = context.cid;
 
-        gpu_pos_locator->updatePair(label_k, size);
-        gpu_pos_locator->updatePair(label_v, size);
+        CoreHWConfig core_config = GetCoreHWConfig(cid);
+        ExuConfig *exu = core_config.exu;
+        SfuConfig *sfu = core_config.sfu;
 
-        AddrPosKey key_k, key_v;
-        gpu_pos_locator->findPair(label_k, key_k);
-        gpu_pos_locator->findPair(label_v, key_v);
+        if (exu->type == MAC_Array)
+            cycle += (B * T * C * OC * 2 / (slice_x * slice_y)) /
+                     (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+        else
+            assert(false && "Unsupported tile type");
 
-        gpu_write_generic(context, key_k.pos + (key_k.size - size), size,
-                          mem_time, false);
-        gpu_write_generic(context, key_v.pos + (key_v.size - size), size,
-                          mem_time, false);
-    }
+        if (sfu->type == Linear)
+            cycle += 0 / sfu->x_dims * CYCLE;
+        else
+            assert(false && "Unsupported tile type");
 
 
-    
-    gpu_pos_locator->updatePair(datapass_label.outdata, data_size_out);
-    gpu_pos_locator->findPair(datapass_label.outdata, out_key);
+        if (mem_time > cycle) {
+            // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
+            overlap_time = 0;
+            LOG_VERBOSE(1, context.cid,
+                        "Prim name:" << name << RED << " cycle: " << cycle
+                                     << ", dram_time: " << mem_time << RESET);
 
-    cout << cid << " [matmul_forward_gpu_pd] before write: " << mem_time
-         << " at addr " << out_key.pos << endl;
-    gpu_write_generic(context, out_key.pos + data_size_out * fetch_index,
-                      data_size_out, mem_time);
-    int cycle = 0;
-    int cid = context.cid;
-    ExuConfig *exu = get_exu_config(cid);
-    SfuConfig *sfu = get_sfu_config(cid);
-                    
-    if (exu->type == MAC_Array)
-        cycle += (B * T * C * OC * 2 / (slice_x * slice_y)) / (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
-    else
-        assert(false && "Unsupported tile type");
+            // std::cout << RED << "cycle: " << cycle << ", dram_time: " <<
+            // dram_time
+            //           << RESET << std::endl;
 
-    if (sfu->type == Linear)
-        cycle += 0 / sfu->x_dims * CYCLE;
-    else
-        assert(false && "Unsupported tile type");
-                    
-
-    if (mem_time > cycle) {
-        // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
-        overlap_time = 0;
-        LOG_VERBOSE(1, context.cid, "Prim name:" << name << RED << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
-
-        // std::cout << RED << "cycle: " << cycle << ", dram_time: " << dram_time
-        //           << RESET << std::endl;
-
+        } else {
+            overlap_time = cycle - mem_time;
+            LOG_VERBOSE(1, context.cid,
+                        "Prim name:" << name << GREEN << " cycle: " << cycle
+                                     << ", dram_time: " << mem_time << RESET);
+        }
     } else {
-        overlap_time = cycle - mem_time;
-        LOG_VERBOSE(1, context.cid, "Prim name:" << name << GREEN << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
-
-    }
-    }else{
-    int slice_total = slice_x * slice_y;
-    // input 读入
-    gpu_read_generic(context,
-        input_mem_offset + data_size_input / slice_total * fetch_index,
-        data_size_input / slice_total, mem_time);
+        int slice_total = slice_x * slice_y;
+        // input 读入
+        gpu_read_generic(context,
+                         input_mem_offset +
+                             data_size_input / slice_total * fetch_index,
+                         data_size_input / slice_total, mem_time);
 #if GPU_CACHE_DEBUG == 1
 
-    LOG_VERBOSE(1, context.cid," data_size_weight / slice_x " << data_size_weight / slice_x);
+        LOG_VERBOSE(1, context.cid,
+                    " data_size_weight / slice_x "
+                        << data_size_weight / slice_x);
 
 
 #endif
-    // weight 读入
-    // LOG_VERBOSE(1, context.cid," data_size_weight / slice_x " << data_size_weight / slice_x);
+        // weight 读入
+        // LOG_VERBOSE(1, context.cid," data_size_weight / slice_x " <<
+        // data_size_weight / slice_x);
 
-    gpu_read_generic(context, w_key.pos + w_key.size / slice_total * fetch_index,
-            data_size_weight / slice_total, mem_time);
-    // assert(false && "Unsupported job type");
-    // bias 读入
-    gpu_read_generic(context, b_key.pos + b_key.size / slice_total * fetch_index,
-            data_size_bias / slice_total, mem_time);
+        gpu_read_generic(context,
+                         w_key.pos + w_key.size / slice_total * fetch_index,
+                         data_size_weight / slice_total, mem_time);
+        // assert(false && "Unsupported job type");
+        // bias 读入
+        gpu_read_generic(context,
+                         b_key.pos + b_key.size / slice_total * fetch_index,
+                         data_size_bias / slice_total, mem_time);
 
-    for (auto stage : batchInfo) {
-        int size = 0;
-        switch (job_type) {
-        case JOB_PREFILL:
-        case JOB_BOTH:
-            size = data_byte * B * OC * stage.token_num / (slice_y * slice_x) / 3;
-            break;
-        case JOB_DECODE:
-            size = data_byte * B * OC * 1 / (slice_y * slice_x) / 3;
-            break;
-        default:
-            assert(false && "Unsupported job type");
+        for (auto stage : batchInfo) {
+            int size = 0;
+            switch (job_type) {
+            case JOB_PREFILL:
+            case JOB_BOTH:
+                size = data_byte * B * OC * stage.token_num /
+                       (slice_y * slice_x) / 3;
+                break;
+            case JOB_DECODE:
+                size = data_byte * B * OC * 1 / (slice_y * slice_x) / 3;
+                break;
+            default:
+                assert(false && "Unsupported job type");
+            }
+
+            char format_label_k[1000];
+            sprintf(format_label_k, "%s%s%sk#%d", prefix.c_str(),
+                    ETERNAL_PREFIX, KVCACHE_PREFIX, stage.req_id);
+            string label_k = format_label_k;
+
+            char format_label_v[1000];
+            sprintf(format_label_v, "%s%s%sv#%d", prefix.c_str(),
+                    ETERNAL_PREFIX, KVCACHE_PREFIX, stage.req_id);
+            string label_v = format_label_v;
+
+            gpu_pos_locator->updatePair(label_k, size);
+            gpu_pos_locator->updatePair(label_v, size);
+
+            AddrPosKey key_k, key_v;
+            gpu_pos_locator->findPair(label_k, key_k);
+            gpu_pos_locator->findPair(label_v, key_v);
+
+            // LOG_VERBOSE(1, context.cid," matmul kv " << " prefix "<< prefix
+            // << " " << size << " key size " << key_k.size << " " << label_k);
+
+            gpu_write_generic(context, key_k.pos + (key_k.size - size), size,
+                              mem_time, false);
+            gpu_write_generic(context, key_v.pos + (key_v.size - size), size,
+                              mem_time, false);
         }
 
-        char format_label_k[1000];
-        sprintf(format_label_k, "%s%s%sk#%d", prefix.c_str(), ETERNAL_PREFIX, KVCACHE_PREFIX,
-                stage.req_id);
-        string label_k = format_label_k;
 
-        char format_label_v[1000];
-        sprintf(format_label_v, "%s%s%sv#%d", prefix.c_str(), ETERNAL_PREFIX, KVCACHE_PREFIX,
-                stage.req_id);
-        string label_v = format_label_v;
+        gpu_pos_locator->updatePair(datapass_label.outdata, data_size_out);
+        gpu_pos_locator->findPair(datapass_label.outdata, out_key);
 
-        gpu_pos_locator->updatePair(label_k, size);
-        gpu_pos_locator->updatePair(label_v, size);
+        cout << cid << " [matmul_forward_gpu_pd] before write: " << mem_time
+             << " at addr " << out_key.pos << endl;
+        gpu_write_generic(context, out_key.pos + data_size_out * fetch_index,
+                          data_size_out, mem_time);
+        int cycle = 0;
+        int cid = context.cid;
 
-        AddrPosKey key_k, key_v;
-        gpu_pos_locator->findPair(label_k, key_k);
-        gpu_pos_locator->findPair(label_v, key_v);
+        CoreHWConfig core_config = GetCoreHWConfig(cid);
+        ExuConfig *exu = core_config.exu;
+        SfuConfig *sfu = core_config.sfu;
 
-        // LOG_VERBOSE(1, context.cid," matmul kv " << " prefix "<< prefix << " " << size << " key size " << key_k.size << " " << label_k);
+        if (exu->type == MAC_Array)
+            cycle += (B * T * C * OC * 2 / (slice_x * slice_y)) /
+                     (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+        else
+            assert(false && "Unsupported tile type");
 
-        gpu_write_generic(context, key_k.pos + (key_k.size - size), size,
-                          mem_time, false);
-        gpu_write_generic(context, key_v.pos + (key_v.size - size), size,
-                          mem_time, false);
+        if (sfu->type == Linear)
+            cycle += 0 / sfu->x_dims * CYCLE;
+        else
+            assert(false && "Unsupported tile type");
+
+
+        if (mem_time > cycle) {
+            // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
+            overlap_time = 0;
+            LOG_VERBOSE(1, context.cid,
+                        "Prim name:" << name << RED << " cycle: " << cycle
+                                     << ", dram_time: " << mem_time << RESET);
+
+            // std::cout << RED << "cycle: " << cycle << ", dram_time: " <<
+            // dram_time
+            //           << RESET << std::endl;
+
+        } else {
+            overlap_time = cycle - mem_time;
+            LOG_VERBOSE(1, context.cid,
+                        "Prim name:" << name << GREEN << " cycle: " << cycle
+                                     << ", dram_time: " << mem_time << RESET);
+        }
+        // cout << "B: " << B << ", T: " << T << ", C: " << C << ", OC: " << OC
+        // << endl; assert(false);
     }
-
-
-    gpu_pos_locator->updatePair(datapass_label.outdata, data_size_out);
-    gpu_pos_locator->findPair(datapass_label.outdata, out_key);
-
-    cout << cid << " [matmul_forward_gpu_pd] before write: " << mem_time
-         << " at addr " << out_key.pos << endl;
-    gpu_write_generic(context, out_key.pos + data_size_out * fetch_index,
-                      data_size_out, mem_time);
-    int cycle = 0;
-    int cid = context.cid;
-    ExuConfig *exu = get_exu_config(cid);
-    SfuConfig *sfu = get_sfu_config(cid);
-                    
-    if (exu->type == MAC_Array)
-        cycle += (B * T * C * OC * 2 / (slice_x * slice_y)) / (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
-    else
-        assert(false && "Unsupported tile type");
-
-    if (sfu->type == Linear)
-        cycle += 0 / sfu->x_dims * CYCLE;
-    else
-        assert(false && "Unsupported tile type");
-                    
-
-    if (mem_time > cycle) {
-        // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
-        overlap_time = 0;
-        LOG_VERBOSE(1, context.cid, "Prim name:" << name << RED << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
-
-        // std::cout << RED << "cycle: " << cycle << ", dram_time: " << dram_time
-        //           << RESET << std::endl;
-
-    } else {
-        overlap_time = cycle - mem_time;
-        LOG_VERBOSE(1, context.cid, "Prim name:" << name << GREEN << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
-
-    }
-    // cout << "B: " << B << ", T: " << T << ", C: " << C << ", OC: " << OC << endl;
-    // assert(false);
-
-}
 #endif
 
     cout << cid << " [matmul_forward_gpu_pd] after write: " << mem_time
@@ -310,11 +333,11 @@ void matmul_forward_gpu_pd::print_self(string prefix) {
          << endl;
 }
 
-void matmul_forward_gpu_pd::parse_json(json j) {
-    B = find_var(j["B"]);
-    T = find_var(j["T"]);
-    C = find_var(j["C"]);
-    OC = find_var(j["OC"]);
+void matmul_forward_gpu_pd::parseJson(json j) {
+    B = GetDefinedParam(j["B"]);
+    T = GetDefinedParam(j["T"]);
+    C = GetDefinedParam(j["C"]);
+    OC = GetDefinedParam(j["OC"]);
     slice_x = j["slice_x"];
     slice_y = j["slice_y"];
 

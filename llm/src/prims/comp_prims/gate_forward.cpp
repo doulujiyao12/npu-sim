@@ -13,7 +13,7 @@ void gate_forward::print_self(string prefix) {
 
 void gate_forward::initialize() {
     out_size = B * T * K;
-    p_inp_size = B * T * C;
+    input_size = B * T * C;
     inp_size = B * T * C;
 
     dram_inp_size = (B * T * C + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
@@ -26,20 +26,20 @@ void gate_forward::initialize() {
         data_byte = 2;
 }
 
-void gate_forward::parse_json(json j) {
-    B = find_var(j["B"]);
-    T = find_var(j["T"]);
-    C = find_var(j["C"]);
-    E_N = find_var(j["E_N"]);
-    K = find_var(j["K"]);
+void gate_forward::parseJson(json j) {
+    B = GetDefinedParam(j["B"]);
+    T = GetDefinedParam(j["T"]);
+    C = GetDefinedParam(j["C"]);
+    E_N = GetDefinedParam(j["E_N"]);
+    K = GetDefinedParam(j["K"]);
 
     initialize();
 
     if (j.contains("dram_address"))
-        parse_address(j["dram_address"]);
+        parseAddress(j["dram_address"]);
 
     if (j.contains("sram_address"))
-        parse_sram_label(j["sram_address"]);
+        parseSramLabel(j["sram_address"]);
 
     if (inp_offset == -1)
         inp_offset = (out_offset * 1024 - B * T * C) / 1024;
@@ -53,11 +53,11 @@ int gate_forward::sram_utilization(DATATYPE datatype, int cid) {
     int total_sram = 0;
 
     int p_inp_sram =
-        ceiling_division(B * T * C * data_byte * 8, get_sram_bitwidth(cid));
+        CeilingDivision(B * T * C * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
     int out_sram =
-        ceiling_division(B * T * K * data_byte * 8, get_sram_bitwidth(cid));
+        CeilingDivision(B * T * K * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
 
-    total_sram = (p_inp_sram + out_sram) * get_sram_bitwidth(cid) / 8;
+    total_sram = (p_inp_sram + out_sram) * GetCoreHWConfig(cid).sram_bitwidth / 8;
 
     return total_sram;
 }
@@ -123,7 +123,7 @@ int gate_forward::task_core(TaskCoreContext &context) {
         prefix = datapass_label.outdata;
 
     // 读入input数据
-    check_input_data(context, dram_time, inp_global_addr, data_size_input);
+    checkInputData(context, dram_time, inp_global_addr, data_size_input);
     BETTER_PRINT(dram_time);
 
 #if USE_SRAM == 1
@@ -137,7 +137,7 @@ int gate_forward::task_core(TaskCoreContext &context) {
 #endif
 
     // 计算overlap并写回output数据
-    write_output_data(context, B * T * C * E_N, 0, dram_time, overlap_time,
+    writeOutputData(context, B * T * C * E_N, 0, dram_time, overlap_time,
                       data_size_out, out_global_addr);
 
     BETTER_PRINT(overlap_time);

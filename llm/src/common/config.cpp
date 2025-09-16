@@ -1,6 +1,8 @@
 #include "common/config.h"
 #include "common/msg.h"
+#include "utils/config_utils.h"
 #include "utils/prim_utils.h"
+#include "utils/print_utils.h"
 #include "utils/system_utils.h"
 
 void CoreJob::print_self() {
@@ -33,22 +35,11 @@ void CoreConfig::print_self() {
 }
 
 void from_json(const json &j, Cast &c) {
-    j.at("dest").get_to(c.dest);
-
-    if (!j.contains("tag"))
-        c.tag = c.dest;
-    else
-        j.at("tag").get_to(c.tag);
-
-    if (!j.contains("weight"))
-        c.weight = 1;
-    else
-        j.at("weight").get_to(c.weight);
-
-    if (!j.contains("addr"))
-        c.addr = -1;
-    else
-        j.at("addr").get_to(c.addr);
+    SetParamFromJson<int>(j, "dest", &(c.dest));
+    SetParamFromJson<int>(j, "tag", &(c.tag), c.dest);
+    SetParamFromJson<int>(j, "weight", &(c.weight), 1);
+    SetParamFromJson<int>(j, "addr", &(c.addr), -1);
+    SetParamFromJson<bool>(j, "critical", &(c.critical), false);
 
     if (!j.contains("loopout"))
         c.loopout = BOTH;
@@ -60,84 +51,46 @@ void from_json(const json &j, Cast &c) {
         else
             c.loopout = BOTH;
     }
-
-    if (!j.contains("critical"))
-        c.critical = false;
-    else
-        j.at("critical").get_to(c.critical);
 }
 
 void from_json(const json &j, CoreJob &c) {
     if (j.contains("cast")) {
-        for (int i = 0; i < j["cast"].size(); i++) {
-            Cast temp = j["cast"][i];
+        auto casts = j["cast"];
+        for (int i = 0; i < casts.size(); i++) {
+            Cast temp = casts[i];
             c.cast.push_back(temp);
         }
-    } else {
-        // cout << "[WARN] You need to designate CAST field unless you are
-        // running SIM_PD.\n";
-    } // NOTE: 如果配置文件中没有cast，需要手动指派。
+    } else if (SYSTEM_MODE != SIM_DATAFLOW)
+        ARGUS_EXIT("Undefined \'cast\' field in json.\n");
 
-    j.at("recv_cnt").get_to(c.recv_cnt);
-
-    if (!j.contains("recv_tag"))
-        c.recv_tag = 0;
-    else
-        j.at("recv_tag").get_to(c.recv_tag);
+    SetParamFromJson<int>(j, "recv_cnt", &(c.recv_cnt));
+    SetParamFromJson<int>(j, "recv_tag", &(c.recv_tag), 0);
 
     if (j.contains("prims")) {
         auto prims = j["prims"];
         for (auto prim : prims) {
-            comp_base *p = nullptr;
+            CompBase *p = nullptr;
             string type = prim.at("type");
 
-            p = (comp_base *)new_prim(type);
-            cout << "Start prim type: " << type << endl;
-            p->parse_json(prim);
+            p = (CompBase *)(PrimFactory::getInstance.createPrim(type));
+            p->parseJson(prim);
 
-            // 是否使用硬件
-            if (prim.contains("use_hw")) {
-                prim.at("use_hw").get_to(p->use_hw);
-            } else {
-                p->use_hw = false;
-            }
-
-            c.prims.push_back((prim_base *)p);
-            cout << "Prim type: " << type << endl;
+            c.prims.push_back((PrimBase *)p);
         }
     }
 }
 
 void from_json(const json &j, CoreConfig &c) {
-    j.at("id").get_to(c.id);
+    SetParamFromJson<int>(j, "id", &(c.id));
 
     if (c.id >= GRID_SIZE) {
-        cout << "[ERROR] Core id " << c.id << " is out of range.\n";
-        sc_stop();
+        ARGUS_EXIT("Core id ", c.id, " out of range");
         return;
     }
 
-    if (j.contains("prim_copy")) {
-        j.at("prim_copy").get_to(c.prim_copy);
-    } else {
-        c.prim_copy = -1;
-    }
-
-    if (j.contains("send_global_mem")) {
-        j.at("send_global_mem").get_to(c.send_global_mem);
-    } else {
-        c.send_global_mem = -1;
-    }
-
-    if (j.contains("loop")) {
-        auto &loop_val = j["loop"];
-        if (loop_val.is_number_integer()) {
-            c.loop = loop_val;
-        } else
-            c.loop = find_var(j["loop"]);
-    } else {
-        c.loop = 1;
-    }
+    SetParamFromJson<int>(j, "prim_copy", &(c.prim_copy), -1);
+    SetParamFromJson<int>(j, "send_global_mem", &(c.send_global_mem), -1);
+    SetParamFromJson<int>(j, "loop", &(c.loop), 1);
 
     if (j.contains("worklist")) {
         for (int i = 0; i < j["worklist"].size(); i++) {
@@ -162,8 +115,7 @@ void from_json(const json &j, CoreConfig &c) {
 }
 
 void from_json(const json &j, LayerConfig &c) {
-    // 将json转化为LayerConfig
-    j.at("id").get_to(c.id);
+    SetParamFromJson<int>(j, "id", &(c.id));
 
     for (int i = 0; i < j["cast"].size(); i++) {
         Cast temp = j["cast"][i];
@@ -171,7 +123,6 @@ void from_json(const json &j, LayerConfig &c) {
     }
 
     // loop统一在外部填写
-
     if (j.contains("split")) {
         if (j["split"]["type"] == "TP")
             c.split = SPLIT_TP;
@@ -186,19 +137,19 @@ void from_json(const json &j, LayerConfig &c) {
 }
 
 void from_json(const json &j, StreamConfig &c) {
-    j.at("id").get_to(c.id);
+    SetParamFromJson<int>(j, "id", &(c.id));
+    SetParamFromJson<int>(j, "loop", &(c.loop), 1);
 
     if (j.contains("prims")) {
         auto prims = j["prims"];
         for (auto prim : prims) {
-            gpu_base *p = nullptr;
-            string type = prim.at("type");
-            cout << type << endl;
+            string type;
+            SetParamFromJson<string>(prim, "type", &type);
+            gpu_base *p =
+                (gpu_base *)(PrimFactory::getInstance().createPrim(type));
+            p->parseJson(prim);
 
-            p = (gpu_base *)new_prim(type);
-            p->parse_json(prim);
-
-            c.prims.push_back((prim_base *)p);
+            c.prims.push_back((PrimBase *)p);
         }
     }
 
@@ -206,47 +157,25 @@ void from_json(const json &j, StreamConfig &c) {
         auto sources = j["source"];
         for (auto source : sources) {
             c.sources.push_back(
-                make_pair(source["label"], find_var(source["size"])));
+                make_pair(source["label"], GetDefinedParam(source["size"])));
         }
-    }
-
-    if (j.contains("loop")) {
-        c.loop = find_var(j["loop"]);
-    } else {
-        c.loop = 1;
     }
 }
 
 void from_json(const json &j, CoreHWConfig &c) {
-    j.at("id").get_to(c.id);
+    SetParamFromJson<int>(j, "id", &(c.id));
 
-    if (j.contains("exu_x"))
-        j.at("exu_x").get_to(c.exu_x);
-    else
-        c.exu_x = 128;
+    int exu_x, exu_y;
+    SetParamFromJson<int>(j, "exu_x", &exu_x, 128);
+    SetParamFromJson<int>(j, "exu_y", &exu_y, 128);
+    c.exu = new ExuConfig(MAC_Array, exu_x, exu_y);
 
-    if (j.contains("exu_y"))
-        j.at("exu_y").get_to(c.exu_y);
-    else
-        c.exu_y = 128;
+    int sfu_x;
+    SetParamFromJson<int>(j, "sfu_x", &sfu_x, 2048);
+    c.sfu = new SfuConfig(Linear, sfu_x);
 
-    if (j.contains("sfu_x"))
-        j.at("sfu_x").get_to(c.sfu_x);
-    else
-        c.sfu_x = 2048;
-
-    if (j.contains("sram_bitwidth"))
-        j.at("sram_bitwidth").get_to(c.sram_bitwidth);
-    else
-        c.sram_bitwidth = 128;
-
-    if (j.contains("dram_config"))
-        j.at("dram_config").get_to(c.dram_config);
-    else
-        c.dram_config = DEFAULT_DRAM_CONFIG_PATH;
-
-    if (j.contains("dram_bw"))
-        j.at("dram_bw").get_to(c.dram_bw);
-    else
-        c.dram_bw = dram_bw;
+    SetParamFromJson<int>(j, "sram_bitwidth", &(c.sram_bitwidth), 128);
+    SetParamFromJson<string>(j, "dram_config", &(c.dram_config),
+                             DEFAULT_DRAM_CONFIG_PATH);
+    SetParamFromJson<int>(j, "dram_bw", &(c.dram_bw), g_default_dram_bw);
 }

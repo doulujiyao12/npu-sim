@@ -13,7 +13,7 @@ void Set_addr::print_self(string prefix) {
 
 int Set_addr::sram_utilization(DATATYPE datatype, int cid) { return 0; }
 
-void Set_addr::parse_json(json j) { sram_addr = find_var(j["sram_addr"]); }
+void Set_addr::parseJson(json j) { sram_addr = GetDefinedParam(j["sram_addr"]); }
 
 void Set_addr::deserialize(sc_bv<128> buffer) {
     sram_addr = buffer.range(31, 8).to_uint64();

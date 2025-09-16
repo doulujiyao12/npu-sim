@@ -60,11 +60,11 @@ int Clear_sram::task_core(TaskCoreContext &context) {
     int pos = 0;
     for (auto record : temp_list) {
         auto size = record.second.size;
-        int dma_read_count = size * 8 / (get_sram_bitwidth(cid) * SRAM_BANKS);
+        int dma_read_count = size * 8 / (GetCoreHWConfig(cid).sram_bitwidth * SRAM_BANKS);
         int byte_residue =
-            size * 8 - dma_read_count * (get_sram_bitwidth(cid) * SRAM_BANKS);
+            size * 8 - dma_read_count * (GetCoreHWConfig(cid).sram_bitwidth * SRAM_BANKS);
         int single_read_count =
-            ceiling_division(byte_residue, get_sram_bitwidth(cid));
+            CeilingDivision(byte_residue, GetCoreHWConfig(cid).sram_bitwidth);
 
         AddrPosKey temp_key = AddrPosKey(pos, size);
         u_int64_t temp_addr = 0;

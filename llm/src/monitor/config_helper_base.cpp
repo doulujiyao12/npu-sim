@@ -48,14 +48,14 @@ void config_helper_base::fill_queue_data(queue<Msg> *q) {
             core_prim_cnt += work.prims.size();
 
             for (auto prim : work.prims) {
-                comp_base *cp = (comp_base *)prim;
+                CompBase *cp = (CompBase *)prim;
 
                 int send_offset = cp->data_offset;
                 if (send_offset == -1)
                     continue;
 
-                // p_inp_size 是 输入 input的大小
-                int send_size = cp->inp_size - cp->p_inp_size;
+                // input_size 是 输入 input的大小
+                int send_size = cp->inp_size - cp->input_size;
                 int send_size_in_bit = send_size * 8;
                 int pkg_num = (send_size_in_bit % M_D_DATA)
                                   ? (send_size_in_bit / M_D_DATA + 1)
