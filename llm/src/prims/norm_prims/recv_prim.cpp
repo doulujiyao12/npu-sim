@@ -56,7 +56,7 @@ sc_bv<128> Recv_prim::serialize() {
 
     return d;
 }
-int Recv_prim::task_core(TaskCoreContext &context) {
+int Recv_prim::taskCoreDefault(TaskCoreContext &context) {
     u_int64_t elapsed_time;
     // sram_write_append_generic(context, M_D_DATA, elapsed_time);
 

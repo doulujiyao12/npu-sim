@@ -47,7 +47,7 @@ sc_bv<128> Set_addr::serialize() {
     return d;
 }
 
-int Set_addr::task_core(TaskCoreContext &context) {
+int Set_addr::taskCoreDefault(TaskCoreContext &context) {
     // std::cout << "Set Sram333 " << sram_addr << " to " << context.sram_addr
     // << endl;
     //  CTODO: 取消注释

@@ -30,7 +30,7 @@ public:
         std::cout << prefix << "<Wait_event>" << std::endl;
     }
 
-    int task_core(TaskChipContext &context) override {
+    int taskCoreDefault(TaskChipContext &context) override {
         return 0;
     }
 };

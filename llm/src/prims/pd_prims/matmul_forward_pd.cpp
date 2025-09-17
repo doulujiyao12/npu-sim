@@ -7,7 +7,7 @@
 
 int matmul_forward_pd::task() { return 0; }
 
-int matmul_forward_pd::task_core(TaskCoreContext &context) {
+int matmul_forward_pd::taskCoreDefault(TaskCoreContext &context) {
     // 空转一轮，直接退出（PD模式）
     if (T == 0)
         return 0;
@@ -61,7 +61,7 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
 
     // 读入input数据
     checkInputData(context, dram_time, inp_global_addr, data_size_input);
-    BETTER_PRINT(dram_time);
+    ARGUS_PRINT(dram_time);
 
 #if USE_SRAM == 1
 #if NB_CACHE_DEBUG == 1
@@ -77,7 +77,7 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
     auto label_bias = ETERNAL_PREFIX + prefix + "_b";
     checkStaticData(context, dram_time, bias_global_addr, data_size_bias,
                       label_bias);
-    BETTER_PRINT(dram_time);
+    ARGUS_PRINT(dram_time);
 
     // 写入kvcache，根据batchInfo确定
     for (auto stage : batchInfo) {
@@ -145,7 +145,7 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
     if (!input_reuse)
         sram_pos_locator->deletePair(datapass_label.indata[0]);
 
-    BETTER_PRINT(dram_time);
+    ARGUS_PRINT(dram_time);
 #endif
 
 
@@ -215,7 +215,7 @@ int matmul_forward_pd::task_core(TaskCoreContext &context) {
     // writeOutputData(context, B * T * C * OC * 2, 0, dram_time,
     // overlap_time,
     //                   data_size_out, out_global_addr);
-    BETTER_PRINT(overlap_time);
+    ARGUS_PRINT(overlap_time);
     // cout << "B: " << B << ", T: " << T << ", C: " << C << ", OC: " << OC << endl;
     // assert(false);
 

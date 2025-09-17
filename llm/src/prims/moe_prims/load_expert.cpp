@@ -61,7 +61,7 @@ sc_bv<128> load_expert::serialize() {
     return d;
 }
 
-int load_expert::task_core(TaskCoreContext &context) {
+int load_expert::taskCoreDefault(TaskCoreContext &context) {
     // 所用时间
     u_int64_t dram_time = 0;
     u_int64_t overlap_time = 0;

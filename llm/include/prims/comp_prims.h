@@ -6,507 +6,326 @@
 
 class Attention_f : public CompBase {
 public:
-    int B, T, C, NH;
-    int R;
-    int prea_offset, a_offset;
-
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
 
-    Attention_f() { name = "Attention_f"; }
+    Attention_f() {
+        name = "Attention_f";
+        prim_type_code = PRIM_TYPE_CODE::ATTENTION_F_TYPE;
+        param_name = {"B", "T", "C", "NH", "R"};
+    }
 };
 
 
 class Batchnorm_f : public CompBase {
 public:
-    int B, H, W, C;
-    int gamma_offset, beta_offset;
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+    void initialize();
 
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
-    Batchnorm_f() { name = "Batchnorm_f"; }
+    Batchnorm_f() {
+        name = "Batchnorm_f";
+        prim_type_code = PRIM_TYPE_CODE::BATCHNORM_F_TYPE;
+        param_name = {"B", "W", "H", "C"};
+    }
 };
 
 
 class Conv_f : public CompBase {
 public:
-    int inp_offset; // 16 16
-    int out_offset;
-
-    int B, W, H, C;     // 4 16 16 8
-    int pX, pY, sX, sY; // 8 8 4 4
-    int kX, kY, F;      // 8 8 4
-
-    int oW, oH, oC; // 通过计算可以得到
-    int k_offset, b_offset;
-
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
-    Conv_f() { name = "Conv_f"; }
+
+    Conv_f() {
+        name = "Conv_f";
+        prim_type_code = PRIM_TYPE_CODE::CONV_F_TYPE;
+        param_name = {"B",  "W",  "H",  "C",  "pX", "pY",
+                      "sX", "sY", "kX", "kY", "F"};
+    }
 };
 
 
 class Dummy_p : public CompBase {
 public:
-    int task();
-    int task_core(TaskCoreContext &context);
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+    void initialize();
 
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
-
-    Dummy_p() { name = "Dummy_p"; }
+    Dummy_p() {
+        name = "Dummy_p";
+        prim_type_code = PRIM_TYPE_CODE::DUMMY_P_TYPE;
+    }
 };
 
 class gate_forward : public CompBase {
 public:
-    int B, T, C, E_N; // 专家个数
-    int K;            // 选中的专家个数
-
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
 
-    gate_forward() { name = "gate_forward"; }
+    gate_forward() {
+        name = "gate_forward";
+        prim_type_code = PRIM_TYPE_CODE::GATE_FORWARD_TYPE;
+        param_name = {"B", "T", "C", "E_N", "K"};
+    }
 };
 
 class Gelu_f : public CompBase {
 public:
-    int N;
-
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
 
-    Gelu_f() { name = "Gelu_f"; }
+    Gelu_f() {
+        name = "Gelu_f";
+        prim_type_code = PRIM_TYPE_CODE::GELU_F_TYPE;
+        param_name = {"N"};
+    }
 };
 
 
 class Layernorm_f : public CompBase {
 public:
-    int B, T, C;
-    int w_offset, b_offset;
-
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
 
-    Layernorm_f() { name = "Layernorm_f"; }
+    Layernorm_f() {
+        name = "Layernorm_f";
+        prim_type_code = PRIM_TYPE_CODE::LAYERNORM_F_TYPE;
+        param_name = {"B", "T", "C"};
+    }
 };
 
 
 class Matmul_f : public CompBase {
 public:
-    int B, T, C, OC;
-    int NH, DH, R;
-    int w_offset, b_offset;
-
-    int task();
-    int task_r();
-    int task_core(TaskCoreContext &context);
-    void print_dim(int cid);
-
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
-    HardwareTaskConfig *generate_hw_config();
-    Matmul_f() { name = "Matmul_f"; }
-
-    void matmul_forward_naive(float *out, const float *inp, const float *weight,
-                              const float *bias, int B, int T, int C, int OC);
+    Matmul_f() {
+        name = "Matmul_f";
+        prim_type_code = PRIM_TYPE_CODE::MATMUL_F_TYPE;
+        param_name = {"B", "T", "C", "OC", "NH", "DH", "R"};
+    }
 };
 
 
 class switch_data : public CompBase {
 public:
-    int IN, OUT;
-
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
-    switch_data() { name = "switch_data"; }
+    switch_data() {
+        name = "switch_data";
+        prim_type_code = PRIM_TYPE_CODE::SWITCH_DATA_TYPE;
+        param_name = {"IN", "OUT"};
+    }
 };
 
 
 class Max_pool : public CompBase {
 public:
-    int inp_offset; // 16 16
-    int out_offset;
-
-    int B, W, H, C;     // 4 16 16 8
-    int pX, pY, sX, sY; // 8 8 4 4
-    int kX, kY;         // 8 8 4
-
-    int oW, oH, oC; // 通过计算可以得到
-    int k_offset, b_offset;
-
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
-    Max_pool() { name = "Max_pool"; }
+    Max_pool() {
+        name = "Max_pool";
+        prim_type_code = PRIM_TYPE_CODE::MAX_POOL_TYPE;
+        param_name = {"B", "W", "H", "C", "pX", "pY", "sX", "sY", "kX", "kY"};
+    }
 };
 
 
 class Merge_conv : public CompBase {
 public:
-    int B, T, C;
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+    void initialize();
 
-    int dim; // 1: concat, 2: add
-    int slice;
-
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
-    void parse_matmul(Matmul_f *p);
-
-    Merge_conv() { name = "Merge_conv"; }
+    Merge_conv() {
+        name = "Merge_conv";
+        prim_type_code = PRIM_TYPE_CODE::MERGE_CONV_TYPE;
+        param_name = {"B", "T", "C", "dim", "slice"};
+    }
 };
 
 
 class Merge_matmul : public CompBase {
 public:
-    int B, T, C;
-
-    int dim; // 1: concat, 2: add
-    int slice;
-
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
-    void parse_matmul(Matmul_f *p);
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
 
-    Merge_matmul() { name = "Merge_matmul"; }
+    Merge_matmul() {
+        name = "Merge_matmul";
+        prim_type_code = PRIM_TYPE_CODE::MERGE_MATMUL_TYPE;
+        param_name = {"B", "T", "C", "dim", "slice"};
+    }
 };
 
 
 class Relu_f : public CompBase {
 public:
-    int N;
-
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
-    Relu_f() { name = "Relu_f"; }
+    Relu_f() {
+        name = "Relu_f";
+        prim_type_code = PRIM_TYPE_CODE::RELU_F_TYPE;
+        param_name = {"N"};
+    }
 };
 
 
 class Residual_f : public CompBase {
 public:
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
+
     Residual_f() {
         name = "Residual_f";
-        prim_type_code = RESIDUAL_F_TYPE;
+        prim_type_code = PRIM_TYPE_CODE::RESIDUAL_F_TYPE;
+        param_name = {"N"};
     }
 };
 
 
 class rmsnorm_forward : public CompBase {
 public:
-    int B, T, C;
-    int w_offset;
-
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
-    rmsnorm_forward() { name = "rmsnorm_forward"; }
+    rmsnorm_forward() {
+        name = "rmsnorm_forward";
+        prim_type_code = PRIM_TYPE_CODE::RMSNORM_F_TYPE;
+        param_name = {"B", "T", "C"};
+    }
 };
 
 
 class rope_forward : public CompBase {
 public:
-    int B, T, C, NH;
-    int sc_offset;
-
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
 
-    rope_forward() { name = "rope_forward"; }
+    rope_forward() {
+        name = "rope_forward";
+        prim_type_code = PRIM_TYPE_CODE::ROPE_F_TYPE;
+        param_name = {"B", "T", "C", "NH"};
+    }
 };
 
 
 class silu_forward : public CompBase {
 public:
-    int N;
-
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
-    silu_forward() { name = "silu_forward"; }
+    silu_forward() {
+        name = "silu_forward";
+        prim_type_code = PRIM_TYPE_CODE::SILU_F_TYPE;
+        param_name = {"N"};
+    }
 };
 
 
 class Split_conv : public CompBase {
 public:
-    int W, H, C, B;
-    int pX, pY, S, K;
-    int slice;
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+    void initialize();
 
-    int new_H;
-
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
-    void parse_conv(Conv_f *p);
-
-    Split_conv() { name = "Split_conv"; }
+    Split_conv() {
+        name = "Split_conv";
+        prim_type_code = PRIM_TYPE_CODE::SPLIT_CONV_TYPE;
+        param_name = {"W", "H", "C", "B", "pX", "pY", "S", "K", "slice"};
+    }
 };
 
 
 class Split_matmul : public CompBase {
 public:
-    int B, T, C;
-    int dim;
-    int slice;
-
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
-    void parse_matmul(Matmul_f *matmul);
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
 
-    Split_matmul() { name = "Split_matmul"; }
+    Split_matmul() {
+        name = "Split_matmul";
+        prim_type_code = PRIM_TYPE_CODE::SPLIT_MATMUL_TYPE;
+        param_name = {"B", "T", "C", "dim", "slice"};
+    }
 };
 
 
 class swiglu_forward : public CompBase {
 public:
-    int N;
-    int inp2_offset;
-
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
-    swiglu_forward() { name = "swiglu_forward"; }
+    swiglu_forward() {
+        name = "swiglu_forward";
+        prim_type_code = PRIM_TYPE_CODE::SWIGLU_F_TYPE;
+        param_name = {"N"};
+    }
 };
 
 
 class Send_global_memory : public CompBase {
 public:
-    GLOBAL_SEND_TYPE type;
-    int enable;
-    int des_id;       // global memory's id (reserved for c2c)
-    int des_offset;   // global memory's offset
-    int local_offset; // local memory's offset
-    int max_packet;   // max packet size
-    int tag_id;       // tag id
-    int end_length;   // end length
-
     int data_packet_id; // 已经发送的包数量
 
-    int task();
-    int task_core(TaskCoreContext &context);
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+    void initialize();
 
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
-    Send_global_memory() { name = "Send_global_memory"; }
+    Send_global_memory() {
+        name = "Send_global_memory";
+        prim_type_code = PRIM_TYPE_CODE::SEND_GLOBAL_MEMORY_TYPE;
+        param_name = {"type",         "enable",     "des_id", "des_offset",
+                      "local_offset", "max_packet", "tag_id", "end_length"};
+    }
 };
 
 class Recv_global_memory : public CompBase {
 public:
-    GLOBAL_RECV_TYPE type;
-    int tag_id;
-    int recv_cnt;
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+    void initialize();
 
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
-    Recv_global_memory() { name = "Recv_global_memory"; }
+    Recv_global_memory() {
+        name = "Recv_global_memory";
+        prim_type_code = PRIM_TYPE_CODE::RECV_GLOBAL_MEMORY_TYPE;
+        param_name = {"type", "tag_id", "recv_cnt"};
+    }
 };
 
 class parse_input : public CompBase {
 public:
-    int size;
-
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
 
-    parse_input() { name = "parse_input"; }
+    parse_input() {
+        name = "parse_input";
+        prim_type_code = PRIM_TYPE_CODE::PARSE_INPUT_TYPE;
+        param_name = {"size"};
+    }
 };
 
 class parse_output : public CompBase {
 public:
-    int size;
-
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
 
-    parse_output() { name = "parse_output"; }
+    parse_output() {
+        name = "parse_output";
+        prim_type_code = PRIM_TYPE_CODE::PARSE_OUTPUT_TYPE;
+        param_name = {"size"};
+    }
 };

@@ -10,7 +10,7 @@ public:
     bool is_merge; // true: FFN升维，否则为降维
 
     int task();
-    int task_core(TaskCoreContext &context);
+    int taskCoreDefault(TaskCoreContext &context);
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
@@ -33,7 +33,7 @@ public:
     MOE_LOAD_STRATEGY strategy;
 
     int task();
-    int task_core(TaskCoreContext &context);
+    int taskCoreDefault(TaskCoreContext &context);
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);

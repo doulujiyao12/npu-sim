@@ -41,7 +41,7 @@ public:
     }
 
     virtual void parseJson(json j) = 0;
-    virtual int task_core(TaskChipContext &context) = 0;
+    virtual int taskCoreDefault(TaskChipContext &context) = 0;
 
     virtual ~chip_instr_base() = default;
 

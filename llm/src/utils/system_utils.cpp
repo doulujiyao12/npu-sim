@@ -20,6 +20,16 @@ bool RandResult(int threshold) {
     return num <= threshold;
 }
 
+int GetFromPairedVector(vector<pair<string, int>> &vector, string key) {
+    for (auto &pair : vector) {
+        if (pair.first == key)
+            return pair.second;
+    }
+
+    ARGUS_EXIT("Key ", key, " does not exist in vector.\n");
+    return -1;
+}
+
 CoreHWConfig GetCoreHWConfig(int id) {
     for (auto pair : g_core_hw_config) {
         if (pair.first == id)

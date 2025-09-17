@@ -85,7 +85,7 @@ sc_bv<128> CompBase::serialize() {
 void CompBase::deserialize(sc_bv<128> buffer) {
     datatype = DATATYPE(buffer.range(8, 8).to_uint64());
     inp_offset = buffer.range(24, 9).to_uint64();
-    inp_size = buffer.range(40, 25).to_uint64();
+    data_offset = buffer.range(40, 25).to_uint64();
     out_offset = buffer.range(56, 41).to_uint64();
 
     int pos = 61;
@@ -129,17 +129,96 @@ void CompBase::parseJson(json j) {
     cout << "out_offset: " << out_offset << endl;
 }
 
+int CompBase::sramUtilization(DATATYPE datatype, int cid) {
+    int total_sram = 0;
+
+    total_sram += CeilingDivision(input_size * data_byte * 8,
+                                  GetCoreHWConfig(cid).sram_bitwidth);
+
+    for (auto &pair : data_chunk) {
+        total_sram += CeilingDivision(pair.second * data_byte * 8,
+                                      GetCoreHWConfig(cid).sram_bitwidth);
+    }
+
+    total_sram *= GetCoreHWConfig(cid).sram_bitwidth / 8;
+    return total_sram;
+}
+
 void CompBase::initializeDefault() {
     if (datatype == INT8)
         data_byte = 1;
     else if (datatype == FP16)
         data_byte = 2;
 
+    input_size = 0;
+    for (auto &input : data_size_input)
+        input_size += input;
+    if (!input_size)
+        ARGUS_EXIT("0 input size for primitive.\n");
+
+    out_size = 0;
+    for (const auto &chunk : data_chunk) {
+        if (chunk.first == "output") {
+            out_size = chunk.second;
+            break;
+        }
+    }
+    if (!out_size)
+        ARGUS_EXIT("0 output size for primitive.\n");
+
     int pos = data_offset;
     for (auto &chunk : data_chunk) {
         data_chunk_addr[chunk.first] = pos;
         pos += chunk.second * data_byte;
     }
+}
+
+int CompBase::taskCoreDefault(TaskCoreContext &context) {
+    // 所用时间
+    u_int64_t dram_time = 0;
+    u_int64_t overlap_time = 0;
+
+    // 检查数据重利用
+    bool input_reuse[data_size_input.size()];
+    for (int i = 0; i < data_size_input.size(); i++) {
+        input_reuse[i] = false;
+        if (datapass_label.indata[i][0] == '_') {
+            input_reuse[i] = true;
+            datapass_label.indata[i] = datapass_label.indata[i].substr(1);
+        }
+    }
+
+    // 获取前缀label
+    std::size_t pos = datapass_label.outdata.find_last_of('_');
+    std::string prefix;
+    if (pos != std::string::npos)
+        prefix = datapass_label.outdata.substr(0, pos);
+    else
+        prefix = datapass_label.outdata;
+
+    // 读入input数据
+    checkInputData(context, dram_time, inp_offset, data_size_input);
+
+    u_int64_t exu_flops = 0;
+    u_int64_t sfu_flops = 0;
+#if USE_SRAM == 1
+    {
+        // 自定义task
+        taskCore(context, prefix, dram_time, exu_flops, sfu_flops);
+
+        // 删除标签
+        for (int i = 0; i < data_size_input.size(); i++) {
+            if (!input_reuse[i] && datapass_label.indata[i] != UNSET_LABEL)
+                sram_pos_locator->deletePair(datapass_label.indata[i]);
+        }
+    }
+#endif
+
+    // 计算overlap并写回output数据
+    writeOutputData(context, exu_flops, sfu_flops, dram_time, overlap_time,
+                    out_size, data_chunk_addr["output"]);
+
+    return overlap_time;
 }
 
 void CompBase::checkInputData(TaskCoreContext &context, uint64_t &dram_time,
@@ -559,4 +638,17 @@ void CompBase::writeOutputData(TaskCoreContext &context, uint64_t exu_flops,
     }
 #endif
 #endif
+}
+
+void CompBase::printSelf() {
+    cout << "<" + name + ">\n";
+
+    for (auto &pair : param_value)
+        cout << "\t" << pair.first << ": " << pair.second << endl;
+
+    for (auto &pair : data_chunk)
+        cout << "\t" << pair.first << ": " << pair.second << endl;
+
+    for (auto &pair : data_chunk_addr)
+        cout << "\t" << pair.first << ": " << pair.second << endl;
 }

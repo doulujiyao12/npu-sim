@@ -27,7 +27,7 @@ public:
         std::cout << prefix << "<Recv_global_mem>" << std::endl;
     }
 
-    int task_core(TaskChipContext &context) override {
+    int taskCoreDefault(TaskChipContext &context) override {
         std::cout << "Executing <Recv_global_mem>" << std::endl;
         return 0;
     }

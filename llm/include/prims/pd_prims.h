@@ -9,7 +9,7 @@ public:
     int chunk;
 
     int task();
-    int task_core(TaskCoreContext &context);
+    int taskCoreDefault(TaskCoreContext &context);
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
@@ -32,7 +32,7 @@ public:
     PD_JOB job_type;
 
     int task();
-    int task_core(TaskCoreContext &context);
+    int taskCoreDefault(TaskCoreContext &context);
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
@@ -56,7 +56,7 @@ public:
     int chunk;
 
     int task();
-    int task_core(TaskCoreContext &context);
+    int taskCoreDefault(TaskCoreContext &context);
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);

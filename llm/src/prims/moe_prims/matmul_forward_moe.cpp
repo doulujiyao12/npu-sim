@@ -124,7 +124,7 @@ sc_bv<128> matmul_forward_moe::serialize() {
     return d;
 }
 
-int matmul_forward_moe::task_core(TaskCoreContext &context) {
+int matmul_forward_moe::taskCoreDefault(TaskCoreContext &context) {
     // 所用时间
     u_int64_t dram_time = 0;
     u_int64_t overlap_time = 0;
@@ -167,7 +167,7 @@ int matmul_forward_moe::task_core(TaskCoreContext &context) {
 
     // 读入input数据
     checkInputData(context, dram_time, inp_global_addr, data_size_input);
-    BETTER_PRINT(dram_time);
+    ARGUS_PRINT(dram_time);
 
 #if USE_SRAM == 1
     {
@@ -265,13 +265,13 @@ int matmul_forward_moe::task_core(TaskCoreContext &context) {
             checked[e] = true;
         }
 
-        BETTER_PRINT(dram_time);
+        ARGUS_PRINT(dram_time);
 
         // 删除标签
         if (!input_reuse)
             sram_pos_locator->deletePair(datapass_label.indata[0]);
 
-        BETTER_PRINT(dram_time);
+        ARGUS_PRINT(dram_time);
     }
 #endif
 
@@ -316,7 +316,7 @@ int matmul_forward_moe::task_core(TaskCoreContext &context) {
                       out_global_addr);
 #endif 
     
-    BETTER_PRINT(overlap_time);
+    ARGUS_PRINT(overlap_time);
 
     return 0;
 }

@@ -2,7 +2,7 @@
 
 int Set_batch::task() { return 0; }
 
-int Set_batch::task_core(TaskCoreContext &context) {
+int Set_batch::taskCoreDefault(TaskCoreContext &context) {
     (*stage_cnt)++;
 
     target->clear();

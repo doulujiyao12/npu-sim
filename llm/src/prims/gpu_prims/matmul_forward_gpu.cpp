@@ -2,7 +2,7 @@
 #include "utils/memory_utils.h"
 #include "utils/system_utils.h"
 
-int Matmul_f_gpu::task_core(TaskCoreContext &context) {
+int Matmul_f_gpu::taskCoreDefault(TaskCoreContext &context) {
     int data_byte = 0;
     if (datatype == INT8) {
         data_byte = 1;

@@ -10,7 +10,7 @@ public:
     SramPosLocator *sram_pos_locator;
     int *loop_cnt;
 
-    int task_core(TaskCoreContext &context);
+    int taskCoreDefault(TaskCoreContext &context);
     int task();
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -33,7 +33,7 @@ public:
     int size;
 
     int task();
-    int task_core(TaskCoreContext &context);
+    int taskCoreDefault(TaskCoreContext &context);
 
     void deserialize(sc_bv<128> buffer);
     sc_bv<128> serialize();
@@ -55,7 +55,7 @@ public:
     int recv_cnt; // 需要接收到的end包数量（用于多发一）
 
     int task();
-    int task_core(TaskCoreContext &context);
+    int taskCoreDefault(TaskCoreContext &context);
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
@@ -90,7 +90,7 @@ public:
     SramPosLocator *sram_pos_locator;
 
     int task();
-    int task_core(TaskCoreContext &context);
+    int taskCoreDefault(TaskCoreContext &context);
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
@@ -123,7 +123,7 @@ public:
     AddrDatapassLabel *datapass_label;
 
     int task();
-    int task_core(TaskCoreContext &context);
+    int taskCoreDefault(TaskCoreContext &context);
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
@@ -153,7 +153,7 @@ public:
     int *stage_cnt;
 
     int task();
-    int task_core(TaskCoreContext &context);
+    int taskCoreDefault(TaskCoreContext &context);
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
@@ -186,7 +186,7 @@ public:
     int size;
 
     int task();
-    int task_core(TaskCoreContext &context);
+    int taskCoreDefault(TaskCoreContext &context);
 
     void deserialize(sc_bv<128> buffer);
     sc_bv<128> serialize();

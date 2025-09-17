@@ -100,7 +100,7 @@ sc_bv<128> attention_forward_pd::serialize() {
     return d;
 }
 
-int attention_forward_pd::task_core(TaskCoreContext &context) {
+int attention_forward_pd::taskCoreDefault(TaskCoreContext &context) {
     // 所用时间
     u_int64_t dram_time = 0;
     u_int64_t overlap_time = 0;
@@ -135,7 +135,7 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
 
     // 读入input数据
     checkInputData(context, dram_time, inp_global_addr, data_size_input);
-    BETTER_PRINT(dram_time);
+    ARGUS_PRINT(dram_time);
 
 #if USE_SRAM == 1
     int cur_tokens = 0;
@@ -265,13 +265,13 @@ int attention_forward_pd::task_core(TaskCoreContext &context) {
     if (!input_reuse)
         sram_pos_locator->deletePair(datapass_label.indata[0]);
 
-    BETTER_PRINT(dram_time);
+    ARGUS_PRINT(dram_time);
 #endif
 
     // 计算overlap并写回output数据
     writeOutputData(context, (uint64_t)B * NH * T * (T - 1) / 2 * (4 * C / NH + 5), 0,
                       dram_time, overlap_time, data_size_out, out_global_addr);
-    BETTER_PRINT(overlap_time);
+    ARGUS_PRINT(overlap_time);
 
     return overlap_time;
 }

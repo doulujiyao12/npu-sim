@@ -9,7 +9,7 @@ public:
     int B, T, C, OC;
     int slice_x, slice_y;
 
-    int task_core(TaskCoreContext &context);
+    int taskCoreDefault(TaskCoreContext &context);
     int task();
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -29,7 +29,7 @@ public:
     int B, T, C, NH;
     int slice_x, slice_y;
 
-    int task_core(TaskCoreContext &context);
+    int taskCoreDefault(TaskCoreContext &context);
     int task();
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -49,7 +49,7 @@ public:
     int N;
     int slice_x, slice_y;
 
-    int task_core(TaskCoreContext &context);
+    int taskCoreDefault(TaskCoreContext &context);
     int task();
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -69,7 +69,7 @@ public:
     int B, T, C;
     int slice_x, slice_y;
 
-    int task_core(TaskCoreContext &context);
+    int taskCoreDefault(TaskCoreContext &context);
     int task();
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -90,7 +90,7 @@ public:
     int N;
     int slice_x, slice_y;
 
-    int task_core(TaskCoreContext &context);
+    int taskCoreDefault(TaskCoreContext &context);
     int task();
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
@@ -117,7 +117,7 @@ public:
     vector<bool> *decode_done;
 
     int task();
-    int task_core(TaskCoreContext &context);
+    int taskCoreDefault(TaskCoreContext &context);
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
@@ -139,7 +139,7 @@ public:
     vector<Stage> batchInfo;
     vector<bool> *decode_done;
 
-    int task_core(TaskCoreContext &context);
+    int taskCoreDefault(TaskCoreContext &context);
     int task();
     int sram_utilization(DATATYPE datatype, int cid = 0);
 

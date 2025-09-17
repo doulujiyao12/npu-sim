@@ -617,10 +617,10 @@ void WorkerCoreExecutor::send_logic() {
 
                     int delay = 0;
                     TaskCoreContext context = generate_context(this);
-                    // 因为send task_core 会delay 所以 ev_send_helper
+                    // 因为send taskCoreDefault 会delay 所以 ev_send_helper
                     // 有机会发出去 然后wc 里面又要wait 一个cycle ev_send_helper
                     // 一低一高
-                    delay = prim->task_core(context);
+                    delay = prim->taskCoreDefault(context);
 
                     if (!channel_avail_i.read())
                         wait(ev_channel_avail_i);
@@ -830,7 +830,7 @@ void WorkerCoreExecutor::send_para_logic() {
 
                             int delay = 0;
                             TaskCoreContext context = generate_context(this);
-                            delay = prim->task_core(context);
+                            delay = prim->taskCoreDefault(context);
 #if ROUTER_PIPE == 0
                             send_buffer = Msg(
                                 s_prim->data_packet_id == s_prim->max_packet,
@@ -1124,7 +1124,7 @@ void WorkerCoreExecutor::recv_logic() {
 
                     int delay = 0;
                     TaskCoreContext context = generate_context(this);
-                    delay = prim->task_core(context);
+                    delay = prim->taskCoreDefault(context);
 
                     // 如果是end包，则将recv_index归零，表示开始接收下一个core传来的数据（如果有的话）
                     if (temp.is_end) {
@@ -1295,7 +1295,7 @@ void WorkerCoreExecutor::task_logic() {
         cout << "[PRIM] Core <\033[38;5;214m" << cid
              << "\033[0m>: PRIM NAME -----------------------: " << p->name
              << endl;
-        delay = p->task_core(context);
+        delay = p->taskCoreDefault(context);
         wait(sc_time(delay, SC_NS));
 
         // sc_time start_time = sc_time_stamp();
@@ -1421,7 +1421,7 @@ try = present_time some one has try to lock the helper before in the same time
 
 status = 0, If a new cycle begins and no other module requires the helper, reset
 send_helper_write to 0. pool down data_sent_o status = 1, 表示 准备执行send
-task_core （会有delay） 一般在status 0 之后 同一个周期内，行为和 0 一致
+taskCoreDefault （会有delay） 一般在status 0 之后 同一个周期内，行为和 0 一致
 
 status = 2 表示send 从 sram 里面已经拿到数据了，可以开始发送了
 

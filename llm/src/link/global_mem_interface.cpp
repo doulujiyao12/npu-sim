@@ -74,7 +74,7 @@ void GlobalMemInterface::task_logic() {
         } 
 
         // p->datapass_label = *next_datapass_label;
-        delay = p->task_core(context);
+        delay = p->taskCoreDefault(context);
         wait(sc_time(delay, SC_NS));
 
         ev_block.notify(CYCLE, SC_NS);

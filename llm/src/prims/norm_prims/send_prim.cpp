@@ -72,7 +72,7 @@ sc_bv<128> Send_prim::serialize() {
 
     return d;
 }
-int Send_prim::task_core(TaskCoreContext &context) {
+int Send_prim::taskCoreDefault(TaskCoreContext &context) {
 #if USE_NB_DRAMSYS == 0
     auto wc = context.wc;
 #endif

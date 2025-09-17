@@ -7,6 +7,7 @@
 using namespace std;
 
 bool RandResult(int threshold);
+int GetFromPairedVector(vector<pair<string, int>> &vector, string key);
 
 CoreHWConfig GetCoreHWConfig(int id);
 

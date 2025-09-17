@@ -21,7 +21,7 @@ sc_bv<128> Clear_sram::serialize() {
 
 int Clear_sram::sram_utilization(DATATYPE datatype, int cid) { return 0; }
 
-int Clear_sram::task_core(TaskCoreContext &context) {
+int Clear_sram::taskCoreDefault(TaskCoreContext &context) {
     // CTODO: rearrange sram (need sram_pos_locator pointer)
     cout << "[INFO] before clear_sram: sram_addr=" << *(context.sram_addr)
          << endl;

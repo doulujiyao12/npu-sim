@@ -45,7 +45,7 @@ void Gelu_f_gpu::deserialize(sc_bv<128> buffer) {
 
 int Gelu_f_gpu::sram_utilization(DATATYPE datatype, int cid) { return 0; }
 
-int Gelu_f_gpu::task_core(TaskCoreContext &context) {
+int Gelu_f_gpu::taskCoreDefault(TaskCoreContext &context) {
     int data_byte = 0;
     if (datatype == INT8) {
         data_byte = 1;

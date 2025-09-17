@@ -24,7 +24,7 @@ public:
     int dram_data_size;
     DATATYPE datatype = INT8;
 
-    virtual int task_core(TaskCoreContext &context) = 0;
+    virtual int taskCoreDefault(TaskCoreContext &context) = 0;
     virtual sc_bv<128> serialize() = 0;
     virtual void deserialize(sc_bv<128> buffer) = 0;
     virtual void initialize() = 0;
