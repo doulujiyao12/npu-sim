@@ -5,6 +5,8 @@
 #include "prims/comp_prims.h"
 #include "utils/system_utils.h"
 
+REGISTER_PRIM(Batchnorm_f);
+
 void Batchnorm_f::initialize() {}
 
 int Batchnorm_f::taskCore(TaskCoreContext &context, string prim_name,

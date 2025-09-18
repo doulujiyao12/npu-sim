@@ -3,10 +3,10 @@
 #include <functional>
 #include <unordered_map>
 
+#include "prims/base.h"
 #include "prims/comp_prims.h"
 #include "prims/gpu_prims.h"
 #include "prims/norm_prims.h"
-#include "prims/base.h"
 #include "utils/print_utils.h"
 
 class PrimFactory {
@@ -72,9 +72,9 @@ private:
 };
 
 // 所有原语的注册函数
-#define REGISTER_PRIM(prim_type, name)                                         \
+#define REGISTER_PRIM(prim_type)                                               \
     static bool registered_##prim_type = []() {                                \
         PrimFactory::getInstance().registerPrim(                               \
-            name, []() { return new prim_type(); });                           \
+            prim_type().name, []() { return new prim_type(); });               \
         return true;                                                           \
     }();

@@ -9,6 +9,8 @@
 #include "utils/print_utils.h"
 #include "utils/system_utils.h"
 
+REGISTER_PRIM(Send_global_memory);
+
 void Send_global_memory::initialize() {
     ARGUS_EXIT("Send_global_memory not implemented.\n");
 }

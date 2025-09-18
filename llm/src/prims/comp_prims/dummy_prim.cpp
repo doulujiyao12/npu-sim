@@ -5,6 +5,8 @@
 #include "prims/comp_prims.h"
 #include "utils/memory_utils.h"
 
+REGISTER_PRIM(Dummy_p)
+
 void Dummy_p::initialize() { data_size_input = {80}; }
 
 int Dummy_p::taskCore(TaskCoreContext &context, string prim_name,

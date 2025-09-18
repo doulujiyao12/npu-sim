@@ -7,6 +7,8 @@
 #include "utils/memory_utils.h"
 #include "utils/system_utils.h"
 
+REGISTER_PRIM(Max_pool);
+
 void Max_pool::initialize() {
     auto &p = param_value;
     int oH = (p["H"] + 2 * p["pY"] - p["kY"]) / p["sY"] + 1;

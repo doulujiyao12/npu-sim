@@ -7,6 +7,8 @@
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
+REGISTER_PRIM(Gelu_f);
+
 #define GELU_SCALING_FACTOR sqrtf(2.0f / M_PI)
 
 void Gelu_f::initialize() {

@@ -1,5 +1,8 @@
 #include "prims/pd_prims.h"
 #include "utils/memory_utils.h"
+#include "utils/prim_utils.h"
+
+REGISTER_PRIM(attention_forward_pd);
 
 void attention_forward_pd::initialize() {
     auto &p = param_value;

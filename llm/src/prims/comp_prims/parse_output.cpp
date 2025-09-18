@@ -1,5 +1,8 @@
 #include "prims/comp_prims.h"
 #include "utils/system_utils.h"
+
+REGISTER_PRIM(parse_output);
+
 void parse_output::initialize() {
     auto &p = param_value;
     data_size_input = {0};

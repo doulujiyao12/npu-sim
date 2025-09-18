@@ -2,6 +2,9 @@
 #include "utils/memory_utils.h"
 #include "utils/print_utils.h"
 #include "utils/system_utils.h"
+#include "utils/prim_utils.h"
+
+REGISTER_PRIM(matmul_forward_moe);
 
 void matmul_forward_moe::initialize() {
     auto &p = param_value;

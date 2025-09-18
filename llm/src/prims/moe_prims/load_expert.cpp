@@ -1,6 +1,9 @@
 #include "prims/moe_prims.h"
 #include "utils/memory_utils.h"
 #include "utils/system_utils.h"
+#include "utils/prim_utils.h"
+
+REGISTER_PRIM(load_expert);
 
 void load_expert::initialize() {
     auto &p = param_value;

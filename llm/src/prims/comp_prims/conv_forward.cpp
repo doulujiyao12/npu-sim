@@ -6,6 +6,8 @@
 #include "utils/memory_utils.h"
 #include "utils/system_utils.h"
 
+REGISTER_PRIM(Conv_f);
+
 void Conv_f::initialize() {
     auto &p = param_value;
     int oH = (p["H"] + 2 * p["pY"] - p["kY"]) / p["sY"] + 1;

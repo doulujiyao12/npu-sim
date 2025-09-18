@@ -5,6 +5,8 @@
 #include "prims/comp_prims.h"
 #include "utils/print_utils.h"
 
+REGISTER_PRIM(Split_conv);
+
 void Split_conv::initialize() {
     // W = p->W, H = p->H, C = p->C, B = p->B;
     // pX = p->pX, pY = p->pY;

@@ -4,6 +4,8 @@
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
+REGISTER_PRIM(rmsnorm_forward);
+
 void rmsnorm_forward::initialize() {
     auto &p = param_value;
     data_size_input = {p["B"] * p["T"] * p["C"]};

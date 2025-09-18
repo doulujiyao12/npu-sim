@@ -3,6 +3,7 @@
 #include "utils/memory_utils.h"
 #include "utils/print_utils.h"
 #include "utils/system_utils.h"
+#include "utils/prim_utils.h"
 
 #include "common/memory.h"
 #include "memory/dram/Dcachecore.h"
@@ -50,7 +51,7 @@ void CompBase::parseSramLabel(json j) {
 
 sc_bv<128> CompBase::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(prim_type_code);
+    d.range(7, 0) = sc_bv<8>(PrimFactory::getInstance().getPrimId(name));
     d.range(8, 8) = sc_bv<1>(datatype);
     d.range(24, 9) = sc_bv<16>(inp_offset);
     d.range(40, 25) = sc_bv<16>(data_offset);

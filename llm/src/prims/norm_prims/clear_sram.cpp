@@ -5,30 +5,30 @@
 #include "prims/norm_prims.h"
 #include "prims/base.h"
 #include "utils/system_utils.h"
+#include "utils/prim_utils.h"
 
-void Clear_sram::printSelf(string prefix) {
-    cout << prefix << "<clear_sram>\n";
+REGISTER_PRIM(Clear_sram);
+
+void Clear_sram::printSelf() {
+    cout << "<clear_sram>\n";
 }
 
 void Clear_sram::deserialize(sc_bv<128> buffer) {}
 
 sc_bv<128> Clear_sram::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(CLEAR_SRAM_TYPE);
+    d.range(7, 0) = sc_bv<8>(PrimFactory::getInstance().getPrimId(name));
 
     return d;
 }
 
-int Clear_sram::sram_utilization(DATATYPE datatype, int cid) { return 0; }
-
 int Clear_sram::taskCoreDefault(TaskCoreContext &context) {
-    // CTODO: rearrange sram (need sram_pos_locator pointer)
     cout << "[INFO] before clear_sram: sram_addr=" << *(context.sram_addr)
          << endl;
 #if USE_SRAM_MANAGER == 0
     vector<pair<string, AddrPosKey>> temp_list;
     // sram_pos_locator->printAllKeys();
-    for (auto record : sram_pos_locator->data_map) {
+    for (auto record : prim_context->sram_pos_locator_->data_map) {
         cout << "\tReading label <" << record.first << ">\n";
 
         if (!record.second.valid)
@@ -50,25 +50,20 @@ int Clear_sram::taskCoreDefault(TaskCoreContext &context) {
             temp_list.push_back(record);
         }
     }
-    // for (const auto& item : temp_list) {
-    //     std::cout << "Key: " << item.first << ", ";
-    //     std::cout << "AddrPosKey - pos: " << item.second.pos << ", size: " <<
-    //     item.second.size << std::endl;
-    // }
 
-    sram_pos_locator->clearAll();
+    prim_context->sram_pos_locator_->clearAll();
     int pos = 0;
     for (auto record : temp_list) {
         auto size = record.second.size;
-        int dma_read_count = size * 8 / (GetCoreHWConfig(cid).sram_bitwidth * SRAM_BANKS);
+        int dma_read_count = size * 8 / (GetCoreHWConfig(prim_context->cid).sram_bitwidth * SRAM_BANKS);
         int byte_residue =
-            size * 8 - dma_read_count * (GetCoreHWConfig(cid).sram_bitwidth * SRAM_BANKS);
+            size * 8 - dma_read_count * (GetCoreHWConfig(prim_context->cid).sram_bitwidth * SRAM_BANKS);
         int single_read_count =
-            CeilingDivision(byte_residue, GetCoreHWConfig(cid).sram_bitwidth);
+            CeilingDivision(byte_residue, GetCoreHWConfig(prim_context->cid).sram_bitwidth);
 
         AddrPosKey temp_key = AddrPosKey(pos, size);
         u_int64_t temp_addr = 0;
-        sram_pos_locator->addPair(record.first, temp_key, context, temp_addr);
+        prim_context->sram_pos_locator_->addPair(record.first, temp_key, context, temp_addr);
         cout << "\tAdd label <" << record.first << "> at offset " << pos
              << endl;
 
@@ -78,11 +73,9 @@ int Clear_sram::taskCoreDefault(TaskCoreContext &context) {
     *(context.sram_addr) = pos;
     cout << "[INFO] after clear_sram: sram_addr=" << pos << endl;
 #endif
-    *(loop_cnt) += 1;
+    prim_context->loop_cnt += 1;
 
 
     // CTODO: GC time count
     return 0;
 }
-
-int Clear_sram::task() { return 0; }

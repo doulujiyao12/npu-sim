@@ -1,6 +1,8 @@
 #include "prims/comp_prims.h"
 #include "utils/memory_utils.h"
 
+REGISTER_PRIM(rope_forward);
+
 void rope_forward::initialize() {
     auto &p = param_value;
     data_size_input = {p["B"] * p["T"] * p["C"]};

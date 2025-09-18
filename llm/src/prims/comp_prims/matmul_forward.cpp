@@ -12,6 +12,8 @@
 #include "utils/print_utils.h"
 #include "utils/system_utils.h"
 
+REGISTER_PRIM(Matmul_f);
+
 void Matmul_f::initialize() {
     auto &p = param_value;
     data_size_input = {p["B"] * p["T"] * p["C"]};
@@ -46,7 +48,7 @@ int Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
 
     uint64_t performance_cycle = (exu->x_dims + exu->x_dims + padding_input_x) *
                                  weight_tile_x * weight_tile_y;
- 
+
     uint64_t performance_comp =
         performance_cycle * exu->y_dims * exu->x_dims * comp_util;
     LOG_VERBOSE(1, context.cid,
@@ -58,11 +60,13 @@ int Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
 
     for (int loop = 0; loop < loop_input_count; loop++) {
         for (int p = 0; p < data_size_input.size(); p++) {
-            if (datapass_label.indata[p].find(DRAM_LABEL) == 0) {
-                cout << "[MATMUL] Core " << cid << ": Checking input "
-                     << datapass_label.indata[p] << "..." << endl;
+            if (prim_context->datapass_label_->indata[p].find(DRAM_LABEL) ==
+                0) {
+                cout << "[MATMUL] Core " << prim_context->cid << ": Checking input "
+                     << prim_context->datapass_label_->indata[p] << "..."
+                     << endl;
                 prefReadData(context, dram_time, data_size_input[p],
-                             datapass_label.indata[p]);
+                             prim_context->datapass_label_->indata[p]);
             }
         }
     }

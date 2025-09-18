@@ -3,6 +3,7 @@
 
 #include "common/system.h"
 #include "prims/base.h"
+#include "utils/prim_utils.h"
 
 class Attention_f : public CompBase {
 public:

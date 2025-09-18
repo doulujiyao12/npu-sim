@@ -6,6 +6,8 @@
 #include "utils/memory_utils.h"
 #include "utils/system_utils.h"
 
+REGISTER_PRIM(Merge_matmul);
+
 void Merge_matmul::initialize() {
     auto &p = param_value;
     if (p["dim"] == 1)

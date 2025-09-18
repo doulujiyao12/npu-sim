@@ -3,6 +3,8 @@
 #include "utils/memory_utils.h"
 #include "utils/system_utils.h"
 
+REGISTER_PRIM(swiglu_forward);
+
 void swiglu_forward::initialize() {
     auto &p = param_value;
     data_size_input = {p["N"], p["N"]};

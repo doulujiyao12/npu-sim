@@ -8,6 +8,8 @@
 #include "utils/print_utils.h"
 #include "utils/system_utils.h"
 
+REGISTER_PRIM(Recv_global_memory);
+
 void Recv_global_memory::initialize() {
     ARGUS_EXIT("Recv_global_memory not implemented.\n");
 }
