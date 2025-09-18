@@ -15,13 +15,13 @@
 #include "prims/moe_prims.h"
 #include "prims/norm_prims.h"
 #include "prims/pd_prims.h"
-#include "prims/prim_base.h"
+#include "prims/base.h"
 #include "trace/Event_engine.h"
-#include "utils/file_utils.h"
 #include "utils/memory_utils.h"
 #include "utils/msg_utils.h"
 #include "utils/pe_utils.h"
 #include "utils/prim_utils.h"
+#include "utils/print_utils.h"
 #include "utils/system_utils.h"
 #include "workercore/workercore.h"
 
@@ -31,8 +31,8 @@ using namespace std;
 WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
                        Event_engine *event_engine, string dram_config_name)
     : sc_module(n), cid(s_cid), event_engine(event_engine) {
-    systolic_config = new HardwareTaskConfig();
-    other_config = new HardwareTaskConfig();
+    // systolic_config = new HardwareTaskConfig();
+    // other_config = new HardwareTaskConfig();
     dcache = new DCache(sc_gen_unique_name("dcache"), cid, (int)cid / GRID_X,
                         (int)cid % GRID_X, this->event_engine, dram_config_name,
                         "../DRAMSys/configs");
@@ -40,7 +40,7 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
          << dram_config_name << endl;
     cout << " MaxAddr "
          << dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
-    auto sram_bitw = 
+    auto sram_bitw = GetCoreHWConfig(cid).sram_bitwidth;
     ram_array = new DynamicBandwidthRamRow<sc_bv<SRAM_BITWIDTH>, SRAM_BANKS>(
         sc_gen_unique_name("ram_array"), 0,
         MAX_SRAM_SIZE * 8 / sram_bitw / SRAM_BANKS, SIMU_READ_PORT,
@@ -68,8 +68,8 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
            dcache->dramSysWrapper->dramsys->getMemSpec().memorySizeBytes);
     g_dram_kvtable[cid] =
         new DramKVTable(executor->MaxDramAddr, (uint64_t)50 * 1024 * 1024, 20);
-    executor->systolic_config = systolic_config;
-    executor->other_config = other_config;
+    // executor->systolic_config = systolic_config;
+    // executor->other_config = other_config;
     // dummy_dcache =  new DummyDCache("dcache");
 #if USE_NB_DRAMSYS == 1
     executor->nb_dcache_socket->socket.bind(dcache->socket);
@@ -86,21 +86,21 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
     executor->temp_mem_access_port->mem_write_port(*temp_ram_array);
     executor->high_bw_temp_mem_access_port->mem_read_port(*temp_ram_array);
 
-    systolic = new SystolicArray(sc_gen_unique_name("systolic-array"),
-                                 this->event_engine, systolic_config);
+    // systolic = new SystolicArray(sc_gen_unique_name("systolic-array"),
+    //                              this->event_engine, systolic_config);
 
-    executor->systolic_done_i(systolic_done);
-    systolic->systolic_done_o(systolic_done);
-    executor->systolic_start_o(systolic_start);
-    systolic->systolic_start_i(systolic_start);
+    // executor->systolic_done_i(systolic_done);
+    // systolic->systolic_done_o(systolic_done);
+    // executor->systolic_start_o(systolic_start);
+    // systolic->systolic_start_i(systolic_start);
 }
 
 WorkerCore::~WorkerCore() {
     delete executor;
     delete dcache;
-    delete systolic;
-    delete systolic_config;
-    delete other_config;
+    // delete systolic;
+    // delete systolic_config;
+    // delete other_config;
     delete ram_array;
     delete temp_ram_array;
 }
@@ -158,12 +158,14 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
 
     SC_THREAD(poll_buffer_i);
     sram_addr = new int(0);
-    sram_manager_ = new SramManager(0, cid, MAX_SRAM_SIZE, SRAM_BLOCK_SIZE, 0);
 
+    // 初始化PrimCoreContext
+    core_context = new PrimCoreContext(cid);
+    core_context->gpu_pos_locator_ = gpu_pos_locator;
 
     send_done = true;
     send_last_packet = false;
-    loop_cnt = 1;
+    
     start_global_mem_event = new sc_event();
     end_global_mem_event = new sc_event();
     start_nb_dram_event = new sc_event();
@@ -173,19 +175,12 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
 
     end_nb_dram_event = new sc_event();
     end_nb_gpu_dram_event = new sc_event();
-    next_datapass_label = new AddrDatapassLabel();
-    sram_pos_locator = new SramPosLocator(s_cid, sram_manager_);
-    batchInfo = new vector<Stage>;
-    stage_cnt = 0;
+
     sram_writer = new SRAMWriteModule("sram_writer", end_sram_event);
 #if USE_NB_DRAMSYS == 1
     nb_dcache_socket =
         new NB_DcacheIF(cid, sc_gen_unique_name("nb_dcache"),
                         start_nb_dram_event, end_nb_dram_event, event_engine);
-    // nb_global_mem_socket =
-    //     new NB_GlobalMemIF(sc_gen_unique_name("nb_global_mem"),
-    //     start_global_mem_event,
-    //         end_global_mem_event, event_engine);
 #else
     dcache_socket = new DcacheCore(sc_gen_unique_name("dcache"), event_engine);
 #endif
@@ -195,8 +190,6 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
     gpunb_dcache_if = new GPUNB_dcacheIF(sc_gen_unique_name("nb_dcache_if"),
                                          cid, start_nb_gpu_dram_event,
                                          end_nb_gpu_dram_event, event_engine);
-    // cache_processor = new Processor(("processor_" + to_string(cid)).c_str(),
-    // cid * 1000);
 #else
 #endif
     mem_access_port = new mem_access_unit(sc_gen_unique_name("mem_access_unit"),
@@ -214,13 +207,6 @@ void WorkerCoreExecutor::init_global_mem() {
         sc_gen_unique_name("nb_global_mem"), start_global_mem_event,
         end_global_mem_event, event_engine);
 }
-
-// void WorkerCoreExecutor::init_global_mem_interface() {
-//     assert(0);
-//     nb_global_mem_socket = new NB_GlobalMemIF(
-//         sc_gen_unique_name("nb_global_mem"), start_global_mem_event,
-//         end_global_mem_event, event_engine);
-// }
 
 void WorkerCoreExecutor::end_of_elaboration() {
     // 在构造函数之后设置信号的初始值
@@ -256,13 +242,13 @@ void WorkerCoreExecutor::worker_core_execute() {
                 "Core " + ToHexString(cid), "Send_prim", "B",
                 Trace_event_util(
                     "Send_prim" +
-                    get_send_type_name(dynamic_cast<Send_prim *>(p)->type)));
+                    GetEnumSendType(dynamic_cast<Send_prim *>(p)->type)));
             wait(prim_block.negedge_event());
             event_engine->add_event(
                 "Core " + ToHexString(cid), "Send_prim", "E",
                 Trace_event_util(
                     "Send_prim" +
-                    get_send_type_name(dynamic_cast<Send_prim *>(p)->type)));
+                    GetEnumSendType(dynamic_cast<Send_prim *>(p)->type)));
 #else
             while (!send_done)
                 wait(CYCLE, SC_NS);
@@ -300,13 +286,13 @@ void WorkerCoreExecutor::worker_core_execute() {
                 "Core " + ToHexString(cid), "Receive_prim", "B",
                 Trace_event_util(
                     "Receive_prim" +
-                    get_recv_type_name(dynamic_cast<Recv_prim *>(p)->type)));
+                    GetEnumRecvType(dynamic_cast<Recv_prim *>(p)->type)));
             wait(prim_block.negedge_event());
             event_engine->add_event(
                 "Core " + ToHexString(cid), "Receive_prim", "E",
                 Trace_event_util(
                     "Receive_prim" +
-                    get_recv_type_name(dynamic_cast<Recv_prim *>(p)->type)));
+                    GetEnumRecvType(dynamic_cast<Recv_prim *>(p)->type)));
         } else {
             // 检查队列中p的下一个原语是否还是计算原语
             bool last_comp = false;
@@ -374,168 +360,11 @@ void WorkerCoreExecutor::switch_prim_block() {
 
 // 指令被 RECV_CONF发送过来后，会在本地核实例化对应的指令类
 PrimBase *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
-    PrimBase *task = nullptr;
     int type = buffer.range(7, 0).to_uint64();
-
-    switch (type) {
-    case LAYERNORM_F_TYPE:
-        task = new Layernorm_f();
-        break;
-    case MATMUL_F_TYPE:
-        task = new Matmul_f();
-        break;
-    case ATTENTION_F_TYPE:
-        task = new Attention_f();
-        break;
-    case GELU_F_TYPE:
-        task = new Gelu_f();
-        break;
-    case RESIDUAL_F_TYPE:
-        task = new Residual_f();
-        break;
-    case SEND_PRIM_TYPE:
-        task = new Send_prim(this->sram_pos_locator);
-        break;
-    case RECV_PRIM_TYPE:
-        task = new Recv_prim();
-        break;
-    case LOAD_PRIM_TYPE:
-        task = new Load_prim();
-        break;
-    case STORE_PRIM_TYPE:
-        task = new Store_prim();
-        break;
-    case CONV_F_TYPE:
-        task = new Conv_f();
-        break;
-    case RELU_F_TYPE:
-        task = new Relu_f();
-        break;
-    case SPLIT_MATMUL_TYPE:
-        task = new Split_matmul();
-        break;
-    case MERGE_MATMUL_TYPE:
-        task = new Merge_matmul();
-        break;
-    case SPLIT_CONV_TYPE:
-        task = new Split_conv();
-        break;
-    case MERGE_CONV_TYPE:
-        task = new Merge_conv();
-        break;
-    case BATCHNORM_F_TYPE:
-        task = new Batchnorm_f();
-        break;
-    case MAX_POOL_TYPE:
-        task = new Max_pool();
-        break;
-    case DUMMY_P_TYPE:
-        task = new Dummy_p();
-        break;
-    case SET_ADDR_TYPE:
-        task = new Set_addr(this->next_datapass_label);
-        break;
-    case CLEAR_SRAM_TYPE:
-        task = new Clear_sram(this->sram_pos_locator, &loop_cnt);
-        break;
-    case SET_BATCH_TYPE:
-        task = new Set_batch(this->batchInfo, &stage_cnt);
-        break;
-    case SWITCH_DATA_TYPE:
-        task = new switch_data();
-        break;
-    case MATMUL_F_GPU_TYPE:
-        task = new Matmul_f_gpu();
-        break;
-    case ATTENTION_F_GPU_TYPE:
-        task = new Attention_f_gpu();
-        break;
-    case GATE_FORWARD_TYPE:
-        task = new gate_forward();
-        break;
-    case GELU_F_GPU_TYPE:
-        task = new Gelu_f_gpu();
-        break;
-    case RESIDUAL_F_GPU_TYPE:
-        task = new Residual_f_gpu();
-        break;
-    case LAYERNORM_F_GPU_TYPE:
-        task = new Layernorm_f_gpu();
-        break;
-    case MATMUL_FORWARD_GPU_PD_TYPE:
-        task = new matmul_forward_gpu_pd();
-        break;
-    case ATTENTION_FORWARD_GPU_PD_TYPE:
-        task = new attention_forward_gpu_pd();
-        break;
-    case MATMUL_FORWARD_PD_TYPE:
-        task = new matmul_forward_pd();
-        break;
-    case ATTENTION_FORWARD_PD_TYPE:
-        task = new attention_forward_pd();
-        break;
-    case SEND_GLOBAL_MEMORY_TYPE:
-        task = new Send_global_memory();
-        break;
-    case RECV_GLOBAL_MEMORY_TYPE:
-        task = new Recv_global_memory();
-        break;
-    case RMSNORM_F_TYPE:
-        task = new rmsnorm_forward();
-        break;
-    case ROPE_FORWARD_PD_TYPE:
-        task = new rope_forward_pd();
-        break;
-    case ROPE_F_TYPE:
-        task = new rope_forward();
-        break;
-    case SILU_F_TYPE:
-        task = new silu_forward();
-        break;
-    case SWIGLU_F_TYPE:
-        task = new swiglu_forward();
-        break;
-    case MATMUL_FORWARD_MOE_TYPE:
-        task = new matmul_forward_moe();
-        break;
-    case LOAD_EXPERT_TYPE:
-        task = new load_expert();
-        break;
-    case PARSE_INPUT_TYPE:
-        task = new parse_input();
-        break;
-    case PARSE_OUTPUT_TYPE:
-        task = new parse_output();
-        break;
-    default:
-        assert(0 && "Unknown prim");
-        cout << "Unknown prim: " << type << ".\n";
-        break;
-    }
+    PrimBase *task = PrimFactory::getInstance().createPrim(type);
 
     task->deserialize(buffer);
-    task->cid = cid;
-
-    if (task->prim_type == COMP_PRIM) {
-        CompBase *comp = (CompBase *)task;
-        comp->sram_pos_locator = sram_pos_locator;
-        comp->sram_pos_locator->cid = cid;
-    }
-#if USE_L1L2_CACHE == 1
-    else if (task->prim_type == GPU_PRIM) {
-        gpu_base *gpu = (gpu_base *)task;
-        gpu->gpu_pos_locator = gpu_pos_locator;
-    }
-#endif
-    else if (task->prim_type == PD_PRIM) {
-        pd_base *pd = (pd_base *)task;
-        pd->sram_pos_locator = sram_pos_locator;
-        pd->sram_pos_locator->cid = cid;
-    } else if (task->prim_type == MOE_PRIM) {
-        moe_base *moe = (moe_base *)task;
-        moe->sram_pos_locator = sram_pos_locator;
-        moe->sram_pos_locator->cid = cid;
-    }
+    task->prim_context = core_context;
 
     return task;
 }
@@ -545,8 +374,8 @@ void WorkerCoreExecutor::poll_buffer_i() {
         if (!data_sent_i.read())
             wait(ev_data_sent_i);
 
-        Msg m = deserialize_msg(channel_i.read());
-        switch (m.msg_type) {
+        Msg m = DeserializeMsg(channel_i.read());
+        switch (m.msg_type_) {
         case DATA:
             recv_buffer.push(m);
             ev_recv_data.notify(0, SC_NS);
@@ -590,9 +419,9 @@ void WorkerCoreExecutor::send_logic() {
         bool job_done = false; // 结束内圈循环的标志
 
         cout << "[SEND START] Core " << cid << ": running send "
-             << send_prim_type_to_string(prim->type) << ", destination "
-             << prim->des_id << ", tag " << prim->tag_id << ", max packet "
-             << prim->max_packet << " at " << sc_time_stamp() << endl;
+             << GetEnumSendType(prim->type) << ", destination " << prim->des_id
+             << ", tag " << prim->tag_id << ", max packet " << prim->max_packet
+             << " at " << sc_time_stamp() << endl;
 
         while (true) {
             bool need_long_wait = false;
@@ -637,7 +466,7 @@ void WorkerCoreExecutor::send_logic() {
                     if (prim->data_packet_id == prim->max_packet) {
                         cout << "Core " << cid
                              << " max_packet: " << prim->max_packet << " "
-                             << send_buffer.is_end << endl;
+                             << send_buffer.is_end_ << endl;
 
                         job_done = true;
                     }
@@ -674,8 +503,10 @@ void WorkerCoreExecutor::send_logic() {
                 send_buffer = Msg(MSG_TYPE::DONE, GRID_SIZE, cid);
 
                 if (SYSTEM_MODE == SIM_PD || SYSTEM_MODE == SIM_PDS) {
-                    for (int i = 0; i < decode_done.size(); i++) {
-                        send_buffer.data.range(i, i) = sc_bv<1>(decode_done[i]);
+                    for (int i = 0; i < core_context->decode_done_.size();
+                         i++) {
+                        send_buffer.data_.range(i, i) =
+                            sc_bv<1>(core_context->decode_done_[i]);
                     }
                 }
 
@@ -698,7 +529,7 @@ void WorkerCoreExecutor::send_logic() {
 
             if (job_done) {
                 cout << "[SEND DONE] Core " << cid << ": running send "
-                     << send_prim_type_to_string(prim->type) << " done at "
+                     << GetEnumSendType(prim->type) << " done at "
                      << sc_time_stamp() << "\n";
                 break;
             }
@@ -728,7 +559,7 @@ void WorkerCoreExecutor::send_para_logic() {
                     "Core " + ToHexString(cid), "Send_prim", "B",
                     Trace_event_util(
                         "Send_prim" +
-                        get_send_type_name(
+                        GetEnumSendType(
                             dynamic_cast<Send_prim *>(prim)->type)));
             } else if (typeid(*prim) == typeid(Recv_prim)) {
                 cout << "Core " << cid << " going para recv\n";
@@ -736,7 +567,7 @@ void WorkerCoreExecutor::send_para_logic() {
                     "Core " + ToHexString(cid), "Recv_prim", "B",
                     Trace_event_util(
                         "Recv_prim" +
-                        get_recv_type_name(
+                        GetEnumRecvType(
                             dynamic_cast<Recv_prim *>(prim)->type)));
             }
 
@@ -849,7 +680,7 @@ void WorkerCoreExecutor::send_para_logic() {
                                 job_done = true;
                                 cout << "Core " << cid
                                      << " max_packet: " << s_prim->max_packet
-                                     << " " << send_buffer.is_end << endl;
+                                     << " " << send_buffer.is_end_ << endl;
                             }
                         }
 #if ROUTER_PIPE == 1
@@ -918,7 +749,7 @@ void WorkerCoreExecutor::send_para_logic() {
                         Msg m = ack_buffer.front();
                         ack_buffer.pop();
 
-                        if (m.msg_type == ACK) {
+                        if (m.msg_type_ == ACK) {
                             job_done = true;
 
                             cout << sc_time_stamp() << ": Worker " << cid
@@ -944,14 +775,14 @@ void WorkerCoreExecutor::send_para_logic() {
                     "Core " + ToHexString(cid), "Send_prim", "E",
                     Trace_event_util(
                         "Send_prim" +
-                        get_send_type_name(
+                        GetEnumSendType(
                             dynamic_cast<Send_prim *>(prim)->type)));
             } else {
                 event_engine->add_event(
                     "Core " + ToHexString(cid), "Recv_prim", "E",
                     Trace_event_util(
                         "Recv_prim" +
-                        get_recv_type_name(
+                        GetEnumRecvType(
                             dynamic_cast<Recv_prim *>(prim)->type)));
             }
         }
@@ -974,7 +805,7 @@ void WorkerCoreExecutor::recv_logic() {
         bool job_done = false;
 
         cout << "[RECV] Core " << cid << ": running recv "
-             << recv_prim_type_to_string(prim->type) << ", recv_cnt "
+             << GetEnumRecvType(prim->type) << ", recv_cnt "
              << prim->recv_cnt << ", recv_tag " << prim->tag_id << endl;
 
         while (true) {
@@ -997,7 +828,7 @@ void WorkerCoreExecutor::recv_logic() {
                 Msg m = ack_buffer.front();
                 ack_buffer.pop();
 
-                if (m.msg_type == ACK) {
+                if (m.msg_type_ == ACK) {
                     job_done = true;
 
                     cout << sc_time_stamp() << ": Worker " << cid
@@ -1032,7 +863,7 @@ void WorkerCoreExecutor::recv_logic() {
                 recv_buffer.pop();
                 // 复制到SRAM中
                 // 如果是end包，则将recv_index归零，表示开始接收下一个core传来的数据（如果有的话）
-                if (temp.is_end) {
+                if (temp.is_end_) {
                     while (!atomic_helper_lock(sc_time_stamp(), 3) ||
                            !channel_avail_i.read())
                         wait(CYCLE, SC_NS);
@@ -1089,11 +920,11 @@ void WorkerCoreExecutor::recv_logic() {
                         temp = start_data_buffer.front();
                     }
 
-                    if (prim->tag_id != cid && temp.tag_id != prim->tag_id) {
+                    if (prim->tag_id != cid && temp.tag_id_ != prim->tag_id) {
                         cout << "[WARN] Core " << cid
                              << " gets incompatible tag id: prim tag "
                              << prim->tag_id << " with buffer top msg tag "
-                             << temp.tag_id << endl;
+                             << temp.tag_id_ << endl;
                         sc_stop();
                     }
 
@@ -1104,7 +935,7 @@ void WorkerCoreExecutor::recv_logic() {
 
                     recv_cnt++;
 
-                    if (temp.seq_id == 1 &&
+                    if (temp.seq_id_ == 1 &&
                         (SYSTEM_MODE == SIM_DATAFLOW || SYSTEM_MODE == SIM_PD ||
                          SYSTEM_MODE == SIM_PDS)) {
                         // 在pos locator中添加一个kv，label是input_label
@@ -1116,10 +947,10 @@ void WorkerCoreExecutor::recv_logic() {
                         string input_label = format_label;
 
                         u_int64_t temp;
-                        if (sram_pos_locator->findPair(input_label, inp_key) ==
+                        if (core_context->sram_pos_locator_->findPair(input_label, inp_key) ==
                             -1)
                             // TWO DRIVER
-                            sram_pos_locator->addPair(input_label, inp_key);
+                            core_context->sram_pos_locator_->addPair(input_label, inp_key);
                     }
 
                     int delay = 0;
@@ -1127,9 +958,9 @@ void WorkerCoreExecutor::recv_logic() {
                     delay = prim->taskCoreDefault(context);
 
                     // 如果是end包，则将recv_index归零，表示开始接收下一个core传来的数据（如果有的话）
-                    if (temp.is_end) {
+                    if (temp.is_end_) {
                         end_cnt++;
-                        max_recv += temp.seq_id;
+                        max_recv += temp.seq_id_;
 
                         cout << sc_time_stamp() << ": Worker " << cid
                              << " receive end packet: end_cnt " << end_cnt
@@ -1150,12 +981,12 @@ void WorkerCoreExecutor::recv_logic() {
                                 sprintf(format_label, "%s", INPUT_LABEL);
                                 string input_label = format_label;
                                 inp_key.size = 0; //+= max_recv * M_D_DATA;
-                                sram_pos_locator->findPair(input_label,
+                                core_context->sram_pos_locator_->findPair(input_label,
                                                            inp_key);
 
 
                                 u_int64_t temp;
-                                sram_pos_locator->addPair(input_label, inp_key);
+                                core_context->sram_pos_locator_->addPair(input_label, inp_key);
                             }
 
                             job_done = true;
@@ -1188,16 +1019,16 @@ void WorkerCoreExecutor::recv_logic() {
                     if (!buffer_i.size())
                         wait(ev_recv_config);
 
-                    Msg m = deserialize_msg(buffer_i.front());
+                    Msg m = DeserializeMsg(buffer_i.front());
                     buffer_i.pop();
-                    prim_queue.emplace_back(parse_prim(m.data));
+                    prim_queue.emplace_back(parse_prim(m.data_));
 
                     // cout << "Core " << cid << " recv config " << m.seq_id
                     //      << endl;
 
                     // 检查是否为end config包，如果是，需要向host发送ack包
-                    if (m.is_end) {
-                        this->prim_refill = m.refill;
+                    if (m.is_end_) {
+                        this->prim_refill = m.refill_;
                         wait_send = true;
                     }
                 }
@@ -1233,128 +1064,11 @@ void WorkerCoreExecutor::task_logic() {
         int delay = 0;
         TaskCoreContext context = generate_context(this);
 
-        // context.SetGlobalMemIF(nb_global_memif, start_global_event,
-        // end_global_event);
-
-        if (p->prim_type == COMP_PRIM) {
-            CompBase *comp = (CompBase *)p;
-            comp->datapass_label = *next_datapass_label;
-        }
-#if USE_L1L2_CACHE == 1
-        else if (p->prim_type == GPU_PRIM) {
-            context.gpunb_dcache_if = gpunb_dcache_if;
-            context.event_engine = event_engine;
-
-            gpu_base *gpu = (gpu_base *)p;
-            gpu->datapass_label = *next_datapass_label;
-        }
-#endif
-        else if (p->prim_type == PD_PRIM) {
-            pd_base *pd = (pd_base *)p;
-            pd->datapass_label = *next_datapass_label;
-            pd->batchInfo = *batchInfo;
-            pd->decode_done = &decode_done;
-        } else if (p->prim_type == MOE_PRIM) {
-            moe_base *moe = (moe_base *)p;
-            moe->datapass_label = *next_datapass_label;
-            moe->selected_experts = &selected_experts;
-            moe->selected_freq = &selected_freq;
-            moe->prefetched_experts = &prefetched_experts;
-        }
-
-        if (typeid(*p) == typeid(matmul_forward_gpu_pd)) {
-            matmul_forward_gpu_pd *matmul = (matmul_forward_gpu_pd *)p;
-            matmul->batchInfo = *batchInfo;
-
-            matmul->decode_done = &decode_done;
-
-            cout << "?>????\n";
-            for (auto b : *batchInfo) {
-                cout << b.req_id << endl;
-            }
-        } else if (typeid(*p) == typeid(attention_forward_gpu_pd)) {
-            attention_forward_gpu_pd *attention = (attention_forward_gpu_pd *)p;
-            attention->decode_done = &decode_done;
-            attention->batchInfo = *batchInfo;
-        }
-        context.event_engine = event_engine;
-        context.s_sram = start_sram_event;
-        context.e_sram = end_sram_event;
-#if USE_BEHA_SRAM == 0
-
-        context.sram_writer = sram_writer;
-#endif
-#if USE_GLOBAL_DRAM == 1
-        context.event_engine = event_engine;
-
-
-        context.gpunb_dcache_if = gpunb_dcache_if;
-#endif
-
-        p->cid = cid;
         cout << "[PRIM] Core <\033[38;5;214m" << cid
              << "\033[0m>: PRIM NAME -----------------------: " << p->name
              << endl;
         delay = p->taskCoreDefault(context);
         wait(sc_time(delay, SC_NS));
-
-        // sc_time start_time = sc_time_stamp();
-
-        // // CTODO: 现在仅适用于matmul
-        // if (typeid(*p) == typeid(Matmul_f) && p->use_hw) {
-        //     HardwareTaskConfig *config = ((Matmul_f
-        //     *)p)->generate_hw_config(); systolic_config->args =
-        //     config->args; systolic_config->data = config->data;
-        //     systolic_config->hardware = config->hardware;
-
-        //     // test only!! fill in data
-        //     test_fill_data(systolic_config->args[0], 2,
-        //                    systolic_config->data[0],
-        //                    systolic_config->args[1] *
-        //                    systolic_config->args[2],
-        //                    systolic_config->data[2],
-        //                    systolic_config->args[2] *
-        //                    systolic_config->args[3]);
-
-        //     for (int i = 0;
-        //          i < systolic_config->args[1] * systolic_config->args[3];
-        //          i++) {
-        //         if (i % systolic_config->args[3] ==
-        //             systolic_config->args[3] - 1)
-        //             cout << endl;
-        //     }
-
-        //     cout << endl;
-
-        //     // 进行工作
-        //     ev_systolic.notify(0, SC_NS);
-
-        //     // 等待工作完成
-        //     while (systolic_done_i.read() == false) {
-        //         wait(CYCLE, SC_NS);
-        //     }
-
-        //     // 计算overlap time
-        //     sc_time end_time = sc_time_stamp();
-        //     if ((end_time - start_time) < sc_time(delay, SC_NS)) {
-        //         wait(sc_time(delay, SC_NS) - (end_time - start_time));
-        //     }
-
-        //     cout << systolic_config->args[1] << " " <<
-        //     systolic_config->args[3]
-        //          << endl;
-
-        //     for (int i = 0;
-        //          i < systolic_config->args[1] * systolic_config->args[3];
-        //          i++) {
-        //         cout << systolic_config->data[1][i] - 5 << " ";
-        //         if (i % systolic_config->args[3] ==
-        //             systolic_config->args[3] - 1)
-        //             cout << endl;
-        //     }
-
-        //     cout << endl;
-        // }
 
         cout << "Core " << cid << ": task " << p->name << " done.\n";
 
@@ -1377,8 +1091,8 @@ void WorkerCoreExecutor::req_logic() {
                     request_buffer.size()) {
                     for (auto i = request_buffer.begin();
                          i != request_buffer.end();) {
-                        if ((*i).tag_id == prim->tag_id) {
-                            ack_queue.push((*i).source);
+                        if ((*i).tag_id_ == prim->tag_id) {
+                            ack_queue.push((*i).source_);
                             i = request_buffer.erase(i);
                         } else
                             i++;
@@ -1528,7 +1242,7 @@ void WorkerCoreExecutor::send_helper() {
 #else
         if (send_helper_write >= 2) {
 #endif
-            channel_o.write(serialize_msg(send_buffer));
+            channel_o.write(SerializeMsg(send_buffer));
             data_sent_o.write(true);
             ev_next_write_clear.notify(CYCLE, SC_NS);
         } else
@@ -1540,11 +1254,11 @@ void WorkerCoreExecutor::send_helper() {
 
 void WorkerCoreExecutor::call_systolic_array() {
     while (true) {
-        if (systolic_config) {
-            systolic_start_o.write(true);
-            wait(CYCLE, SC_NS);
-            systolic_start_o.write(false);
-        }
+        // if (systolic_config) {
+        //     systolic_start_o.write(true);
+        //     wait(CYCLE, SC_NS);
+        //     systolic_start_o.write(false);
+        // }
 
         wait();
     }
@@ -1577,8 +1291,6 @@ void WorkerCoreExecutor::catch_data_sent_i() {
 
 WorkerCoreExecutor::~WorkerCoreExecutor() {
     delete sram_addr;
-    delete sram_pos_locator;
-    delete next_datapass_label;
 #if USE_NB_DRAMSYS == 1
     delete nb_dcache_socket;
 #else
@@ -1594,8 +1306,9 @@ WorkerCoreExecutor::~WorkerCoreExecutor() {
     delete end_sram_event;
     delete start_global_mem_event;
     delete end_global_mem_event;
-    delete sram_manager_;
     delete sram_writer;
     delete g_dram_kvtable;
     delete g_dram_kvtable[cid];
+
+    delete core_context;
 }

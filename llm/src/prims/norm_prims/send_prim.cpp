@@ -2,7 +2,7 @@
 
 #include "defs/enums.h"
 #include "prims/norm_prims.h"
-#include "prims/prim_base.h"
+#include "prims/base.h"
 
 void Send_prim::print_self(string prefix) {
     cout << prefix << "<send_prim>\n";

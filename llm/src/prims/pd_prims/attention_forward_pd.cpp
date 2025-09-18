@@ -1,159 +1,35 @@
 #include "prims/pd_prims.h"
 #include "utils/memory_utils.h"
 
-void attention_forward_pd::print_self(string prefix) {
-    cout << prefix << "<attention_forward_pd>\n";
-    cout << prefix << "\tB: " << B << ", T: " << T << ", C: " << C << endl;
-    cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size
-         << ", previous_inp_size: " << input_size << endl;
-    cout << prefix << "\toutput_offset: " << out_offset
-         << ", input_offset: " << inp_offset << endl;
-}
-
 void attention_forward_pd::initialize() {
-    out_size = B * T * NH * DH;
-    input_size = B * T * 3 * C;
-    inp_size = B * T * 3 * C;
-
-    if (datatype == INT8)
-        data_byte = 1;
-    else if (datatype == FP16)
-        data_byte = 2;
-
-    prea_offset = B * T * 3 * C + inp_offset;
-    a_offset = B * NH * T * T + prea_offset;
+    auto &p = param_value;
+    data_size_input = {p["B"] * p["T"] * p["C"]};
+    data_chunk = {{"preatt", p["B"] * p["NH"] * p["T"] * p["T"]},
+                  {"att", p["B"] * p["NH"] * p["T"] * p["T"]},
+                  {"output", p["B"] * p["T"] * p["NH"] * p["DH"]}};
 }
 
-void attention_forward_pd::parseJson(json j) {
-    B = GetDefinedParam(j["B"]);
-    T = GetDefinedParam(j["T"]);
-    C = GetDefinedParam(j["C"]);
-    NH = GetDefinedParam(j["NH"]);
-    DH = GetDefinedParam(j["DH"]);
-    R = GetDefinedParam(j["R"]);
-
-    auto job_str = j["job_type"];
-    if (job_str == "prefill")
-        job_type = JOB_PREFILL;
-    else if (job_str == "decode")
-        job_type = JOB_DECODE;
-    else if (job_str == "both")
-        job_type = JOB_BOTH;
-    else
-        job_type = JOB_BOTH;
-
-    initialize();
-
-    if (j.contains("dram_address"))
-        parseAddress(j["dram_address"]);
-
-    if (j.contains("sram_address"))
-        parseSramLabel(j["sram_address"]);
-}
-
-int attention_forward_pd::sram_utilization(DATATYPE datatype, int cid) {
-    int total_sram = 0;
-
-    int p_inp_sram =
-        CeilingDivision(B * T * 3 * C * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
-    int a_sram = CeilingDivision(B * NH * T * T * data_byte * 8,
-                                  GetCoreHWConfig(cid).sram_bitwidth);
-    int out_sram =
-        CeilingDivision(out_size * data_byte * 8, GetCoreHWConfig(cid).sram_bitwidth);
-
-    total_sram = p_inp_sram + a_sram + out_sram;
-    total_sram *= GetCoreHWConfig(cid).sram_bitwidth / 8;
-    return total_sram;
-}
-
-void attention_forward_pd::deserialize(sc_bv<128> buffer) {
-    inp_offset = buffer.range(23, 8).to_uint64();
-    inp_offset *= 1024;
-    out_offset = buffer.range(39, 24).to_uint64();
-    out_offset *= 1024;
-    B = buffer.range(55, 40).to_uint64();
-    T = buffer.range(71, 56).to_uint64();
-    C = buffer.range(87, 72).to_uint64();
-    NH = buffer.range(103, 88).to_uint64();
-    datatype = DATATYPE(buffer.range(105, 104).to_uint64());
-    job_type = PD_JOB(buffer.range(111, 108).to_uint64());
-    DH = buffer.range(119, 112).to_uint64();
-    R = buffer.range(127, 120).to_uint64();
-
-    initialize();
-}
-
-sc_bv<128> attention_forward_pd::serialize() {
-    sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(ATTENTION_FORWARD_PD_TYPE);
-    d.range(23, 8) = sc_bv<16>(inp_offset);
-    d.range(39, 24) = sc_bv<16>(out_offset);
-    d.range(55, 40) = sc_bv<16>(B);
-    d.range(71, 56) = sc_bv<16>(T);
-    d.range(87, 72) = sc_bv<16>(C);
-    d.range(103, 88) = sc_bv<16>(NH);
-    d.range(105, 104) = sc_bv<2>(datatype);
-    d.range(111, 108) = sc_bv<4>(job_type);
-    d.range(119, 112) = sc_bv<8>(DH);
-    d.range(127, 120) = sc_bv<8>(R);
-
-    return d;
-}
-
-int attention_forward_pd::taskCoreDefault(TaskCoreContext &context) {
-    // 所用时间
-    u_int64_t dram_time = 0;
-    u_int64_t overlap_time = 0;
-
-    // 数据维度
-    vector<int> data_size_input = {B * T * C}; // QKV input
-    int data_size_preatt = B * NH * T * T;     // preatt
-    int data_size_att = B * NH * T * T;        // att
-    int data_size_out = B * T * NH * DH;       // output
-
-    // dram地址
-    u_int64_t dram_addr_tile = 0; //cid * dataset_words_per_tile;
-    u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
-    u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
-    u_int64_t prea_global_addr = dram_addr_tile + prea_offset * data_byte;
-    u_int64_t a_global_addr = dram_addr_tile + a_offset * data_byte;
-
-    // 检查数据重利用
-    bool input_reuse = false;
-    if (datapass_label.indata[0][0] == '_') {
-        input_reuse = true;
-        datapass_label.indata[0] = datapass_label.indata[0].substr(1);
-    }
-
-    // 获取前缀label
-    std::size_t pos = datapass_label.outdata.find_last_of('_');
-    std::string prefix;
-    if (pos != std::string::npos)
-        prefix = datapass_label.outdata.substr(0, pos);
-    else
-        prefix = datapass_label.outdata;
-
-    // 读入input数据
-    checkInputData(context, dram_time, inp_global_addr, data_size_input);
-    ARGUS_PRINT(dram_time);
-
-#if USE_SRAM == 1
+int attention_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
+                                   u_int64_t dram_time, u_int64_t &exu_ops,
+                                   u_int64_t &sfu_ops) {
+    auto &p = param_value;
     int cur_tokens = 0;
 
     // 查找kvcache! 需要使用相应的kvcache label 读出KV
     // 根据batchInfo进行，逻辑和普通prefill和decode相同
-    for (auto stage : batchInfo) {
+    for (auto stage : prim_context->batch_info_) {
         int batch = stage.req_id;
 
         AddrPosKey kcache;
         char format_label_k[100];
-        sprintf(format_label_k, "%s%s%sk#%d", prefix.c_str(), ETERNAL_PREFIX, KVCACHE_PREFIX,
-                batch);
+        sprintf(format_label_k, "%s%s%sk#%d", prim_name.c_str(), ETERNAL_PREFIX,
+                KVCACHE_PREFIX, batch);
         string label_decode_k = format_label_k;
         // cout << "decode_k: " << label_decode_k << endl;
 
 
-        int flag = sram_pos_locator->findPair(label_decode_k, kcache);
+        int flag =
+            prim_context->sram_pos_locator_->findPair(label_decode_k, kcache);
         if (flag == -1) {
             printf("[ERROR] attention_forward_pd: failed to find label %s, "
                    "exit.\n",
@@ -163,31 +39,31 @@ int attention_forward_pd::taskCoreDefault(TaskCoreContext &context) {
 #if USE_SRAM_MANAGER == 1
             std::cout << "[INFO] CompBase: sram_pos_locator find the "
                          "label: "
-                      << label_decode_k << " with flag: " << flag
-                      << std::endl;
+                      << label_decode_k << " with flag: " << flag << std::endl;
             sram_first_write_generic(context, flag, kcache.dram_addr, dram_time,
                                      nullptr, label_decode_k, true,
-                                     sram_pos_locator);
+                                     prim_context->sram_pos_locator_);
 
 #else
             // TODO: DUMMY dram addr
-            sram_first_write_generic(context, flag, inp_global_addr, dram_time,
+            sram_first_write_generic(context, flag, inp_offset, dram_time,
                                      nullptr);
             kcache.spill_size = 0;
-            sram_pos_locator->addPair(label_decode_k, kcache, context,
-                                      dram_time);
+            prim_context->sram_pos_locator_->addPair(label_decode_k, kcache,
+                                                     context, dram_time);
 #endif
         }
 
 
         AddrPosKey vcache;
         char format_label_v[100];
-        sprintf(format_label_v, "%s%s%sv#%d", prefix.c_str(), ETERNAL_PREFIX, KVCACHE_PREFIX,
-                batch);
+        sprintf(format_label_v, "%s%s%sv#%d", prim_name.c_str(), ETERNAL_PREFIX,
+                KVCACHE_PREFIX, batch);
         string label_decode_v = format_label_v;
         // cout << "decode_v: " << label_decode_v << endl;
 
-        flag = sram_pos_locator->findPair(label_decode_v, vcache);
+        flag =
+            prim_context->sram_pos_locator_->findPair(label_decode_v, vcache);
         if (flag == -1) {
             printf("[ERROR] attention_forward_pd: failed to find label %s, "
                    "exit.\n",
@@ -197,19 +73,18 @@ int attention_forward_pd::taskCoreDefault(TaskCoreContext &context) {
 #if USE_SRAM_MANAGER == 1
             std::cout << "[INFO] CompBase: sram_pos_locator find the "
                          "label: "
-                      << label_decode_v << " with flag: " << flag
-                      << std::endl;
+                      << label_decode_v << " with flag: " << flag << std::endl;
             sram_first_write_generic(context, flag, vcache.dram_addr, dram_time,
                                      nullptr, label_decode_v, true,
-                                     sram_pos_locator);
+                                     prim_context->sram_pos_locator_);
 
 #else
             // TODO: DUMMY dram addr
-            sram_first_write_generic(context, flag, inp_global_addr, dram_time,
+            sram_first_write_generic(context, flag, inp_offset, dram_time,
                                      nullptr);
             vcache.spill_size = 0;
-            sram_pos_locator->addPair(label_decode_v, vcache, context,
-                                      dram_time);
+            prim_context->sram_pos_locator_->addPair(label_decode_v, vcache,
+                                                     context, dram_time);
 #endif
         }
 
@@ -217,23 +92,25 @@ int attention_forward_pd::taskCoreDefault(TaskCoreContext &context) {
         // dahu ??
         int sram_offset = 0;
 #if USE_SRAM_MANAGER == 1
-        sram_pos_locator->printAllKeysWithAllocId();
+        prim_context->sram_pos_locator_->printAllKeysWithAllocId();
         // Print allocation IDs for debugging
         std::cout << label_decode_k << " " << label_decode_v
                   << " Key Allocation ID: " << kcache.alloc_id << " "
                   << vcache.alloc_id << std::endl;
 
         sram_read_generic(context, kcache.size, sram_offset, dram_time,
-                          kcache.alloc_id, true, sram_pos_locator);
+                          kcache.alloc_id, true,
+                          prim_context->sram_pos_locator_);
         sram_read_generic(context, vcache.size, sram_offset, dram_time,
-                          vcache.alloc_id, true, sram_pos_locator);
+                          vcache.alloc_id, true,
+                          prim_context->sram_pos_locator_);
 #else
         // 读出k,v
         sram_read_generic(context, kcache.size, kcache.pos, dram_time);
         sram_read_generic(context, vcache.size, vcache.pos, dram_time);
 #endif
 
-        cur_tokens = kcache.size / (B * C * data_byte);
+        cur_tokens = kcache.size / (p["B"] * p["C"] * data_byte);
     }
 
     // 写入preatt中间结果
@@ -242,38 +119,26 @@ int attention_forward_pd::taskCoreDefault(TaskCoreContext &context) {
     temp_sram_addr_prior = temp_sram_addr;
     std::cout << "attention_forward sram_write_back_temp: temp_sram_addr: "
               << temp_sram_addr << std::endl;
-    sram_write_back_temp(context, data_byte * data_size_preatt, temp_sram_addr,
-                         dram_time);
+    sram_write_back_temp(context, data_byte * data_chunk_addr["preatt"],
+                         temp_sram_addr, dram_time);
     std::cout << "attention_forward sram_read_generic_temp: temp_sram_addr: "
               << temp_sram_addr << std::endl;
 
     // 读出preatt，计算自然指数，写入att
-    sram_read_generic_temp(context, data_byte * data_size_preatt,
+    sram_read_generic_temp(context, data_byte * data_chunk_addr["preatt"],
                            temp_sram_addr_prior, dram_time);
     temp_sram_addr_prior = temp_sram_addr;
     std::cout << "attention_forward sram_write_back_temp: temp_sram_addr: "
               << temp_sram_addr << std::endl;
-    sram_write_back_temp(context, data_byte * data_size_att, temp_sram_addr,
-                         dram_time);
+    sram_write_back_temp(context, data_byte * data_chunk_addr["att"],
+                         temp_sram_addr, dram_time);
     // 读出att
     std::cout << "attention_forward sram_read_generic_temp: temp_sram_addr: "
               << temp_sram_addr << std::endl;
-    sram_read_generic_temp(context, data_byte * data_size_att,
+    sram_read_generic_temp(context, data_byte * data_chunk_addr["att"],
                            temp_sram_addr_prior, dram_time);
 
-    // 删除标签
-    if (!input_reuse)
-        sram_pos_locator->deletePair(datapass_label.indata[0]);
-
-    ARGUS_PRINT(dram_time);
-#endif
-
-    // 计算overlap并写回output数据
-    writeOutputData(context, (uint64_t)B * NH * T * (T - 1) / 2 * (4 * C / NH + 5), 0,
-                      dram_time, overlap_time, data_size_out, out_global_addr);
-    ARGUS_PRINT(overlap_time);
-
-    return overlap_time;
+    exu_ops = (u_int64_t)p["B"] * p["NH"] * p["T"] * (p["T"] - 1) / 2 *
+              (4 * p["C"] / p["NH"] + 5);
+    sfu_ops = 0;
 }
-
-int attention_forward_pd::task() { return 0; }

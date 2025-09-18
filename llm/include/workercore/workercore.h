@@ -26,7 +26,7 @@ public:
 
     WorkerCoreExecutor *executor;
     DCache *dcache;
-    SystolicArray *systolic;
+    // SystolicArray *systolic;
     // DynamicBandwidthRamRow<sc_bv<256>, column_num> ram_array("ram_array", 0,
     // bank_depth, 2, 1, port_num + column_num * high_bw_port_num, port_num,
     // high_bw_port_num, event_engine_test); DynamicBandwidthRamRow<sc_bv<128>,
@@ -36,8 +36,8 @@ public:
     DynamicBandwidthRamRow<sc_bv<SRAM_BITWIDTH>, SRAM_BANKS> *ram_array;
     DynamicBandwidthRamRow<sc_bv<SRAM_BITWIDTH>, SRAM_BANKS> *temp_ram_array;
 
-    HardwareTaskConfig *systolic_config;
-    HardwareTaskConfig *other_config;
+    // HardwareTaskConfig *systolic_config;
+    // HardwareTaskConfig *other_config;
     DummyDCache *dummy_dcache;
 
     sc_signal<bool> systolic_done;
@@ -101,8 +101,8 @@ public:
     queue<PrimBase *> send_para_queue; // 并行策略：send和recv并行
 
     /* ----------------Config----------------------- */
-    HardwareTaskConfig *systolic_config;
-    HardwareTaskConfig *other_config;
+    // HardwareTaskConfig *systolic_config;
+    // HardwareTaskConfig *other_config;
 
     /* ----------------Hardware--------------------- */
     sc_in<bool> systolic_done_i;
@@ -118,9 +118,7 @@ public:
                            // helper是要向data_sent_o写入true还是false
 
     /* ----------------PD complex------------------- */
-    vector<Stage> *batchInfo;
-    vector<bool> decode_done;
-    int stage_cnt;
+    PrimCoreContext *core_context;
 
     /* --------------------------------------------- */
 
@@ -163,8 +161,6 @@ public:
     mem_access_unit *temp_mem_access_port;
     high_bw_mem_access_unit *high_bw_temp_mem_access_port;
 
-    SramManager *sram_manager_;
-
     // sram相关
     int *sram_addr;                    // 用于记录当前sram可分配的起始地址
     sc_event *start_nb_dram_event;     // 用于启动非阻塞dram访存
@@ -176,15 +172,6 @@ public:
     sc_event *start_sram_event;
     sc_event *end_sram_event;
     SRAMWriteModule *sram_writer;
-    SramPosLocator *sram_pos_locator; // 记录sram中数据的位置，label(string)-int
-    AddrDatapassLabel
-        *next_datapass_label; // 记录sram中数据的标签，这个变量由set
-                              // sram修改，并由紧接着的comp原语读取并使用
-
-    // moe相关
-    vector<int> selected_experts;
-    vector<int> selected_freq;
-    vector<int> prefetched_experts;
 
     SC_HAS_PROCESS(WorkerCoreExecutor);
     WorkerCoreExecutor(const sc_module_name &n, int s_cid,

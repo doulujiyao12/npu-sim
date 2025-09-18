@@ -160,12 +160,6 @@ int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
     return overlap_time;
 }
 
-int attention_forward_gpu_pd::task() { return 0; }
-
-int attention_forward_gpu_pd::sram_utilization(DATATYPE datatype, int cid) {
-    return 0;
-}
-
 void attention_forward_gpu_pd::deserialize(sc_bv<128> buffer) {
     slice_x = buffer.range(15, 8).to_uint();
     slice_y = buffer.range(23, 16).to_uint();
@@ -199,7 +193,7 @@ void attention_forward_gpu_pd::print_self(string prefix) {
          << endl;
 }
 
-gpu_base *attention_forward_gpu_pd::clone() {
+GpuBase *attention_forward_gpu_pd::clone() {
     return new attention_forward_gpu_pd(*this);
 }
 

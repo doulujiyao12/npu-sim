@@ -1,4 +1,4 @@
-#include "prims/comp_base.h"
+#include "prims/base.h"
 #include "utils/config_utils.h"
 #include "utils/memory_utils.h"
 #include "utils/print_utils.h"
@@ -22,7 +22,7 @@ void CompBase::parseAddress(json j) {
 
 void CompBase::parseSramLabel(json j) {
     string in_label = j["indata"];
-    datapass_label.outdata = j["outdata"];
+    prim_context->datapass_label_->outdata = j["outdata"];
 
     std::vector<std::string> in_labels;
 
@@ -44,7 +44,7 @@ void CompBase::parseSramLabel(json j) {
     }
 
     for (int i = 0; i < in_labels.size(); i++) {
-        datapass_label.indata[i] = in_labels[i];
+        prim_context->datapass_label_->indata[i] = in_labels[i];
     }
 }
 
@@ -182,19 +182,20 @@ int CompBase::taskCoreDefault(TaskCoreContext &context) {
     bool input_reuse[data_size_input.size()];
     for (int i = 0; i < data_size_input.size(); i++) {
         input_reuse[i] = false;
-        if (datapass_label.indata[i][0] == '_') {
+        if (prim_context->datapass_label_->indata[i][0] == '_') {
             input_reuse[i] = true;
-            datapass_label.indata[i] = datapass_label.indata[i].substr(1);
+            prim_context->datapass_label_->indata[i] =
+                prim_context->datapass_label_->indata[i].substr(1);
         }
     }
 
     // 获取前缀label
-    std::size_t pos = datapass_label.outdata.find_last_of('_');
+    std::size_t pos = prim_context->datapass_label_->outdata.find_last_of('_');
     std::string prefix;
     if (pos != std::string::npos)
-        prefix = datapass_label.outdata.substr(0, pos);
+        prefix = prim_context->datapass_label_->outdata.substr(0, pos);
     else
-        prefix = datapass_label.outdata;
+        prefix = prim_context->datapass_label_->outdata;
 
     // 读入input数据
     checkInputData(context, dram_time, inp_offset, data_size_input);
@@ -208,8 +209,10 @@ int CompBase::taskCoreDefault(TaskCoreContext &context) {
 
         // 删除标签
         for (int i = 0; i < data_size_input.size(); i++) {
-            if (!input_reuse[i] && datapass_label.indata[i] != UNSET_LABEL)
-                sram_pos_locator->deletePair(datapass_label.indata[i]);
+            if (!input_reuse[i] &&
+                prim_context->datapass_label_->indata[i] != UNSET_LABEL)
+                prim_context->sram_pos_locator_->deletePair(
+                    prim_context->datapass_label_->indata[i]);
         }
     }
 #endif
@@ -230,7 +233,6 @@ void CompBase::checkInputData(TaskCoreContext &context, uint64_t &dram_time,
     auto mau = context.mau;
     auto hmau = context.hmau;
     auto sram_addr = context.sram_addr;
-    // dahu ???
     int inp_sram_offset = *sram_addr;
 
 #if DUMMY == 1
@@ -244,48 +246,51 @@ void CompBase::checkInputData(TaskCoreContext &context, uint64_t &dram_time,
 
 #if USE_SRAM == 1
     for (int p = 0; p < data_size_input.size(); p++) {
-        if (datapass_label.indata[p].find(DRAM_LABEL) == 0) {
-            size_t space_pos = datapass_label.indata[p].find(' ');
+        if (prim_context->datapass_label_->indata[p].find(DRAM_LABEL) == 0) {
+            size_t space_pos =
+                prim_context->datapass_label_->indata[p].find(' ');
             if (space_pos != std::string::npos) {
-                datapass_label.indata[p] =
-                    datapass_label.indata[p].substr(space_pos + 1);
+                prim_context->datapass_label_->indata[p] =
+                    prim_context->datapass_label_->indata[p].substr(space_pos +
+                                                                   1);
             }
             LOG_VERBOSE(1, context.cid,
-                        "Prim name:" << name
-                                     << " CompBase: read from dram, label: "
-                                     << datapass_label.indata[p].c_str());
+                        "Prim name:"
+                            << name << " CompBase: read from dram, label: "
+                            << prim_context->datapass_label_->indata[p].c_str());
             // printf("[INFO] CompBase: read from dram, label: %s\n",
-            //        datapass_label.indata[p].c_str());
+            //        prim_context->datapass_label_->indata[p].c_str());
 #if USE_SRAM_MANAGER == 1
             sram_first_write_generic(context, data_byte * data_size_input[p],
                                      inp_global_addr, dram_time, dram_start,
-                                     datapass_label.indata[p], true,
-                                     sram_pos_locator);
+                                     prim_context->datapass_label_->indata[p],
+                                     true, prim_context->sram_pos_locator_);
 #else
             sram_first_write_generic(context, data_byte * data_size_input[p],
                                      inp_global_addr, dram_time, dram_start);
             AddrPosKey inp_key =
                 AddrPosKey(*sram_addr, data_byte * data_size_input[p]);
-            sram_pos_locator->addPair(datapass_label.indata[p], inp_key,
-                                      context, dram_time);
+            prim_context->sram_pos_locator_->addPair(
+                prim_context->datapass_label_->indata[p], inp_key, context,
+                dram_time);
 #endif
         } else {
 
 
             AddrPosKey inp_key;
             LOG_VERBOSE(1, context.cid,
-                        "Prim name:" << name
-                                     << " CompBase: read from sram, label: "
-                                     << datapass_label.indata[p].c_str());
+                        "Prim name:"
+                            << name << " CompBase: read from sram, label: "
+                            << prim_context->datapass_label_->indata[p].c_str());
 
             // printf("[INFO] CompBase: read from sram, label: %s\n",
-            //        datapass_label.indata[p].c_str());
-            int flag =
-                sram_pos_locator->findPair(datapass_label.indata[p], inp_key);
+            //        prim_context->datapass_label_->indata[p].c_str());
+            int flag = prim_context->sram_pos_locator_->findPair(
+                prim_context->datapass_label_->indata[p], inp_key);
             if (flag == -1) {
-                printf("[ERROR] CompBase: sram_pos_locator cannot find the "
+                printf("[ERROR] CompBase: sram_pos_locator_ cannot find the "
                        "label: %s\n",
-                       datapass_label.indata[p].c_str());
+                       prim_context->datapass_label_->indata[p].c_str());
                 sc_stop();
             } else if (flag > 0) {
 
@@ -294,17 +299,19 @@ void CompBase::checkInputData(TaskCoreContext &context, uint64_t &dram_time,
                     1, context.cid,
                     "Prim name:"
                         << name
-                        << " CompBase: sram_pos_locator find the label: "
-                        << datapass_label.indata[p] << " with flag: " << flag);
+                        << " CompBase: sram_pos_locator_ find the label: "
+                        << prim_context->datapass_label_->indata[p]
+                        << " with flag: " << flag);
 
-                // std::cout << "[INFO] CompBase: sram_pos_locator find the "
+                // std::cout << "[INFO] CompBase: sram_pos_locator_ find the "
                 //              "label: "
-                //           << datapass_label.indata[p] << " with flag: " <<
-                //           flag
+                //           << prim_context->datapass_label_->indata[p] << "
+                //           with flag: " << flag
                 //           << std::endl;
                 sram_first_write_generic(
                     context, flag, inp_global_addr, dram_time, dram_start,
-                    datapass_label.indata[p], true, sram_pos_locator);
+                    prim_context->datapass_label_->indata[p], true,
+                    prim_context->sram_pos_locator_);
 
 #else
                 LOG_VERBOSE(1, context.cid,
@@ -315,39 +322,43 @@ void CompBase::checkInputData(TaskCoreContext &context, uint64_t &dram_time,
                                          dram_time, dram_start);
                 inp_key.size = data_size_input[p];
                 inp_key.spill_size = 0;
-                sram_pos_locator->addPair(datapass_label.indata[p], inp_key,
-                                          context, dram_time);
+                prim_context->sram_pos_locator_->addPair(
+                    prim_context->datapass_label_->indata[p], inp_key, context,
+                    dram_time);
 #endif
             } else {
                 // send receive input data
 #if USE_SRAM_MANAGER == 1
                 LOG_VERBOSE(1, context.cid,
-                            "Prim name:" << name
-                                         << " CompBase: send receive sram: "
-                                         << datapass_label.indata[p]
-                                         << " with flag: " << flag);
+                            "Prim name:"
+                                << name << " CompBase: send receive sram: "
+                                << prim_context->datapass_label_->indata[p]
+                                << " with flag: " << flag);
 
                 AddrPosKey inp_key;
-                int flag = sram_pos_locator->findPair(datapass_label.indata[p],
-                                                      inp_key);
+                int flag = sram_pos_locator_->findPair(
+                    prim_context->datapass_label_->indata[p], inp_key);
                 if (inp_key.alloc_id == 0) {
                     sram_first_write_generic(
                         context, data_byte * data_size_input[p],
                         inp_global_addr, dram_time, dram_start,
-                        datapass_label.indata[p], true, sram_pos_locator, true);
+                        prim_context->datapass_label_->indata[p], true,
+                        prim_context->sram_pos_locator_, true);
                 }
 #else
                 LOG_VERBOSE(1, context.cid,
                             "Prim name:"
                                 << name << " CompBase: send receive sram: "
-                                << datapass_label.indata[p] << " with flag: "
-                                << flag << " key size " << inp_key.size
-                                << " data size " << data_size_input[p]);
+                                << prim_context->datapass_label_->indata[p]
+                                << " with flag: " << flag << " key size "
+                                << inp_key.size << " data size "
+                                << data_size_input[p]);
 
                 inp_key.size = data_size_input[p];
                 inp_key.spill_size = 0;
-                sram_pos_locator->addPair(datapass_label.indata[p], inp_key,
-                                          context, dram_time);
+                prim_context->sram_pos_locator_->addPair(
+                    prim_context->datapass_label_->indata[p], inp_key, context,
+                    dram_time);
 
 
 #endif
@@ -356,7 +367,8 @@ void CompBase::checkInputData(TaskCoreContext &context, uint64_t &dram_time,
 
             // mla kvcache
             AddrPosKey sc_key;
-            sram_pos_locator->findPair(datapass_label.indata[p], sc_key);
+            prim_context->sram_pos_locator_->findPair(
+                prim_context->datapass_label_->indata[p], sc_key);
 
 
             int data_bits = data_byte * data_size_input[p] * 8;
@@ -369,8 +381,9 @@ void CompBase::checkInputData(TaskCoreContext &context, uint64_t &dram_time,
                     std::ceil(static_cast<double>(data_bits) / alignment)) *
                 alignment;
             int aligned_data_byte = aligned_data_bits / 8;
-            if (sram_pos_locator->data_map[datapass_label.indata[p]].size <
-                aligned_data_byte) {
+            if (prim_context->sram_pos_locator_
+                    ->data_map[prim_context->datapass_label_->indata[p]]
+                    .size < aligned_data_byte) {
                 LOG_VERBOSE(1, context.cid,
                             "Prim name:" << name << "\033[1;33m"
                                          << "warning!! input output not mapping"
@@ -382,47 +395,54 @@ void CompBase::checkInputData(TaskCoreContext &context, uint64_t &dram_time,
                 //           << std::endl;
                 auto sram_manager_ = context.sram_manager_;
 #if ASSERT == 1
-                assert(sram_pos_locator->validateTotalSize());
+                assert(prim_context->sram_pos_locator_->validateTotalSize());
 #endif
 
-                // cout << "[INFO] CompBase: sram_pos_locator update the size
+                // cout << "[INFO] CompBase: sram_pos_locator_ update the size
                 // of " << aligned_data_byte -
-                // sram_pos_locator->data_map[datapass_label.indata[p]].size <<
-                // std::endl;
+                // sram_pos_locator_->data_map[prim_context->datapass_label_->indata[p]].size
+                // << std::endl;
                 int ori_size =
-                    sram_pos_locator->data_map[datapass_label.indata[p]].size;
+                    prim_context->sram_pos_locator_
+                        ->data_map[prim_context->datapass_label_->indata[p]]
+                        .size;
                 sc_key.size +=
                     aligned_data_byte -
-                    sram_pos_locator->data_map[datapass_label.indata[p]].size;
-                sram_pos_locator->addPair(datapass_label.indata[p], sc_key,
-                                          context, dram_time, false);
-                sram_manager_->allocate_append(aligned_data_byte - ori_size,
-                                               sc_key.alloc_id);
+                    prim_context->sram_pos_locator_
+                        ->data_map[prim_context->datapass_label_->indata[p]]
+                        .size;
+                prim_context->sram_pos_locator_->addPair(
+                    prim_context->datapass_label_->indata[p], sc_key, context,
+                    dram_time, false);
+                prim_context->sram_manager_->allocate_append(
+                    aligned_data_byte - ori_size, sc_key.alloc_id);
                 // sc_key.size +=
                 //     aligned_data_byte -
-                //     sram_pos_locator->data_map[datapass_label.indata[p]].size;
-                // sram_pos_locator->addPair(datapass_label.indata[p], sc_key,
+                //     sram_pos_locator_->data_map[prim_context->datapass_label_->indata[p]].size;
+                // sram_pos_locator_->addPair(prim_context->datapass_label_->indata[p],
+                // sc_key,
                 //                           false);
 #if ASSERT == 1
-                assert(sram_pos_locator->validateTotalSize());
+                assert(prim_context->sram_pos_locator_->validateTotalSize());
 #endif
             }
 #else
-            if (sram_pos_locator->data_map[datapass_label.indata[p]].size <
-                inp_key.size) {
+            if (prim_context->sram_pos_locator_
+                    ->data_map[prim_context->datapass_label_->indata[p]]
+                    .size < inp_key.size) {
                 // std::cout << "address " << (void*)&inp_key << "address " <<
-                // (void*)&sram_pos_locator->data_map[datapass_label.indata[p]]
+                // (void*)&sram_pos_locator_->data_map[prim_context->datapass_label_->indata[p]]
                 // << std::endl; LOG_VERBOSE(1, context.cid,"Prim name:" << name
                 // <<  " key size " << inp_key.size << " data size " <<
-                // sram_pos_locator->data_map[datapass_label.indata[p]].size);
+                // sram_pos_locator_->data_map[prim_context->datapass_label_->indata[p]].size);
 
                 assert(false);
                 LOG_VERBOSE(1, context.cid,
                             "Prim name:" << name << "\033[1;33m"
                                          << "warning!! input output not mapping"
                                          << "\033[0m");
-                sram_pos_locator->addPair(datapass_label.indata[p], inp_key,
-                                          false);
+                prim_context->sram_pos_locator_->addPair(
+                    prim_context->datapass_label_->indata[p], inp_key, false);
             }
 
 
@@ -431,8 +451,9 @@ void CompBase::checkInputData(TaskCoreContext &context, uint64_t &dram_time,
 
 #if USE_SRAM_MANAGER == 1
         AddrPosKey input_key;
-        sram_pos_locator->findPair(datapass_label.indata[p], input_key);
-        sram_pos_locator->printAllKeysWithAllocId();
+        prim_context->sram_pos_locator_->findPair(
+            prim_context->datapass_label_->indata[p], input_key);
+        prim_context->sram_pos_locator_->printAllKeysWithAllocId();
         // Print allocation IDs for debugging
         LOG_VERBOSE(1, context.cid,
                     "Prim name:" << name << "Input Key Allocation ID: "
@@ -442,12 +463,13 @@ void CompBase::checkInputData(TaskCoreContext &context, uint64_t &dram_time,
         //           << std::endl;
         sram_read_generic(context, data_byte * data_size_input[p],
                           inp_sram_offset, dram_time, input_key.alloc_id, true,
-                          sram_pos_locator);
+                          prim_context->sram_pos_locator_);
 #else
         // 读出input
         LOG_VERBOSE(1, context.cid, "Prim name:" << name << " read input ");
 
-        sram_pos_locator->findPair(datapass_label.indata[p], inp_sram_offset);
+        prim_context->sram_pos_locator_->findPair(
+            prim_context->datapass_label_->indata[p], inp_sram_offset);
         sram_read_generic(context, data_byte * data_size_input[p],
                           inp_sram_offset, dram_time);
 #endif
@@ -467,7 +489,7 @@ void CompBase::prefReadData(TaskCoreContext &context, uint64_t &dram_time,
 
 
     AddrPosKey sc_key;
-    int flag = sram_pos_locator->findPair(label_name, sc_key);
+    int flag = prim_context->sram_pos_locator_->findPair(label_name, sc_key);
     if (flag == -1) {
         assert(false && "weight data not found");
     } else if (flag > 0) {
@@ -475,15 +497,16 @@ void CompBase::prefReadData(TaskCoreContext &context, uint64_t &dram_time,
     }
     // dahu ??
     int sram_offset = 0;
-    sram_pos_locator->findPair(label_name, sc_key);
+    prim_context->sram_pos_locator_->findPair(label_name, sc_key);
 #if USE_SRAM_MANAGER == 1
-    sram_pos_locator->printAllKeysWithAllocId();
+    sram_pos_locator_->printAllKeysWithAllocId();
     // Print allocation IDs for debugging
     std::cout << label_name << " Key Allocation ID: " << sc_key.alloc_id
               << std::endl;
 
     sram_read_generic(context, data_byte * data_size_label, sram_offset,
-                      dram_time, sc_key.alloc_id, true, sram_pos_locator);
+                      dram_time, sc_key.alloc_id, true,
+                      prim_context->sram_pos_locator_);
 #else
 
     sram_read_generic(context, data_byte * data_size_label, sram_offset,
@@ -498,7 +521,6 @@ void CompBase::checkStaticData(TaskCoreContext &context, uint64_t &dram_time,
     auto wc = context.wc;
 #endif
     auto sram_addr = context.sram_addr;
-    // dahu ??
     int sram_offset = *sram_addr;
 
 #if DUMMY == 1
@@ -510,21 +532,22 @@ void CompBase::checkStaticData(TaskCoreContext &context, uint64_t &dram_time,
 #endif
 
     AddrPosKey sc_key;
-    int flag = sram_pos_locator->findPair(label_name, sc_key);
+    int flag = prim_context->sram_pos_locator_->findPair(label_name, sc_key);
     if (flag == -1) {
         LOG_VERBOSE(1, context.cid,
                     "Prim name:" << name << " weight data not found");
 
 #if USE_SRAM_MANAGER == 1
-        sram_first_write_generic(context, data_byte * data_size_label,
-                                 label_global_addr, dram_time, dram_start,
-                                 label_name, true, sram_pos_locator);
+        sram_first_write_generic(
+            context, data_byte * data_size_label, label_global_addr, dram_time,
+            dram_start, label_name, true, prim_context->sram_pos_locator_);
 #else
         sram_first_write_generic(context, data_byte * data_size_label,
                                  label_global_addr, dram_time, dram_start);
 
         sc_key = AddrPosKey(*sram_addr, data_byte * data_size_label);
-        sram_pos_locator->addPair(label_name, sc_key, context, dram_time);
+        prim_context->sram_pos_locator_->addPair(label_name, sc_key, context,
+                                                dram_time);
 #endif
     } else if (flag > 0) {
         LOG_VERBOSE(1, context.cid,
@@ -532,29 +555,31 @@ void CompBase::checkStaticData(TaskCoreContext &context, uint64_t &dram_time,
 #if USE_SRAM_MANAGER == 1
         sram_first_write_generic(context, flag, label_global_addr, dram_time,
                                  dram_start, label_name, true,
-                                 sram_pos_locator);
+                                 prim_context->sram_pos_locator_);
 
 #else
         sram_first_write_generic(context, flag, label_global_addr, dram_time,
                                  dram_start);
         sc_key.size = data_byte * data_size_label;
         sc_key.spill_size = 0;
-        sram_pos_locator->addPair(label_name, sc_key, context, dram_time);
+        prim_context->sram_pos_locator_->addPair(label_name, sc_key, context,
+                                                dram_time);
 #endif
     }
 
 
-    sram_pos_locator->findPair(label_name, sc_key);
+    prim_context->sram_pos_locator_->findPair(label_name, sc_key);
     LOG_VERBOSE(1, context.cid,
                 "Prim name:" << name << " read weight data from sram");
 #if USE_SRAM_MANAGER == 1
-    sram_pos_locator->printAllKeysWithAllocId();
+    sram_pos_locator_->printAllKeysWithAllocId();
     // Print allocation IDs for debugging
     std::cout << label_name << " Key Allocation ID: " << sc_key.alloc_id
               << std::endl;
     if (use_pf == false) {
         sram_read_generic(context, data_byte * data_size_label, sram_offset,
-                          dram_time, sc_key.alloc_id, true, sram_pos_locator);
+                          dram_time, sc_key.alloc_id, true,
+                          prim_context->sram_pos_locator_);
     }
 #else
     if (use_pf == false) {
@@ -608,7 +633,7 @@ void CompBase::writeOutputData(TaskCoreContext &context, uint64_t exu_flops,
 
     // 写入out
     std::vector<std::string> out_labels;
-    std::istringstream iss(datapass_label.outdata);
+    std::istringstream iss(prim_context->datapass_label_->outdata);
     std::string label;
     while (iss >> label)
         out_labels.push_back(label);
@@ -620,7 +645,7 @@ void CompBase::writeOutputData(TaskCoreContext &context, uint64_t exu_flops,
     for (int i = 0; i < out_labels.size(); i++) {
         sram_write_append_generic(
             context, data_byte * data_size_out / out_labels.size(),
-            overlap_time, out_labels[i], true, sram_pos_locator,
+            overlap_time, out_labels[i], true, prim_context->sram_pos_locator_,
             out_global_addr +
                 i * data_byte * data_size_out / out_labels.size());
     }
@@ -634,7 +659,8 @@ void CompBase::writeOutputData(TaskCoreContext &context, uint64_t exu_flops,
             AddrPosKey(static_cast<int>(temp_out_sram_offset + i * interval),
                        data_byte * data_size_out / out_labels.size());
         // already wait in addPair do not add overlap_time
-        sram_pos_locator->addPair(out_labels[i], out_key, context, dram_time);
+        prim_context->sram_pos_locator_->addPair(out_labels[i], out_key, context,
+                                                dram_time);
     }
 #endif
 #endif

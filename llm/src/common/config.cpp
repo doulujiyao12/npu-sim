@@ -145,8 +145,8 @@ void from_json(const json &j, StreamConfig &c) {
         for (auto prim : prims) {
             string type;
             SetParamFromJson<string>(prim, "type", &type);
-            gpu_base *p =
-                (gpu_base *)(PrimFactory::getInstance().createPrim(type));
+            GpuBase *p =
+                (GpuBase *)(PrimFactory::getInstance().createPrim(type));
             p->parseJson(prim);
 
             c.prims.push_back((PrimBase *)p);

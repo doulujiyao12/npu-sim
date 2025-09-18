@@ -227,7 +227,7 @@ void Matmul_f_gpu::print_self(string prefix) {
          << endl;
 }
 
-gpu_base *Matmul_f_gpu::clone() { return new Matmul_f_gpu(*this); }
+GpuBase *Matmul_f_gpu::clone() { return new Matmul_f_gpu(*this); }
 
 void Matmul_f_gpu::parseJson(json j) {
     B = GetDefinedParam(j["B"]);

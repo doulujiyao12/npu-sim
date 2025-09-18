@@ -1,70 +1,39 @@
-#include "prims/pd_base.h"
+#include "prims/base.h"
 
-class matmul_forward_pd : public pd_base {
+class matmul_forward_pd : public PdBase {
 public:
-    int B, T, C, OC;
-    int NH, DH, R;
-    int w_offset, b_offset;
-    PD_JOB job_type;
-    int chunk;
-
-    int task();
-    int taskCoreDefault(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
 
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
-    matmul_forward_pd() { name = "matmul_forward_pd"; }
+    matmul_forward_pd() {
+        name = "matmul_forward_pd";
+        param_name.insert(param_name.end(),
+                          {"B", "T", "C", "OC", "NH", "DH", "R", "chunk"});
+    }
 };
 
 
-class attention_forward_pd : public pd_base {
+class attention_forward_pd : public PdBase {
 public:
-    int B, T, C, NH;
-    int DH, R;
-    int prea_offset, a_offset;
-    PD_JOB job_type;
-
-    int task();
-    int taskCoreDefault(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
 
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
-    attention_forward_pd() { name = "attention_forward_pd"; }
+    attention_forward_pd() {
+        name = "attention_forward_pd";
+        param_name.insert(param_name.end(), {"B", "T", "C", "NH", "DH", "R"});
+    }
 };
 
 
-class rope_forward_pd : public pd_base {
+class rope_forward_pd : public PdBase {
 public:
-    int B, T, C, NH;
-    int R;
-    int sc_offset;
-    PD_JOB job_type;
-    int chunk;
-
-    int task();
-    int taskCoreDefault(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
+    int taskCore(TaskCoreContext &context, string prim_name,
+                 u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
-
-    rope_forward_pd() { name = "rope_forward_pd"; }
+    rope_forward_pd() {
+        name = "rope_forward_pd";
+        param_name.insert(param_name.end(), {"B", "T", "C", "NH", "R"});
+    }
 };

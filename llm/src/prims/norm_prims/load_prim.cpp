@@ -1,7 +1,7 @@
 #include "systemc.h"
 
 #include "prims/norm_prims.h"
-#include "prims/prim_base.h"
+#include "prims/base.h"
 
 void Load_prim::print_self(string prefix) {}
 
@@ -32,7 +32,3 @@ sc_bv<128> Load_prim::serialize() {
     return d;
 }
 int Load_prim::taskCoreDefault(TaskCoreContext &context) { return 0; }
-int Load_prim::task() {
-    // CTODO: complete this after dram and sram interface are done
-    return 0;
-}

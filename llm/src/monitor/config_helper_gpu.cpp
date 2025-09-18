@@ -45,7 +45,7 @@ config_helper_gpu::config_helper_gpu(string filename, string font_ttf,
         auto prims = stream.prims;
 
         for (int j = 0; j < prims.size(); j++) {
-            gpu_base *prim = (gpu_base *)prims[j];
+            GpuBase *prim = (GpuBase *)prims[j];
             int sms = prim->req_sm;
 
             int cycles = sms / GRID_SIZE;
@@ -126,7 +126,7 @@ void config_helper_gpu::generate_prims(int i) {
             new Recv_prim(RECV_TYPE::RECV_START, work.recv_tag, work.recv_cnt));
 
         for (auto prim : work.prims) {
-            gpu_base *gp = (gpu_base *)prim;
+            GpuBase *gp = (GpuBase *)prim;
             int sms = gp->req_sm;
 
             // 只需要看单个原语重复次数
@@ -158,7 +158,7 @@ void config_helper_gpu::calculate_address(bool do_loop) {}
 
 void config_helper_gpu::fill_queue_start(queue<Msg> *q) {
     cout << "GPU fill start queue, phase " << gpu_index << "\n";
-    int sms = ((gpu_base *)(streams[0].prims[gpu_index]))->req_sm;
+    int sms = ((GpuBase *)(streams[0].prims[gpu_index]))->req_sm;
 
     for (auto stream : streams) {
         for (auto source : stream.sources) {
@@ -274,7 +274,7 @@ void config_helper_gpu::parse_done_msg(Event_engine *event_engine,
                             Trace_event_util());
 
     auto prim = streams[0].prims[gpu_index - 1];
-    auto core_inv = ((gpu_base *)prim)->req_sm;
+    auto core_inv = ((GpuBase *)prim)->req_sm;
 
     if (core_inv >= GRID_SIZE)
         core_inv = GRID_SIZE;

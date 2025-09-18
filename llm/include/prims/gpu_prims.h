@@ -1,10 +1,9 @@
 #pragma once
 #include "systemc.h"
 
-#include "prims/gpu_base.h"
-#include "prims/pd_base.h"
+#include "prims/base.h"
 
-class Matmul_f_gpu : public gpu_base {
+class Matmul_f_gpu : public GpuBase {
 public:
     int B, T, C, OC;
     int slice_x, slice_y;
@@ -19,12 +18,12 @@ public:
     void print_self(string prefix);
     void parseJson(json j);
 
-    gpu_base *clone();
+    GpuBase *clone();
 
     Matmul_f_gpu() { name = "Matmul_f_gpu"; }
 };
 
-class Attention_f_gpu : public gpu_base {
+class Attention_f_gpu : public GpuBase {
 public:
     int B, T, C, NH;
     int slice_x, slice_y;
@@ -39,12 +38,12 @@ public:
     void print_self(string prefix);
     void parseJson(json j);
 
-    gpu_base *clone();
+    GpuBase *clone();
 
     Attention_f_gpu() { name = "Attention_f_gpu"; }
 };
 
-class Gelu_f_gpu : public gpu_base {
+class Gelu_f_gpu : public GpuBase {
 public:
     int N;
     int slice_x, slice_y;
@@ -59,12 +58,12 @@ public:
     void print_self(string prefix);
     void parseJson(json j);
 
-    gpu_base *clone();
+    GpuBase *clone();
 
     Gelu_f_gpu() { name = "Gelu_f_gpu"; }
 };
 
-class Layernorm_f_gpu : public gpu_base {
+class Layernorm_f_gpu : public GpuBase {
 public:
     int B, T, C;
     int slice_x, slice_y;
@@ -79,13 +78,13 @@ public:
     void print_self(string prefix);
     void parseJson(json j);
 
-    gpu_base *clone();
+    GpuBase *clone();
 
     Layernorm_f_gpu() { name = "Layernorm_f_gpu"; }
 };
 
 
-class Residual_f_gpu : public gpu_base {
+class Residual_f_gpu : public GpuBase {
 public:
     int N;
     int slice_x, slice_y;
@@ -100,13 +99,13 @@ public:
     void print_self(string prefix);
     void parseJson(json j);
 
-    gpu_base *clone();
+    GpuBase *clone();
 
     Residual_f_gpu() { name = "Residual_f_gpu"; }
 };
 
 
-class matmul_forward_gpu_pd : public gpu_base {
+class matmul_forward_gpu_pd : public GpuBase {
 public:
     int B, T, C, OC;
     int NH, DH, R;
@@ -126,12 +125,12 @@ public:
     void print_self(string prefix);
     int sram_utilization(DATATYPE datatype, int cid = 0);
 
-    gpu_base *clone() { return new matmul_forward_gpu_pd(*this); }
+    GpuBase *clone() { return new matmul_forward_gpu_pd(*this); }
 
     matmul_forward_gpu_pd() { name = "matmul_forward_gpu_pd"; }
 };
 
-class attention_forward_gpu_pd : public gpu_base {
+class attention_forward_gpu_pd : public GpuBase {
 public:
     int B, T, C, NH;
     int slice_x, slice_y;
@@ -149,7 +148,7 @@ public:
     void print_self(string prefix);
     void parseJson(json j);
 
-    gpu_base *clone();
+    GpuBase *clone();
 
     attention_forward_gpu_pd() { name = "attention_forward_gpu_pd"; }
 };

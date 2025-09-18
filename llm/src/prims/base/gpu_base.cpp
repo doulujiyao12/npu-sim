@@ -1,7 +1,7 @@
-#include "prims/gpu_base.h"
+#include "prims/base.h"
 #include "utils/system_utils.h"
 
-void gpu_base::parse_compose(json j) {
+void GpuBase::parse_compose(json j) {
     if (j.contains("grid_x")) {
         auto &data_gx = j["grid_x"];
         if (data_gx.is_number_integer())
@@ -41,7 +41,7 @@ void gpu_base::parse_compose(json j) {
         req_sm = GetDefinedParam(j["require_sm"]);
 }
 
-void gpu_base::parse_addr_label(json j) {
+void GpuBase::parse_addr_label(json j) {
     string in_label = j["indata"];
     datapass_label.outdata = j["outdata"];
 

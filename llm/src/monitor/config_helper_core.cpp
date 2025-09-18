@@ -3,7 +3,7 @@
 #include <sstream>
 
 #include "monitor/config_helper_core.h"
-#include "prims/moe_base.h"
+#include "prims/base.h"
 #include "utils/display_utils.h"
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
@@ -381,17 +381,17 @@ void config_helper_core::generate_prims(int i) {
             } else if (prim->prim_type == MOE_PRIM) {
                 for (int i = 0; i < MAX_SPLIT_NUM; i++) {
                     label->indata[i] =
-                        ((moe_base *)prim)->datapass_label.indata[i];
+                        ((MoeBase *)prim)->datapass_label.indata[i];
                     cout << "Core " << c->id << " moe " << i << " "
                          << label->indata[i] << endl;
                 }
-                label->outdata = ((moe_base *)prim)->datapass_label.outdata;
+                label->outdata = ((MoeBase *)prim)->datapass_label.outdata;
             } else if (prim->prim_type == PD_PRIM) {
                 for (int i = 0; i < MAX_SPLIT_NUM; i++) {
                     label->indata[i] =
-                        ((pd_base *)prim)->datapass_label.indata[i];
+                        ((PdBase *)prim)->datapass_label.indata[i];
                 }
-                label->outdata = ((pd_base *)prim)->datapass_label.outdata;
+                label->outdata = ((PdBase *)prim)->datapass_label.outdata;
             }
 
             // 这里直接推入字符串形式的label，之后会在序列化的时候转化为整形label

@@ -89,7 +89,7 @@ void config_helper_gpu_pd::fill_queue_start(queue<Msg> *q) {
     }
 
     // 直接获取这一个prim有几个核参加
-    int sms = ((gpu_base *)prim_list[prim_index])->req_sm;
+    int sms = ((GpuBase *)prim_list[prim_index])->req_sm;
     for (int i = 0; i < min(sms, GRID_SIZE); i++) {
         int index = i / GRID_X;
         int pkg_index = 0;
@@ -285,7 +285,7 @@ void config_helper_gpu_pd::generate_prims() {
 void config_helper_gpu_pd::generate_prims(int i) {
     cout << "[GPU PD SCHEDULE] Generate prims for index " << i << ".\n";
 
-    gpu_base *prim = (gpu_base *)prim_list[i];
+    GpuBase *prim = (GpuBase *)prim_list[i];
     int sms = prim->req_sm;
 
     for (int c = 0; c < GRID_SIZE; c++) {
@@ -310,9 +310,9 @@ void config_helper_gpu_pd::generate_prims(int i) {
 
         for (int r = 0; r < repeat; r++) {
             for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-                label->indata[i] = ((gpu_base *)prim)->datapass_label.indata[i];
+                label->indata[i] = ((GpuBase *)prim)->datapass_label.indata[i];
             }
-            label->outdata = ((gpu_base *)prim)->datapass_label.outdata;
+            label->outdata = ((GpuBase *)prim)->datapass_label.outdata;
 
             temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, c,
                                       set_addr->serialize()));
@@ -370,7 +370,7 @@ void config_helper_gpu_pd::parse_ack_msg(Event_engine *event_engine,
                             Trace_event_util());
 
     // 计算本iter参与计算的core数量
-    int sms = ((gpu_base *)prim_list[prim_index])->req_sm;
+    int sms = ((GpuBase *)prim_list[prim_index])->req_sm;
     int attend_cores = sms >= GRID_SIZE ? GRID_SIZE : sms;
     if (g_recv_ack_cnt >= attend_cores) {
         g_recv_ack_cnt = 0;
@@ -397,7 +397,7 @@ void config_helper_gpu_pd::parse_done_msg(Event_engine *event_engine,
                             Trace_event_util());
 
     // 计算本iter参与计算的core数量
-    int sms = ((gpu_base *)prim_list[prim_index])->req_sm;
+    int sms = ((GpuBase *)prim_list[prim_index])->req_sm;
     int attend_cores = sms >= GRID_SIZE ? GRID_SIZE : sms;
     if (g_recv_done_cnt >= attend_cores) {
         iter_done(g_done_msg);

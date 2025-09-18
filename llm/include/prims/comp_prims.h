@@ -2,7 +2,7 @@
 #include "systemc.h"
 
 #include "common/system.h"
-#include "prims/comp_base.h"
+#include "prims/base.h"
 
 class Attention_f : public CompBase {
 public:
@@ -12,8 +12,7 @@ public:
 
     Attention_f() {
         name = "Attention_f";
-        prim_type_code = PRIM_TYPE_CODE::ATTENTION_F_TYPE;
-        param_name = {"B", "T", "C", "NH", "R"};
+        param_name.insert(param_name.end(), {"B", "T", "C", "NH", "R"});
     }
 };
 
@@ -26,8 +25,7 @@ public:
 
     Batchnorm_f() {
         name = "Batchnorm_f";
-        prim_type_code = PRIM_TYPE_CODE::BATCHNORM_F_TYPE;
-        param_name = {"B", "W", "H", "C"};
+        param_name.insert(param_name.end(), {"B", "W", "H", "C"});
     }
 };
 
@@ -40,9 +38,8 @@ public:
 
     Conv_f() {
         name = "Conv_f";
-        prim_type_code = PRIM_TYPE_CODE::CONV_F_TYPE;
-        param_name = {"B",  "W",  "H",  "C",  "pX", "pY",
-                      "sX", "sY", "kX", "kY", "F"};
+        param_name.insert(param_name.end(), {"B", "W", "H", "C", "pX", "pY",
+                                             "sX", "sY", "kX", "kY", "F"});
     }
 };
 
@@ -53,10 +50,7 @@ public:
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
 
-    Dummy_p() {
-        name = "Dummy_p";
-        prim_type_code = PRIM_TYPE_CODE::DUMMY_P_TYPE;
-    }
+    Dummy_p() { name = "Dummy_p"; }
 };
 
 class gate_forward : public CompBase {
@@ -67,8 +61,7 @@ public:
 
     gate_forward() {
         name = "gate_forward";
-        prim_type_code = PRIM_TYPE_CODE::GATE_FORWARD_TYPE;
-        param_name = {"B", "T", "C", "E_N", "K"};
+        param_name.insert(param_name.end(), {"B", "T", "C", "E_N", "K"});
     }
 };
 
@@ -80,8 +73,7 @@ public:
 
     Gelu_f() {
         name = "Gelu_f";
-        prim_type_code = PRIM_TYPE_CODE::GELU_F_TYPE;
-        param_name = {"N"};
+        param_name.insert(param_name.end(), {"N"});
     }
 };
 
@@ -94,8 +86,7 @@ public:
 
     Layernorm_f() {
         name = "Layernorm_f";
-        prim_type_code = PRIM_TYPE_CODE::LAYERNORM_F_TYPE;
-        param_name = {"B", "T", "C"};
+        param_name.insert(param_name.end(), {"B", "T", "C"});
     }
 };
 
@@ -107,8 +98,8 @@ public:
     void initialize();
     Matmul_f() {
         name = "Matmul_f";
-        prim_type_code = PRIM_TYPE_CODE::MATMUL_F_TYPE;
-        param_name = {"B", "T", "C", "OC", "NH", "DH", "R"};
+        param_name.insert(param_name.end(),
+                          {"B", "T", "C", "OC", "NH", "DH", "R"});
     }
 };
 
@@ -120,8 +111,7 @@ public:
     void initialize();
     switch_data() {
         name = "switch_data";
-        prim_type_code = PRIM_TYPE_CODE::SWITCH_DATA_TYPE;
-        param_name = {"IN", "OUT"};
+        param_name.insert(param_name.end(), {"IN", "OUT"});
     }
 };
 
@@ -133,8 +123,8 @@ public:
     void initialize();
     Max_pool() {
         name = "Max_pool";
-        prim_type_code = PRIM_TYPE_CODE::MAX_POOL_TYPE;
-        param_name = {"B", "W", "H", "C", "pX", "pY", "sX", "sY", "kX", "kY"};
+        param_name.insert(param_name.end(), {"B", "W", "H", "C", "pX", "pY",
+                                             "sX", "sY", "kX", "kY"});
     }
 };
 
@@ -147,8 +137,7 @@ public:
 
     Merge_conv() {
         name = "Merge_conv";
-        prim_type_code = PRIM_TYPE_CODE::MERGE_CONV_TYPE;
-        param_name = {"B", "T", "C", "dim", "slice"};
+        param_name.insert(param_name.end(), {"B", "T", "C", "dim", "slice"});
     }
 };
 
@@ -161,8 +150,7 @@ public:
 
     Merge_matmul() {
         name = "Merge_matmul";
-        prim_type_code = PRIM_TYPE_CODE::MERGE_MATMUL_TYPE;
-        param_name = {"B", "T", "C", "dim", "slice"};
+        param_name.insert(param_name.end(), {"B", "T", "C", "dim", "slice"});
     }
 };
 
@@ -174,8 +162,7 @@ public:
     void initialize();
     Relu_f() {
         name = "Relu_f";
-        prim_type_code = PRIM_TYPE_CODE::RELU_F_TYPE;
-        param_name = {"N"};
+        param_name.insert(param_name.end(), {"N"});
     }
 };
 
@@ -188,8 +175,7 @@ public:
 
     Residual_f() {
         name = "Residual_f";
-        prim_type_code = PRIM_TYPE_CODE::RESIDUAL_F_TYPE;
-        param_name = {"N"};
+        param_name.insert(param_name.end(), {"N"});
     }
 };
 
@@ -201,8 +187,7 @@ public:
     void initialize();
     rmsnorm_forward() {
         name = "rmsnorm_forward";
-        prim_type_code = PRIM_TYPE_CODE::RMSNORM_F_TYPE;
-        param_name = {"B", "T", "C"};
+        param_name.insert(param_name.end(), {"B", "T", "C"});
     }
 };
 
@@ -215,8 +200,7 @@ public:
 
     rope_forward() {
         name = "rope_forward";
-        prim_type_code = PRIM_TYPE_CODE::ROPE_F_TYPE;
-        param_name = {"B", "T", "C", "NH"};
+        param_name.insert(param_name.end(), {"B", "T", "C", "NH"});
     }
 };
 
@@ -228,8 +212,7 @@ public:
     void initialize();
     silu_forward() {
         name = "silu_forward";
-        prim_type_code = PRIM_TYPE_CODE::SILU_F_TYPE;
-        param_name = {"N"};
+        param_name.insert(param_name.end(), {"N"});
     }
 };
 
@@ -242,8 +225,8 @@ public:
 
     Split_conv() {
         name = "Split_conv";
-        prim_type_code = PRIM_TYPE_CODE::SPLIT_CONV_TYPE;
-        param_name = {"W", "H", "C", "B", "pX", "pY", "S", "K", "slice"};
+        param_name.insert(param_name.end(),
+                          {"W", "H", "C", "B", "pX", "pY", "S", "K", "slice"});
     }
 };
 
@@ -256,8 +239,7 @@ public:
 
     Split_matmul() {
         name = "Split_matmul";
-        prim_type_code = PRIM_TYPE_CODE::SPLIT_MATMUL_TYPE;
-        param_name = {"B", "T", "C", "dim", "slice"};
+        param_name.insert(param_name.end(), {"B", "T", "C", "dim", "slice"});
     }
 };
 
@@ -269,8 +251,7 @@ public:
     void initialize();
     swiglu_forward() {
         name = "swiglu_forward";
-        prim_type_code = PRIM_TYPE_CODE::SWIGLU_F_TYPE;
-        param_name = {"N"};
+        param_name.insert(param_name.end(), {"N"});
     }
 };
 
@@ -285,9 +266,10 @@ public:
 
     Send_global_memory() {
         name = "Send_global_memory";
-        prim_type_code = PRIM_TYPE_CODE::SEND_GLOBAL_MEMORY_TYPE;
-        param_name = {"type",         "enable",     "des_id", "des_offset",
-                      "local_offset", "max_packet", "tag_id", "end_length"};
+        param_name.insert(param_name.end(),
+                          {"type", "enable", "des_id", "des_offset",
+                           "local_offset", "max_packet", "tag_id",
+                           "end_length"});
     }
 };
 
@@ -299,8 +281,7 @@ public:
 
     Recv_global_memory() {
         name = "Recv_global_memory";
-        prim_type_code = PRIM_TYPE_CODE::RECV_GLOBAL_MEMORY_TYPE;
-        param_name = {"type", "tag_id", "recv_cnt"};
+        param_name.insert(param_name.end(), {"type", "tag_id", "recv_cnt"});
     }
 };
 
@@ -312,8 +293,7 @@ public:
 
     parse_input() {
         name = "parse_input";
-        prim_type_code = PRIM_TYPE_CODE::PARSE_INPUT_TYPE;
-        param_name = {"size"};
+        param_name.insert(param_name.end(), {"size"});
     }
 };
 
@@ -325,7 +305,6 @@ public:
 
     parse_output() {
         name = "parse_output";
-        prim_type_code = PRIM_TYPE_CODE::PARSE_OUTPUT_TYPE;
-        param_name = {"size"};
+        param_name.insert(param_name.end(), {"size"});
     }
 };

@@ -6,7 +6,7 @@
 #include "common/system.h"
 #include "defs/global.h"
 #include "memory/dram/Dcachecore.h"
-#include "prims/comp_base.h"
+#include "prims/base.h"
 #include "prims/comp_prims.h"
 #include "utils/memory_utils.h"
 #include "utils/print_utils.h"
@@ -46,7 +46,7 @@ int Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
 
     uint64_t performance_cycle = (exu->x_dims + exu->x_dims + padding_input_x) *
                                  weight_tile_x * weight_tile_y;
-
+ 
     uint64_t performance_comp =
         performance_cycle * exu->y_dims * exu->x_dims * comp_util;
     LOG_VERBOSE(1, context.cid,

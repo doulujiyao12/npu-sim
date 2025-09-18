@@ -179,7 +179,7 @@ void Attention_f_gpu::print_self(string prefix) {
          << endl;
 }
 
-gpu_base *Attention_f_gpu::clone() { return new Attention_f_gpu(*this); }
+GpuBase *Attention_f_gpu::clone() { return new Attention_f_gpu(*this); }
 
 void Attention_f_gpu::parseJson(json j) {
     B = GetDefinedParam(j["B"]);

@@ -3,7 +3,7 @@
 
 #include "link/instr/recv_global_mem.h"
 #include "memory/dram/Dcachecore.h"
-#include "prims/comp_base.h"
+#include "prims/base.h"
 #include "prims/comp_prims.h"
 #include "utils/memory_utils.h"
 #include "utils/print_utils.h"

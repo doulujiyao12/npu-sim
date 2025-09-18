@@ -3,8 +3,8 @@
 #include "defs/const.h"
 #include "defs/enums.h"
 #include "defs/global.h"
-#include "prims/comp_base.h"
-#include "prims/prim_base.h"
+#include "prims/base.h"
+#include "prims/base.h"
 #include "utils/prim_utils.h"
 #include <fstream>
 #include <iostream>

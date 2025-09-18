@@ -1,7 +1,7 @@
 #pragma once
 #include "common/pd.h"
 #include "monitor/config_helper_base.h"
-#include "prims/gpu_base.h"
+#include "prims/base.h"
 
 class config_helper_gpu_pd : public config_helper_base {
 public:

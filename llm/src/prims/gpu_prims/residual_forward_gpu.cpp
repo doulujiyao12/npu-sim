@@ -135,7 +135,7 @@ void Residual_f_gpu::print_self(string prefix) {
          << endl;
 }
 
-gpu_base *Residual_f_gpu::clone() { return new Residual_f_gpu(*this); }
+GpuBase *Residual_f_gpu::clone() { return new Residual_f_gpu(*this); }
 
 void Residual_f_gpu::parseJson(json j) {
     N = GetDefinedParam(j["N"]);

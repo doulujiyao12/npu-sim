@@ -10,20 +10,6 @@
 
 using namespace std;
 
-class KVCache {
-public:
-    // 可能已经obsolete
-    int Kstart;
-    int Vstart;
-
-    float kvcache[KVCACHE_MAX_SIZE];
-
-    KVCache() {
-        Kstart = 0;
-        Vstart = KVCACHE_MAX_SIZE / 2;
-    }
-};
-
 // 以下为sram_pos_locator相关
 class AddrDatapassLabel {
 public:

@@ -3,7 +3,7 @@
 #include "defs/enums.h"
 #include "prims/comp_prims.h"
 #include "prims/norm_prims.h"
-#include "prims/prim_base.h"
+#include "prims/base.h"
 #include "utils/memory_utils.h"
 
 void Recv_prim::print_self(string prefix) {

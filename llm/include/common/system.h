@@ -16,24 +16,45 @@
 
 using namespace std;
 
-
-class HardwareTaskConfig {
+// prim与计算核共用
+class PrimCoreContext {
 public:
-    HardwareConduct hardware;
-    vector<float *> data;
-    vector<int> args;
+    int cid;
+    int loop_cnt; // 当前prim执行的循环次数
+
+    SramManager *sram_manager_;
+    SramPosLocator *sram_pos_locator_;
+    GpuPosLocator *gpu_pos_locator_;
+
+    // serving相关
+    vector<Stage> batch_info_;
+    vector<bool> decode_done_;
+
+    // 原语的输入输出标签
+    AddrDatapassLabel *datapass_label_;
+
+    // moe相关
+    vector<int> selected_experts_;   // 选中的专家列表
+    vector<int> selected_freq_;      // 专家被选中的次数
+    vector<int> prefetched_experts_; // 被预先存储在sram中的专家
+
+    PrimCoreContext(int id) : cid(id) {
+        loop_cnt = 0;
+        
+        sram_manager_ =
+            new SramManager(0, cid, MAX_SRAM_SIZE, SRAM_BLOCK_SIZE, 0);
+        sram_pos_locator_ = new SramPosLocator(cid, sram_manager_);
+        datapass_label_ = new AddrDatapassLabel;
+    }
+
+    ~PrimCoreContext() {
+        delete sram_manager_;
+        delete sram_pos_locator_;
+        delete datapass_label_;
+    }
 };
 
-class GPT2Config {
-public:
-    int max_seq_len;       // max sequence length, e.g. 1024
-    int vocab_size;        // vocab size, e.g. 50257
-    int padded_vocab_size; // padded to e.g. %128==0, 50304
-    int num_layers;        // number of layers, e.g. 12
-    int num_heads;         // number of heads in attention, e.g. 12
-    int channels;          // number of channels, e.g. 768
-};
-
+// 用于传入taskCore
 class TaskCoreContext {
 public:
     int cid;
@@ -49,7 +70,7 @@ public:
     sc_event *e_nbdram;
     sc_event *s_sram;
     sc_event *e_sram;
-    SRAMWriteModule* sram_writer;
+    SRAMWriteModule *sram_writer;
     int loop_cnt;
     uint64_t MaxDramAddr; // 当前核最大的 dram 地址
     unsigned int defaultDataLength;
@@ -105,7 +126,8 @@ public:
                     high_bw_mem_access_unit *temp_hmau, int *sram_addr,
                     sc_event *s_nbdram, sc_event *e_nbdram,
                     NB_DcacheIF *nb_dcache, SramManager *sram_manager,
-                    int loop_cnt, uint64_t MaxDramAddr, unsigned int defaultDataLength)
+                    int loop_cnt, uint64_t MaxDramAddr,
+                    unsigned int defaultDataLength)
         : mau(mau),
           hmau(hmau),
           temp_mau(temp_mau),
@@ -124,7 +146,8 @@ public:
                     high_bw_mem_access_unit *hmau, mem_access_unit *temp_mau,
                     high_bw_mem_access_unit *temp_hmau, int *sram_addr,
                     sc_event *s_nbdram, sc_event *e_nbdram,
-                    SramManager *sram_manager, int loop_cnt, uint64_t MaxDramAddr, unsigned int defaultDataLength)
+                    SramManager *sram_manager, int loop_cnt,
+                    uint64_t MaxDramAddr, unsigned int defaultDataLength)
         : wc(wc),
           mau(mau),
           hmau(hmau),
@@ -147,7 +170,8 @@ public:
                     NB_DcacheIF *nb_dcache, int loop_cnt,
                     SramManager *sram_manager,
                     sc_event *start_nb_gpu_dram_event,
-                    sc_event *end_nb_gpu_dram_event, uint64_t MaxDramAddr, unsigned int defaultDataLength)
+                    sc_event *end_nb_gpu_dram_event, uint64_t MaxDramAddr,
+                    unsigned int defaultDataLength)
         : mau(mau),
           hmau(hmau),
           temp_mau(temp_mau),

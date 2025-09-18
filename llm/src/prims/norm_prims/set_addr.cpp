@@ -2,7 +2,7 @@
 
 #include "common/memory.h"
 #include "defs/global.h"
-#include "prims/comp_base.h"
+#include "prims/base.h"
 #include "prims/norm_prims.h"
 #include "utils/system_utils.h"
 

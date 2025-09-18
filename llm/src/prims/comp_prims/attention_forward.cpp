@@ -1,6 +1,6 @@
 #include "systemc.h"
 
-#include "prims/comp_base.h"
+#include "prims/base.h"
 #include "prims/comp_prims.h"
 #include "utils/config_utils.h"
 #include "utils/memory_utils.h"

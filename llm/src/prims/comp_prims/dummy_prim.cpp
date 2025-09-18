@@ -1,7 +1,7 @@
 #include "systemc.h"
 
 #include "memory/dram/Dcachecore.h"
-#include "prims/comp_base.h"
+#include "prims/base.h"
 #include "prims/comp_prims.h"
 #include "utils/memory_utils.h"
 

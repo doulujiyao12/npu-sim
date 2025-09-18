@@ -174,4 +174,4 @@ void Layernorm_f_gpu::parseJson(json j) {
     }
 }
 
-gpu_base *Layernorm_f_gpu::clone() { return new Layernorm_f_gpu(*this); }
+GpuBase *Layernorm_f_gpu::clone() { return new Layernorm_f_gpu(*this); }

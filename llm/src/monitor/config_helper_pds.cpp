@@ -496,14 +496,14 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
             for (int i = 0; i < MAX_SPLIT_NUM; i++) {
                 if (prim->prim_type == PD_PRIM) {
                     label->indata[i] =
-                        ((pd_base *)prim)->datapass_label.indata[i];
+                        ((PdBase *)prim)->datapass_label.indata[i];
                 } else if (prim->prim_type == COMP_PRIM) {
                     label->indata[i] =
                         ((CompBase *)prim)->datapass_label.indata[i];
                 }
             }
             if (prim->prim_type == PD_PRIM) {
-                label->outdata = ((pd_base *)prim)->datapass_label.outdata;
+                label->outdata = ((PdBase *)prim)->datapass_label.outdata;
             } else if (prim->prim_type == COMP_PRIM) {
                 label->outdata = ((CompBase *)prim)->datapass_label.outdata;
             }

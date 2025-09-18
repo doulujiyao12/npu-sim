@@ -3,10 +3,10 @@
 
 #include "common/memory.h"
 #include "prims/norm_prims.h"
-#include "prims/prim_base.h"
+#include "prims/base.h"
 #include "utils/system_utils.h"
 
-void Clear_sram::print_self(string prefix) {
+void Clear_sram::printSelf(string prefix) {
     cout << prefix << "<clear_sram>\n";
 }
 

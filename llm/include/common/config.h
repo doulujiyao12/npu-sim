@@ -2,8 +2,7 @@
 #include <vector>
 
 #include "defs/enums.h"
-#include "prims/comp_base.h"
-#include "prims/prim_base.h"
+#include "prims/base.h"
 
 class Cast {
 public:

@@ -128,4 +128,4 @@ int Gelu_f_gpu::taskCoreDefault(TaskCoreContext &context) {
 
 int Gelu_f_gpu::task() { return 0; }
 
-gpu_base *Gelu_f_gpu::clone() { return new Gelu_f_gpu(*this); }
+GpuBase *Gelu_f_gpu::clone() { return new Gelu_f_gpu(*this); }

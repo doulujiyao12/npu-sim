@@ -3,48 +3,29 @@
 
 #include "common/memory.h"
 #include "common/pd.h"
-#include "prims/prim_base.h"
+#include "prims/base.h"
 
 class Clear_sram : public PrimBase {
 public:
-    SramPosLocator *sram_pos_locator;
-    int *loop_cnt;
-
     int taskCoreDefault(TaskCoreContext &context);
-    int task();
-    int sram_utilization(DATATYPE datatype, int cid = 0);
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
+    void printSelf();
 
-    void print_self(string prefix);
-    void initialize() {};
-
-    Clear_sram() {}
-    Clear_sram(SramPosLocator *sram_pos_locator, int *loop_cnt)
-        : sram_pos_locator(sram_pos_locator), loop_cnt(loop_cnt) {}
+    Clear_sram() { name = "Clear_sram"; }
 };
 
 
 class Load_prim : public PrimBase {
 public:
-    int dram_addr;
-    int sram_addr;
-    int size;
-
-    int task();
     int taskCoreDefault(TaskCoreContext &context);
 
-    void deserialize(sc_bv<128> buffer);
     sc_bv<128> serialize();
-
-    void parseJson(json j, vector<pair<string, int>> vtable);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-    void initialize() {};
+    void deserialize(sc_bv<128> buffer);
+    void printSelf();
 
     Load_prim() { name = "Load_prim"; }
-    Load_prim(int da, int sa, int s) : dram_addr(da), sram_addr(sa), size(s) {}
 };
 
 
@@ -54,19 +35,14 @@ public:
     int tag_id;   // 和send原语对应的tag
     int recv_cnt; // 需要接收到的end包数量（用于多发一）
 
-    int task();
     int taskCoreDefault(TaskCoreContext &context);
 
     sc_bv<128> serialize();
     void deserialize(sc_bv<128> buffer);
-
-    void parseJson(json j, vector<pair<string, int>> vtable);
-    void print_self(string prefix) override;
-    int sram_utilization(DATATYPE datatype, int cid = 0);
+    void printSelf();
 
     Recv_prim() { name = "Recv_prim"; }
     Recv_prim(RECV_TYPE type);
-    void initialize() {};
     Recv_prim(RECV_TYPE type, int tag, int cnt)
         : type(type), tag_id(tag), recv_cnt(cnt) {
         name = "Recv_prim";
