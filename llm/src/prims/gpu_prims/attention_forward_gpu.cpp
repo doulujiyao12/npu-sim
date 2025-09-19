@@ -3,100 +3,108 @@
 #include "utils/memory_utils.h"
 #include "utils/system_utils.h"
 
-int Attention_f_gpu::taskCoreDefault(TaskCoreContext &context) {
-    int data_byte = 0;
-    if (datatype == INT8) {
-        data_byte = 1;
-    } else if (datatype == FP16) {
-        data_byte = 2;
-    }
-    B = B * gpu_B;
-    T = GetDefinedParam("T");
+void Attention_f_gpu::initialize() {
+    auto &p = param_value;
+    input_size = {data_byte * p["B"] * p["T"] * p["C"]};
+    data_chunk = {{"preatt", data_byte * p["B"] * p["NH"] * p["T"] * p["T"]},
+                  {"att", data_byte * p["B"] * p["NH"] * p["T"] * p["T"]},
+                  {"output", data_byte * p["B"] * p["NH"] * p["T"] * p["C"] /
+                                 (3 * slice_x * slice_y)}};
+}
 
-    int data_size_input = data_byte * B * T * C;       // QKV input
-    int data_size_preatt = data_byte * B * NH * T * T; // preatt
-    int data_size_att = data_byte * B * NH * T * T;    // att
-    int data_size_out =
-        data_byte * B * T * C / (3 * slice_x * slice_y); // output
+int Attention_f_gpu::taskCoreDefault(TaskCoreContext &context) {
+    auto &p = param_value;
+    p["B"] *= gpu_B;
 
     int mem_time = 0;
     auto input_mem_offset = 0;
-    if (!gpu_pos_locator->findPair(datapass_label.indata[0],
-                                   input_mem_offset)) {
-        printf(
-            "[ERROR] Attention_f_gpu: gpu_pos_locator cannot find the label: "
-            "%s\n",
-            datapass_label.indata[0].c_str());
+    if (!prim_context->gpu_pos_locator_->findPair(
+            prim_context->datapass_label_->indata[0], input_mem_offset)) {
+        printf("[ERROR] Attention_f_gpu: prim_context->gpu_pos_locator_ cannot "
+               "find the label: "
+               "%s\n",
+               prim_context->datapass_label_->indata[0].c_str());
         sc_stop();
     }
 
     // 获取前缀label
-    std::size_t pos = datapass_label.outdata.find_last_of('_');
+    std::size_t pos = prim_context->datapass_label_->outdata.find_last_of('_');
     std::string prefix;
     if (pos != std::string::npos) {
-        prefix = datapass_label.outdata.substr(0, pos);
+        prefix = prim_context->datapass_label_->outdata.substr(0, pos);
     } else {
-        prefix = datapass_label.outdata;
+        prefix = prim_context->datapass_label_->outdata;
     }
 
     auto label_preatt = prefix + "_preatt";
-    AddrPosKey p_key = AddrPosKey(0, data_size_preatt);
-    gpu_pos_locator->fetchPair(label_preatt, p_key);
+    AddrPosKey p_key = AddrPosKey(0, GetFromPairedVector(data_chunk, "preatt"));
+    prim_context->gpu_pos_locator_->fetchPair(label_preatt, p_key);
 
     auto label_att = prefix + "_att";
-    AddrPosKey a_key = AddrPosKey(0, data_size_att);
-    gpu_pos_locator->fetchPair(label_att, a_key);
+    AddrPosKey a_key = AddrPosKey(0, GetFromPairedVector(data_chunk, "att"));
+    prim_context->gpu_pos_locator_->fetchPair(label_att, a_key);
 
-    cout << cid << " [Attention_f_gpu] before read1: " << mem_time
+    cout << prim_context->cid << " [Attention_f_gpu] before read1: " << mem_time
          << " at addr " << input_mem_offset << endl;
 
     int overlap_time = 0;
 #if USE_L1L2_CACHE == 1
     // V
     gpu_read_generic(context,
-                     input_mem_offset + data_size_input / 3 * 2 +
-                         data_size_input / (3 * slice_x * slice_y) *
-                             fetch_index,
-                     data_size_input / (3 * slice_x * slice_y), mem_time, true);
+                     input_mem_offset + input_size / 3 * 2 +
+                         input_size / (3 * slice_x * slice_y) * fetch_index,
+                     input_size / (3 * slice_x * slice_y), mem_time, true);
     // K
     gpu_read_generic(context,
-                     input_mem_offset + data_size_input / 3 +
-                         data_size_input / (3 * slice_x * slice_y) *
-                             fetch_index,
-                     data_size_input / (3 * slice_x * slice_y), mem_time, true);
+                     input_mem_offset + input_size / 3 +
+                         input_size / (3 * slice_x * slice_y) * fetch_index,
+                     input_size / (3 * slice_x * slice_y), mem_time, true);
 
-    cout << cid << " [Attention_f_gpu] after read1: " << mem_time << endl;
-    cout << cid << " [Attention_f_gpu] before write1: " << mem_time
-         << " at addr " << p_key.pos << endl;
+    cout << prim_context->cid << " [Attention_f_gpu] after read1: " << mem_time
+         << endl;
+    cout << prim_context->cid
+         << " [Attention_f_gpu] before write1: " << mem_time << " at addr "
+         << p_key.pos << endl;
 
     gpu_write_generic(context,
-                      p_key.pos +
-                          data_size_preatt / (slice_x * slice_y) * fetch_index,
-                      data_size_preatt / (slice_x * slice_y), mem_time);
+                      p_key.pos + GetFromPairedVector(data_chunk, "preatt") /
+                                      (slice_x * slice_y) * fetch_index,
+                      GetFromPairedVector(data_chunk, "preatt") /
+                          (slice_x * slice_y),
+                      mem_time);
     gpu_read_generic(context,
-                     p_key.pos +
-                         data_size_preatt / (slice_x * slice_y) * fetch_index,
-                     data_size_preatt / (slice_x * slice_y), mem_time);
+                     p_key.pos + GetFromPairedVector(data_chunk, "preatt") /
+                                     (slice_x * slice_y) * fetch_index,
+                     GetFromPairedVector(data_chunk, "preatt") /
+                         (slice_x * slice_y),
+                     mem_time);
 
     gpu_write_generic(
-        context, a_key.pos + data_size_att / (slice_x * slice_y) * fetch_index,
-        data_size_att / (slice_x * slice_y), mem_time);
+        context,
+        a_key.pos + GetFromPairedVector(data_chunk, "att") /
+                        (slice_x * slice_y) * fetch_index,
+        GetFromPairedVector(data_chunk, "att") / (slice_x * slice_y), mem_time);
     gpu_read_generic(
-        context, a_key.pos + data_size_att / (slice_x * slice_y) * fetch_index,
-        data_size_att / (slice_x * slice_y), mem_time);
+        context,
+        a_key.pos + GetFromPairedVector(data_chunk, "att") /
+                        (slice_x * slice_y) * fetch_index,
+        GetFromPairedVector(data_chunk, "att") / (slice_x * slice_y), mem_time);
 
     // Q
     gpu_read_generic(context,
-                     input_mem_offset + data_size_input /
-                                            (3 * slice_x * slice_y) *
-                                            fetch_index,
-                     data_size_input / (3 * slice_x * slice_y), mem_time);
+                     input_mem_offset +
+                         input_size / (3 * slice_x * slice_y) * fetch_index,
+                     input_size / (3 * slice_x * slice_y), mem_time);
 
     AddrPosKey out_key;
-    gpu_pos_locator->updatePair(datapass_label.outdata, data_size_out);
-    gpu_pos_locator->findPair(datapass_label.outdata, out_key);
+    prim_context->gpu_pos_locator_->updatePair(
+        prim_context->datapass_label_->outdata,
+        GetFromPairedVector(data_chunk, "output"));
+    prim_context->gpu_pos_locator_->findPair(
+        prim_context->datapass_label_->outdata, out_key);
 
-    gpu_write_generic(context, out_key.pos, data_size_out, mem_time);
+    gpu_write_generic(context, out_key.pos,
+                      GetFromPairedVector(data_chunk, "output"), mem_time);
     int cycle = 0;
     int cid = context.cid;
 
@@ -105,8 +113,8 @@ int Attention_f_gpu::taskCoreDefault(TaskCoreContext &context) {
     SfuConfig *sfu = core_config.sfu;
 
     if (exu->type == MAC_Array)
-        cycle += B * NH * T * (T - 1) / 2 * (4 * C / NH + 5) /
-                 (slice_x * slice_y) /
+        cycle += p["B"] * p["NH"] * p["T"] * (p["T"] - 1) / 2 *
+                 (4 * p["C"] / p["NH"] + 5) / (slice_x * slice_y) /
                  (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
     else
         assert(false && "Unsupported tile type");
@@ -137,63 +145,10 @@ int Attention_f_gpu::taskCoreDefault(TaskCoreContext &context) {
 #endif
 
     cout << cid << " [Attention_f_gpu] after write: " << overlap_time << endl;
-    B = B / gpu_B;
-    assert(B > 0);
+
+    p["B"] /= gpu_B;
+
     return overlap_time;
 }
 
-int Attention_f_gpu::task() { return 0; }
-
-int Attention_f_gpu::sram_utilization(DATATYPE datatype, int cid) { return 0; }
-
-void Attention_f_gpu::deserialize(sc_bv<128> buffer) {
-    slice_x = buffer.range(15, 8).to_uint();
-    slice_y = buffer.range(23, 16).to_uint();
-    B = buffer.range(55, 40).to_uint64();
-    T = buffer.range(71, 56).to_uint64();
-    C = buffer.range(87, 72).to_uint64();
-    NH = buffer.range(103, 88).to_uint64();
-    datatype = DATATYPE(buffer.range(105, 104).to_uint64());
-    fetch_index = buffer.range(121, 106).to_uint64();
-}
-
-sc_bv<128> Attention_f_gpu::serialize() {
-    sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(ATTENTION_F_GPU_TYPE);
-    d.range(15, 8) = sc_bv<8>(slice_x);
-    d.range(23, 16) = sc_bv<8>(slice_y);
-    d.range(55, 40) = sc_bv<16>(B);
-    d.range(71, 56) = sc_bv<16>(T);
-    d.range(87, 72) = sc_bv<16>(C);
-    d.range(103, 88) = sc_bv<16>(NH);
-    d.range(105, 104) = sc_bv<2>(datatype);
-    d.range(121, 106) = sc_bv<16>(fetch_index);
-
-    return d;
-}
-
-void Attention_f_gpu::print_self(string prefix) {
-    cout << prefix << "<attention_forward_gpu>\n";
-    cout << prefix << "\tB: " << B << ", T: " << T << ", C: " << C << endl;
-    cout << prefix << "slice_x: " << slice_x << ", slice_y: " << slice_y
-         << endl;
-}
-
 GpuBase *Attention_f_gpu::clone() { return new Attention_f_gpu(*this); }
-
-void Attention_f_gpu::parseJson(json j) {
-    B = GetDefinedParam(j["B"]);
-    T = GetDefinedParam(j["T"]);
-    C = GetDefinedParam(j["C"]);
-    NH = GetDefinedParam(j["NH"]);
-    slice_x = j["slice_x"];
-    slice_y = j["slice_y"];
-
-    if (j.contains("compose")) {
-        parse_compose(j["compose"]);
-    }
-
-    if (j.contains("address")) {
-        parse_addr_label(j["address"]);
-    }
-}

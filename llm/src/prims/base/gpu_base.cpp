@@ -1,61 +1,119 @@
 #include "prims/base.h"
+#include "utils/config_utils.h"
+#include "utils/prim_utils.h"
+#include "utils/print_utils.h"
 #include "utils/system_utils.h"
 
-void GpuBase::parse_compose(json j) {
-    if (j.contains("grid_x")) {
-        auto &data_gx = j["grid_x"];
-        if (data_gx.is_number_integer())
-            grid_x = data_gx;
-        else
-            grid_x = GetDefinedParam(j["grid_x"]);
+sc_bv<128> GpuBase::serialize() {
+    sc_bv<128> d;
+    d.range(7, 0) = sc_bv<8>(PrimFactory::getInstance().getPrimId(name));
+    d.range(8, 8) = sc_bv<1>(datatype);
+    d.range(24, 9) = sc_bv<16>(fetch_index);
+    d.range(32, 25) = sc_bv<8>(slice_x);
+    d.range(40, 33) = sc_bv<8>(slice_y);
+    d.range(56, 41) = sc_bv<16>(req_sm);
+
+    // 所有参数平均分配
+    if (param_name.size() > 10) {
+        ARGUS_EXIT("Primitive with # params = ", param_name.size(),
+                   " is not supported.\n");
+        return d;
     }
 
-    if (j.contains("grid_y")) {
-        auto &data_gy = j["grid_y"];
-        if (data_gy.is_number_integer())
-            grid_y = data_gy;
-        else
-            grid_y = GetDefinedParam(j["grid_y"]);
+    int pos = 57;
+    if (param_name.size() <= 2) {
+        for (auto &pair : param_value) {
+            d.range(pos + 31, pos) = sc_bv<32>(pair.second);
+            pos += 32;
+        }
+    } else if (param_name.size() <= 4) {
+        for (auto &pair : param_value) {
+            d.range(pos + 15, pos) = sc_bv<16>(pair.second);
+            pos += 16;
+        }
+    } else {
+        for (auto &pair : param_value) {
+            d.range(pos + 7, pos) = sc_bv<8>(pair.second);
+            pos += 8;
+        }
     }
-
-    if (j.contains("block_x")) {
-        auto &data_bx = j["block_x"];
-        if (data_bx.is_number_integer())
-            block_x = data_bx;
-        else
-            block_x = GetDefinedParam(j["block_x"]);
-    }
-
-    if (j.contains("block_y")) {
-        auto &data_by = j["block_y"];
-        if (data_by.is_number_integer())
-            block_y = data_by;
-        else
-            block_y = GetDefinedParam(j["block_y"]);
-    }
-
-    auto &data_req_sm = j["require_sm"];
-    if (data_req_sm.is_number_integer())
-        req_sm = data_req_sm;
-    else
-        req_sm = GetDefinedParam(j["require_sm"]);
 }
 
-void GpuBase::parse_addr_label(json j) {
-    string in_label = j["indata"];
-    datapass_label.outdata = j["outdata"];
+void GpuBase::deserialize(sc_bv<128> buffer) {
+    datatype = DATATYPE(buffer.range(8, 8).to_uint64());
+    fetch_index = buffer.range(24, 9).to_uint64();
+    slice_x = buffer.range(32, 25).to_uint64();
+    slice_y = buffer.range(40, 33).to_uint64();
+    req_sm = buffer.range(56, 41).to_uint64();
 
-    std::vector<std::string> in_labels;
-
-    std::istringstream iss(in_label);
-    std::string word;
-
-    // 保证DRAM_LABEL后面跟着另一个label
-    while (iss >> word) {
-        in_labels.push_back(word);
+    int pos = 5761;
+    if (param_name.size() <= 2) {
+        for (auto &param : param_name) {
+            param_value[param] = buffer.range(pos + 31, pos).to_uint64();
+            pos += 32;
+        }
+    } else if (param_name.size() <= 4) {
+        for (auto &param : param_name) {
+            param_value[param] = buffer.range(pos + 15, pos).to_uint64();
+            pos += 16;
+        }
+    } else {
+        for (auto &param : param_name) {
+            param_value[param] = buffer.range(pos + 7, pos).to_uint64();
+            pos += 8;
+        }
     }
 
-    for (int i = 0; i < in_labels.size(); i++) {
-        datapass_label.indata[i] = in_labels[i];
+    initialize();
+    initializeDefault();
+}
+
+void GpuBase::parseCompose(json j) {
+    SetParamFromJson(j, "slice_x", &slice_x);
+    SetParamFromJson(j, "slice_y", &slice_y);
+    SetParamFromJson(j, "req_sm", &req_sm);
+}
+
+void GpuBase::parseJson(json j) {
+    for (auto &param : param_name) {
+        SetParamFromJson(j, param, &param_value[param]);
     }
+
+    initialize();
+    initializeDefault();
+
+    if (j.contains("compose"))
+        parseCompose(j["compose"]);
+}
+
+void GpuBase::initializeDefault() {
+    if (datatype == INT8)
+        data_byte = 1;
+    else if (datatype == FP16)
+        data_byte = 2;
+
+    input_size = 0;
+    for (auto &input : data_size_input)
+        input_size += input;
+
+    out_size = -1;
+    for (const auto &chunk : data_chunk) {
+        if (chunk.first == "output") {
+            out_size = chunk.second;
+            break;
+        }
+    }
+
+    if (out_size < 0)
+        ARGUS_EXIT("No output chunk found.\n");
+}
+
+void GpuBase::printSelf() {
+    cout << "<" + name + ">\n";
+
+    for (auto &pair : param_value)
+        cout << "\t" << pair.first << ": " << pair.second << endl;
+
+    for (auto &pair : data_chunk)
+        cout << "\t" << pair.first << ": " << pair.second << endl;
 }

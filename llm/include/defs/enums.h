@@ -118,9 +118,10 @@ enum PD_JOB {
 
 // 原语类型
 enum PRIM_TYPE {
-    NORM_PRIM = 1,
-    COMP_PRIM = 1 << 1,
-    GPU_PRIM = 1 << 2,
+    NORM_PRIM = 0,
+    COMP_PRIM = 1,
+    GPU_PRIM = 1 << 1,
+    NPU_PRIM = 1 << 2,
     PD_PRIM = 1 << 3,
     MOE_PRIM = 1 << 4,
 };

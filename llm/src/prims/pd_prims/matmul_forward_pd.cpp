@@ -1,9 +1,9 @@
 #include "common/pd.h"
 #include "prims/pd_prims.h"
 #include "utils/memory_utils.h"
+#include "utils/prim_utils.h"
 #include "utils/print_utils.h"
 #include "utils/system_utils.h"
-#include "utils/prim_utils.h"
 
 REGISTER_PRIM(matmul_forward_pd);
 
@@ -31,21 +31,20 @@ int matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         }
     }
 
-    if (!need_multiply) {
-        p["weight"] /= p["chunk"];
-        p["bias"] /= p["chunk"];
-    }
+    int chunk_ratio = need_multiply ? 1 : p["chunk"];
 
 #if NB_CACHE_DEBUG == 1
     LOG_VERBOSE(1, context.cid, " data_size_weight " << data_size_weight);
 #endif
     auto label_weight = ETERNAL_PREFIX + prim_name + "_w";
     checkStaticData(context, dram_time, data_chunk_addr["weight"],
-                    GetFromPairedVector(data_chunk, "weight"), label_weight);
+                    GetFromPairedVector(data_chunk, "weight") / chunk_ratio,
+                    label_weight);
 
     auto label_bias = ETERNAL_PREFIX + prim_name + "_b";
     checkStaticData(context, dram_time, data_chunk_addr["bias"],
-                    GetFromPairedVector(data_chunk, "bias"), label_bias);
+                    GetFromPairedVector(data_chunk, "bias") / chunk_ratio,
+                    label_bias);
     ARGUS_PRINT(dram_time);
 
     // 写入kvcache，根据batchInfo确定

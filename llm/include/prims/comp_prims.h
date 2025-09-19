@@ -5,7 +5,7 @@
 #include "prims/base.h"
 #include "utils/prim_utils.h"
 
-class Attention_f : public CompBase {
+class Attention_f : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -18,7 +18,7 @@ public:
 };
 
 
-class Batchnorm_f : public CompBase {
+class Batchnorm_f : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -31,7 +31,7 @@ public:
 };
 
 
-class Conv_f : public CompBase {
+class Conv_f : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -45,7 +45,7 @@ public:
 };
 
 
-class Dummy_p : public CompBase {
+class Dummy_p : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -54,7 +54,7 @@ public:
     Dummy_p() { name = "Dummy_p"; }
 };
 
-class gate_forward : public CompBase {
+class gate_forward : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -66,7 +66,7 @@ public:
     }
 };
 
-class Gelu_f : public CompBase {
+class Gelu_f : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -79,7 +79,7 @@ public:
 };
 
 
-class Layernorm_f : public CompBase {
+class Layernorm_f : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -92,7 +92,7 @@ public:
 };
 
 
-class Matmul_f : public CompBase {
+class Matmul_f : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -105,7 +105,7 @@ public:
 };
 
 
-class switch_data : public CompBase {
+class switch_data : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -117,7 +117,7 @@ public:
 };
 
 
-class Max_pool : public CompBase {
+class Max_pool : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -130,7 +130,7 @@ public:
 };
 
 
-class Merge_conv : public CompBase {
+class Merge_conv : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -143,7 +143,7 @@ public:
 };
 
 
-class Merge_matmul : public CompBase {
+class Merge_matmul : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -156,7 +156,7 @@ public:
 };
 
 
-class Relu_f : public CompBase {
+class Relu_f : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -168,7 +168,7 @@ public:
 };
 
 
-class Residual_f : public CompBase {
+class Residual_f : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -181,7 +181,7 @@ public:
 };
 
 
-class rmsnorm_forward : public CompBase {
+class rmsnorm_forward : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -193,7 +193,7 @@ public:
 };
 
 
-class rope_forward : public CompBase {
+class rope_forward : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -206,7 +206,7 @@ public:
 };
 
 
-class silu_forward : public CompBase {
+class silu_forward : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -218,7 +218,7 @@ public:
 };
 
 
-class Split_conv : public CompBase {
+class Split_conv : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -232,7 +232,7 @@ public:
 };
 
 
-class Split_matmul : public CompBase {
+class Split_matmul : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -245,7 +245,7 @@ public:
 };
 
 
-class swiglu_forward : public CompBase {
+class swiglu_forward : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -257,7 +257,7 @@ public:
 };
 
 
-class Send_global_memory : public CompBase {
+class Send_global_memory : public NpuBase {
 public:
     int data_packet_id; // 已经发送的包数量
 
@@ -274,7 +274,7 @@ public:
     }
 };
 
-class Recv_global_memory : public CompBase {
+class Recv_global_memory : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -286,7 +286,7 @@ public:
     }
 };
 
-class parse_input : public CompBase {
+class parse_input : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
@@ -298,7 +298,7 @@ public:
     }
 };
 
-class parse_output : public CompBase {
+class parse_output : public NpuBase {
 public:
     int taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
