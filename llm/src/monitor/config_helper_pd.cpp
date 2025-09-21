@@ -89,7 +89,7 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
 void config_helper_pd::fill_queue_config(queue<Msg> *q) {
     // 将temp中的所有内容搬运到q中，并清空temp
     for (auto msg : temp_config) {
-        auto des = msg.des;
+        auto des = msg.des_;
         int index = des / GRID_X;
         q[index].push(msg);
     }
@@ -128,7 +128,7 @@ void config_helper_pd::fill_queue_start(queue<Msg> *q) {
                     Msg m =
                         Msg(false, MSG_TYPE::S_DATA, j + total_pkg, status.id,
                             M_D_DATA * (j - 1), status.id, M_D_DATA, d);
-                    m.source = GRID_SIZE;
+                    m.source_ = GRID_SIZE;
                     q[index].push(m);
                 }
 
@@ -149,7 +149,7 @@ void config_helper_pd::iter_done(vector<Msg> done_msg) {
     // 如果其中有DECODE done的话就额外更新一次
     // 只有最后一个stage的core才能够更新
     for (auto msg : done_msg) {
-        int id = msg.source;
+        int id = msg.source_;
         if ((id + 1) % model_stage)
             continue;
 
@@ -197,7 +197,7 @@ void config_helper_pd::iter_done(vector<Msg> done_msg) {
                         if (outfile.is_open()) {
                             outfile << "[CATCH TEST] " << sc_time_stamp()
                                     << "MAX_SRAM_SIZE " << MAX_SRAM_SIZE
-                                    << " BANDWIDTH " << dram_bw << endl;
+                                    << " BANDWIDTH " << g_default_dram_bw << endl;
                             outfile.close();
                         } else {
                             cout << "Error: Unable to open file for writing "
@@ -373,7 +373,7 @@ void config_helper_pd::iter_start() {
         busy = true;
 }
 
-void config_helper_pd::print_self() {
+void config_helper_pd::printSelf() {
     cout << "[PD Config]" << endl;
     cout << "Heads: " << heads << endl;
     cout << "EOF Chance: " << eof_chance << endl;
@@ -451,24 +451,19 @@ void config_helper_pd::generate_prims(int i) {
         for (int loop = 0; loop < core.loop; loop++) {
             for (int p = 0; p < work.prims.size(); p++) {
                 auto prim = work.prims[p];
-                PrimBase *set_addr = new_prim("Set_addr");
+                PrimBase *set_addr = PrimFactory::getInstance().createPrim("Set_addr");
                 auto label = ((Set_addr *)set_addr)->datapass_label;
 
                 for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-                    if (prim->prim_type == PD_PRIM) {
-                        label->indata[i] =
-                            ((PdBase *)prim)->datapass_label.indata[i];
-                    } else if (prim->prim_type == COMP_PRIM) {
-                        label->indata[i] =
-                            ((CompBase *)prim)->datapass_label.indata[i];
+                    if (prim->prim_type & COMP_PRIM) {
+                        label.indata[i] =
+                            prim->prim_context->datapass_label_->indata[i];
                     }
                 }
-                if (prim->prim_type == PD_PRIM) {
-                    label->outdata = ((PdBase *)prim)->datapass_label.outdata;
-                } else if (prim->prim_type == COMP_PRIM) {
-                    label->outdata =
-                        ((CompBase *)prim)->datapass_label.outdata;
-                }
+                if (prim->prim_type & COMP_PRIM) {
+                        label.outdata =
+                            prim->prim_context->datapass_label_->outdata;
+                    }
 
                 temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
                                           i, set_addr->serialize()));
@@ -476,7 +471,7 @@ void config_helper_pd::generate_prims(int i) {
                                           i, prim->serialize()));
 
                 if (loop == core.loop - 1 && p == work.prims.size() - 1)
-                    output_label = label->outdata;
+                    output_label = label.outdata;
             }
         }
     }
@@ -533,7 +528,7 @@ void config_helper_pd::generate_prims(int i) {
     // 每一个核都需要向memInterface发送DONE信号
     PrimBase *send_done = new Send_prim(SEND_TYPE::SEND_DONE);
     Msg m = Msg(true, MSG_TYPE::CONFIG, ++prim_seq, i, send_done->serialize());
-    m.refill = false;
+    m.refill_ = false;
     temp_config.push_back(m);
 }
 
@@ -543,7 +538,7 @@ void config_helper_pd::parse_ack_msg(Event_engine *event_engine, int flow_id,
                             Trace_event_util());
 
     for (auto m : g_temp_ack_msg) {
-        int cid = m.source;
+        int cid = m.source_;
         cout << sc_time_stamp()
              << ": Config helper PD: received ack packet from " << cid
              << ". total " << g_recv_ack_cnt + 1 << "/" << coreconfigs.size()
@@ -568,7 +563,7 @@ void config_helper_pd::parse_done_msg(Event_engine *event_engine,
                             Trace_event_util());
 
     for (auto m : g_temp_done_msg) {
-        int cid = m.source;
+        int cid = m.source_;
         cout << sc_time_stamp()
              << ": Config helper PD: received done packet from " << cid
              << ", working type " << coreStatus[cid].job_type << ".\n";

@@ -1,6 +1,7 @@
 #include "monitor/config_helper_pds.h"
 #include "prims/norm_prims.h"
 #include "prims/pd_prims.h"
+#include "utils/config_utils.h"
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
@@ -103,7 +104,7 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
 void config_helper_pds::fill_queue_config(queue<Msg> *q) {
     // 将temp中的所有内容搬运到q中，并清空temp
     for (auto msg : temp_config) {
-        auto des = msg.des;
+        auto des = msg.des_;
         int index = des / GRID_X;
         q[index].push(msg);
     }
@@ -144,17 +145,16 @@ void config_helper_pds::fill_queue_start(queue<Msg> *q) {
             int pkg_num = (send_size_in_bit % M_D_DATA)
                               ? (send_size_in_bit / M_D_DATA + 1)
                               : (send_size_in_bit / M_D_DATA);
-            pkg_num =
-                pkg_num % (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD)
-                    ? pkg_num / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD) + 1
-                    : pkg_num / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD);
+            pkg_num = pkg_num % (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD)
+                          ? pkg_num / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD) + 1
+                          : pkg_num / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD);
 
             for (int j = 1; j <= pkg_num; j++) {
                 sc_bv<M_D_DATA> d(0x1);
 
                 Msg m = Msg(false, MSG_TYPE::S_DATA, j + total_pkg, status.id,
                             M_D_DATA * (j - 1), status.id, M_D_DATA, d);
-                m.source = GRID_SIZE;
+                m.source_ = GRID_SIZE;
                 q[index].push(m);
             }
 
@@ -187,7 +187,7 @@ void config_helper_pds::iter_done(PD_JOB type) {
         done_msg = g_done_msg_d;
 
     for (auto msg : done_msg) {
-        int id = msg.source;
+        int id = msg.source_;
         if (id < prefill_core && stage_index[id] != prefill_stage ||
             id >= prefill_core && stage_index[id] != decode_stage)
             continue;
@@ -438,7 +438,7 @@ void config_helper_pds::iter_start(PD_JOB type) {
     }
 }
 
-void config_helper_pds::print_self() {}
+void config_helper_pds::printSelf() {}
 
 void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
     // 一个iter中有stage个core参与执行，id 1要流向id end，id end要传回id 1
@@ -479,8 +479,8 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
     string output_label = "";
 
     PrimBase *recv_data_1 = new Recv_prim(work.recv_cnt ? RECV_TYPE::RECV_START
-                                                         : RECV_TYPE::RECV_DATA,
-                                           work.recv_tag, work.recv_cnt);
+                                                        : RECV_TYPE::RECV_DATA,
+                                          work.recv_tag, work.recv_cnt);
     temp_buffer.push_back(
         Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, recv_data_1->serialize()));
     PrimBase *set_batch = new Set_batch(status.batchInfo);
@@ -490,22 +490,17 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
     if (status.batchInfo.size()) {
         for (int p = 0; p < work.prims.size(); p++) {
             auto prim = work.prims[p];
-            PrimBase *set_addr = new_prim("Set_addr");
+            PrimBase *set_addr = PrimFactory::getInstance().createPrim("Set_addr");
             auto label = ((Set_addr *)set_addr)->datapass_label;
 
             for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-                if (prim->prim_type == PD_PRIM) {
-                    label->indata[i] =
-                        ((PdBase *)prim)->datapass_label.indata[i];
-                } else if (prim->prim_type == COMP_PRIM) {
-                    label->indata[i] =
-                        ((CompBase *)prim)->datapass_label.indata[i];
+                if (prim->prim_type & COMP_PRIM) {
+                    label.indata[i] =
+                        prim->prim_context->datapass_label_->indata[i];
                 }
             }
-            if (prim->prim_type == PD_PRIM) {
-                label->outdata = ((PdBase *)prim)->datapass_label.outdata;
-            } else if (prim->prim_type == COMP_PRIM) {
-                label->outdata = ((CompBase *)prim)->datapass_label.outdata;
+            if (prim->prim_type & COMP_PRIM) {
+                label.outdata = prim->prim_context->datapass_label_->outdata;
             }
 
             temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i,
@@ -514,7 +509,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
                 Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, prim->serialize()));
 
             if (p == work.prims.size() - 1)
-                output_label = label->outdata;
+                output_label = label.outdata;
         }
     }
 
@@ -582,7 +577,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
     // 每一个核都需要向memInterface发送DONE信号
     PrimBase *send_done = new Send_prim(SEND_TYPE::SEND_DONE);
     Msg m = Msg(true, MSG_TYPE::CONFIG, ++prim_seq, i, send_done->serialize());
-    m.refill = false;
+    m.refill_ = false;
     temp_buffer.push_back(m);
 }
 
@@ -592,7 +587,7 @@ void config_helper_pds::parse_ack_msg(Event_engine *event_engine, int flow_id,
                             Trace_event_util());
 
     for (auto m : g_temp_ack_msg) {
-        int cid = m.source;
+        int cid = m.source_;
         cout << sc_time_stamp()
              << ": Config helper PDS: received ack packet from " << cid
              << ", type: " << coreStatus[cid].job_type;
@@ -629,7 +624,7 @@ void config_helper_pds::parse_done_msg(Event_engine *event_engine,
                             Trace_event_util());
 
     for (auto m : g_temp_done_msg) {
-        int cid = m.source;
+        int cid = m.source_;
         cout << sc_time_stamp()
              << ": Config helper PD: received done packet from " << cid
              << ", type: " << coreStatus[cid].job_type;

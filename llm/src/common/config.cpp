@@ -5,7 +5,7 @@
 #include "utils/print_utils.h"
 #include "utils/system_utils.h"
 
-void CoreJob::print_self() {
+void CoreJob::printSelf() {
     for (auto cast : cast) {
         cout << "{\n";
         cout << "\tdest: " << cast.dest << endl;
@@ -19,7 +19,7 @@ void CoreJob::print_self() {
     cout << "recv_tag: " << recv_tag << endl;
 }
 
-void CoreConfig::print_self() {
+void CoreConfig::printSelf() {
     cout << "<CoreConfig>\n";
     cout << "Core id: " << id << endl;
     cout << "\tprim_copy: " << prim_copy << endl;
@@ -28,7 +28,7 @@ void CoreConfig::print_self() {
 
     for (auto work : worklist) {
         cout << "\t<Worklist>\n";
-        work.print_self();
+        work.printSelf();
         cout << "\t</Worklist>\n";
     }
     cout << "</CoreConfig>\n";
@@ -72,7 +72,7 @@ void from_json(const json &j, CoreJob &c) {
             CompBase *p = nullptr;
             string type = prim.at("type");
 
-            p = (CompBase *)(PrimFactory::getInstance.createPrim(type));
+            p = (CompBase *)(PrimFactory::getInstance().createPrim(type));
             p->parseJson(prim);
 
             c.prims.push_back((PrimBase *)p);

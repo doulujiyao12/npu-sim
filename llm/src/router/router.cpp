@@ -111,7 +111,7 @@ void RouterUnit::router_execute() {
                 // move the data into the buffer
                 sc_bv<256> temp = host_channel_i->read();
 
-                Msg tt = deserialize_msg(temp);
+                Msg tt = DeserializeMsg(temp);
                 // cout << sc_time_stamp() << ": Router " << rid
                 //      << ": get des seqid " << tt.des << " " << tt.seq_id
                 //      << " from host." << endl;
@@ -139,7 +139,7 @@ void RouterUnit::router_execute() {
             sc_bv<256> temp = buffer_o[i].front();
             buffer_o[i].pop();
 
-            Msg tt = deserialize_msg(temp);
+            Msg tt = DeserializeMsg(temp);
             // cout << sc_time_stamp() << ": " << rid << ": output " << i <<
             // "\n";
 
@@ -179,7 +179,7 @@ void RouterUnit::router_execute() {
 
                 buffer_o[CENTER].pop();
 
-                Msg tt = deserialize_msg(temp);
+                Msg tt = DeserializeMsg(temp);
 
                 channel_o[CENTER].write(temp);
                 data_sent_o[CENTER].write(true);
@@ -195,7 +195,7 @@ void RouterUnit::router_execute() {
         // host输入包 向 output 哪个方向输出
         if (host_channel_i && host_buffer_i->size()) {
             sc_bv<256> temp = host_buffer_i->front();
-            int d = get_msg_des_id(temp);
+            int d = DeserializeMsg(temp).des_;
             // 先x后y的路由
             Directions next = GetNextHop(d, rid);
 
@@ -212,16 +212,16 @@ void RouterUnit::router_execute() {
         // 检查req_queue中的所有元素。假设A向B发送req，则检查B->A的输出信道是否上锁。如果不上锁/或上锁且tag相同，且buffer未满，则可以搬运至输出信道。
         for (auto it = req_queue.begin(); it != req_queue.end();) {
             auto req = *it;
-            int des = req.des;
-            int source = req.source;
+            int des = req.des_;
+            int source = req.source_;
             Directions next = GetNextHop(des, source);
 
-            if (output_lock[next] == -1 || output_lock[next] == req.tag_id) {
+            if (output_lock[next] == -1 || output_lock[next] == req.tag_id_) {
                 cout << "[INFO] Router " << rid << ", checking req from "
                      << source << endl;
                 if (buffer_o[CENTER].size() < MAX_BUFFER_PACKET_SIZE) {
                     it = req_queue.erase(it);
-                    buffer_o[CENTER].emplace(serialize_msg(req));
+                    buffer_o[CENTER].emplace(SerializeMsg(req));
                     flag_trigger = true;
                     continue;
                 }
@@ -237,23 +237,23 @@ void RouterUnit::router_execute() {
                 continue;
 
             sc_bv<256> temp = buffer_i[i].front();
-            Msg m = deserialize_msg(temp);
-            Directions out = GetNextHop(m.des, rid);
+            Msg m = DeserializeMsg(temp);
+            Directions out = GetNextHop(m.des_, rid);
 
             // 是否能发送 不能发送的情况是上锁了以后，并且tag一样
             // 注意：REQUEST包若终点为本core，则会优先进入req_buffer；否则按照正常数据流转
-            if (m.msg_type == REQUEST && m.des == rid) {
+            if (m.msg_type_ == REQUEST && m.des_ == rid) {
                 buffer_i[i].pop();
                 req_queue.push_back(m);
 
                 cout << "[REQUEST] Router " << rid << " received REQ from "
-                     << m.source << ", put into req_queue.\n";
+                     << m.source_ << ", put into req_queue.\n";
                 continue;
             }
 
-            if (m.des != GRID_SIZE && output_lock[out] != -1 &&
+            if (m.des_ != GRID_SIZE && output_lock[out] != -1 &&
                 output_lock[out] !=
-                    m.tag_id) // 如果不发往host，且目标通道上锁，且目标上锁tag不等同于自己的tag：continue
+                    m.tag_id_) // 如果不发往host，且目标通道上锁，且目标上锁tag不等同于自己的tag：continue
                 continue;
             if (out == HOST &&
                 host_buffer_o->size() >=
@@ -270,17 +270,17 @@ void RouterUnit::router_execute() {
 
             // [ACK] 非发往host的ACK包，需要上锁或者增加refcnt
             // FIX 上锁应该在第一个DATA 包
-            if (m.msg_type == DATA && m.seq_id == 1 && m.des != GRID_SIZE &&
-                m.source != GRID_SIZE) {
+            if (m.msg_type_ == DATA && m.seq_id_ == 1 && m.des_ != GRID_SIZE &&
+                m.source_ != GRID_SIZE) {
                 // i 是 ACK 的进入方向，需要计算 ACK 的输出方向
                 if (output_lock[out] == -1) {
                     // 上锁
-                    output_lock[out] = m.tag_id;
+                    output_lock[out] = m.tag_id_;
                     output_lock_ref[out]++;
                     cout << sc_time_stamp() << " " << ": Router " << rid
                          << " lock: " << out << " " << output_lock[out] << " "
                          << output_lock_ref[out] << endl;
-                } else if (output_lock[out] == m.tag_id) {
+                } else if (output_lock[out] == m.tag_id_) {
                     // 添加refcnt
                     // Two Ack 多发一 DATA 包 乱序 接受核的接受地址由 Send
                     // 包中地址决定
@@ -298,10 +298,10 @@ void RouterUnit::router_execute() {
             // DTODO
             // 排除了Config DATA 包，不会减少 lock
             // START DATA 包也不会上锁？
-            if (m.msg_type == DATA && m.is_end && m.source != GRID_SIZE &&
-                m.des != GRID_SIZE) {
+            if (m.msg_type_ == DATA && m.is_end_ && m.source_ != GRID_SIZE &&
+                m.des_ != GRID_SIZE) {
                 // i 是 data 的进入方向，需要计算 data 的输出方向
-                out = GetNextHop(m.des, rid);
+                out = GetNextHop(m.des_, rid);
 
                 output_lock_ref[out]--;
 

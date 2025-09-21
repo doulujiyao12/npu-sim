@@ -4,6 +4,27 @@
 #include "defs/enums.h"
 #include "prims/base.h"
 
+
+class ExuConfig {
+public:
+    Etype type; // exu type
+    int x_dims; // exu x array
+    int y_dims; // exu y array
+
+    ExuConfig() : type(MAC_Array), x_dims(128), y_dims(128) {}
+    ExuConfig(Etype t, int x, int y) : type(t), x_dims(x), y_dims(y) {}
+};
+
+class SfuConfig {
+public:
+    Sftype type; // exu type
+    int x_dims;  // exu x array
+
+    SfuConfig() : type(Linear), x_dims(16) {}
+    SfuConfig(Sftype t, int x) : type(t), x_dims(x) {}
+};
+
+
 class Cast {
 public:
     int dest;
@@ -35,7 +56,7 @@ public:
     vector<PrimBase *> prims_last_loop;
     vector<PrimBase *> prims_in_loop;
 
-    void print_self();
+    void printSelf();
     CoreJob() {}
     CoreJob(int recv_cnt, int recv_tag, int loop)
         : recv_cnt(recv_cnt), recv_tag(recv_tag) {
@@ -58,7 +79,7 @@ public:
 
     vector<CoreJob> worklist;
 
-    void print_self();
+    void printSelf();
 };
 
 void from_json(const json &j, CoreConfig &c);
@@ -122,22 +143,3 @@ public:
 };
 
 void from_json(const json &j, CoreHWConfig &c);
-
-class ExuConfig {
-public:
-    Etype type; // exu type
-    int x_dims; // exu x array
-    int y_dims; // exu y array
-
-    ExuConfig() : type(MAC_Array), x_dims(128), y_dims(128) {}
-    ExuConfig(Etype t, int x, int y) : type(t), x_dims(x), y_dims(y) {}
-};
-
-class SfuConfig {
-public:
-    Sftype type; // exu type
-    int x_dims;  // exu x array
-
-    SfuConfig() : type(Linear), x_dims(16) {}
-    SfuConfig(Sftype t, int x) : type(t), x_dims(x) {}
-};

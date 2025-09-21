@@ -2,6 +2,7 @@
 
 #include "nlohmann/json.hpp"
 #include "utils/system_utils.h"
+#include "utils/config_utils.h"
 #include <string>
 #include <vector>
 
@@ -80,7 +81,7 @@ void from_json(const json &j, TopConfig &c) {
     }
 }
 
-void TopConfig::print_self() {
+void TopConfig::printSelf() {
     std::cout << "TopConfig: " << std::endl;
     std::cout << "pipeline: " << pipeline << std::endl;
     std::cout << "sequential: " << sequential << std::endl;
@@ -90,6 +91,6 @@ void TopConfig::print_self() {
     }
 
     for (auto component_ptr : component_) {
-        component_ptr->print_self();
+        component_ptr->printSelf();
     }
 }

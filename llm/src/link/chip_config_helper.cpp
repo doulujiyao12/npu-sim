@@ -47,16 +47,16 @@ chip_config_helper::chip_config_helper(string filename, string font_ttf, int cid
         }
     }
 
-    print_self();
+    printSelf();
 }
 
 
-void chip_config_helper::print_self(){
+void chip_config_helper::printSelf(){
     cout << "<ChipConfigHelper>\n";
     cout << "\tchip id: " << cid << endl;
     cout << "\t<instr_list>\n";
     for(auto instr : instr_list){
-        instr->print_self("\t\t");
+        instr->printSelf("\t\t");
     }
     cout << "\t</instr_list>\n";
 

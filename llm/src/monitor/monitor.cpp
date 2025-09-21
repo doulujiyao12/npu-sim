@@ -79,7 +79,7 @@ void Monitor::init() {
 
     for (int i = 0; i < GRID_SIZE; i++) {
         workerCores[i] = new WorkerCore(sc_gen_unique_name("workercore"), i,
-                                        this->event_engine, GetCoreHWConfig(i).dram_config);
+                                        this->event_engine, GetCoreHWConfig(i)->dram_config);
     }
 
     // 根据Config的设置连接到Globalmem

@@ -15,8 +15,8 @@ ChipConfig::ChipConfig() {}
 
 ChipConfig::~ChipConfig() {}
 
-void ChipConfig::print_self() {
-    // chip->print_self();
+void ChipConfig::printSelf() {
+    // chip->printSelf();
     std::cout << "chip_id: " << id << std::endl;
     std::cout << "GridX: " << GridX << std::endl;
     std::cout << "GridY: " << GridY << std::endl;

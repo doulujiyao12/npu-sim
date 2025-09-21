@@ -85,9 +85,9 @@ int Layernorm_f_gpu::taskCoreDefault(TaskCoreContext &context) {
 
     int cycle = 0;
 
-    CoreHWConfig core_config = GetCoreHWConfig(prim_context->cid);
-    ExuConfig *exu = core_config.exu;
-    SfuConfig *sfu = core_config.sfu;
+    CoreHWConfig *core_config = GetCoreHWConfig(prim_context->cid);
+    ExuConfig *exu = core_config->exu;
+    SfuConfig *sfu = core_config->sfu;
 
     if (exu->type == MAC_Array)
         cycle += 0 / (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;

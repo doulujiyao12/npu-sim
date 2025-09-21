@@ -2,7 +2,7 @@
 #include "utils/memory_utils.h"
 #include "utils/system_utils.h"
 
-void matmul_forward_gpu_pd::initialize() {
+void Matmul_f_gpu::initialize() {
     auto &p = param_value;
     input_size = {data_byte * p["B"] * p["T"] * p["C"]};
     data_chunk = {{"weight", data_byte * p["C"] * p["OC"]},
@@ -87,9 +87,9 @@ int Matmul_f_gpu::taskCoreDefault(TaskCoreContext &context) {
 
         int cycle = 0;
 
-        CoreHWConfig core_config = GetCoreHWConfig(prim_context->cid);
-        ExuConfig *exu = core_config.exu;
-        SfuConfig *sfu = core_config.sfu;
+        CoreHWConfig *core_config = GetCoreHWConfig(prim_context->cid);
+        ExuConfig *exu = core_config->exu;
+        SfuConfig *sfu = core_config->sfu;
 
         if (exu->type == MAC_Array)
             cycle +=
@@ -154,9 +154,9 @@ int Matmul_f_gpu::taskCoreDefault(TaskCoreContext &context) {
 
         int cycle = 0;
 
-        CoreHWConfig core_config = GetCoreHWConfig(prim_context->cid);
-        ExuConfig *exu = core_config.exu;
-        SfuConfig *sfu = core_config.sfu;
+        CoreHWConfig *core_config = GetCoreHWConfig(prim_context->cid);
+        ExuConfig *exu = core_config->exu;
+        SfuConfig *sfu = core_config->sfu;
 
         if (exu->type == MAC_Array)
             cycle +=

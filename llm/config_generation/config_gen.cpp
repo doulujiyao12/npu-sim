@@ -24,7 +24,7 @@ public:
     vector<PrimBase *> prims;
 
 
-    void print_self();
+    void printSelf();
     CorePrims() {}
 };
 

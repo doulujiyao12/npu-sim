@@ -45,5 +45,5 @@ public:
 
     virtual ~chip_instr_base() = default;
 
-    virtual void print_self(std::string prefix) = 0;
+    virtual void printSelf(std::string prefix) = 0;
 };

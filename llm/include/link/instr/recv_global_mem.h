@@ -23,7 +23,7 @@ public:
         seq = j.contains("seq") ? j["seq"].get<int>() : -1;
     }
 
-    void print_self(std::string prefix) override{
+    void printSelf(std::string prefix) override{
         std::cout << prefix << "<Recv_global_mem>" << std::endl;
     }
 

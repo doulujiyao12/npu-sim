@@ -65,7 +65,7 @@ public:
 
     Residual_f_gpu() {
         name = "Residual_f_gpu";
-        param_name.insert(param_name.end(), {"N"})
+        param_name.insert(param_name.end(), {"N"});
     }
 };
 
@@ -79,7 +79,8 @@ public:
 
     matmul_forward_gpu_pd() {
         name = "matmul_forward_gpu_pd";
-        param_name.insert(param_name.end(), {"B", "T", "C", "NH", "DH", "R", "job_type"})
+        param_name.insert(param_name.end(),
+                          {"B", "T", "C", "NH", "DH", "R", "job_type"});
     }
 };
 
@@ -92,6 +93,6 @@ public:
 
     attention_forward_gpu_pd() {
         name = "attention_forward_gpu_pd";
-        param_name.insert(param_name.end(), {"B", "T", "C", "NH"})
+        param_name.insert(param_name.end(), {"B", "T", "C", "NH"});
     }
 };

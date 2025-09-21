@@ -9,7 +9,7 @@ using namespace std;
 bool RandResult(int threshold);
 int GetFromPairedVector(vector<pair<string, int>> &vector, string key);
 
-CoreHWConfig GetCoreHWConfig(int id);
+CoreHWConfig *GetCoreHWConfig(int id);
 
 int CeilingDivision(int a, int b);
 

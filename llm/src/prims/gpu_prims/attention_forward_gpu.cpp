@@ -108,9 +108,9 @@ int Attention_f_gpu::taskCoreDefault(TaskCoreContext &context) {
     int cycle = 0;
     int cid = context.cid;
 
-    CoreHWConfig core_config = GetCoreHWConfig(cid);
-    ExuConfig *exu = core_config.exu;
-    SfuConfig *sfu = core_config.sfu;
+    CoreHWConfig *core_config = GetCoreHWConfig(cid);
+    ExuConfig *exu = core_config->exu;
+    SfuConfig *sfu = core_config->sfu;
 
     if (exu->type == MAC_Array)
         cycle += p["B"] * p["NH"] * p["T"] * (p["T"] - 1) / 2 *

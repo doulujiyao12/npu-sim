@@ -4,7 +4,7 @@
 #include "monitor/monitor.h"
 #include "systemc.h"
 #include "trace/Event_engine.h"
-#include "utils/file_utils.h"
+#include "utils/print_utils.h"
 #include "utils/simple_flags.h"
 #include "utils/system_utils.h"
 #include <iostream>
@@ -64,14 +64,14 @@ int sc_main(int argc, char *argv[]) {
 
     InitGrid(g_flag_config_file.c_str(), g_flag_core_config_file.c_str());
     InitGlobalMembers();
-    init_dram_areas();
-    initialize_cache_structures();
-    init_perf_counters();
+    // init_dram_areas();
+    // initialize_cache_structures();
+    // init_perf_counters();
 
     TopConfig *top_config =
         new TopConfig(g_flag_config_file.c_str(), g_flag_ttf.c_str());
     // TopConfig top_config(g_flag_config_file.c_str());
-    top_config->print_self();
+    top_config->printSelf();
 
     Event_engine *event_engine = new Event_engine("event-engine", 10);
     TopMonitor *top_monitor = new TopMonitor("top_monitor", event_engine,
@@ -81,8 +81,8 @@ int sc_main(int argc, char *argv[]) {
 
     sc_start();
 
-    destroy_dram_areas();
-    destroy_cache_structures();
+    // destroy_dram_areas();
+    // destroy_cache_structures();
     // sc_close_vcd_trace_file(tf);
     SystemCleanup();
 

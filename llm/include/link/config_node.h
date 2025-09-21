@@ -17,7 +17,7 @@ public:
     BaseConfig *parent_config;
     BaseConfig *top_config;
     std::vector<ChipConfig> chips;
-    void print_self();
+    void printSelf();
 
     Type getType() const override { return TYPE_NODE; }
 };

@@ -345,7 +345,7 @@ void SramPosLocator::updateKVPair(TaskCoreContext &context, std::string &key,
         // cout << "left_byte" << result.left_byte << endl;
         return;
     } else {
-        int alignment = std::max(GetCoreHWConfig(cid).sram_bitwidth, SRAM_BLOCK_SIZE * 8);
+        int alignment = std::max(GetCoreHWConfig(cid)->sram_bitwidth, SRAM_BLOCK_SIZE * 8);
         int alignment_byte = alignment / 8;
         int tmp = 1;
 
@@ -442,12 +442,12 @@ int SramPosLocator::rearrangeAll(TaskCoreContext &context) {
         auto spill_size = record.second.spill_size;
 
         int dma_read_count =
-            spill_size * 8 / (int)(GetCoreHWConfig(cid).sram_bitwidth * SRAM_BANKS);
+            spill_size * 8 / (int)(GetCoreHWConfig(cid)->sram_bitwidth * SRAM_BANKS);
         int byte_residue =
             spill_size * 8 -
-            dma_read_count * (GetCoreHWConfig(cid).sram_bitwidth * SRAM_BANKS);
+            dma_read_count * (GetCoreHWConfig(cid)->sram_bitwidth * SRAM_BANKS);
         int single_read_count =
-            CeilingDivision(byte_residue, GetCoreHWConfig(cid).sram_bitwidth);
+            CeilingDivision(byte_residue, GetCoreHWConfig(cid)->sram_bitwidth);
 
         int temp_pos = *(context.sram_addr);
         u_int64_t temp_addr = 0;

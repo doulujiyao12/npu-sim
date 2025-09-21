@@ -59,9 +59,9 @@ int Residual_f_gpu::taskCoreDefault(TaskCoreContext &context) {
 
     int cycle = 0;
 
-    CoreHWConfig core_config = GetCoreHWConfig(prim_context->cid);
-    ExuConfig *exu = core_config.exu;
-    SfuConfig *sfu = core_config.sfu;
+    CoreHWConfig *core_config = GetCoreHWConfig(prim_context->cid);
+    ExuConfig *exu = core_config->exu;
+    SfuConfig *sfu = core_config->sfu;
 
     if (exu->type == MAC_Array)
         cycle += p["N"] / (slice_x * slice_y) /

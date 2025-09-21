@@ -40,7 +40,7 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
          << dram_config_name << endl;
     cout << " MaxAddr "
          << dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
-    auto sram_bitw = GetCoreHWConfig(cid).sram_bitwidth;
+    auto sram_bitw = GetCoreHWConfig(cid)->sram_bitwidth;
     ram_array = new DynamicBandwidthRamRow<sc_bv<SRAM_BITWIDTH>, SRAM_BANKS>(
         sc_gen_unique_name("ram_array"), 0,
         MAX_SRAM_SIZE * 8 / sram_bitw / SRAM_BANKS, SIMU_READ_PORT,

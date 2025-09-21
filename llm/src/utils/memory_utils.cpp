@@ -54,7 +54,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
                               SramPosLocator *sram_pos_locator,
                               bool dummy_alloc, bool add_dram_addr) {
 
-    int sram_bitw = GetCoreHWConfig(context.cid).sram_bitwidth;
+    int sram_bitw = GetCoreHWConfig(context.cid)->sram_bitwidth;
 
     int dma_read_count = data_size_in_byte * 8 / (sram_bitw * SRAM_BANKS);
     int byte_residue =
@@ -240,7 +240,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
         } else {
             auto require_byte = dma_read_count * cache_count * cache_lines / 8;
             float need_NS = (float)require_byte / beha_dram_util /
-                            (15.0 * GetCoreHWConfig(context.cid).dram_bw / 8);
+                            (15.0 * GetCoreHWConfig(context.cid)->dram_bw / 8);
             int need_cycles = need_NS;
             wait(need_cycles, SC_NS);
         }
@@ -455,7 +455,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
 
 void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
                              u_int64_t global_addr, u_int64_t &dram_time) {
-    int sram_bitw = GetCoreHWConfig(context.cid).sram_bitwidth;
+    int sram_bitw = GetCoreHWConfig(context.cid)->sram_bitwidth;
     // assert(false);
     int dma_read_count = data_size_in_byte * 8 / (int)(sram_bitw * SRAM_BANKS);
     int byte_residue =
@@ -549,7 +549,7 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
     } else {
         auto require_byte = dma_read_count * cache_count * cache_lines / 8;
         float need_NS = (float)require_byte / beha_dram_util /
-                        (15.0 * GetCoreHWConfig(context.cid).dram_bw / 8);
+                        (15.0 * GetCoreHWConfig(context.cid)->dram_bw / 8);
         int need_cycles = need_NS;
         wait(need_cycles, SC_NS);
     }
@@ -703,7 +703,7 @@ void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
                        int sram_addr_offset, u_int64_t &dram_time,
                        AllocationID alloc_id, bool use_manager,
                        SramPosLocator *sram_pos_locator, int start_offset) {
-    int sram_bitw = GetCoreHWConfig(context.cid).sram_bitwidth;
+    int sram_bitw = GetCoreHWConfig(context.cid)->sram_bitwidth;
 
     int dma_read_count = data_size_in_byte * 8 / (int)(sram_bitw * SRAM_BANKS);
     int bit_residue =
@@ -837,7 +837,7 @@ void sram_read_generic(TaskCoreContext &context, int data_size_in_byte,
 
 void sram_read_generic_temp(TaskCoreContext &context, int data_size_in_byte,
                             int sram_addr_offset, u_int64_t &dram_time) {
-    int sram_bitw = GetCoreHWConfig(context.cid).sram_bitwidth;
+    int sram_bitw = GetCoreHWConfig(context.cid)->sram_bitwidth;
     LOG_VERBOSE(1, context.cid, " sram_read_generic_temp ");
 
 
@@ -941,7 +941,7 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
                                u_int64_t global_addr) {
     LOG_VERBOSE(1, context.cid, " sram_write_append_generic ");
 
-    int sram_bitw = GetCoreHWConfig(context.cid).sram_bitwidth;
+    int sram_bitw = GetCoreHWConfig(context.cid)->sram_bitwidth;
 
     int dma_read_count = data_size_in_byte * 8 / (int)(sram_bitw * SRAM_BANKS);
     int byte_residue =
@@ -1115,7 +1115,7 @@ void sram_write_append_generic(TaskCoreContext &context, int data_size_in_byte,
 // 会修改 context.sram_addr 的数值
 void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
                           int &temp_sram_addr, u_int64_t &dram_time) {
-    int sram_bitw = GetCoreHWConfig(context.cid).sram_bitwidth;
+    int sram_bitw = GetCoreHWConfig(context.cid)->sram_bitwidth;
 
     int dma_read_count = data_size_in_byte * 8 / (int)(sram_bitw * SRAM_BANKS);
     int byte_residue =
@@ -1590,7 +1590,7 @@ TaskCoreContext generate_context(WorkerCoreExecutor *workercore) {
         workercore->high_bw_temp_mem_access_port, workercore->sram_addr,
         workercore->start_nb_dram_event, workercore->end_nb_dram_event,
         workercore->nb_dcache_socket, workercore->loop_cnt,
-        workercore->sram_manager_, workercore->start_nb_gpu_dram_event,
+        workercore->core_context->sram_manager_, workercore->start_nb_gpu_dram_event,
         workercore->end_nb_gpu_dram_event, workercore->MaxDramAddr,
         workercore->defaultDataLength);
 #elif USE_NB_DRAMSYS == 1

@@ -138,9 +138,9 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
                           GetFromPairedVector(data_chunk, "output"), mem_time);
         int cycle = 0;
 
-        CoreHWConfig core_config = GetCoreHWConfig(prim_context->cid);
-        ExuConfig *exu = core_config.exu;
-        SfuConfig *sfu = core_config.sfu;
+        CoreHWConfig *core_config = GetCoreHWConfig(prim_context->cid);
+        ExuConfig *exu = core_config->exu;
+        SfuConfig *sfu = core_config->sfu;
 
         if (exu->type == MAC_Array)
             cycle +=
@@ -261,9 +261,9 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
 
         int cycle = 0;
 
-        CoreHWConfig core_config = GetCoreHWConfig(prim_context->cid);
-        ExuConfig *exu = core_config.exu;
-        SfuConfig *sfu = core_config.sfu;
+        CoreHWConfig *core_config = GetCoreHWConfig(prim_context->cid);
+        ExuConfig *exu = core_config->exu;
+        SfuConfig *sfu = core_config->sfu;
 
         if (exu->type == MAC_Array)
             cycle +=
@@ -308,3 +308,5 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
 
     return overlap_time;
 }
+
+GpuBase *matmul_forward_gpu_pd::clone() { return new matmul_forward_gpu_pd(*this); }

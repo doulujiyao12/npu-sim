@@ -3,6 +3,7 @@
 #include "prims/norm_prims.h"
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
+#include "utils/config_utils.h"
 
 config_helper_gpu_pd::config_helper_gpu_pd(string filename, string font_ttf,
                                            sc_event *ev_sig,
@@ -62,7 +63,7 @@ config_helper_gpu_pd::config_helper_gpu_pd(string filename, string font_ttf,
 void config_helper_gpu_pd::fill_queue_config(queue<Msg> *q) {
     // 将temp中的所有内容搬运到q中，并清空temp
     for (auto msg : temp_config) {
-        auto des = msg.des;
+        auto des = msg.des_;
         int index = des / GRID_X;
         q[index].push(msg);
     }
@@ -97,7 +98,7 @@ void config_helper_gpu_pd::fill_queue_start(queue<Msg> *q) {
         // 这里相当于quick start，实际上也只有第一个原语需要初始数据
         sc_bv<128> d(0x1);
         Msg m = Msg(true, MSG_TYPE::S_DATA, pkg_index + 1, i, 0, i, 0, d);
-        m.source = GRID_SIZE;
+        m.source_ = GRID_SIZE;
         q[index].push(m);
     }
 }
@@ -305,14 +306,14 @@ void config_helper_gpu_pd::generate_prims(int i) {
 
         // 只需要看单个原语重复次数
         int repeat = sms / GRID_SIZE + (sms % GRID_SIZE > c);
-        PrimBase *set_addr = new_prim("Set_addr");
+        PrimBase *set_addr = PrimFactory::getInstance().createPrim("Set_addr");
         auto label = ((Set_addr *)set_addr)->datapass_label;
 
         for (int r = 0; r < repeat; r++) {
             for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-                label->indata[i] = ((GpuBase *)prim)->datapass_label.indata[i];
+                label.indata[i] = prim->prim_context->datapass_label_->indata[i];
             }
-            label->outdata = ((GpuBase *)prim)->datapass_label.outdata;
+            label.outdata = prim->prim_context->datapass_label_->outdata;
 
             temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, c,
                                       set_addr->serialize()));
@@ -327,7 +328,7 @@ void config_helper_gpu_pd::generate_prims(int i) {
         PrimBase *send_done = new Send_prim(SEND_TYPE::SEND_DONE);
         Msg m =
             Msg(true, MSG_TYPE::CONFIG, ++prim_seq, c, send_done->serialize());
-        m.refill = false;
+        m.refill_ = false;
         temp_config.push_back(m);
     }
 }
@@ -356,7 +357,7 @@ void config_helper_gpu_pd::parse_ack_msg(Event_engine *event_engine,
                             Trace_event_util());
 
     for (auto m : g_temp_ack_msg) {
-        int cid = m.source;
+        int cid = m.source_;
         cout << sc_time_stamp()
              << ": Config helper PD: received ack packet from " << cid
              << ". total " << g_recv_ack_cnt + 1 << "/" << coreconfigs.size()
@@ -384,7 +385,7 @@ void config_helper_gpu_pd::parse_done_msg(Event_engine *event_engine,
                             Trace_event_util());
 
     for (auto m : g_temp_done_msg) {
-        int cid = m.source;
+        int cid = m.source_;
         cout << sc_time_stamp()
              << ": Config helper GPU PDS: received done packet from " << cid
              << endl;
@@ -408,4 +409,4 @@ void config_helper_gpu_pd::parse_done_msg(Event_engine *event_engine,
     }
 }
 
-void config_helper_gpu_pd::print_self() {}
+void config_helper_gpu_pd::printSelf() {}

@@ -11,50 +11,7 @@ int GetDefinedParam(string var) {
     }
 
     ARGUS_EXIT("Undefined variable ", var, ".\n");
-    return;
-}
-
-template <typename T> void SetParamFromJson(json j, string field, T *target) {
-    if (j.contains(field)) {
-        json value = j[field];
-
-        if (value.is_number_integer()) {
-            *target = value;
-            return;
-        }
-
-        for (auto v : vtable) {
-            if (v.first == value) {
-                *target = v.second;
-                return;
-            }
-        }
-
-        ARGUS_EXIT("Undefined variable ", value, ".\n");
-    } else
-        ARGUS_EXIT("Undefined field ", field, " in json.\n");
-}
-
-template <typename T>
-void SetParamFromJson(json j, string field, T *target, T default_value) {
-    if (j.contains(field)) {
-        json value = j[field];
-
-        if (value.is_number_integer()) {
-            *target = value;
-            return;
-        }
-
-        for (auto v : vtable) {
-            if (v.first == value) {
-                *target = v.second;
-                return;
-            }
-        }
-
-        *target = default_value;
-    } else
-        *target = default_value;
+    return 1;
 }
 
 void ParseSimulationType(json j) {
@@ -85,7 +42,7 @@ void ParseSimulationType(json j) {
     }
 }
 
-void ParseWorkloadConfig(json j) {
+void ParseHardwareConfig(json j) {
     if (j.contains("x"))
         GRID_X = j["x"];
     else
@@ -112,13 +69,13 @@ void ParseWorkloadConfig(json j) {
                                            sample.exu->y_dims);
             SfuConfig *sfu = new SfuConfig(Linear, sample.sfu->x_dims);
             g_core_hw_config.push_back(make_pair(
-                i, CoreHWConfig(i, exu, sfu, sample.dram_config, sample.dram_bw,
-                                sample.sram_bitwidth)));
+                i, new CoreHWConfig(i, exu, sfu, sample.dram_config,
+                                    sample.dram_bw, sample.sram_bitwidth)));
         }
 
         ExuConfig *exu = new ExuConfig(MAC_Array, c.exu->x_dims, c.exu->y_dims);
         SfuConfig *sfu = new SfuConfig(Linear, c.sfu->x_dims);
-        g_core_hw_config.push_back(make_pair(c.id, c));
+        g_core_hw_config.push_back(make_pair(c.id, new CoreHWConfig(c)));
 
         sample = c;
     }
@@ -127,8 +84,8 @@ void ParseWorkloadConfig(json j) {
         ExuConfig *exu =
             new ExuConfig(MAC_Array, sample.exu->x_dims, sample.exu->y_dims);
         SfuConfig *sfu = new SfuConfig(Linear, sample.sfu->x_dims);
-        g_core_hw_config.push_back(
-            make_pair(i, CoreHWConfig(i, exu, sfu, sample.dram_config,
-                                      sample.dram_bw, sample.sram_bitwidth)));
+        g_core_hw_config.push_back(make_pair(
+            i, new CoreHWConfig(i, exu, sfu, sample.dram_config, sample.dram_bw,
+                                sample.sram_bitwidth)));
     }
 }

@@ -19,19 +19,19 @@
 //     CompBase *parse_prim(json j);
 //     void calculate_address(bool do_loop);
 
-//     void print_self();
+//     void printSelf();
 
 //     void fill_queue_start(queue<Msg> *q);
 // };
 
-// void Config_helper::print_self() {
+// void Config_helper::printSelf() {
 //     for (auto core : coreconfigs) {
 //         cout << "[Core " << core.id << "]\n";
 
 //         cout << "\tCore prims: \n";
 //         for (auto work : core.worklist) {
 //             for (auto prim : work.prims_in_loop) {
-//                 prim->print_self("\t\t");
+//                 prim->printSelf("\t\t");
 //             }
 //         }
 //     }
@@ -304,7 +304,7 @@
 //     // prims_last_loop 的地址
 //     calculate_address(false);
 
-//     print_self();
+//     printSelf();
 // }
 
 // CompBase *Config_helper::parse_prim(json j) {

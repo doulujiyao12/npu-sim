@@ -109,12 +109,12 @@ public:
     Set_batch() { auto_pd = false; }
 
     Set_batch(vector<Stage> batchInfo) {
-        this->batchInfo = batchInfo;
+        this->batch_info = batchInfo;
         auto_pd = false;
     }
 
     Set_batch(vector<Stage> batchInfo, bool auto_pd) {
-        this->batchInfo = batchInfo;
+        this->batch_info = batchInfo;
         this->auto_pd = auto_pd;
     }
 };

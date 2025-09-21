@@ -7,7 +7,7 @@ u_int64_t dcache_hits = 0;
 u_int64_t dcache_misses = 0;
 u_int64_t dcache_evictions = 0;
 
-vector<pair<int, CoreHWConfig>> g_core_hw_config;
+vector<pair<int, CoreHWConfig *>> g_core_hw_config;
 vector<PrimBase *> g_prim_stash;
 vector<chip_instr_base*> g_chip_prim_stash;
 AddrLabelTable g_addr_label_table;

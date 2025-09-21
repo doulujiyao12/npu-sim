@@ -3,7 +3,7 @@
 #include "monitor/monitor.h"
 #include "systemc.h"
 #include "trace/Event_engine.h"
-#include "utils/file_utils.h"
+#include "utils/print_utils.h"
 #include "utils/simple_flags.h"
 #include "utils/system_utils.h"
 #include <ctime>
@@ -450,7 +450,7 @@ int sc_main(int argc, char *argv[]) {
     beha_dram = g_beha_dram;
     gpu_B = g_gpu_B;
 
-    modifyNbrOfDevices("../DRAMSys/configs/memspec/JEDEC_4Gb_DDR4-1866_8bit_A.json", "../DRAMSys/configs/memspec/JEDEC_4Gb_DDR4-1866_8bit_DF.json", dram_bw);
+    modifyNbrOfDevices("../DRAMSys/configs/memspec/JEDEC_4Gb_DDR4-1866_8bit_A.json", "../DRAMSys/configs/memspec/JEDEC_4Gb_DDR4-1866_8bit_DF.json", g_default_dram_bw);
     int bytecount_df = static_cast<int>(log2(g_dram_bw));
     generateDFAddressMapping(bytecount_df, "../DRAMSys/configs/addressmapping/am_ddr4_8x4Gbx8_df.json");
 
@@ -476,8 +476,8 @@ int sc_main(int argc, char *argv[]) {
     InitGrid(g_flag_config_file.c_str(), g_flag_core_config_file.c_str());
     InitGlobalMembers();
 
-    init_dram_areas();
-    initialize_cache_structures();
+    // init_dram_areas();
+    // initialize_cache_structures();
 
     Event_engine *event_engine =
         new Event_engine("event-engine", g_flag_trace_window);
@@ -496,8 +496,8 @@ int sc_main(int argc, char *argv[]) {
     // "monitor.memInterface->host_data_sent_i[3]");
     sc_start();
 
-    destroy_dram_areas();
-    destroy_cache_structures();
+    // destroy_dram_areas();
+    // destroy_cache_structures();
     // event_engine->dump_traced_file();
     sc_close_vcd_trace_file(tf);
 

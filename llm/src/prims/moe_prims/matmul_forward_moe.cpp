@@ -139,7 +139,7 @@ int matmul_forward_moe::taskCore(TaskCoreContext &context, string prim_name,
 
 #if PERFORMANCE_MODE == 1
 
-    ExuConfig *exu = GetCoreHWConfig(context.cid).exu;
+    ExuConfig *exu = GetCoreHWConfig(context.cid)->exu;
 
     uint64_t weight_tile_x = (p["C"] + exu->x_dims - 1) / exu->x_dims;
     uint64_t weight_tile_y = (p["OC"] + exu->y_dims - 1) / exu->y_dims;

@@ -23,7 +23,7 @@ public:
     TopConfig *top_config;
     std::vector<std::pair<int, int>> source_info;
     config_helper_base *chip;
-    void print_self();
+    void printSelf();
 
     ChipConfig();
     ~ChipConfig();

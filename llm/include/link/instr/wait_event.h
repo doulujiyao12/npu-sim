@@ -26,7 +26,7 @@ public:
         }
     }
 
-    void print_self(std::string prefix) override{
+    void printSelf(std::string prefix) override{
         std::cout << prefix << "<Wait_event>" << std::endl;
     }
 

@@ -42,7 +42,7 @@ public:
     void generate_prims(int i);
     void calculate_address(bool do_loop);
 
-    void print_self();
+    void printSelf();
 
     void random_core(string font_ttf);
 

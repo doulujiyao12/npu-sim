@@ -93,7 +93,7 @@ extern float beha_dram_util;
 class ExuConfig;
 class SfuConfig;
 class CoreHWConfig;
-extern vector<pair<int, CoreHWConfig>> g_core_hw_config;
+extern vector<pair<int, CoreHWConfig *>> g_core_hw_config;
 
 extern int verbose_level;
 

@@ -30,14 +30,14 @@ int GetFromPairedVector(vector<pair<string, int>> &vector, string key) {
     return -1;
 }
 
-CoreHWConfig GetCoreHWConfig(int id) {
+CoreHWConfig *GetCoreHWConfig(int id) {
     for (auto pair : g_core_hw_config) {
         if (pair.first == id)
             return pair.second;
     }
 
     ARGUS_EXIT("Core HW config for id ", id, " does not exist.\n");
-    return CoreHWConfig();
+    return new CoreHWConfig();
 }
 
 int CeilingDivision(int a, int b) {

@@ -9,7 +9,7 @@
 #include "monitor/mem_interface.h"
 #include "prims/comp_prims.h"
 #include "prims/norm_prims.h"
-#include "utils/file_utils.h"
+#include "utils/print_utils.h"
 #include "utils/msg_utils.h"
 #include "utils/prim_utils.h"
 
@@ -128,25 +128,25 @@ MemInterface::~MemInterface() {
 void MemInterface::end_of_simulation() {
 
     // 美观的打印输出
-    print_bar(40);
+    PrintBar(40);
     std::cout << "| " << std::left << std::setw(20) << "CoreConfig"
               << "| " << std::right << std::setw(15) << "Util.   (Byte) |\n";
-    print_bar(40);
+    PrintBar(40);
     for (int i = 0; i < config_helper->coreconfigs.size(); i++) {
         CoreConfig *c = &config_helper->coreconfigs[i];
         int total_utilization = 0;
         for (auto work : c->worklist) {
             for (auto prim : work.prims_in_loop) {
-                if (prim) { // 确保指针非空
+                if (prim && prim->prim_type & PRIM_TYPE::NPU_PRIM) { // 确保指针非空
                     total_utilization +=
-                        prim->sram_utilization(prim->datatype, c->id);
+                        ((NpuBase *)prim)->sramUtilization(prim->datatype, c->id);
                 }
             }
         }
         // 打印当前CoreConfig的总SRAM利用率
-        print_row("CoreConfig " + std::to_string(i), total_utilization);
+        PrintRow("CoreConfig " + std::to_string(i), total_utilization);
     }
-    print_bar(40);
+    PrintBar(40);
 }
 
 void MemInterface::end_of_elaboration() {
@@ -249,16 +249,16 @@ void MemInterface::recv_helper() {
         for (int i = 0; i < GRID_X; i++) {
             if (host_data_sent_i[i].read()) {
                 sc_bv<256> d = host_channel_i[i].read();
-                Msg m = deserialize_msg(d);
+                Msg m = DeserializeMsg(d);
 
-                if (m.msg_type == ACK) {
-                    cout << "ACK from " << m.source << endl;
+                if (m.msg_type_ == ACK) {
+                    cout << "ACK from " << m.source_ << endl;
                     config_helper->g_temp_ack_msg.push_back(m);
                     ev_recv_ack.notify(0, SC_NS);
                 }
 
-                else if (m.msg_type == DONE) {
-                    cout << "DONE from " << m.source << endl;
+                else if (m.msg_type_ == DONE) {
+                    cout << "DONE from " << m.source_ << endl;
                     config_helper->g_temp_done_msg.push_back(m);
                     ev_recv_done.notify(0, SC_NS);
                 }
@@ -346,7 +346,7 @@ void MemInterface::write_helper() {
                 // send data
                 Msg t = temp_buffer[i].front();
                 temp_buffer[i].pop();
-                host_channel_o[i].write(serialize_msg(t));
+                host_channel_o[i].write(SerializeMsg(t));
                 host_data_sent_o[i].write(true);
                 // cout << "SEND DATA to: " << t.des << ",seq: " << t.seq_id
                 //      << endl;

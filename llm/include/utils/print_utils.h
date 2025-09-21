@@ -1,4 +1,5 @@
 #pragma once
+#include "defs/enums.h"
 #include <iostream>
 
 std::string ToHexString(int value);
@@ -22,6 +23,7 @@ std::string GetEnumRecvType(RECV_TYPE type);
     do {                                                                       \
         std::ostringstream oss;                                                \
         oss << __VA_ARGS__;                                                    \
-        std::cout << "[ERROR]: " << oss.str() << std::endl;                                   \
+        std::cout << "[ERROR]: " << oss.str() << std::endl;                    \
         sc_stop();                                                             \
     } while (0)
+    
