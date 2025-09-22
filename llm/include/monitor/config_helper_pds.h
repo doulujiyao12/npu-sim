@@ -53,7 +53,6 @@ public:
 
     void generate_prims(int i) {}
     void generate_prims(int i, vector<Msg> &temp_buffer);
-    void calculate_address(bool do_loop);
 
     void printSelf();
 

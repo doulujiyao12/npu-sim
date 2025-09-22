@@ -99,12 +99,12 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
             cout << "[GPU MATMUL PD]: size: " << size << endl;
 
             char format_label_k[100];
-            sprintf(format_label_k, "%s%s%sk#%d", prefix, ETERNAL_PREFIX,
+            sprintf(format_label_k, "%s%s%sk#%d", prefix.c_str(), ETERNAL_PREFIX,
                     KVCACHE_PREFIX, stage.req_id);
             string label_k = format_label_k;
 
             char format_label_v[100];
-            sprintf(format_label_v, "%s%s%sv#%d", prefix, ETERNAL_PREFIX,
+            sprintf(format_label_v, "%s%s%sv#%d", prefix.c_str(), ETERNAL_PREFIX,
                     KVCACHE_PREFIX, stage.req_id);
             string label_v = format_label_v;
 

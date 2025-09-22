@@ -9,7 +9,7 @@ void parse_output::initialize() {
     data_chunk = {{"output", p["size"]}};
 }
 
-int parse_output::taskCore(TaskCoreContext &context, string prim_name,
+void parse_output::taskCore(TaskCoreContext &context, string prim_name,
                            u_int64_t dram_time, u_int64_t &exu_ops,
                            u_int64_t &sfu_ops) {
     exu_ops = 0;

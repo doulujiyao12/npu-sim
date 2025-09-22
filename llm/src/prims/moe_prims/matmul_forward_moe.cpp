@@ -19,7 +19,7 @@ void matmul_forward_moe::initialize() {
     }
 }
 
-int matmul_forward_moe::taskCore(TaskCoreContext &context, string prim_name,
+void matmul_forward_moe::taskCore(TaskCoreContext &context, string prim_name,
                                  u_int64_t dram_time, u_int64_t &exu_ops,
                                  u_int64_t &sfu_ops) {
     auto &p = param_value;
@@ -73,7 +73,7 @@ int matmul_forward_moe::taskCore(TaskCoreContext &context, string prim_name,
             cout << "[ERROR] selected_experts size mismatch: "
                  << selected_experts.size() << " != " << p["K"] << endl;
             sc_stop();
-            return 0;
+            return;
         }
     }
 

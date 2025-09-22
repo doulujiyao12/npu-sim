@@ -14,7 +14,7 @@ void Split_matmul::initialize() {
     data_chunk = {{"output", p["B"] * p["T"] * p["C"]}};
 }
 
-int Split_matmul::taskCore(TaskCoreContext &context, string prim_name,
+void Split_matmul::taskCore(TaskCoreContext &context, string prim_name,
                            u_int64_t dram_time, u_int64_t &exu_ops,
                            u_int64_t &sfu_ops) {
     auto &p = param_value;

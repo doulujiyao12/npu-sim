@@ -11,7 +11,7 @@ void rope_forward_pd::initialize() {
                   {"output", p["B"] * p["T"] * p["C"] / (1 + 2 / p["R"])}};
 }
 
-int rope_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
+void rope_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
                               u_int64_t dram_time, u_int64_t &exu_ops,
                               u_int64_t &sfu_ops) {
     // 此时默认已经分好注意力头了。对于每一个注意力头，对应的sincos数据大小均为B

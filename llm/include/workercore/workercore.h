@@ -105,8 +105,8 @@ public:
     // HardwareTaskConfig *other_config;
 
     /* ----------------Hardware--------------------- */
-    sc_in<bool> systolic_done_i;
-    sc_out<bool> systolic_start_o;
+    // sc_in<bool> systolic_done_i;
+    // sc_out<bool> systolic_start_o;
 
     /* ----------------Handshake-------------------- */
     // 握手信号buffer

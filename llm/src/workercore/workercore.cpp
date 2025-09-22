@@ -361,7 +361,7 @@ void WorkerCoreExecutor::switch_prim_block() {
 // 指令被 RECV_CONF发送过来后，会在本地核实例化对应的指令类
 PrimBase *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
     int type = buffer.range(7, 0).to_uint64();
-    PrimBase *task = PrimFactory::getInstance().createPrim(type);
+    PrimBase *task = PrimFactory::getInstance().createPrim(type, false);
 
     task->deserialize(buffer);
     task->prim_context = core_context;

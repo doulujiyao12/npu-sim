@@ -6,6 +6,8 @@
 #include "utils/prim_utils.h"
 #include "utils/print_utils.h"
 
+REGISTER_PRIM(Send_prim);
+
 void Send_prim::printSelf() {
     cout << "<send_prim>\n";
 

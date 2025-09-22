@@ -20,29 +20,36 @@ public:
 
     void registerPrim(const std::string &type, CreatorFunc creator) {
         creators_[type] = creator;
-        // Assign a unique ID starting from 1
         type_to_id_[type] = next_id_;
         id_to_type_[next_id_] = type;
+
+        cout << "Registered primitive: " << type << " -> " << next_id_ << endl;
         next_id_++;
     }
 
-    PrimBase *createPrim(const std::string &type) {
+    PrimBase *createPrim(const std::string &type, bool need_init = true) {
         auto it = creators_.find(type);
         if (it != creators_.end()) {
-            g_prim_stash.push_back(it->second());
-            return it->second();
+            PrimBase *prim = it->second();
+            if (need_init)
+                prim->prim_context = new PrimCoreContext();
+
+            g_prim_stash.push_back(prim);
+            return prim;
         }
 
         ARGUS_EXIT("Unregistered primitive type ", type);
+        return nullptr;
     }
 
-    PrimBase *createPrim(int id) {
+    PrimBase *createPrim(int id, bool need_init = true) {
         auto it = id_to_type_.find(id);
         if (it != id_to_type_.end()) {
-            return createPrim(it->second);
+            return createPrim(it->second, need_init);
         }
 
         ARGUS_EXIT("Unregistered primitive ID ", id);
+        return nullptr;
     }
 
     int getPrimId(const std::string &type) const {

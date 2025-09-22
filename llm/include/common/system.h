@@ -36,6 +36,13 @@ public:
     vector<int> selected_freq_;      // 专家被选中的次数
     vector<int> prefetched_experts_; // 被预先存储在sram中的专家
 
+    PrimCoreContext() {
+        datapass_label_ = new AddrDatapassLabel();
+        sram_manager_ = nullptr;
+        sram_pos_locator_ = nullptr;
+        gpu_pos_locator_ = nullptr;
+    }
+
     PrimCoreContext(int id) : cid(id) {
         loop_cnt = 0;
         
@@ -46,8 +53,8 @@ public:
     }
 
     ~PrimCoreContext() {
-        delete sram_manager_;
-        delete sram_pos_locator_;
-        delete datapass_label_;
+        if (sram_manager_) delete sram_manager_;
+        if (sram_pos_locator_) delete sram_pos_locator_;
+        if (datapass_label_) delete datapass_label_;
     }
 };

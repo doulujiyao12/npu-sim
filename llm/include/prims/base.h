@@ -80,7 +80,7 @@ public:
 
     // 向上暴露的工作函数
     int taskCoreDefault(TaskCoreContext &context);
-    virtual int taskCore(TaskCoreContext &context, string prim_name,
+    virtual void taskCore(TaskCoreContext &context, string prim_name,
                          u_int64_t dram_time, u_int64_t &exu_ops,
                          u_int64_t &sfu_ops) = 0;
 

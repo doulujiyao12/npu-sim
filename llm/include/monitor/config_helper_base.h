@@ -23,11 +23,9 @@ public:
 
     int pipeline; // 是否进行input连续输入，从而增加pipeline并行度，数值大小为需要连续进行的pipe段数
 
-    void set_hw_config(string filename);
-
-    virtual void fill_queue_config(queue<Msg> *q) = 0;
-    virtual void fill_queue_start(queue<Msg> *q) = 0;
-    void fill_queue_data(queue<Msg> *q);
+    virtual void fill_queue_config(queue<Msg> *q) = 0; // 下发原语配置
+    virtual void fill_queue_start(queue<Msg> *q) = 0; // 下发初始数据
+    void fill_queue_data(queue<Msg> *q); // 下发权重数据
 
     bool judge_is_end_core(int i);
     bool judge_is_end_work(CoreJob work);
@@ -39,7 +37,6 @@ public:
     string name() { return "Config helper"; }
 
     virtual void generate_prims(int i) = 0;
-    void calculate_address(bool do_loop);
 
     virtual void printSelf() = 0;
     virtual config_helper_base *clone() const = 0;

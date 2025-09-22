@@ -37,6 +37,8 @@ sc_bv<128> GpuBase::serialize() {
             pos += 8;
         }
     }
+
+    return d;
 }
 
 void GpuBase::deserialize(sc_bv<128> buffer) {

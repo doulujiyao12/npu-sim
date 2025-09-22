@@ -2,7 +2,7 @@
 
 class matmul_forward_moe : public MoeBase {
 public:
-    int taskCore(TaskCoreContext &context, string prim_name,
+    void taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
     matmul_forward_moe() {
@@ -15,7 +15,7 @@ public:
 
 class load_expert : public MoeBase {
 public:
-    int taskCore(TaskCoreContext &context, string prim_name,
+    void taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
     load_expert() {

@@ -6,7 +6,7 @@
 #include "utils/system_utils.h"
 
 void NpuBase::parseAddress(json j) {
-    SetParamFromJson(j, "input", &inp_offset);
+    SetParamFromJson(j, "input", &inp_offset, 0);
     SetParamFromJson(j, "data", &data_offset,
                      inp_offset + input_size * data_byte);
 
@@ -61,23 +61,30 @@ sc_bv<128> NpuBase::serialize() {
         return d;
     }
 
+    std::vector<std::pair<std::string, int>> vec(param_value.begin(),
+                                                 param_value.end());
+    std::sort(vec.begin(), vec.end(),
+              [](auto &a, auto &b) { return a.first < b.first; });
+
     int pos = 57;
     if (param_name.size() <= 2) {
-        for (auto &pair : param_value) {
+        for (auto &pair : vec) {
             d.range(pos + 31, pos) = sc_bv<32>(pair.second);
             pos += 32;
         }
     } else if (param_name.size() <= 4) {
-        for (auto &pair : param_value) {
+        for (auto &pair : vec) {
             d.range(pos + 15, pos) = sc_bv<16>(pair.second);
             pos += 16;
         }
     } else {
-        for (auto &pair : param_value) {
+        for (auto &pair : vec) {
             d.range(pos + 7, pos) = sc_bv<8>(pair.second);
             pos += 8;
         }
     }
+
+    return d;
 }
 
 void NpuBase::deserialize(sc_bv<128> buffer) {
@@ -86,19 +93,22 @@ void NpuBase::deserialize(sc_bv<128> buffer) {
     data_offset = buffer.range(40, 25).to_uint64();
     out_offset = buffer.range(56, 41).to_uint64();
 
+    vector<string> vec(param_name.begin(), param_name.end());
+    sort(vec.begin(), vec.end());
+
     int pos = 57;
-    if (param_name.size() <= 2) {
-        for (auto &param : param_name) {
+    if (vec.size() <= 2) {
+        for (auto &param : vec) {
             param_value[param] = buffer.range(pos + 31, pos).to_uint64();
             pos += 32;
         }
-    } else if (param_name.size() <= 4) {
-        for (auto &param : param_name) {
+    } else if (vec.size() <= 4) {
+        for (auto &param : vec) {
             param_value[param] = buffer.range(pos + 15, pos).to_uint64();
             pos += 16;
         }
     } else {
-        for (auto &param : param_name) {
+        for (auto &param : vec) {
             param_value[param] = buffer.range(pos + 7, pos).to_uint64();
             pos += 8;
         }
@@ -119,8 +129,10 @@ void NpuBase::parseJson(json j) {
     if (j.contains("dram_address"))
         parseAddress(j["dram_address"]);
 
+
     if (j.contains("sram_address"))
         parseSramLabel(j["sram_address"]);
+
 
     cout << "\033[1;33m" << name << "\033[0m" << endl;
     cout << "inp_offset: " << inp_offset << endl;
@@ -160,7 +172,7 @@ void NpuBase::initializeDefault() {
         }
     }
     if (out_size < 0) {
-        ARGUS_EXIT("No output chunk found.\n");
+        ARGUS_EXIT("No output chunk found for ", name, ".\n");
         return;
     }
 
@@ -599,6 +611,8 @@ void NpuBase::writeOutputData(TaskCoreContext &context, uint64_t exu_flops,
     SfuConfig *sfu = core_config->sfu;
 
     cout << "exu_flops: " << exu_flops << " sfu_flops: " << sfu_flops << endl;
+    cout << exu->x_dims << " " << exu->y_dims << " " << comp_util << endl;
+    cout << sfu->x_dims << endl;
 
     if (exu->type == MAC_Array)
         cycle +=

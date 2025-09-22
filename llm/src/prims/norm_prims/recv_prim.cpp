@@ -24,7 +24,7 @@ void Recv_prim::deserialize(sc_bv<128> buffer) {
 
 sc_bv<128> Recv_prim::serialize() {
     sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>();
+    d.range(7, 0) = sc_bv<8>(PrimFactory::getInstance().getPrimId(name));
     d.range(11, 8) = sc_bv<4>(type);
     d.range(19, 12) = sc_bv<8>(tag_id);
     d.range(27, 20) = sc_bv<8>(recv_cnt);

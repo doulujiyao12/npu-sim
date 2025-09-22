@@ -452,16 +452,16 @@ void config_helper_pd::generate_prims(int i) {
             for (int p = 0; p < work.prims.size(); p++) {
                 auto prim = work.prims[p];
                 PrimBase *set_addr = PrimFactory::getInstance().createPrim("Set_addr");
-                auto label = ((Set_addr *)set_addr)->datapass_label;
+                auto label = set_addr->prim_context->datapass_label_;
 
                 for (int i = 0; i < MAX_SPLIT_NUM; i++) {
                     if (prim->prim_type & COMP_PRIM) {
-                        label.indata[i] =
+                        label->indata[i] =
                             prim->prim_context->datapass_label_->indata[i];
                     }
                 }
                 if (prim->prim_type & COMP_PRIM) {
-                        label.outdata =
+                        label->outdata =
                             prim->prim_context->datapass_label_->outdata;
                     }
 
@@ -471,7 +471,7 @@ void config_helper_pd::generate_prims(int i) {
                                           i, prim->serialize()));
 
                 if (loop == core.loop - 1 && p == work.prims.size() - 1)
-                    output_label = label.outdata;
+                    output_label = label->outdata;
             }
         }
     }
@@ -502,8 +502,7 @@ void config_helper_pd::generate_prims(int i) {
     send_data->end_length = end_length;
 
     if ((i + 1) % model_stage != 1) {
-
-        // 不是shage 1 就是接收上一个 stage 传过来的中间结果
+        // 不是stage 1 就是接收上一个 stage 传过来的中间结果
         temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i,
                                   recv_data_2->serialize()));
         temp_config.push_back(

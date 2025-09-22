@@ -41,7 +41,6 @@ public:
 
     void generate_prims();
     void generate_prims(int i);
-    void calculate_address(bool do_loop);
 
     void parse_ack_msg(Event_engine *event_engine, int flow_id,
                        sc_event *notify_event);

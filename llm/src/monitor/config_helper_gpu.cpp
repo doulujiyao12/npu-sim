@@ -135,13 +135,13 @@ void config_helper_gpu::generate_prims(int i) {
 
             for (int r = 0; r < repeat; r++) {
                 PrimBase *p = PrimFactory::getInstance().createPrim("Set_addr");
-                auto label = ((Set_addr *)p)->datapass_label;
+                auto label = p->prim_context->datapass_label_;
 
                 // Set_addr 的label 指向其后面的那条原语
                 for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-                    label.indata[i] = gp->prim_context->datapass_label_->indata[i];
+                    label->indata[i] = gp->prim_context->datapass_label_->indata[i];
                 }
-                label.outdata = gp->prim_context->datapass_label_->outdata;
+                label->outdata = gp->prim_context->datapass_label_->outdata;
 
                 // 这里直接推入字符串形式的label，之后会在序列化的时候转化为整形label
                 work.prims_last_loop.push_back(p);
@@ -154,8 +154,6 @@ void config_helper_gpu::generate_prims(int i) {
         work.prims_last_loop.push_back(new Send_prim(SEND_TYPE::SEND_DONE));
     }
 }
-
-void config_helper_gpu::calculate_address(bool do_loop) {}
 
 void config_helper_gpu::fill_queue_start(queue<Msg> *q) {
     cout << "GPU fill start queue, phase " << gpu_index << "\n";

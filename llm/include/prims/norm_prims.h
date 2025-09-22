@@ -106,14 +106,19 @@ public:
 
     void printSelf();
 
-    Set_batch() { auto_pd = false; }
+    Set_batch() {
+        name = "Set_batch";
+        auto_pd = false;
+    }
 
     Set_batch(vector<Stage> batchInfo) {
+        name = "Set_batch";
         this->batch_info = batchInfo;
         auto_pd = false;
     }
 
     Set_batch(vector<Stage> batchInfo, bool auto_pd) {
+        name = "Set_batch";
         this->batch_info = batchInfo;
         this->auto_pd = auto_pd;
     }

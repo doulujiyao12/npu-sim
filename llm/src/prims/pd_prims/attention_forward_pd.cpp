@@ -12,9 +12,9 @@ void attention_forward_pd::initialize() {
                   {"output", p["B"] * p["T"] * p["NH"] * p["DH"]}};
 }
 
-int attention_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
-                                   u_int64_t dram_time, u_int64_t &exu_ops,
-                                   u_int64_t &sfu_ops) {
+void attention_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
+                                    u_int64_t dram_time, u_int64_t &exu_ops,
+                                    u_int64_t &sfu_ops) {
     auto &p = param_value;
     int cur_tokens = 0;
 
@@ -25,8 +25,8 @@ int attention_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
 
         AddrPosKey kcache;
         char format_label_k[100];
-        sprintf(format_label_k, "%s%s%sk#%d", prim_name.c_str(), ETERNAL_PREFIX,
-                KVCACHE_PREFIX, batch);
+        sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+                batch);
         string label_decode_k = format_label_k;
         // cout << "decode_k: " << label_decode_k << endl;
 
@@ -60,8 +60,8 @@ int attention_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
 
         AddrPosKey vcache;
         char format_label_v[100];
-        sprintf(format_label_v, "%s%s%sv#%d", prim_name.c_str(), ETERNAL_PREFIX,
-                KVCACHE_PREFIX, batch);
+        sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+                batch);
         string label_decode_v = format_label_v;
         // cout << "decode_v: " << label_decode_v << endl;
 

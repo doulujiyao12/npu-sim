@@ -243,25 +243,12 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
     g_recv_ack_cnt = 0;
     g_recv_done_cnt = 0;
 
-    for (int i = 0; i < coreconfigs.size(); i++) {
-        // //std::cout << "Coreiii " << i << " prims: " <<
-        // coreconfigs[i].prims.size() << std::endl;
+    for (int i = 0; i < coreconfigs.size(); i++)
         generate_prims(i);
-
-        // for (auto work : coreconfigs[i].worklist) {
-        //     cout << "work\n";
-        //     for (auto prim : work.prims_last_loop) {
-        //         prim->printSelf("\t\t");
-        //     }
-        // }
-        // cout << "core\n";
-    }
 
     // 再去重新填写send的收发地址
     calculate_address(true);
     calculate_address(false);
-
-    // printSelf();
 }
 
 void config_helper_core::fill_queue_config(queue<Msg> *q) {
@@ -372,14 +359,14 @@ void config_helper_core::generate_prims(int i) {
         // 然后是comp，直接推c中的对应队列即可
         for (auto prim : work.prims) {
             PrimBase *p = PrimFactory::getInstance().createPrim("Set_addr");
-            auto label = ((Set_addr *)p)->datapass_label;
+            auto label = p->prim_context->datapass_label_;
             // Set_addr 的label 指向其后面的那条原语
             if (prim->prim_type & PRIM_TYPE::COMP_PRIM) {
                 for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-                    label.indata[i] =
+                    label->indata[i] =
                         prim->prim_context->datapass_label_->indata[i];
                 }
-                label.outdata = prim->prim_context->datapass_label_->outdata;
+                label->outdata = prim->prim_context->datapass_label_->outdata;
             }
 
             // 这里直接推入字符串形式的label，之后会在序列化的时候转化为整形label
@@ -423,19 +410,19 @@ void config_helper_core::generate_prims(int i) {
 
         for (auto prim : work.prims) {
             PrimBase *p = PrimFactory::getInstance().createPrim("Set_addr");
-            auto label = ((Set_addr *)p)->datapass_label;
+            auto label = p->prim_context->datapass_label_;
             // Set_addr 的label 指向其后面的那条原语
             if (prim->prim_type & PRIM_TYPE::COMP_PRIM) {
                 for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-                    label.indata[i] =
+                    label->indata[i] =
                         prim->prim_context->datapass_label_->indata[i];
                 }
-                label.outdata = prim->prim_context->datapass_label_->outdata;
+                label->outdata = prim->prim_context->datapass_label_->outdata;
             }
 
             // 这里直接推入字符串形式的label，之后会在序列化的时候转化为整形label
-            work.prims_in_loop.push_back(p);
-            work.prims_in_loop.push_back(prim);
+            work.prims_last_loop.push_back(p);
+            work.prims_last_loop.push_back(prim);
         }
 
         // if (c->send_global_mem != -1){
@@ -444,7 +431,8 @@ void config_helper_core::generate_prims(int i) {
 
         if (is_end) {
             work.prims_last_loop.push_back(new Send_prim(SEND_TYPE::SEND_DONE));
-            work.prims_last_loop.push_back(PrimFactory::getInstance().createPrim("Clear_sram"));
+            work.prims_last_loop.push_back(
+                PrimFactory::getInstance().createPrim("Clear_sram"));
             continue;
         }
 
@@ -478,7 +466,8 @@ void config_helper_core::generate_prims(int i) {
 
         // 清理sram
         if (w == c->worklist.size() - 1) {
-            work.prims_last_loop.push_back(PrimFactory::getInstance().createPrim("Clear_sram"));
+            work.prims_last_loop.push_back(
+                PrimFactory::getInstance().createPrim("Clear_sram"));
         }
     }
 }
@@ -510,7 +499,7 @@ void config_helper_core::calculate_address(bool do_loop) {
             if (!do_loop && judge_is_end_work(work))
                 continue; // 汇节点
 
-            // 拿到这个核的output size
+            // 拿到这个corejob的output size
             for (int j = v->size() - 1; j >= 0; j--) {
                 auto p = (*v)[j];
                 if (p->prim_type & PRIM_TYPE::COMP_PRIM) {
@@ -526,6 +515,8 @@ void config_helper_core::calculate_address(bool do_loop) {
             stringstream ss(output_label);
             string word;
 
+            cout << "Output: corejob: " << output_label << endl;
+
             while (ss >> word)
                 output_label_split.push_back(word);
 
@@ -539,7 +530,6 @@ void config_helper_core::calculate_address(bool do_loop) {
                     int slice_size = (output_size % weight)
                                          ? (output_size / weight + 1)
                                          : (output_size / weight);
-                    cout << "[SIZE CHECK] name: " << prim->name << endl;
                     cout << "output_size: " << output_size
                          << ", slice_size: " << slice_size << endl;
                     int slice_size_in_bit =
@@ -571,40 +561,8 @@ void config_helper_core::calculate_address(bool do_loop) {
                                              : output_label_split[index];
                     temp->end_length = end_length;
 
-                    // des offset
-                    // if (work.cast[index].addr != -1) {
-                    //     temp->des_offset = work.cast[index].addr;
-                    //     cout << "Core " << i << ": work gets actual dram des:
-                    //     "
-                    //          << temp->des_offset << endl;
-                    // } else {
-                    //     temp->des_offset = delta_offset[temp->des_id];
-                    //     delta_offset[temp->des_id] += slice_size;
-                    // }
-
                     index++;
                 }
-                //  else if (typeid(*prim) == typeid(Send_global_memory)) {
-                //     int weight = 1; // 先假设是-1
-                //     Send_global_memory *g = (Send_global_memory *)prim;
-                //     g->type_ = GLOBAL_SEND_DATA;
-                //     g->des_id_ = coreconfigs[i].send_global_mem;
-                //     int slice_size = (output_size % weight)
-                //                          ? (output_size / weight + 1)
-                //                          : (output_size / weight);
-                //     int slice_size_in_bit = slice_size * 8;
-                //     int pkg_nums = (slice_size_in_bit % M_D_DATA)
-                //                        ? (slice_size_in_bit / M_D_DATA + 1)
-                //                        : (slice_size_in_bit / M_D_DATA);
-                //     int end_length =
-                //         slice_size_in_bit - (pkg_nums - 1) * M_D_DATA;
-                //     g->local_offset_ = output_offset;
-                //     g->max_packet_ = pkg_nums;
-                //     g->end_length_ = end_length;
-                //     g->des_offset = delta_offset[g->des_id];
-                //     delta_offset[g->des_id] += slice_size;
-                //     g->tag_id = 15;
-                // }
             }
         }
     }

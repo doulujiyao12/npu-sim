@@ -36,12 +36,12 @@ sc_bv<128> Set_addr::serialize() {
 
     int offset = 34;
     for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-        d.range(offset + 11, offset) =
-            sc_bv<12>(g_addr_label_table.addRecord(datapass_label.indata[i]));
+        d.range(offset + 11, offset) = sc_bv<12>(g_addr_label_table.addRecord(
+            prim_context->datapass_label_->indata[i]));
         offset += 12;
     }
-    d.range(offset + 11, offset) =
-        sc_bv<12>(g_addr_label_table.addRecord(datapass_label.outdata));
+    d.range(offset + 11, offset) = sc_bv<12>(
+        g_addr_label_table.addRecord(prim_context->datapass_label_->outdata));
 
     return d;
 }

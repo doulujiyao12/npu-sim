@@ -105,33 +105,3 @@ void config_helper_base::fill_queue_data(queue<Msg> *q) {
              << " data packages.\n";
     }
 }
-
-void config_helper_base::set_hw_config(string filename) {
-    json j;
-
-    ifstream jfile(filename);
-    if (!jfile.is_open()) {
-        cout << "[ERROR] Failed to open file " << filename << ".\n";
-        sc_stop();
-    }
-
-    jfile >> j;
-
-    auto config_cores = j["cores"];
-    CoreHWConfig sample = config_cores[0];
-    bool has_config[GRID_SIZE];
-    for (auto &b : has_config)
-        b = false;
-
-    for (auto core : config_cores) {
-        CoreHWConfig *c = new CoreHWConfig(core);
-        g_core_hw_config.push_back(make_pair(c->id, c));
-    }
-
-    for (int i = 0; i < GRID_SIZE; i++) {
-        if (has_config[i]) continue;
-
-        CoreHWConfig *c = new CoreHWConfig(sample);
-        g_core_hw_config.push_back(make_pair(i, c));
-    }
-}

@@ -75,9 +75,13 @@ void ParseHardwareConfig(json j) {
 
         ExuConfig *exu = new ExuConfig(MAC_Array, c.exu->x_dims, c.exu->y_dims);
         SfuConfig *sfu = new SfuConfig(Linear, c.sfu->x_dims);
-        g_core_hw_config.push_back(make_pair(c.id, new CoreHWConfig(c)));
+        g_core_hw_config.push_back(
+            make_pair(c.id, new CoreHWConfig(c.id, exu, sfu, c.dram_config,
+                                             c.dram_bw, c.sram_bitwidth)));
 
         sample = c;
+        sample.exu = new ExuConfig(MAC_Array, c.exu->x_dims, c.exu->y_dims);
+        sample.sfu = new SfuConfig(Linear, c.sfu->x_dims);
     }
 
     for (int i = sample.id + 1; i < GRID_SIZE; i++) {
@@ -88,4 +92,7 @@ void ParseHardwareConfig(json j) {
             i, new CoreHWConfig(i, exu, sfu, sample.dram_config, sample.dram_bw,
                                 sample.sram_bitwidth)));
     }
+
+    for (auto core : g_core_hw_config)
+        core.second->printSelf();
 }

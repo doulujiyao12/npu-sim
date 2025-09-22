@@ -12,7 +12,7 @@ void rmsnorm_forward::initialize() {
     data_chunk = {{"weight", p["C"]}, {"output", p["B"] * p["T"] * p["C"]}};
 }
 
-int rmsnorm_forward::taskCore(TaskCoreContext &context, string prim_name,
+void rmsnorm_forward::taskCore(TaskCoreContext &context, string prim_name,
                               u_int64_t dram_time, u_int64_t &exu_ops,
                               u_int64_t &sfu_ops) {
     // 读入weight数据

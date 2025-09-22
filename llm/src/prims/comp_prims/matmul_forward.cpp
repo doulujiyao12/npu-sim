@@ -22,7 +22,7 @@ void Matmul_f::initialize() {
                   {"output", p["B"] * p["T"] * p["OC"]}};
 }
 
-int Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
+void Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
                        u_int64_t dram_time, u_int64_t &exu_ops,
                        u_int64_t &sfu_ops) {
     auto label_weight = ETERNAL_PREFIX + prim_name + "_w";

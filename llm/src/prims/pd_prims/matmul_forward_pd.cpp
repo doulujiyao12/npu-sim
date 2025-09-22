@@ -15,13 +15,13 @@ void matmul_forward_pd::initialize() {
                   {"output", p["B"] * p["T"] * p["OC"] / 3}};
 }
 
-int matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
-                                u_int64_t dram_time, u_int64_t &exu_ops,
-                                u_int64_t &sfu_ops) {
+void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
+                                 u_int64_t dram_time, u_int64_t &exu_ops,
+                                 u_int64_t &sfu_ops) {
     // 空转一轮，直接退出（PD模式）
     auto &p = param_value;
     if (p["T"] == 0)
-        return 0;
+        return;
 
     bool need_multiply = false;
     for (auto stage : prim_context->batch_info_) {
@@ -67,13 +67,13 @@ int matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         }
 
         char format_label_k[100];
-        sprintf(format_label_k, "%s%s%sk#%d", prim_name.c_str(), ETERNAL_PREFIX,
-                KVCACHE_PREFIX, stage.req_id);
+        sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+                stage.req_id);
         string label_k = format_label_k;
 
         char format_label_v[100];
-        sprintf(format_label_v, "%s%s%sv#%d", prim_name.c_str(), ETERNAL_PREFIX,
-                KVCACHE_PREFIX, stage.req_id);
+        sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
+                stage.req_id);
         string label_v = format_label_v;
 
         // 如果没有对应的kvcache，则创建一个标签；如果已经有了，则直接更新大小

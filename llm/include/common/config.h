@@ -121,6 +121,15 @@ public:
     int dram_bw;
     int sram_bitwidth; // SRAM的位宽
 
+    void printSelf() {
+        cout << "CoreHWConfig: " << id << endl;
+        cout << "ExuConfig: " << exu->type << " " << exu->x_dims << " "
+             << exu->y_dims << endl;
+        cout << "SfuConfig: " << sfu->type << " " << sfu->x_dims << endl;
+        cout << "DRAM Config: " << dram_config << " " << dram_bw << " "
+             << sram_bitwidth << endl;
+    }
+
     CoreHWConfig()
         : id(0),
           exu(nullptr),

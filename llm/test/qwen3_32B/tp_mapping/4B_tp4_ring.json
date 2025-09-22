@@ -12,7 +12,7 @@
         "NH/4": 8,
         "L": 10,
         "loop": 20,
-        "3C":   7680,
+        "3C": 7680,
         "4C": 10240,
         "5C": 12800,
         "5C/4": 3200,
@@ -91,7 +91,7 @@
                                     "type": "parse_input",
                                     "size": "BTC/4",
                                     "sram_address": {
-                                        "indata": "layernorm1_in",
+                                        "indata": "input_label",
                                         "outdata": "layernorm1_in"
                                     }
                                 },
@@ -125,6 +125,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -163,7 +164,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul1_2_w"
                                     }
                                 },
@@ -184,6 +185,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -222,7 +224,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul1_3_w"
                                     }
                                 },
@@ -243,6 +245,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -276,7 +279,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul1_4_w"
                                     }
                                 },
@@ -297,6 +300,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -353,7 +357,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "matmul1_out"
                                     }
                                 }
@@ -387,7 +391,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "matmul1_out"
                                     }
                                 }
@@ -421,13 +425,14 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "matmul1_out"
                                     },
                                     "note": "在进行完第一个matmul，做完all gather，假设matmul1_out就是需要继续做attention的列分片数据：B，T，3C/4"
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -473,7 +478,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "attention1_out"
                                     }
                                 }
@@ -507,7 +512,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "attention1_out"
                                     }
                                 }
@@ -546,7 +551,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "attention1_out"
                                     },
                                     "note": "在进行完attention，做完all gather，假设attention1_out就是需要继续做第二个matmul的列分片数据：B，T/4，3C"
@@ -590,7 +595,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul2_2_w"
                                     }
                                 },
@@ -633,7 +638,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul2_3_w"
                                     }
                                 },
@@ -671,7 +676,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul2_4_w"
                                     }
                                 },
@@ -777,7 +782,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul3_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul3_2_w"
                                     }
                                 },
@@ -820,7 +825,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul3_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul3_3_w"
                                     }
                                 },
@@ -858,7 +863,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul3_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul3_4_w"
                                     }
                                 },
@@ -951,7 +956,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul4_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul4_2_w"
                                     }
                                 },
@@ -994,7 +999,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul4_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul4_3_w"
                                     }
                                 },
@@ -1032,7 +1037,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul4_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul4_4_w"
                                     }
                                 },
@@ -1116,6 +1121,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -1154,7 +1160,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul1_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul1_2_w"
                                     }
                                 },
@@ -1175,6 +1181,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -1213,7 +1220,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul1_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul1_3_w"
                                     }
                                 },
@@ -1234,6 +1241,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -1267,7 +1275,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul1_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul1_4_w"
                                     }
                                 },
@@ -1288,6 +1296,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -1344,7 +1353,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "1matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "1matmul1_out"
                                     }
                                 }
@@ -1378,7 +1387,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "1matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "1matmul1_out"
                                     }
                                 }
@@ -1412,13 +1421,14 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "1matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "1matmul1_out"
                                     },
                                     "note": "在进行完第一个matmul，做完all gather，假设1matmul1_out就是需要继续做attention的列分片数据：B，T，3C/4"
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -1464,7 +1474,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "1attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "1attention1_out"
                                     }
                                 }
@@ -1498,7 +1508,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "1attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "1attention1_out"
                                     }
                                 }
@@ -1537,7 +1547,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "1attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "1attention1_out"
                                     },
                                     "note": "在进行完attention，做完all gather，假设1attention1_out就是需要继续做第二个matmul的列分片数据：B，T/4，3C"
@@ -1581,7 +1591,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul2_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul2_2_w"
                                     }
                                 },
@@ -1624,7 +1634,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul2_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul2_3_w"
                                     }
                                 },
@@ -1662,7 +1672,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul2_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul2_4_w"
                                     }
                                 },
@@ -1768,7 +1778,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul3_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul3_2_w"
                                     }
                                 },
@@ -1811,7 +1821,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul3_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul3_3_w"
                                     }
                                 },
@@ -1849,7 +1859,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul3_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul3_4_w"
                                     }
                                 },
@@ -1942,7 +1952,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul4_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul4_2_w"
                                     }
                                 },
@@ -1985,7 +1995,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul4_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul4_3_w"
                                     }
                                 },
@@ -2023,7 +2033,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul4_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul4_4_w"
                                     }
                                 },
@@ -2107,6 +2117,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -2145,7 +2156,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul1_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul1_2_w"
                                     }
                                 },
@@ -2166,6 +2177,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -2204,7 +2216,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul1_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul1_3_w"
                                     }
                                 },
@@ -2225,6 +2237,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -2258,7 +2271,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul1_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul1_4_w"
                                     }
                                 },
@@ -2279,6 +2292,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -2335,7 +2349,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "2matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "2matmul1_out"
                                     }
                                 }
@@ -2369,7 +2383,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "2matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "2matmul1_out"
                                     }
                                 }
@@ -2403,13 +2417,14 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "2matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "2matmul1_out"
                                     },
                                     "note": "在进行完第一个matmul，做完all gather，假设2matmul1_out就是需要继续做attention的列分片数据：B，T，3C/4"
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -2455,7 +2470,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "2attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "2attention1_out"
                                     }
                                 }
@@ -2489,7 +2504,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "2attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "2attention1_out"
                                     }
                                 }
@@ -2528,7 +2543,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "2attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "2attention1_out"
                                     },
                                     "note": "在进行完attention，做完all gather，假设2attention1_out就是需要继续做第二个matmul的列分片数据：B，T/4，3C"
@@ -2572,7 +2587,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul2_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul2_2_w"
                                     }
                                 },
@@ -2615,7 +2630,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul2_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul2_3_w"
                                     }
                                 },
@@ -2653,7 +2668,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul2_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul2_4_w"
                                     }
                                 },
@@ -2759,7 +2774,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul3_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul3_2_w"
                                     }
                                 },
@@ -2802,7 +2817,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul3_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul3_3_w"
                                     }
                                 },
@@ -2840,7 +2855,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul3_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul3_4_w"
                                     }
                                 },
@@ -2933,7 +2948,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul4_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul4_2_w"
                                     }
                                 },
@@ -2976,7 +2991,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul4_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul4_3_w"
                                     }
                                 },
@@ -3014,7 +3029,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul4_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul4_4_w"
                                     }
                                 },
@@ -3098,6 +3113,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -3136,7 +3152,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul1_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul1_2_w"
                                     }
                                 },
@@ -3157,6 +3173,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -3195,7 +3212,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul1_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul1_3_w"
                                     }
                                 },
@@ -3216,6 +3233,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -3249,7 +3267,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul1_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul1_4_w"
                                     }
                                 },
@@ -3270,6 +3288,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -3326,7 +3345,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "3matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "3matmul1_out"
                                     }
                                 }
@@ -3360,7 +3379,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "3matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "3matmul1_out"
                                     }
                                 }
@@ -3394,13 +3413,14 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "3matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "3matmul1_out"
                                     },
                                     "note": "在进行完第一个matmul，做完all gather，假设3matmul1_out就是需要继续做attention的列分片数据：B，T，3C/4"
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -3446,7 +3466,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "3attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "3attention1_out"
                                     }
                                 }
@@ -3480,7 +3500,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "3attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "3attention1_out"
                                     }
                                 }
@@ -3519,7 +3539,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "3attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "3attention1_out"
                                     },
                                     "note": "在进行完attention，做完all gather，假设3attention1_out就是需要继续做第二个matmul的列分片数据：B，T/4，3C"
@@ -3563,7 +3583,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul2_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul2_2_w"
                                     }
                                 },
@@ -3606,7 +3626,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul2_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul2_3_w"
                                     }
                                 },
@@ -3644,7 +3664,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul2_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul2_4_w"
                                     }
                                 },
@@ -3750,7 +3770,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul3_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul3_2_w"
                                     }
                                 },
@@ -3793,7 +3813,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul3_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul3_3_w"
                                     }
                                 },
@@ -3831,7 +3851,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul3_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul3_4_w"
                                     }
                                 },
@@ -3924,7 +3944,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul4_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul4_2_w"
                                     }
                                 },
@@ -3967,7 +3987,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul4_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul4_3_w"
                                     }
                                 },
@@ -4009,7 +4029,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul4_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul4_4_w"
                                     }
                                 },
@@ -4068,7 +4088,7 @@
                                     "type": "parse_input",
                                     "size": "BTC/4",
                                     "sram_address": {
-                                        "indata": "layernorm1_in",
+                                        "indata": "input_label",
                                         "outdata": "layernorm1_in"
                                     }
                                 },
@@ -4102,6 +4122,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -4132,7 +4153,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul1_2_w"
                                     }
                                 },
@@ -4167,6 +4188,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -4197,7 +4219,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul1_3_w"
                                     }
                                 },
@@ -4232,6 +4254,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -4262,7 +4285,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul1_4_w"
                                     }
                                 },
@@ -4297,6 +4320,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -4339,7 +4363,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "matmul1_out"
                                     }
                                 },
@@ -4367,7 +4391,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "matmul1_out"
                                     }
                                 },
@@ -4395,7 +4419,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "matmul1_out"
                                     }
                                 },
@@ -4409,6 +4433,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -4440,7 +4465,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "attention1_out"
                                     }
                                 },
@@ -4468,7 +4493,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "attention1_out"
                                     }
                                 },
@@ -4496,7 +4521,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "attention1_out"
                                     }
                                 },
@@ -4545,7 +4570,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul2_2_w"
                                     }
                                 },
@@ -4594,7 +4619,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul2_3_w"
                                     }
                                 },
@@ -4643,7 +4668,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul2_4_w"
                                     }
                                 },
@@ -4750,7 +4775,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul3_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul3_2_w"
                                     }
                                 },
@@ -4799,7 +4824,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul3_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul3_3_w"
                                     }
                                 },
@@ -4848,7 +4873,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul3_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul3_4_w"
                                     }
                                 },
@@ -4942,7 +4967,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul4_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul4_2_w"
                                     }
                                 },
@@ -4991,7 +5016,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul4_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul4_3_w"
                                     }
                                 },
@@ -5040,7 +5065,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul4_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul4_4_w"
                                     }
                                 },
@@ -5133,6 +5158,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -5163,7 +5189,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul1_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul1_2_w"
                                     }
                                 },
@@ -5198,6 +5224,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -5228,7 +5255,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul1_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul1_3_w"
                                     }
                                 },
@@ -5263,6 +5290,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -5293,7 +5321,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul1_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul1_4_w"
                                     }
                                 },
@@ -5328,6 +5356,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -5370,7 +5399,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "1matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "1matmul1_out"
                                     }
                                 },
@@ -5398,7 +5427,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "1matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "1matmul1_out"
                                     }
                                 },
@@ -5426,7 +5455,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "1matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "1matmul1_out"
                                     }
                                 },
@@ -5440,6 +5469,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -5471,7 +5501,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "1attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "1attention1_out"
                                     }
                                 },
@@ -5499,7 +5529,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "1attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "1attention1_out"
                                     }
                                 },
@@ -5527,7 +5557,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "1attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "1attention1_out"
                                     }
                                 },
@@ -5576,7 +5606,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul2_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul2_2_w"
                                     }
                                 },
@@ -5625,7 +5655,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul2_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul2_3_w"
                                     }
                                 },
@@ -5674,7 +5704,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul2_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul2_4_w"
                                     }
                                 },
@@ -5781,7 +5811,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul3_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul3_2_w"
                                     }
                                 },
@@ -5830,7 +5860,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul3_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul3_3_w"
                                     }
                                 },
@@ -5879,7 +5909,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul3_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul3_4_w"
                                     }
                                 },
@@ -5973,7 +6003,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul4_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul4_2_w"
                                     }
                                 },
@@ -6022,7 +6052,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul4_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul4_3_w"
                                     }
                                 },
@@ -6071,7 +6101,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul4_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul4_4_w"
                                     }
                                 },
@@ -6164,6 +6194,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -6194,7 +6225,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul1_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul1_2_w"
                                     }
                                 },
@@ -6229,6 +6260,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -6259,7 +6291,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul1_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul1_3_w"
                                     }
                                 },
@@ -6294,6 +6326,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -6324,7 +6357,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul1_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul1_4_w"
                                     }
                                 },
@@ -6359,6 +6392,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -6401,7 +6435,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "2matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "2matmul1_out"
                                     }
                                 },
@@ -6429,7 +6463,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "2matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "2matmul1_out"
                                     }
                                 },
@@ -6457,7 +6491,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "2matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "2matmul1_out"
                                     }
                                 },
@@ -6471,6 +6505,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -6502,7 +6537,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "2attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "2attention1_out"
                                     }
                                 },
@@ -6530,7 +6565,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "2attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "2attention1_out"
                                     }
                                 },
@@ -6558,7 +6593,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "2attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "2attention1_out"
                                     }
                                 },
@@ -6607,7 +6642,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul2_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul2_2_w"
                                     }
                                 },
@@ -6656,7 +6691,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul2_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul2_3_w"
                                     }
                                 },
@@ -6705,7 +6740,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul2_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul2_4_w"
                                     }
                                 },
@@ -6812,7 +6847,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul3_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul3_2_w"
                                     }
                                 },
@@ -6861,7 +6896,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul3_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul3_3_w"
                                     }
                                 },
@@ -6910,7 +6945,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul3_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul3_4_w"
                                     }
                                 },
@@ -7004,7 +7039,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul4_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul4_2_w"
                                     }
                                 },
@@ -7053,7 +7088,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul4_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul4_3_w"
                                     }
                                 },
@@ -7102,7 +7137,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul4_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul4_4_w"
                                     }
                                 },
@@ -7195,6 +7230,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -7225,7 +7261,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul1_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul1_2_w"
                                     }
                                 },
@@ -7260,6 +7296,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -7290,7 +7327,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul1_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul1_3_w"
                                     }
                                 },
@@ -7325,6 +7362,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -7355,7 +7393,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul1_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul1_4_w"
                                     }
                                 },
@@ -7390,6 +7428,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -7432,7 +7471,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "3matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "3matmul1_out"
                                     }
                                 },
@@ -7460,7 +7499,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "3matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "3matmul1_out"
                                     }
                                 },
@@ -7488,7 +7527,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "3matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "3matmul1_out"
                                     }
                                 },
@@ -7502,6 +7541,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -7533,7 +7573,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "3attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "3attention1_out"
                                     }
                                 },
@@ -7561,7 +7601,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "3attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "3attention1_out"
                                     }
                                 },
@@ -7589,7 +7629,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "3attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "3attention1_out"
                                     }
                                 },
@@ -7638,7 +7678,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul2_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul2_2_w"
                                     }
                                 },
@@ -7687,7 +7727,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul2_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul2_3_w"
                                     }
                                 },
@@ -7736,7 +7776,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul2_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul2_4_w"
                                     }
                                 },
@@ -7843,7 +7883,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul3_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul3_2_w"
                                     }
                                 },
@@ -7892,7 +7932,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul3_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul3_3_w"
                                     }
                                 },
@@ -7941,7 +7981,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul3_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul3_4_w"
                                     }
                                 },
@@ -8035,7 +8075,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul4_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul4_2_w"
                                     }
                                 },
@@ -8084,7 +8124,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul4_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul4_3_w"
                                     }
                                 },
@@ -8133,7 +8173,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul4_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul4_4_w"
                                     }
                                 },
@@ -8215,7 +8255,7 @@
                                     "type": "parse_input",
                                     "size": "BTC/4",
                                     "sram_address": {
-                                        "indata": "layernorm1_in",
+                                        "indata": "input_label",
                                         "outdata": "layernorm1_in"
                                     }
                                 },
@@ -8249,6 +8289,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -8287,7 +8328,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul1_2_w"
                                     }
                                 },
@@ -8308,6 +8349,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -8346,7 +8388,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul1_3_w"
                                     }
                                 },
@@ -8367,6 +8409,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -8400,7 +8443,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul1_4_w"
                                     }
                                 },
@@ -8421,6 +8464,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -8477,7 +8521,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "matmul1_out"
                                     }
                                 }
@@ -8511,7 +8555,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "matmul1_out"
                                     }
                                 }
@@ -8545,13 +8589,14 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "matmul1_out"
                                     },
                                     "note": "在进行完第一个matmul，做完all gather，假设matmul1_out就是需要继续做attention的列分片数据：B，T，3C/4"
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -8597,7 +8642,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "attention1_out"
                                     }
                                 }
@@ -8631,7 +8676,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "attention1_out"
                                     }
                                 }
@@ -8670,7 +8715,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "attention1_out"
                                     },
                                     "note": "在进行完attention，做完all gather，假设attention1_out就是需要继续做第二个matmul的列分片数据：B，T/4，3C"
@@ -8714,7 +8759,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul2_2_w"
                                     }
                                 },
@@ -8757,7 +8802,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul2_3_w"
                                     }
                                 },
@@ -8795,7 +8840,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul2_4_w"
                                     }
                                 },
@@ -8901,7 +8946,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul3_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul3_2_w"
                                     }
                                 },
@@ -8944,7 +8989,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul3_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul3_3_w"
                                     }
                                 },
@@ -8982,7 +9027,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul3_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul3_4_w"
                                     }
                                 },
@@ -9075,7 +9120,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul4_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul4_2_w"
                                     }
                                 },
@@ -9118,7 +9163,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul4_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul4_3_w"
                                     }
                                 },
@@ -9156,7 +9201,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul4_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul4_4_w"
                                     }
                                 },
@@ -9240,6 +9285,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -9278,7 +9324,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul1_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul1_2_w"
                                     }
                                 },
@@ -9299,6 +9345,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -9337,7 +9384,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul1_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul1_3_w"
                                     }
                                 },
@@ -9358,6 +9405,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -9391,7 +9439,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul1_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul1_4_w"
                                     }
                                 },
@@ -9412,6 +9460,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -9468,7 +9517,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "1matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "1matmul1_out"
                                     }
                                 }
@@ -9502,7 +9551,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "1matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "1matmul1_out"
                                     }
                                 }
@@ -9536,13 +9585,14 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "1matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "1matmul1_out"
                                     },
                                     "note": "在进行完第一个matmul，做完all gather，假设1matmul1_out就是需要继续做attention的列分片数据：B，T，3C/4"
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -9588,7 +9638,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "1attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "1attention1_out"
                                     }
                                 }
@@ -9622,7 +9672,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "1attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "1attention1_out"
                                     }
                                 }
@@ -9661,7 +9711,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "1attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "1attention1_out"
                                     },
                                     "note": "在进行完attention，做完all gather，假设1attention1_out就是需要继续做第二个matmul的列分片数据：B，T/4，3C"
@@ -9705,7 +9755,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul2_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul2_2_w"
                                     }
                                 },
@@ -9748,7 +9798,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul2_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul2_3_w"
                                     }
                                 },
@@ -9786,7 +9836,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul2_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul2_4_w"
                                     }
                                 },
@@ -9892,7 +9942,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul3_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul3_2_w"
                                     }
                                 },
@@ -9935,7 +9985,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul3_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul3_3_w"
                                     }
                                 },
@@ -9973,7 +10023,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul3_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul3_4_w"
                                     }
                                 },
@@ -10066,7 +10116,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul4_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul4_2_w"
                                     }
                                 },
@@ -10109,7 +10159,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul4_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul4_3_w"
                                     }
                                 },
@@ -10147,7 +10197,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul4_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul4_4_w"
                                     }
                                 },
@@ -10231,6 +10281,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -10269,7 +10320,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul1_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul1_2_w"
                                     }
                                 },
@@ -10290,6 +10341,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -10328,7 +10380,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul1_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul1_3_w"
                                     }
                                 },
@@ -10349,6 +10401,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -10382,7 +10435,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul1_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul1_4_w"
                                     }
                                 },
@@ -10403,6 +10456,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -10459,7 +10513,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "2matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "2matmul1_out"
                                     }
                                 }
@@ -10493,7 +10547,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "2matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "2matmul1_out"
                                     }
                                 }
@@ -10527,13 +10581,14 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "2matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "2matmul1_out"
                                     },
                                     "note": "在进行完第一个matmul，做完all gather，假设2matmul1_out就是需要继续做attention的列分片数据：B，T，3C/4"
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -10579,7 +10634,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "2attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "2attention1_out"
                                     }
                                 }
@@ -10613,7 +10668,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "2attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "2attention1_out"
                                     }
                                 }
@@ -10652,7 +10707,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "2attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "2attention1_out"
                                     },
                                     "note": "在进行完attention，做完all gather，假设2attention1_out就是需要继续做第二个matmul的列分片数据：B，T/4，3C"
@@ -10696,7 +10751,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul2_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul2_2_w"
                                     }
                                 },
@@ -10739,7 +10794,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul2_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul2_3_w"
                                     }
                                 },
@@ -10777,7 +10832,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul2_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul2_4_w"
                                     }
                                 },
@@ -10883,7 +10938,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul3_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul3_2_w"
                                     }
                                 },
@@ -10926,7 +10981,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul3_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul3_3_w"
                                     }
                                 },
@@ -10964,7 +11019,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul3_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul3_4_w"
                                     }
                                 },
@@ -11057,7 +11112,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul4_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul4_2_w"
                                     }
                                 },
@@ -11100,7 +11155,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul4_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul4_3_w"
                                     }
                                 },
@@ -11138,7 +11193,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul4_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul4_4_w"
                                     }
                                 },
@@ -11222,6 +11277,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -11260,7 +11316,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul1_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul1_2_w"
                                     }
                                 },
@@ -11281,6 +11337,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -11319,7 +11376,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul1_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul1_3_w"
                                     }
                                 },
@@ -11340,6 +11397,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -11373,7 +11431,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul1_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul1_4_w"
                                     }
                                 },
@@ -11394,6 +11452,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -11450,7 +11509,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "3matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "3matmul1_out"
                                     }
                                 }
@@ -11484,7 +11543,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "3matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "3matmul1_out"
                                     }
                                 }
@@ -11518,13 +11577,14 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "3matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "3matmul1_out"
                                     },
                                     "note": "在进行完第一个matmul，做完all gather，假设3matmul1_out就是需要继续做attention的列分片数据：B，T，3C/4"
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -11570,7 +11630,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "3attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "3attention1_out"
                                     }
                                 }
@@ -11604,7 +11664,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "3attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "3attention1_out"
                                     }
                                 }
@@ -11643,7 +11703,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "3attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "3attention1_out"
                                     },
                                     "note": "在进行完attention，做完all gather，假设3attention1_out就是需要继续做第二个matmul的列分片数据：B，T/4，3C"
@@ -11687,7 +11747,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul2_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul2_2_w"
                                     }
                                 },
@@ -11730,7 +11790,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul2_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul2_3_w"
                                     }
                                 },
@@ -11768,7 +11828,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul2_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul2_4_w"
                                     }
                                 },
@@ -11874,7 +11934,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul3_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul3_2_w"
                                     }
                                 },
@@ -11917,7 +11977,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul3_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul3_3_w"
                                     }
                                 },
@@ -11955,7 +12015,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul3_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul3_4_w"
                                     }
                                 },
@@ -12048,7 +12108,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul4_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul4_2_w"
                                     }
                                 },
@@ -12091,7 +12151,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul4_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul4_3_w"
                                     }
                                 },
@@ -12133,7 +12193,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul4_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul4_4_w"
                                     }
                                 },
@@ -12192,7 +12252,7 @@
                                     "type": "parse_input",
                                     "size": "BTC/4",
                                     "sram_address": {
-                                        "indata": "layernorm1_in",
+                                        "indata": "input_label",
                                         "outdata": "layernorm1_in"
                                     }
                                 },
@@ -12226,6 +12286,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -12256,7 +12317,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul1_2_w"
                                     }
                                 },
@@ -12291,6 +12352,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -12321,7 +12383,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul1_3_w"
                                     }
                                 },
@@ -12356,6 +12418,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -12386,7 +12449,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul1_4_w"
                                     }
                                 },
@@ -12421,6 +12484,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -12463,7 +12527,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "matmul1_out"
                                     }
                                 },
@@ -12491,7 +12555,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "matmul1_out"
                                     }
                                 },
@@ -12519,7 +12583,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "matmul1_out"
                                     }
                                 },
@@ -12533,6 +12597,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -12564,7 +12629,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "attention1_out"
                                     }
                                 },
@@ -12592,7 +12657,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "attention1_out"
                                     }
                                 },
@@ -12620,7 +12685,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "attention1_out"
                                     }
                                 },
@@ -12669,7 +12734,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul2_2_w"
                                     }
                                 },
@@ -12718,7 +12783,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul2_3_w"
                                     }
                                 },
@@ -12767,7 +12832,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul2_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul2_4_w"
                                     }
                                 },
@@ -12874,7 +12939,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul3_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul3_2_w"
                                     }
                                 },
@@ -12923,7 +12988,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul3_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul3_3_w"
                                     }
                                 },
@@ -12972,7 +13037,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul3_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul3_4_w"
                                     }
                                 },
@@ -13066,7 +13131,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul4_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul4_2_w"
                                     }
                                 },
@@ -13115,7 +13180,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul4_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul4_3_w"
                                     }
                                 },
@@ -13164,7 +13229,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul4_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_matmul4_4_w"
                                     }
                                 },
@@ -13257,6 +13322,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -13287,7 +13353,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul1_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul1_2_w"
                                     }
                                 },
@@ -13322,6 +13388,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -13352,7 +13419,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul1_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul1_3_w"
                                     }
                                 },
@@ -13387,6 +13454,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -13417,7 +13485,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul1_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul1_4_w"
                                     }
                                 },
@@ -13452,6 +13520,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -13494,7 +13563,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "1matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "1matmul1_out"
                                     }
                                 },
@@ -13522,7 +13591,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "1matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "1matmul1_out"
                                     }
                                 },
@@ -13550,7 +13619,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "1matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "1matmul1_out"
                                     }
                                 },
@@ -13564,6 +13633,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -13595,7 +13665,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "1attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "1attention1_out"
                                     }
                                 },
@@ -13623,7 +13693,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "1attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "1attention1_out"
                                     }
                                 },
@@ -13651,7 +13721,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "1attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "1attention1_out"
                                     }
                                 },
@@ -13700,7 +13770,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul2_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul2_2_w"
                                     }
                                 },
@@ -13749,7 +13819,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul2_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul2_3_w"
                                     }
                                 },
@@ -13798,7 +13868,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul2_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul2_4_w"
                                     }
                                 },
@@ -13905,7 +13975,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul3_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul3_2_w"
                                     }
                                 },
@@ -13954,7 +14024,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul3_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul3_3_w"
                                     }
                                 },
@@ -14003,7 +14073,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul3_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul3_4_w"
                                     }
                                 },
@@ -14097,7 +14167,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul4_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul4_2_w"
                                     }
                                 },
@@ -14146,7 +14216,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul4_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul4_3_w"
                                     }
                                 },
@@ -14195,7 +14265,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_1matmul4_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_1matmul4_4_w"
                                     }
                                 },
@@ -14288,6 +14358,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -14318,7 +14389,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul1_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul1_2_w"
                                     }
                                 },
@@ -14353,6 +14424,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -14383,7 +14455,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul1_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul1_3_w"
                                     }
                                 },
@@ -14418,6 +14490,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -14448,7 +14521,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul1_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul1_4_w"
                                     }
                                 },
@@ -14483,6 +14556,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -14525,7 +14599,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "2matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "2matmul1_out"
                                     }
                                 },
@@ -14553,7 +14627,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "2matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "2matmul1_out"
                                     }
                                 },
@@ -14581,7 +14655,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "2matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "2matmul1_out"
                                     }
                                 },
@@ -14595,6 +14669,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -14626,7 +14701,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "2attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "2attention1_out"
                                     }
                                 },
@@ -14654,7 +14729,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "2attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "2attention1_out"
                                     }
                                 },
@@ -14682,7 +14757,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "2attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "2attention1_out"
                                     }
                                 },
@@ -14731,7 +14806,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul2_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul2_2_w"
                                     }
                                 },
@@ -14780,7 +14855,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul2_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul2_3_w"
                                     }
                                 },
@@ -14829,7 +14904,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul2_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul2_4_w"
                                     }
                                 },
@@ -14936,7 +15011,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul3_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul3_2_w"
                                     }
                                 },
@@ -14985,7 +15060,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul3_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul3_3_w"
                                     }
                                 },
@@ -15034,7 +15109,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul3_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul3_4_w"
                                     }
                                 },
@@ -15128,7 +15203,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul4_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul4_2_w"
                                     }
                                 },
@@ -15177,7 +15252,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul4_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul4_3_w"
                                     }
                                 },
@@ -15226,7 +15301,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_2matmul4_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_2matmul4_4_w"
                                     }
                                 },
@@ -15319,6 +15394,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -15349,7 +15425,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul1_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul1_2_w"
                                     }
                                 },
@@ -15384,6 +15460,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -15414,7 +15491,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul1_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul1_3_w"
                                     }
                                 },
@@ -15449,6 +15526,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -15479,7 +15557,7 @@
                                     "type": "parse_input",
                                     "size": "3CC-R/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul1_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul1_4_w"
                                     }
                                 },
@@ -15514,6 +15592,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -15556,7 +15635,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "3matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "3matmul1_out"
                                     }
                                 },
@@ -15584,7 +15663,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "3matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "3matmul1_out"
                                     }
                                 },
@@ -15612,7 +15691,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC-R/4",
                                     "sram_address": {
-                                        "indata": "3matmul1_out",
+                                        "indata": "input_label",
                                         "outdata": "3matmul1_out"
                                     }
                                 },
@@ -15626,6 +15705,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -15657,7 +15737,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "3attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "3attention1_out"
                                     }
                                 },
@@ -15685,7 +15765,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "3attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "3attention1_out"
                                     }
                                 },
@@ -15713,7 +15793,7 @@
                                     "type": "parse_input",
                                     "size": "3BTC/4",
                                     "sram_address": {
-                                        "indata": "3attention1_out",
+                                        "indata": "input_label",
                                         "outdata": "3attention1_out"
                                     }
                                 },
@@ -15762,7 +15842,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul2_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul2_2_w"
                                     }
                                 },
@@ -15811,7 +15891,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul2_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul2_3_w"
                                     }
                                 },
@@ -15860,7 +15940,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul2_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul2_4_w"
                                     }
                                 },
@@ -15967,7 +16047,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul3_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul3_2_w"
                                     }
                                 },
@@ -16016,7 +16096,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul3_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul3_3_w"
                                     }
                                 },
@@ -16065,7 +16145,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul3_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul3_4_w"
                                     }
                                 },
@@ -16159,7 +16239,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul4_2_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul4_2_w"
                                     }
                                 },
@@ -16208,7 +16288,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul4_3_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul4_3_w"
                                     }
                                 },
@@ -16257,7 +16337,7 @@
                                     "type": "parse_input",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_3matmul4_4_w",
+                                        "indata": "input_label",
                                         "outdata": "eternal_3matmul4_4_w"
                                     }
                                 },

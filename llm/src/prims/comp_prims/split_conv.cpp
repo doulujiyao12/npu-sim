@@ -24,7 +24,7 @@ void Split_conv::initialize() {
     ARGUS_EXIT("Split_conv not implemented.\n");
 }
 
-int Split_conv::taskCore(TaskCoreContext &context, string prim_name,
+void Split_conv::taskCore(TaskCoreContext &context, string prim_name,
                          u_int64_t dram_time, u_int64_t &exu_ops,
                          u_int64_t &sfu_ops) {
     ARGUS_EXIT("Split_conv not implemented.\n");

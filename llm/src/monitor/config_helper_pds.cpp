@@ -491,16 +491,16 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
         for (int p = 0; p < work.prims.size(); p++) {
             auto prim = work.prims[p];
             PrimBase *set_addr = PrimFactory::getInstance().createPrim("Set_addr");
-            auto label = ((Set_addr *)set_addr)->datapass_label;
+            auto label = set_addr->prim_context->datapass_label_;
 
             for (int i = 0; i < MAX_SPLIT_NUM; i++) {
                 if (prim->prim_type & COMP_PRIM) {
-                    label.indata[i] =
+                    label->indata[i] =
                         prim->prim_context->datapass_label_->indata[i];
                 }
             }
             if (prim->prim_type & COMP_PRIM) {
-                label.outdata = prim->prim_context->datapass_label_->outdata;
+                label->outdata = prim->prim_context->datapass_label_->outdata;
             }
 
             temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i,
@@ -509,7 +509,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
                 Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, prim->serialize()));
 
             if (p == work.prims.size() - 1)
-                output_label = label.outdata;
+                output_label = label->outdata;
         }
     }
 

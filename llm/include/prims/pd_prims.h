@@ -2,7 +2,7 @@
 
 class matmul_forward_pd : public PdBase {
 public:
-    int taskCore(TaskCoreContext &context, string prim_name,
+    void taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
 
@@ -16,12 +16,12 @@ public:
 
 class attention_forward_pd : public PdBase {
 public:
-    int taskCore(TaskCoreContext &context, string prim_name,
+    void taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
 
     attention_forward_pd() {
-        name = "attention_forward_pd";
+        name = "Attention_f_pd";
         param_name.insert(param_name.end(), {"B", "T", "C", "NH", "DH", "R"});
     }
 };
@@ -29,7 +29,7 @@ public:
 
 class rope_forward_pd : public PdBase {
 public:
-    int taskCore(TaskCoreContext &context, string prim_name,
+    void taskCore(TaskCoreContext &context, string prim_name,
                  u_int64_t dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
     void initialize();
     rope_forward_pd() {
