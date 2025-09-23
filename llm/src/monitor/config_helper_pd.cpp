@@ -36,6 +36,7 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
         token_record.push_back(v);
     }
 
+    // TODO: 分配TP组
     attend_cores = GRID_SIZE / model_stage * model_stage;
     for (int i = 0; i < attend_cores; i++) {
         CoreStatus status = CoreStatus(i, JOB_BOTH);
@@ -72,7 +73,7 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
     }
 
     // 建立原语模板
-    json_template = j["chips"][0]["cores"][0];
+    json_template = j["chips"][0]["cores"];
     busy = false;
     g_recv_ack_cnt = 0;
     g_recv_done_cnt = 0;
@@ -336,11 +337,10 @@ void config_helper_pd::printSelf() {
 }
 
 void config_helper_pd::generate_prims(int i) {
-    // 一个iter中有stage个core参与执行，id 1要流向id end，id end要传回id 1
-    // core中原语为单个corejob，需要配置收发规则
     cout << "Generate prims: Core " << i << endl;
     auto status = coreStatus[i];
 
+    // 计算input token大小
     int B = 1, NH = heads, T = 0, C = heads * head_size;
     bool exist_prefill = false;
     for (auto stage : status.batchInfo) {
@@ -358,51 +358,84 @@ void config_helper_pd::generate_prims(int i) {
 
     // TODO: 其他decoder模型适配？
     set_global_vars(T);
-    CoreConfig core = json_template;
-    auto &work = core.worklist[0];
 
-    int index = i / GRID_X;
-    int prim_seq = 0;
-    string output_label = "";
+    // 处理tp的模板核
+    int tp_size = json_template.size();
+    vector<CoreConfig> template_cores;
+    for (auto &j : template_cores) {
+        CoreConfig core = j;
+        template_cores.push_back(core);
+    }
 
-    PrimBase *recv_data_1 = new Recv_prim(RECV_TYPE::RECV_START, i, 1);
-    temp_config.push_back(
-        Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, recv_data_1->serialize()));
-    PrimBase *set_batch = new Set_batch(status.batchInfo);
-    temp_config.push_back(
-        Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, set_batch->serialize()));
+    // 为每一个核做相同的原语生成
+    // 为每一个work生成前后的send和recv原语，最后一个work必定有send_done
+    for (int core_id = i; core_id < i + tp_size; core_id++) {
+        int index = i / GRID_X;
+        int prim_seq = 0;
+        string output_label = "";
 
-    if (status.batchInfo.size()) {
-        for (int loop = 0; loop < core.loop; loop++) {
-            for (int p = 0; p < work.prims.size(); p++) {
-                auto prim = work.prims[p];
-                PrimBase *set_addr =
-                    PrimFactory::getInstance().createPrim("Set_addr");
-                auto label = set_addr->prim_context->datapass_label_;
+        // 每个核生成一个set_batch
+        PrimBase *set_batch = new Set_batch(status.batchInfo);
+        temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i,
+                                  set_batch->serialize()));
 
-                for (int i = 0; i < MAX_SPLIT_NUM; i++) {
+        for (int w = 0; w < template_cores[core_id - i].worklist.size(); w++) {
+            auto &work = template_cores[core_id - i].worklist[w];
+
+            // 如果是tp组的第一个核的第一个work，则为RECV_START，否则为RECV_DATA
+            Recv_prim *recv_data =
+                (Recv_prim *)PrimFactory::getInstance().createPrim("Recv_prim");
+            recv_data->type = (w == 0 && core_id == i) ? RECV_TYPE::RECV_START
+                                                       : RECV_TYPE::RECV_DATA;
+            recv_data->recv_cnt = work.recv_cnt;
+
+            // tag个位：发送方，tag十位：接收方，采用#TP进制
+            recv_data->tag_id =
+                (w == 0 && core_id == i)
+                    ? i
+                    : (core_id * tp_size +
+                       (core_id == i ? core_id + tp_size - 1 : core_id - 1));
+
+            temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i,
+                                      recv_data->serialize()));
+
+            // work的所有计算原语
+            if (status.batchInfo.size()) {
+                for (int p = 0; p < work.prims.size(); p++) {
+                    auto prim = work.prims[p];
+                    PrimBase *set_addr =
+                        PrimFactory::getInstance().createPrim("Set_addr");
+                    auto label = set_addr->prim_context->datapass_label_;
+
                     if (prim->prim_type & COMP_PRIM) {
-                        label->indata[i] =
-                            prim->prim_context->datapass_label_->indata[i];
+                        for (int i = 0; i < MAX_SPLIT_NUM; i++)
+                            label->indata[i] =
+                                prim->prim_context->datapass_label_->indata[i];
+                        label->outdata =
+                            prim->prim_context->datapass_label_->outdata;
                     }
-                }
-                if (prim->prim_type & COMP_PRIM) {
-                    label->outdata =
-                        prim->prim_context->datapass_label_->outdata;
-                }
 
-                temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          i, set_addr->serialize()));
-                temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          i, prim->serialize()));
+                    temp_config.push_back(Msg(false, MSG_TYPE::CONFIG,
+                                              ++prim_seq, i,
+                                              set_addr->serialize()));
+                    temp_config.push_back(Msg(false, MSG_TYPE::CONFIG,
+                                              ++prim_seq, i,
+                                              prim->serialize()));
 
-                if (loop == core.loop - 1 && p == work.prims.size() - 1)
-                    output_label = label->outdata;
+                    if (w == template_cores[core_id - i].worklist.size() &&
+                        p == work.prims.size() - 1)
+                        output_label = label->outdata;
+                }
             }
+
+            // 发送原语
+            // TODO:
+            // 注意发送的对象，需要隔一个TP组。且TP组中不是所有核都需要发送SEND_DATA，有些只需要DONE
         }
     }
 
     // 处理数据流向下一个core
+    // TODO
     int send_dest = i + 1;
     if (send_dest % model_stage == 0)
         send_dest -= model_stage;
@@ -455,6 +488,7 @@ void config_helper_pd::generate_prims(int i) {
     Msg m = Msg(true, MSG_TYPE::CONFIG, ++prim_seq, i, send_done->serialize());
     m.refill_ = false;
     temp_config.push_back(m);
+}
 }
 
 void config_helper_pd::parse_ack_msg(Event_engine *event_engine, int flow_id,
