@@ -1,5 +1,6 @@
 #include "nlohmann/json.hpp"
 #include <SFML/Graphics.hpp>
+#include <algorithm>
 #include <sstream>
 
 #include "common/system.h"
@@ -18,10 +19,8 @@ CoreConfig *config_helper_core::get_core(int id) {
             return &(coreconfigs[i]);
     }
 
-    cout << "Error: core id " << id << " not found!" << endl;
-    sc_stop();
-
-    return NULL;
+    ARGUS_EXIT("Core ", id, " not found.\n");
+    return nullptr;
 }
 
 void config_helper_core::printSelf() {
@@ -168,28 +167,16 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
         vtable.push_back(make_pair(var.key(), var.value()));
     }
 
-    if (config_vars.contains("B"))
-        batch_size = config_vars["B"];
-    else
-        batch_size = 1;
-
-    if (config_vars.contains("T"))
-        seq_len = config_vars["T"];
-    else
-        seq_len = 128;
+    SetParamFromJson(config_vars, "B", &batch_size, 1);
+    SetParamFromJson(config_vars, "T", &seq_len, 128);
 
     auto config_source = j["source"];
     for (auto source : config_source) {
-        if (source.contains("loop")) {
-            int loop_cnt = GetDefinedParam(source["loop"]);
-            for (int i = 0; i < loop_cnt; i++) {
-                source_info.push_back(
-                    make_pair(source["dest"], GetDefinedParam(source["size"])));
-            }
-        } else {
+        int source_loop = 0;
+        SetParamFromJson(source, "loop", &source_loop, 1);
+        for (; source_loop > 0; source_loop--)
             source_info.push_back(
                 make_pair(source["dest"], GetDefinedParam(source["size"])));
-        }
     }
 
     auto config_cores = j["chips"][config_chip_id]["cores"];
@@ -203,11 +190,7 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
         random_core(font_ttf);
     }
 
-    if (j.contains("pipeline")) {
-        j.at("pipeline").get_to(pipeline);
-    } else {
-        pipeline = 1;
-    }
+    SetParamFromJson(j, "pipeline", &pipeline, 1);
 
     // 检查是否需要复制原语的核，config书写要求：需要重新写明所有work的cast、recv_cnt,数量等同于需要复制的那个核的work数量
     for (int i = 0; i < coreconfigs.size(); i++) {
@@ -252,182 +235,140 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
 }
 
 void config_helper_core::fill_queue_config(queue<Msg> *q) {
-    for (auto config : coreconfigs) {
+    for (auto &config : coreconfigs) {
         int index = config.id / GRID_X;
-        vector<Msg> single_rep_in_loop;
-        vector<Msg> single_rep_next_loop; // 存放第二个loop开始的原语
-        vector<Msg> single_rep_last_loop;
 
-        for (auto work : config.worklist) {
-            for (auto prim : work.prims_in_loop) {
-                single_rep_in_loop.push_back(Msg(false, MSG_TYPE::CONFIG,
-                                                 single_rep_in_loop.size() + 1,
-                                                 config.id, prim->serialize()));
-            }
-
-            for (auto prim : work.prims_in_loop) {
-                if (typeid(*prim) == typeid(Recv_prim)) {
-                    Recv_prim *recv_prim = (Recv_prim *)prim;
-                    if (recv_prim->type == RECV_TYPE::RECV_START)
-                        recv_prim->type = RECV_DATA;
+        auto build_msgs = [&](const vector<PrimBase *> &prims,
+                              bool adjust_recv = false) {
+            vector<Msg> msgs;
+            msgs.reserve(prims.size());
+            for (auto *prim : prims) {
+                if (adjust_recv) {
+                    if (auto *recv_prim = dynamic_cast<Recv_prim *>(prim)) {
+                        if (recv_prim->type == RECV_TYPE::RECV_START)
+                            recv_prim->type = RECV_TYPE::RECV_DATA;
+                    }
                 }
-
-                single_rep_next_loop.push_back(Msg(
-                    false, MSG_TYPE::CONFIG, single_rep_next_loop.size() + 1,
-                    config.id, prim->serialize()));
+                msgs.emplace_back(false, MSG_TYPE::CONFIG,
+                                  static_cast<int>(msgs.size()) + 1, config.id,
+                                  prim->serialize());
             }
+            return msgs;
+        };
 
-            for (auto prim : work.prims_last_loop)
-                single_rep_last_loop.push_back(Msg(
-                    false, MSG_TYPE::CONFIG, single_rep_last_loop.size() + 1,
-                    config.id, prim->serialize()));
+        // 三类循环消息
+        vector<Msg> in_loop, next_loop, last_loop;
+        for (auto &work : config.worklist) {
+            auto tmp_in = build_msgs(work.prims_in_loop);
+            auto tmp_next = build_msgs(work.prims_in_loop, true);
+            auto tmp_last = build_msgs(work.prims_last_loop);
+
+            in_loop.insert(in_loop.end(), tmp_in.begin(), tmp_in.end());
+            next_loop.insert(next_loop.end(), tmp_next.begin(), tmp_next.end());
+            last_loop.insert(last_loop.end(), tmp_last.begin(), tmp_last.end());
         }
 
+        // queue push helper
+        int seq_cnt = 1;
+        auto push_msg = [&](Msg m) {
+            m.seq_id_ = seq_cnt++;
+            q[index].push(std::move(m));
+        };
+
+        // RECV_WEIGHT
         PrimBase *recv_weight = new Recv_prim(RECV_TYPE::RECV_WEIGHT,
                                               config.worklist[0].recv_tag, 0);
-        q[index].push(Msg(false, MSG_TYPE::CONFIG, 1, config.id,
-                          recv_weight->serialize()));
+        push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
+                     recv_weight->serialize()));
 
-        // 组装要处理的req信息，在此根据B简单判断即可
+        // Set_batch
         vector<Stage> batchInfo;
         for (int i = 0; i < batch_size; i++)
-            batchInfo.push_back(Stage(i + 1, PREFILL, seq_len));
-
+            batchInfo.emplace_back(i + 1, PREFILL, seq_len);
         PrimBase *set_batch = new Set_batch(batchInfo, true);
 
         cout << "core " << config.id << ", loop: " << config.loop << endl;
-        int seq_cnt = 2;
 
-        for (int i = 0; i < config.loop - 1; i++) {
-            q[index].push(Msg(false, MSG_TYPE::CONFIG, seq_cnt++, config.id,
-                              set_batch->serialize()));
-            if (i == 0) {
-                for (int j = 1; j <= single_rep_in_loop.size(); j++) {
-                    Msg m = single_rep_in_loop[j - 1];
-                    m.seq_id_ = seq_cnt++;
-                    q[index].push(m);
-                }
-            } else {
-                for (int j = 1; j <= single_rep_next_loop.size(); j++) {
-                    Msg m = single_rep_next_loop[j - 1];
-                    m.seq_id_ = seq_cnt++;
-                    q[index].push(m);
-                }
+        // 主循环，将pipeline视为一种循环
+        for (int j = 0; j < pipeline; j++) {
+            for (int i = 0; i < config.loop - 1; i++) {
+                push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
+                             set_batch->serialize()));
+                auto &reps = (i == 0) ? in_loop : next_loop;
+                for (auto &m : reps)
+                    push_msg(m);
             }
-        }
 
-        for (int j = 1; j <= single_rep_last_loop.size(); j++) {
-            q[index].push(Msg(false, MSG_TYPE::CONFIG, seq_cnt++, config.id,
-                              set_batch->serialize()));
+            for (size_t j = 0; j < last_loop.size(); j++) {
+                push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
+                             set_batch->serialize()));
 
-            Msg m = single_rep_last_loop[j - 1];
-            m.seq_id_ = seq_cnt++;
-            m.refill_ = m.is_end_ = j == single_rep_last_loop.size();
-
-            q[index].push(m);
+                Msg m = last_loop[j];
+                m.refill_ = m.is_end_ = (j + 1 == last_loop.size());
+                push_msg(m);
+            }
         }
     }
 }
 
 void config_helper_core::generate_prims(int i) {
-    // 处理单个核的原语，将其放入Coreconfig.prims中
     CoreConfig *c = &coreconfigs[i];
 
-    bool is_source = false;
-    for (auto source : source_info) {
-        if (source.first == c->id) {
-            is_source = true;
-            break;
+    bool is_source = any_of(source_info.begin(), source_info.end(),
+                            [&](auto &src) { return src.first == c->id; });
+
+    auto add_recv = [&](vector<PrimBase *> &prims, bool start, int tag,
+                        int cnt) {
+        prims.push_back(new Recv_prim(
+            start ? RECV_TYPE::RECV_START : RECV_TYPE::RECV_DATA, tag, cnt));
+    };
+
+    auto add_comps = [&](vector<PrimBase *> &prims,
+                         const vector<PrimBase *> &works) {
+        for (auto *prim : works) {
+            PrimBase *p = PrimFactory::getInstance().createPrim("Set_addr");
+            auto label = p->prim_context->datapass_label_;
+            if (prim->prim_type & PRIM_TYPE::COMP_PRIM) {
+                for (int i = 0; i < MAX_SPLIT_NUM; i++)
+                    label->indata[i] =
+                        prim->prim_context->datapass_label_->indata[i];
+                label->outdata = prim->prim_context->datapass_label_->outdata;
+            }
+            prims.push_back(p);
+            prims.push_back(prim);
         }
-    }
+    };
+
+    auto add_sends = [&](vector<PrimBase *> &prims, const vector<Cast> &casts,
+                         bool loopout) {
+        for (auto &ca : casts) {
+            if ((loopout && ca.loopout == FALSE) ||
+                (!loopout && ca.loopout == TRUE))
+                continue;
+            prims.push_back(
+                new Send_prim(SEND_TYPE::SEND_REQ, ca.dest, ca.tag));
+            prims.push_back(new Recv_prim(RECV_TYPE::RECV_ACK));
+            prims.push_back(
+                new Send_prim(SEND_TYPE::SEND_DATA, ca.dest, ca.tag));
+        }
+    };
 
     for (int w = 0; w < c->worklist.size(); w++) {
         auto &work = c->worklist[w];
-        bool is_end = judge_is_end_work(work); // 是不是计算图中的汇节点
+        bool is_end = judge_is_end_work(work);
         if (is_end)
             end_cores++;
 
-        // 先生成loop中的原语
-        // 首先是recv，对应 RECV_DATA
-        if (is_source && w == 0)
-            work.prims_in_loop.push_back(new Recv_prim(
-                RECV_TYPE::RECV_START, work.recv_tag, work.recv_cnt));
-        else
-            work.prims_in_loop.push_back(new Recv_prim(
-                RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt));
+        // 非最后循环
+        add_recv(work.prims_in_loop, (is_source && w == 0), work.recv_tag,
+                 work.recv_cnt);
+        add_comps(work.prims_in_loop, work.prims);
+        add_sends(work.prims_in_loop, work.cast, false);
 
-        // 然后是comp，直接推c中的对应队列即可
-        for (auto prim : work.prims) {
-            PrimBase *p = PrimFactory::getInstance().createPrim("Set_addr");
-            auto label = p->prim_context->datapass_label_;
-            // Set_addr 的label 指向其后面的那条原语
-            if (prim->prim_type & PRIM_TYPE::COMP_PRIM) {
-                for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-                    label->indata[i] =
-                        prim->prim_context->datapass_label_->indata[i];
-                }
-                label->outdata = prim->prim_context->datapass_label_->outdata;
-            }
-
-            // 这里直接推入字符串形式的label，之后会在序列化的时候转化为整形label
-            work.prims_in_loop.push_back(p);
-            work.prims_in_loop.push_back(prim);
-        }
-
-        // // [传输global memory的原语]
-        // if (c->send_global_mem != -1){
-        //     work.prims_in_loop.push_back(new Send_global_memory());
-        // }
-
-        // 最后是send，如果是多播的话需要加入多个send原语
-        // 这里的发送地址和接收地址先不填，等到后续统一填
-        // 按照cast 广播的方式添加对应数量的 send 原语数量
-        for (int j = 0; j < work.cast.size(); j++) {
-            auto ca = work.cast[j];
-
-            // 只需要在末尾循环发送，默认BOTH
-            if (ca.loopout == TRUE)
-                continue;
-
-            int dest = ca.dest;
-            int tag = ca.tag;
-
-            work.prims_in_loop.push_back(
-                new Send_prim(SEND_TYPE::SEND_REQ, dest, tag));
-            work.prims_in_loop.push_back(new Recv_prim(RECV_TYPE::RECV_ACK));
-            work.prims_in_loop.push_back(
-                new Send_prim(SEND_TYPE::SEND_DATA, dest, tag));
-        }
-
-
-        // 再生成最后一个loop的原语
-        if (is_source && w == 0 && c->loop == 1)
-            work.prims_last_loop.push_back(new Recv_prim(
-                RECV_TYPE::RECV_START, work.recv_tag, work.recv_cnt));
-        else
-            work.prims_last_loop.push_back(new Recv_prim(
-                RECV_TYPE::RECV_DATA, work.recv_tag, work.recv_cnt));
-
-        for (auto prim : work.prims) {
-            PrimBase *p = PrimFactory::getInstance().createPrim("Set_addr");
-            auto label = p->prim_context->datapass_label_;
-            // Set_addr 的label 指向其后面的那条原语
-            if (prim->prim_type & PRIM_TYPE::COMP_PRIM) {
-                for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-                    label->indata[i] =
-                        prim->prim_context->datapass_label_->indata[i];
-                }
-                label->outdata = prim->prim_context->datapass_label_->outdata;
-            }
-
-            // 这里直接推入字符串形式的label，之后会在序列化的时候转化为整形label
-            work.prims_last_loop.push_back(p);
-            work.prims_last_loop.push_back(prim);
-        }
-
-        // if (c->send_global_mem != -1){
-        //     work.prims_last_loop.push_back(new Send_global_memory());
-        // }
+        // 最后循环
+        add_recv(work.prims_last_loop, (is_source && w == 0 && c->loop == 1),
+                 work.recv_tag, work.recv_cnt);
+        add_comps(work.prims_last_loop, work.prims);
 
         if (is_end) {
             work.prims_last_loop.push_back(new Send_prim(SEND_TYPE::SEND_DONE));
@@ -436,35 +377,8 @@ void config_helper_core::generate_prims(int i) {
             continue;
         }
 
+        add_sends(work.prims_last_loop, work.cast, true);
 
-        // if (is_end) {
-        //     if (c->send_global_mem != -1) {
-        //         work.prims_last_loop.push_back(new Send_global_memory());
-        //     } else {
-        //         work.prims_last_loop.push_back(new
-        //         Send_prim(SEND_TYPE::SEND_DONE));
-        //     }
-        //     work.prims_last_loop.push_back(new_prim("Clear_sram"));
-        //     continue;
-        // }
-
-        for (int j = 0; j < work.cast.size(); j++) {
-            auto ca = work.cast[j];
-            // 只在末尾循环不需要发送，默认BOTH
-            if (ca.loopout == FALSE)
-                continue;
-
-            int dest = ca.dest;
-            int tag = ca.tag;
-
-            work.prims_last_loop.push_back(
-                new Send_prim(SEND_TYPE::SEND_REQ, dest, tag));
-            work.prims_last_loop.push_back(new Recv_prim(RECV_TYPE::RECV_ACK));
-            work.prims_last_loop.push_back(
-                new Send_prim(SEND_TYPE::SEND_DATA, dest, tag));
-        }
-
-        // 清理sram
         if (w == c->worklist.size() - 1) {
             work.prims_last_loop.push_back(
                 PrimFactory::getInstance().createPrim("Clear_sram"));
@@ -473,14 +387,6 @@ void config_helper_core::generate_prims(int i) {
 }
 
 void config_helper_core::calculate_address(bool do_loop) {
-    // 遍历每一个核的prim，填写其中原语的收发地址
-    for (int i = 0; i < coreconfigs.size(); i++) {
-        // 初始化
-        // id 表示实际的core id
-        delta_offset[coreconfigs[i].id] =
-            ((NpuBase *)coreconfigs[i].worklist[0].prims[0])->inp_offset;
-    }
-
     // 自动设置 send 和 receive 的地址
     for (int i = 0; i < coreconfigs.size(); i++) {
         for (auto &work : coreconfigs[i].worklist) {
@@ -577,20 +483,24 @@ void config_helper_core::fill_queue_start(queue<Msg> *q) {
 
             int index = i / GRID_X;
             int pkg_index = 0;
-            int send_offset = delta_offset[i];
+            int send_offset = 0;
+            for (auto config : coreconfigs) {
+                if (config.id == i)
+                    send_offset =
+                        ((NpuBase *)config.worklist[0].prims[0])->inp_offset;
+            }
+
             int send_size_in_bit = size * sizeof(float) * 8;
             int pkg_num = (send_size_in_bit % M_D_DATA)
                               ? (send_size_in_bit / M_D_DATA + 1)
                               : (send_size_in_bit / M_D_DATA);
 
             for (int j = 1; j <= pkg_num; j++) {
-                // CTODO: 拿到真正的数据
                 sc_bv<M_D_DATA> d(0x1);
                 int length = M_D_DATA;
                 bool is_end_packet = j == pkg_num;
-                if (is_end_packet) {
+                if (is_end_packet)
                     length = size * sizeof(float) - M_D_DATA * (pkg_num - 1);
-                }
 
                 // CTODO: recv_tag default to i
                 Msg m = Msg(j == pkg_num, MSG_TYPE::S_DATA, j + pkg_index, i,

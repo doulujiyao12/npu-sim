@@ -295,6 +295,7 @@ public:
     parse_input() {
         name = "parse_input";
         param_name.insert(param_name.end(), {"size"});
+        skip_input = true;
     }
 };
 
@@ -307,5 +308,6 @@ public:
     parse_output() {
         name = "parse_output";
         param_name.insert(param_name.end(), {"size"});
+        skip_input = true;
     }
 };

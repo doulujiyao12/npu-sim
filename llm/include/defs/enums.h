@@ -66,7 +66,8 @@ enum MSG_TYPE {
     ACK,
     DONE,
     S_DATA, // start data
-    P_DATA  // prepare data
+    P_DATA,  // prepare data
+    MSG_TYPE_NUM
 };
 
 // 数据类型

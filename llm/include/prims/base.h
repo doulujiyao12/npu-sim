@@ -74,6 +74,10 @@ public:
     int data_offset; // 选填，可以推算，在parseJson()中
     int out_offset;  // 选填，可以推算，在parseJson()中
 
+    // 是否跳过taskCoreDefault中的输入输出流程
+    bool skip_input = false;
+    bool skip_output = false;
+
     // 数据块信息
     unordered_map<string, int>
         data_chunk_addr; // 可以推算，在initializeDefault()中

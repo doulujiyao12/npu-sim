@@ -1,7 +1,7 @@
 #include "monitor/config_helper_pd.h"
 #include "defs/global.h"
-#include "prims/norm_prims.h"
 #include "prims/base.h"
+#include "prims/norm_prims.h"
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
@@ -42,12 +42,6 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
         coreStatus.push_back(status);
     }
 
-    // 收集req的arrive时间
-    // if (config_reqs["arrival"].size() != req_cnt) {
-    //     cout << "[ERROR] In config helper pd: arrival time length "
-    //             "incompatible.\n";
-    //     sc_stop();
-    // }
     int arr_size = config_reqs["arrival"].size();
     if (arr_size < req_cnt) {
         for (int i = 0; i < arr_size; i++)
@@ -117,9 +111,10 @@ void config_helper_pd::fill_queue_start(queue<Msg> *q) {
                 int pkg_num = (send_size_in_bit % M_D_DATA)
                                   ? (send_size_in_bit / M_D_DATA + 1)
                                   : (send_size_in_bit / M_D_DATA);
-                pkg_num = pkg_num % (CORE_COMM_PAYLOAD*CORE_ACC_PAYLOAD)
-                                           ? pkg_num / (CORE_COMM_PAYLOAD*CORE_ACC_PAYLOAD) + 1
-                                           : pkg_num / (CORE_COMM_PAYLOAD*CORE_ACC_PAYLOAD);
+                pkg_num =
+                    pkg_num % (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD)
+                        ? pkg_num / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD) + 1
+                        : pkg_num / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD);
 
 
                 for (int j = 1; j <= pkg_num; j++) {
@@ -188,48 +183,8 @@ void config_helper_pd::iter_done(vector<Msg> done_msg) {
                         g_dram_kvtable[i]->remove(label_v);
                     }
 
-
-                    if (++decode_done == requestRecords.size()) {
-                        cout << "All reqs done.\n";
-                        cout << "[CATCH TEST] " << sc_time_stamp() << endl;
-                        ofstream outfile("simulation_result_df_pd.txt",
-                                         ios::app);
-                        if (outfile.is_open()) {
-                            outfile << "[CATCH TEST] " << sc_time_stamp()
-                                    << "MAX_SRAM_SIZE " << MAX_SRAM_SIZE
-                                    << " BANDWIDTH " << g_default_dram_bw << endl;
-                            outfile.close();
-                        } else {
-                            cout << "Error: Unable to open file for writing "
-                                    "timestamp."
-                                 << endl;
-                        }
-
-                        ofstream file("token_records.txt", ios::app);
-
-                        if (!file.is_open()) {
-                            cerr << "Error: Cannot open file " << endl;
-                            return;
-                        }
-
-                        // 设置输出格式，避免科学计数法
-                        file << fixed
-                             << setprecision(
-                                    6); // 设置小数点后6位精度，可根据需要调整
-
-                        file << "*" << g_config_file << "*\n";
-                        for (int i = 0; i < token_record.size(); i++) {
-                            file << "Request " << i << ": \n";
-                            for (int j = 0; j < token_record[i].size(); j++) {
-                                file << "Token " << j << ": "
-                                     << token_record[i][j] << "\n";
-                            }
-                        }
-
-                        file << "\n\n";
-                        file.close();
-                        sc_stop();
-                    }
+                    if (++decode_done == requestRecords.size())
+                        printResults();
                 }
                 break;
             }
@@ -378,25 +333,6 @@ void config_helper_pd::printSelf() {
     cout << "Heads: " << heads << endl;
     cout << "EOF Chance: " << eof_chance << endl;
     cout << "Request Records: " << requestRecords.size() << endl;
-
-    // for (int i = 0; i < coreStatus.size(); i++) {
-    //     cout << "Core " << i << " Status:" << endl;
-    //     cout << "  Available: " << (coreStatus[i].available ? "Yes" :
-    //     "No")
-    //          << endl;
-    //     cout << "  Data Sent: " << (coreStatus[i].data_sent ? "Yes" :
-    //     "No")
-    //          << endl;
-    //     cout << "  Requests: ";
-    //     for (auto req : coreStatus[i].reqs) {
-    //         cout << req << " ";
-    //     }
-    //     cout << endl;
-    // }
-
-    // cout << "Decode Done: " << decode_done << "/" <<
-    // requestRecords.size()
-    //      << endl;
 }
 
 void config_helper_pd::generate_prims(int i) {
@@ -425,22 +361,11 @@ void config_helper_pd::generate_prims(int i) {
     CoreConfig core = json_template;
     auto &work = core.worklist[0];
 
-    // 手动填写recv_cnt
-    work.recv_tag = i;
-    if ((i + 1) % model_stage != 1)
-        work.recv_cnt = 1;
-    else if (exist_prefill)
-        work.recv_cnt = 1;
-    else
-        work.recv_cnt = 1;
-
     int index = i / GRID_X;
     int prim_seq = 0;
     string output_label = "";
 
-    PrimBase *recv_data_1 = new Recv_prim(work.recv_cnt ? RECV_TYPE::RECV_START
-                                                         : RECV_TYPE::RECV_DATA,
-                                           work.recv_tag, work.recv_cnt);
+    PrimBase *recv_data_1 = new Recv_prim(RECV_TYPE::RECV_START, i, 1);
     temp_config.push_back(
         Msg(false, MSG_TYPE::CONFIG, ++prim_seq, i, recv_data_1->serialize()));
     PrimBase *set_batch = new Set_batch(status.batchInfo);
@@ -451,7 +376,8 @@ void config_helper_pd::generate_prims(int i) {
         for (int loop = 0; loop < core.loop; loop++) {
             for (int p = 0; p < work.prims.size(); p++) {
                 auto prim = work.prims[p];
-                PrimBase *set_addr = PrimFactory::getInstance().createPrim("Set_addr");
+                PrimBase *set_addr =
+                    PrimFactory::getInstance().createPrim("Set_addr");
                 auto label = set_addr->prim_context->datapass_label_;
 
                 for (int i = 0; i < MAX_SPLIT_NUM; i++) {
@@ -461,9 +387,9 @@ void config_helper_pd::generate_prims(int i) {
                     }
                 }
                 if (prim->prim_type & COMP_PRIM) {
-                        label->outdata =
-                            prim->prim_context->datapass_label_->outdata;
-                    }
+                    label->outdata =
+                        prim->prim_context->datapass_label_->outdata;
+                }
 
                 temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
                                           i, set_addr->serialize()));
@@ -584,21 +510,51 @@ void config_helper_pd::parse_done_msg(Event_engine *event_engine,
 }
 
 void config_helper_pd::set_global_vars(int T) {
-    vtable.clear();
-    vtable.push_back(make_pair("B", 1));
-    vtable.push_back(make_pair("T", T));
-    vtable.push_back(make_pair("C", heads * head_size));
-    vtable.push_back(make_pair("NH", heads));
-    vtable.push_back(make_pair("DH", head_size));
-    vtable.push_back(make_pair("R", heads / kv_heads));
-    vtable.push_back(make_pair("3C", 3 * heads * head_size));
-    vtable.push_back(make_pair("4C", 4 * heads * head_size));
-    vtable.push_back(make_pair("BTC", T * heads * head_size));
-    vtable.push_back(make_pair("2BTC", 2 * T * heads * head_size));
-    vtable.push_back(make_pair("3BTC", 3 * T * heads * head_size));
-    vtable.push_back(make_pair("4BTC", 4 * T * heads * head_size));
-    vtable.push_back(
-        make_pair("3C-R", heads * head_size * (2 + heads / kv_heads) /
-                              (heads / kv_heads)));
-    vtable.push_back(make_pair("CHUNK", prefill_iters));
+    vtable = {{"B", 1},
+              {"T", T},
+              {"C", heads * head_size},
+              {"NH", heads},
+              {"DH", head_size},
+              {"R", heads / kv_heads},
+              {"3C", 3 * heads * head_size},
+              {"4C", 4 * heads * head_size},
+              {"BTC", T * heads * head_size},
+              {"2BTC", 2 * T * heads * head_size},
+              {"3BTC", 3 * T * heads * head_size},
+              {"4BTC", 4 * T * heads * head_size},
+              {"3C-R",
+               heads * head_size * (2 + heads / kv_heads) / (heads / kv_heads)},
+              {"CHUNK", prefill_iters}};
+}
+
+void config_helper_pd::printResults() {
+    cout << "All reqs done.\n";
+    cout << "[CATCH TEST] " << sc_time_stamp() << endl;
+    ofstream outfile("simulation_result_df_pd.txt", ios::app);
+    if (outfile.is_open()) {
+        outfile << "[CATCH TEST] " << sc_time_stamp() << "MAX_SRAM_SIZE "
+                << MAX_SRAM_SIZE << " BANDWIDTH " << g_default_dram_bw << endl;
+        outfile.close();
+    } else
+        ARGUS_EXIT("Failed to open file simulation_result_df_pd.txt.\n");
+
+    ofstream file("token_records.txt", ios::app);
+
+    if (!file.is_open())
+        ARGUS_EXIT("Failed to open file token_records.txt.\n");
+
+    // 设置输出格式，避免科学计数法
+    file << fixed << setprecision(6); // 设置小数点后6位精度，可根据需要调整
+
+    file << "*" << g_config_file << "*\n";
+    for (int i = 0; i < token_record.size(); i++) {
+        file << "Request " << i << ": \n";
+        for (int j = 0; j < token_record[i].size(); j++) {
+            file << "Token " << j << ": " << token_record[i][j] << "\n";
+        }
+    }
+
+    file << "\n\n";
+    file.close();
+    sc_stop();
 }

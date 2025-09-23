@@ -19,7 +19,6 @@ public:
 
     vector<pair<int, int>> source_info; // 记录计算图开始需要推入才能触发的data
     vector<CoreConfig> coreconfigs;     // 记录所有核的工作配置，包括所有原语
-    map<int, int> delta_offset;         // 用于记录每一个核的接收地址偏移
 
     int pipeline; // 是否进行input连续输入，从而增加pipeline并行度，数值大小为需要连续进行的pipe段数
 

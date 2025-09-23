@@ -7,11 +7,7 @@ int Set_batch::taskCoreDefault(TaskCoreContext &context) {
     prim_context->loop_cnt++;
 
     prim_context->batch_info_.clear();
-    cout << "Core " << prim_context->cid << " into set_batch\n";
     for (auto stage : batch_info) {
-        cout << "stage " << stage.req_id << " " << stage.token_num << "\n";
-        cout << "auto pd: " << auto_pd
-             << ", stage_cnt: " << prim_context->loop_cnt << "\n";
         if (auto_pd && prim_context->loop_cnt > 0) {
             LOG_VERBOSE(1, prim_context->cid,
                         "Auto PD: " << prim_context->loop_cnt);

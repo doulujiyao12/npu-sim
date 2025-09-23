@@ -208,7 +208,8 @@ int NpuBase::taskCoreDefault(TaskCoreContext &context) {
         prefix = prim_context->datapass_label_->outdata;
 
     // 读入input数据
-    checkInputData(context, dram_time, inp_offset, data_size_input);
+    if (!skip_input)
+        checkInputData(context, dram_time, inp_offset, data_size_input);
 
     u_int64_t exu_flops = 0;
     u_int64_t sfu_flops = 0;
@@ -228,8 +229,9 @@ int NpuBase::taskCoreDefault(TaskCoreContext &context) {
 #endif
 
     // 计算overlap并写回output数据
-    writeOutputData(context, exu_flops, sfu_flops, dram_time, overlap_time,
-                    out_size, data_chunk_addr["output"]);
+    if (!skip_output)
+        writeOutputData(context, exu_flops, sfu_flops, dram_time, overlap_time,
+                        out_size, data_chunk_addr["output"]);
 
     return overlap_time;
 }
