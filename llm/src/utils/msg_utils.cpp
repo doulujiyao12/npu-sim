@@ -1,4 +1,5 @@
 #include "utils/msg_utils.h"
+#include "defs/global.h"
 
 sc_bv<256> SerializeMsg(Msg msg) {
     sc_bv<256> serialized_msg;
@@ -64,4 +65,20 @@ Msg DeserializeMsg(sc_bv<256> buffer) {
     msg.data_ = buffer.range(pos + M_D_DATA - 1, pos);
 
     return msg;
+}
+
+void CalculatePacketNum(int output_size, int weight, int data_byte,
+                        int &packet_num, int &end_length) {
+    int slice_size = (output_size % weight) ? (output_size / weight + 1)
+                                            : (output_size / weight);
+
+    int slice_size_in_bit = slice_size * data_byte * 8;
+    packet_num = (slice_size_in_bit % M_D_DATA)
+                     ? (slice_size_in_bit / M_D_DATA + 1)
+                     : (slice_size_in_bit / M_D_DATA);
+    end_length = slice_size_in_bit - (packet_num - 1) * M_D_DATA;
+
+    packet_num = packet_num % (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD)
+                     ? packet_num / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD) + 1
+                     : packet_num / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD);
 }
