@@ -348,7 +348,7 @@ void MemInterface::write_helper() {
                 temp_buffer[i].pop();
                 host_channel_o[i].write(SerializeMsg(t));
                 host_data_sent_o[i].write(true);
-                // cout << "SEND DATA to: " << t.des << ",seq: " << t.seq_id
+                // cout << "SEND DATA to: " << t.des_ << ",seq: " << t.seq_id_
                 //      << endl;
             }
 

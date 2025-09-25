@@ -91,10 +91,11 @@ void RouterUnit::router_execute() {
         for (int i = 0; i < DIRECTIONS; i++) {
             if (data_sent_i[i].read()) {
                 // move the data into the buffer
-                // cout << sc_time_stamp() << ": Router " << rid << "getdata at
-                // "
-                //      << i << "\n";
                 sc_bv<256> temp = channel_i[i].read();
+                Msg tt = DeserializeMsg(temp);
+                // cout << sc_time_stamp() << ": Router " << rid
+                //      << ": get des seqid " << tt.des_ << " " << tt.seq_id_
+                //      << " from " << i << "." << endl;
 
                 buffer_i[i].emplace(temp);
 
@@ -113,7 +114,7 @@ void RouterUnit::router_execute() {
 
                 Msg tt = DeserializeMsg(temp);
                 // cout << sc_time_stamp() << ": Router " << rid
-                //      << ": get des seqid " << tt.des << " " << tt.seq_id
+                //      << ": get des seqid " << tt.des_ << " " << tt.seq_id_
                 //      << " from host." << endl;
 
                 host_buffer_i->emplace(temp);
@@ -184,7 +185,7 @@ void RouterUnit::router_execute() {
                 channel_o[CENTER].write(temp);
                 data_sent_o[CENTER].write(true);
                 // cout << sc_time_stamp() << ": Router " << rid << ": send "
-                //      << tt.seq_id << " to core.\n";
+                //      << tt.seq_id_ << " to core.\n";
             }
 
             // need trigger again
@@ -236,6 +237,9 @@ void RouterUnit::router_execute() {
             if (!buffer_i[i].size())
                 continue;
 
+            // cout << "router " << rid << " input " << i << " size "
+            //      << buffer_i[i].size() << endl;
+
             sc_bv<256> temp = buffer_i[i].front();
             Msg m = DeserializeMsg(temp);
             Directions out = GetNextHop(m.des_, rid);
@@ -266,7 +270,7 @@ void RouterUnit::router_execute() {
                 continue;
 
             // cout << sc_time_stamp() << ": Router " << rid << ": "
-            //      << " put into " << out << " id " << m.seq_id << endl;
+            //      << " put into " << out << " id " << m.seq_id_ << endl;
 
             // [ACK] 非发往host的ACK包，需要上锁或者增加refcnt
             // FIX 上锁应该在第一个DATA 包
@@ -353,9 +357,9 @@ void RouterUnit::router_execute() {
                 host_channel_avail_o->write(false);
             }
         }
-#if ROUTER_LOOP == 1 
+#if ROUTER_LOOP == 1
         cout << "Router " << rid << "flag_trigger " << flag_trigger << endl;
-#endif 
+#endif
 
         // trigger again
         if (flag_trigger)

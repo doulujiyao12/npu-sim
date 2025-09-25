@@ -205,8 +205,6 @@ void WorkerCoreExecutor::worker_core_execute() {
         } else {
             p = prim_queue.front();
         }
-        cout << "[PRIM] Core <" << cid
-             << ">: PRIM NAME -----------------------: " << p->name << endl;
 
         // NOTE:
         // send原语和recv原语和其他计算原语不同，需要涉及core中信号的处理，所以需要在core这个文件内部处理相关逻辑，否则会出现依赖问题。

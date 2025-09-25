@@ -134,9 +134,9 @@ void NpuBase::parseJson(json j) {
         parseSramLabel(j["sram_address"]);
 
 
-    cout << "\033[1;33m" << name << "\033[0m" << endl;
-    cout << "inp_offset: " << inp_offset << endl;
-    cout << "out_offset: " << out_offset << endl;
+    // cout << "\033[1;33m" << name << "\033[0m" << endl;
+    // cout << "inp_offset: " << inp_offset << endl;
+    // cout << "out_offset: " << out_offset << endl;
 }
 
 int NpuBase::sramUtilization(DATATYPE datatype, int cid) {

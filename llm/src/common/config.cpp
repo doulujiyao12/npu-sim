@@ -71,7 +71,7 @@ void from_json(const json &j, CoreJob &c) {
         for (auto prim : prims) {
             CompBase *p = nullptr;
             string type = prim.at("type");
-            cout << "Parsing " << type << endl;
+            // cout << "Parsing " << type << endl;
 
             p = (CompBase *)(PrimFactory::getInstance().createPrim(type));
             p->parseJson(prim);

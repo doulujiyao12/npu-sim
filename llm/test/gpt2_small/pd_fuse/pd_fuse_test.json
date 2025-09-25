@@ -1,20 +1,20 @@
 {
   "mode": "sched_pd",
   "requests": {
-    "count": 25,
+    "count": 5,
     "seq_len": 128,
     "arrival": [
       1
     ]
   },
   "model": {
-    "heads": 20,
-    "eof_chance": 0.1,
-    "stage": 9,
+    "heads": 12,
+    "eof_chance": 0.5,
+    "stage": 4,
     "batch": 2,
     "kv_heads": 5,
-    "head_size": 128,
-    "prefill_iters": 4
+    "head_size": 64,
+    "prefill_iters": 2
   },
   "chips": [
     {
@@ -45,7 +45,7 @@
                   "T": "T",
                   "C": "C",
                   "sram_address": {
-                    "indata": "_input_label",
+                    "indata": "_layernorm1_in",
                     "outdata": "layernorm1_out"
                   },
                   "dram_address": {
@@ -71,7 +71,7 @@
                   "OC": "3C/2",
                   "chunk": "CHUNK",
                   "sram_address": {
-                    "indata": "layernorm1_out",
+                    "indata": "_layernorm1_out",
                     "outdata": "matmul1_1_out"
                   },
                   "dram_address": {
@@ -90,6 +90,7 @@
             },
             {
               "recv_cnt": 1,
+              "cast": [],
               "prims": [
                 {
                   "type": "parse_input",
@@ -107,7 +108,7 @@
                   "C": "C",
                   "OC": "3C/2",
                   "sram_address": {
-                    "indata": "_layernorm1_out",
+                    "indata": "layernorm1_out",
                     "outdata": "matmul1_2_out"
                   },
                   "dram_address": {
@@ -130,6 +131,7 @@
             },
             {
               "recv_cnt": 1,
+              "cast": [],
               "prims": [
                 {
                   "type": "Merge_matmul",
@@ -152,6 +154,7 @@
           "worklist": [
             {
               "recv_cnt": 1,
+              "cast": [],
               "prims": [
                 {
                   "type": "parse_input",
@@ -162,7 +165,7 @@
                   }
                 },
                 {
-                  "type": "Matmul_f_pd",
+                  "type": "Matmul_f",
                   "use_hw": false,
                   "B": "B",
                   "T": "T/2",
@@ -214,7 +217,7 @@
               ],
               "prims": [
                 {
-                  "type": "Matmul_f_pd",
+                  "type": "Matmul_f",
                   "use_hw": false,
                   "B": "B",
                   "T": "T/2",
@@ -222,7 +225,7 @@
                   "OC": "3C/2",
                   "chunk": "CHUNK",
                   "sram_address": {
-                    "indata": "_layernorm1_in",
+                    "indata": "layernorm1_in",
                     "outdata": "matmul1_2_out"
                   },
                   "dram_address": {
