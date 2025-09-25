@@ -38,7 +38,7 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
     else
         prefill_iters = 4;
 
-        // 建立原语模板
+    // 建立原语模板
     json_template_p = j["chips"][0]["cores"]["prefill"];
     json_template_d = j["chips"][0]["cores"]["decode"];
     tp_size = json_template_p.size();
@@ -122,12 +122,6 @@ void config_helper_pds::fill_queue_start(queue<Msg> *q) {
         int index = status.id / GRID_X;
         int total_pkg = 0;
 
-        cout << "wait send prefill: " << wait_send_start_prefill
-             << ", wait send decode: " << wait_send_start_decode
-             << ", status.id: " << status.id
-             << ", prefill core: " << prefill_core
-             << ", decode core: " << decode_core << endl;
-
         if (!wait_send_start_prefill && status.id / tp_size < prefill_core)
             continue;
 
@@ -159,16 +153,12 @@ void config_helper_pds::fill_queue_start(queue<Msg> *q) {
             total_pkg += pkg_num;
         }
 
-        cout << "total_pkg " << total_pkg << endl;
         sc_bv<M_D_DATA> d(0x1);
         q[index].push(Msg(true, MSG_TYPE::S_DATA, total_pkg + 1, status.id, 0,
                           status.id, 1, d));
 
-        if (total_pkg == 0) {
-            sc_bv<M_D_DATA> d(0x1);
-            q[index].push(
-                Msg(true, MSG_TYPE::S_DATA, 1, status.id, 0, status.id, 1, d));
-        }
+        cout << "Send start data: " << total_pkg + 1 << " pkgs to core "
+             << status.id << endl;
     }
 
     wait_send_start_prefill = wait_send_start_decode = false;
@@ -314,7 +304,7 @@ void config_helper_pds::iter_start(PD_JOB type) {
                                       req.seq_len / req.prefill_iters));
                             req.phase = PREFILL;
                             req.prefill_distribute++;
-                            cout << "[PD SCHEDULE] Core " << id
+                            cout << "[PD SCHEDULE] Core " << id * tp_size
                                  << " push in new request PREFILL " << req.id
                                  << endl;
 
@@ -461,6 +451,24 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
 
     // TODO: 其他decoder模型适配？
     set_global_vars(T);
+
+    // lambda函数
+    auto add_recv = [&](int &prim_seq, bool start, int recv_tag, int recv_cnt,
+                        int core_id) {
+        // 如果是tp组的第一个核的第一个work，则为RECV_START，否则为RECV_DATA
+        Recv_prim *recv_data =
+            (Recv_prim *)PrimFactory::getInstance().createPrim("Recv_prim");
+        recv_data->type = start ? RECV_TYPE::RECV_START : RECV_TYPE::RECV_DATA;
+        recv_data->recv_cnt = recv_cnt;
+        recv_data->tag_id = recv_tag;
+
+        Msg m = Msg(false, MSG_TYPE::CONFIG, ++prim_seq, core_id,
+                    recv_data->serialize());
+
+        temp_config.push_back(m);
+    };
+
+    // 处理tp的模板核
     vector<CoreConfig> template_cores;
 
     if (status.job_type == JOB_PREFILL) {
@@ -485,97 +493,115 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
         int prim_seq = 0;
 
         // 每个核生成一个set_batch
+        // 如果本迭代没有工作，且不为tp组的第一个核，则作为最后一个原语
         PrimBase *set_batch = new Set_batch(status.batchInfo);
-        temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, core_id,
+        temp_config.push_back(Msg(!status.batchInfo.size() && core_id % tp_size,
+                                  MSG_TYPE::CONFIG, ++prim_seq, core_id,
                                   set_batch->serialize()));
 
-        for (int w = 0; w < template_cores[core_id - i].worklist.size(); w++) {
-            auto &work = template_cores[core_id - i].worklist[w];
+        if (status.batchInfo.size()) {
+            for (int w = 0; w < template_cores[core_id - i].worklist.size();
+                 w++) {
+                auto &work = template_cores[core_id - i].worklist[w];
+                add_recv(prim_seq, (w == 0 && core_id == i),
+                         (w == 0 && core_id == i)
+                             ? core_id
+                             : (core_id * tp_size + (core_id == i
+                                                         ? core_id + tp_size - 1
+                                                         : core_id - 1)),
+                         work.recv_cnt, core_id);
 
-            // 如果是tp组的第一个核的第一个work，则为RECV_START，否则为RECV_DATA
-            Recv_prim *recv_data =
-                (Recv_prim *)PrimFactory::getInstance().createPrim("Recv_prim");
-            recv_data->type = (w == 0 && core_id == i) ? RECV_TYPE::RECV_START
-                                                       : RECV_TYPE::RECV_DATA;
-            recv_data->recv_cnt = work.recv_cnt;
+                // work的所有计算原语
+                if (status.batchInfo.size()) {
+                    for (int p = 0; p < work.prims.size(); p++) {
+                        auto prim = work.prims[p];
+                        PrimBase *set_addr =
+                            PrimFactory::getInstance().createPrim("Set_addr");
+                        auto label = set_addr->prim_context->datapass_label_;
 
-            // tag个位：发送方，tag十位：接收方，采用#TP进制
-            recv_data->tag_id =
-                (w == 0 && core_id == i)
-                    ? i
-                    : (core_id * tp_size +
-                       (core_id == i ? core_id + tp_size - 1 : core_id - 1));
+                        if (prim->prim_type & COMP_PRIM) {
+                            for (int i = 0; i < MAX_SPLIT_NUM; i++)
+                                label->indata[i] =
+                                    prim->prim_context->datapass_label_
+                                        ->indata[i];
+                            label->outdata =
+                                prim->prim_context->datapass_label_->outdata;
+                        }
 
-            temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                      core_id, recv_data->serialize()));
+                        temp_config.push_back(Msg(false, MSG_TYPE::CONFIG,
+                                                  ++prim_seq, core_id,
+                                                  set_addr->serialize()));
+                        temp_config.push_back(Msg(false, MSG_TYPE::CONFIG,
+                                                  ++prim_seq, core_id,
+                                                  prim->serialize()));
 
-            // work的所有计算原语
-            if (status.batchInfo.size()) {
-                for (int p = 0; p < work.prims.size(); p++) {
-                    auto prim = work.prims[p];
-                    PrimBase *set_addr =
-                        PrimFactory::getInstance().createPrim("Set_addr");
-                    auto label = set_addr->prim_context->datapass_label_;
-
-                    if (prim->prim_type & COMP_PRIM) {
-                        for (int i = 0; i < MAX_SPLIT_NUM; i++)
-                            label->indata[i] =
-                                prim->prim_context->datapass_label_->indata[i];
-                        label->outdata =
-                            prim->prim_context->datapass_label_->outdata;
+                        if (w == template_cores[core_id - i].worklist.size() &&
+                            p == work.prims.size() - 1 && i % tp_size == 0)
+                            output_label = label->outdata;
                     }
+                }
+
+                // 需要计算send_data的发送包裹数，首先找到这个work的最后一个计算原语
+                CompBase *last_comp = (CompBase *)work.prims.back();
+
+                // 发送原语，遵循work中的cast，编号和tag需要自定义
+                for (auto ca : work.cast) {
+                    int next_id = core_id == i + tp_size - 1 ? i : core_id + 1;
+                    Send_prim *send_req =
+                        new Send_prim(SEND_TYPE::SEND_REQ, next_id,
+                                      core_id + next_id * tp_size);
+                    Recv_prim *recv_ack = new Recv_prim(RECV_TYPE::RECV_ACK);
+                    Send_prim *send_data =
+                        new Send_prim(SEND_TYPE::SEND_DATA, next_id,
+                                      core_id + next_id * tp_size);
+
+                    CalculatePacketNum(
+                        last_comp->out_size, ca.weight, last_comp->data_byte,
+                        send_data->max_packet, send_data->end_length);
+                    send_data->output_label =
+                        last_comp->prim_context->datapass_label_->outdata;
 
                     temp_config.push_back(Msg(false, MSG_TYPE::CONFIG,
                                               ++prim_seq, core_id,
-                                              set_addr->serialize()));
+                                              send_req->serialize()));
                     temp_config.push_back(Msg(false, MSG_TYPE::CONFIG,
                                               ++prim_seq, core_id,
-                                              prim->serialize()));
+                                              recv_ack->serialize()));
 
-                    if (w == template_cores[core_id - i].worklist.size() &&
-                        p == work.prims.size() - 1 && i % tp_size == 0)
-                        output_label = label->outdata;
+                    // 如果为最后一个work，且不为tp组第一个核，则为最后一条原语
+                    temp_config.push_back(Msg(
+                        core_id != i &&
+                            w ==
+                                template_cores[core_id - i].worklist.size() - 1,
+                        MSG_TYPE::CONFIG, ++prim_seq, core_id,
+                        send_data->serialize()));
                 }
             }
-
-            // 需要计算send_data的发送包裹数，首先找到这个work的最后一个计算原语
-            CompBase *last_comp = (CompBase *)work.prims.back();
-
-            // 发送原语，遵循work中的cast，编号和tag需要自定义
-            for (auto ca : work.cast) {
-                int next_id = core_id == i + tp_size - 1 ? i : core_id + 1;
-                Send_prim *send_req = new Send_prim(
-                    SEND_TYPE::SEND_REQ, next_id, core_id + next_id * tp_size);
-                Recv_prim *recv_ack = new Recv_prim(RECV_TYPE::RECV_ACK);
-                Send_prim *send_data = new Send_prim(
-                    SEND_TYPE::SEND_DATA, next_id, core_id + next_id * tp_size);
-
-                CalculatePacketNum(last_comp->out_size, ca.weight,
-                                   last_comp->data_byte, send_data->max_packet,
-                                   send_data->end_length);
-                send_data->output_label =
-                    last_comp->prim_context->datapass_label_->outdata;
-
-                temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, send_req->serialize()));
-                temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, recv_ack->serialize()));
-                temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, send_data->serialize()));
-            }
+        } else if (!(core_id % tp_size)) {
+            // 如果本迭代没有工作，且为tp组第一个核，则需要加入RECV_START空转一轮
+            add_recv(prim_seq, true, core_id, 1, core_id);
         }
 
         // 处理数据流向下一个cores
         // 这里只有tp_group的第一个核才需要发送
         if (!(core_id % tp_size)) {
             int group_i = core_id / tp_size;
+
             int send_dest = group_i + 1;
             if (send_dest >= prefill_core && stage_index[i] == decode_stage)
                 // decode最后一个阶段，发送地址为decode的第一个阶段
                 send_dest -= decode_stage;
             send_dest *= tp_size;
+            int recv_source = group_i - 1;
+            if (recv_source < prefill_core)
+                recv_source += decode_stage;
+            else if ((recv_source - prefill_core) % decode_stage ==
+                     decode_stage - 1)
+                recv_source += decode_stage;
+            recv_source *= tp_size;
+
             int send_tag = core_id + tp_size * send_dest;
-            int recv_tag = send_dest + core_id * tp_size;
+            int recv_tag = recv_source + core_id * tp_size;
 
             PrimBase *recv_data_2 =
                 new Recv_prim(RECV_TYPE::RECV_DATA, recv_tag, 1);
@@ -598,7 +624,8 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
             ;
             send_data->end_length = end_length;
 
-            if (core_id < prefill_core && stage_index[core_id / tp_size] == 1) {
+            if (core_id / tp_size < prefill_core &&
+                stage_index[core_id / tp_size] == 1) {
                 // 如果是第一个核，则只发不收
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
                                           core_id, send_req->serialize()));
@@ -606,11 +633,13 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
                                           core_id, recv_ack->serialize()));
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
                                           core_id, send_data->serialize()));
-            } else if (core_id < prefill_core && stage_index[core_id / tp_size] == prefill_stage) {
+            } else if (core_id / tp_size < prefill_core &&
+                       stage_index[core_id / tp_size] == prefill_stage) {
                 // 如果是prefill最后一个核，则只收不发
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
                                           core_id, recv_data_2->serialize()));
-            } else if (core_id >= prefill_core && stage_index[core_id / tp_size] == 1) {
+            } else if (core_id / tp_size >= prefill_core &&
+                       stage_index[core_id / tp_size] == 1) {
                 // 如果是decode的第一个核，则先发后收
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
                                           core_id, send_req->serialize()));
@@ -631,14 +660,14 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
                                           core_id, send_data->serialize()));
             }
-        }
 
-        // 每一个核都需要向memInterface发送DONE信号
-        PrimBase *send_done = new Send_prim(SEND_TYPE::SEND_DONE);
-        Msg m =
-            Msg(true, MSG_TYPE::CONFIG, ++prim_seq, core_id, send_done->serialize());
-        m.refill_ = false;
-        temp_buffer.push_back(m);
+            // tp组的第一个核需要向memInterface发送DONE信号
+            PrimBase *send_done = new Send_prim(SEND_TYPE::SEND_DONE);
+            Msg m = Msg(true, MSG_TYPE::CONFIG, ++prim_seq, core_id,
+                        send_done->serialize());
+            m.refill_ = false;
+            temp_buffer.push_back(m);
+        }
     }
 }
 
@@ -650,8 +679,8 @@ void config_helper_pds::parse_ack_msg(Event_engine *event_engine, int flow_id,
     for (auto m : g_temp_ack_msg) {
         int cid = m.source_ / tp_size;
         cout << sc_time_stamp()
-             << ": Config helper PDS: received ack packet from " << cid
-             << ", type: " << coreStatus[cid].job_type;
+             << ": Config helper PDS: received ack packet from "
+             << cid * tp_size << ", type: " << coreStatus[cid].job_type;
 
         if (coreStatus[cid].job_type == JOB_PREFILL) {
             g_recv_ack_cnt_p++;
@@ -666,13 +695,13 @@ void config_helper_pds::parse_ack_msg(Event_engine *event_engine, int flow_id,
     event_engine->add_event(this->name(), "Waiting Recv Ack", "E",
                             Trace_event_util());
 
-    if (g_recv_ack_cnt_p >= prefill_core) {
+    if (g_recv_ack_cnt_p >= prefill_core * tp_size) {
         g_recv_ack_cnt_p = 0;
         wait_send_start_prefill = true;
         notify_event->notify(CYCLE, SC_NS);
     }
 
-    if (g_recv_ack_cnt_d >= decode_core) {
+    if (g_recv_ack_cnt_d >= decode_core * tp_size) {
         g_recv_ack_cnt_d = 0;
         wait_send_start_decode = true;
         notify_event->notify(CYCLE, SC_NS);
@@ -723,22 +752,28 @@ void config_helper_pds::parse_done_msg(Event_engine *event_engine,
     }
 }
 
-void config_helper_pds::set_global_vars(int T) {
-    vtable.clear();
-    vtable.push_back(make_pair("B", 1));
-    vtable.push_back(make_pair("T", T));
-    vtable.push_back(make_pair("C", heads * head_size));
-    vtable.push_back(make_pair("NH", heads));
-    vtable.push_back(make_pair("DH", head_size));
-    vtable.push_back(make_pair("R", heads / kv_heads));
-    vtable.push_back(make_pair("3C", 3 * heads * head_size));
-    vtable.push_back(make_pair("4C", 4 * heads * head_size));
-    vtable.push_back(make_pair("BTC", T * heads * head_size));
-    vtable.push_back(make_pair("2BTC", 2 * T * heads * head_size));
-    vtable.push_back(make_pair("3BTC", 3 * T * heads * head_size));
-    vtable.push_back(make_pair("4BTC", 4 * T * heads * head_size));
-    vtable.push_back(
-        make_pair("3C-R", heads * head_size * (2 + heads / kv_heads) /
-                              (heads / kv_heads)));
-    vtable.push_back(make_pair("CHUNK", prefill_iters));
+void config_helper_pd::set_global_vars(int T) {
+    int C = heads * head_size;
+    vtable = {{"B", 1},
+              {"T", T},
+              {"T/2", T / 2},
+              {"C", C},
+              {"NH", heads},
+              {"DH", head_size},
+              {"R", heads / kv_heads},
+              {"3C", 3 * C},
+              {"3C/2", 3 * C / 2},
+              {"3CC/2", 3 * C * C / 2},
+              {"4C", 4 * C},
+              {"BTC", T * C},
+              {"2BTC", 2 * T * C},
+              {"3BTC", 3 * T * C},
+              {"4BTC", 4 * T * C},
+              {"3C-R", C * (2 + heads / kv_heads) / (heads / kv_heads)},
+              {"CHUNK", prefill_iters}};
+
+    for (auto &pair : vtable) {
+        if (pair.second == 0)
+            pair.second = 1;
+    }
 }

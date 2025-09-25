@@ -40,7 +40,7 @@ config_helper_pd::config_helper_pd(string filename, string font_ttf,
         token_record.push_back(v);
     }
 
-    // TODO: 分配TP组
+    // 分配TP组
     attend_cores = GRID_SIZE / (tp_size * model_stage) * model_stage;
     for (int i = 0; i < attend_cores; i++) {
         CoreStatus status = CoreStatus(i * tp_size, JOB_BOTH);
@@ -360,7 +360,6 @@ void config_helper_pd::generate_prims(int i) {
 
     // TODO: 其他decoder模型适配？
     set_global_vars(T);
-    cout << "T = " << T << endl;
 
     // lambda函数
     auto add_recv = [&](int &prim_seq, bool start, int recv_tag, int recv_cnt,
@@ -372,7 +371,6 @@ void config_helper_pd::generate_prims(int i) {
         recv_data->recv_cnt = recv_cnt;
         recv_data->tag_id = recv_tag;
 
-        // 非tp第一个核，这是唯一的一条原语
         Msg m = Msg(false, MSG_TYPE::CONFIG, ++prim_seq, core_id,
                     recv_data->serialize());
 
@@ -459,14 +457,6 @@ void config_helper_pd::generate_prims(int i) {
                         send_data->max_packet, send_data->end_length);
                     send_data->output_label =
                         last_comp->prim_context->datapass_label_->outdata;
-
-                    cout << "SEND_DATA_INFO: " << core_id << " " << next_id
-                         << " " << last_comp->out_size << " " << ca.weight
-                         << " " << last_comp->data_byte << " "
-                         << send_data->max_packet << " "
-                         << send_data->end_length << " "
-                         << last_comp->prim_context->datapass_label_->outdata
-                         << endl;
 
                     temp_config.push_back(Msg(false, MSG_TYPE::CONFIG,
                                               ++prim_seq, core_id,
