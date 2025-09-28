@@ -752,7 +752,7 @@ void config_helper_pds::parse_done_msg(Event_engine *event_engine,
     }
 }
 
-void config_helper_pd::set_global_vars(int T) {
+void config_helper_pds::set_global_vars(int T) {
     int C = heads * head_size;
     vtable = {{"B", 1},
               {"T", T},
