@@ -415,6 +415,7 @@ void config_helper_pds::iter_start(PD_JOB type) {
         }
 
         cout << "[SCHEDULE] Complete idle.\n";
+        temp_config.clear();
     } else {
         for (auto msg : temp_buffer)
             temp_config.push_back(msg);
@@ -451,6 +452,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
 
     // TODO: 其他decoder模型适配？
     set_global_vars(T);
+    cout << "T: " << T << endl;
 
     // lambda函数
     auto add_recv = [&](int &prim_seq, bool start, int recv_tag, int recv_cnt,
@@ -586,18 +588,29 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
         // 这里只有tp_group的第一个核才需要发送
         if (!(core_id % tp_size)) {
             int group_i = core_id / tp_size;
-
             int send_dest = group_i + 1;
-            if (send_dest >= prefill_core && stage_index[i] == decode_stage)
-                // decode最后一个阶段，发送地址为decode的第一个阶段
-                send_dest -= decode_stage;
+            if (group_i >= prefill_core) {
+                // prefill core只需要向下加一即可，只有decode core需要进行处理
+                if (send_dest >= decode_core + prefill_core)
+                    send_dest -= decode_core;
+                else if (stage_index[send_dest] == 1)
+                    send_dest -= decode_stage;
+            }
             send_dest *= tp_size;
             int recv_source = group_i - 1;
-            if (recv_source < prefill_core)
-                recv_source += decode_stage;
-            else if ((recv_source - prefill_core) % decode_stage ==
-                     decode_stage - 1)
-                recv_source += decode_stage;
+            if (group_i >= prefill_core) {
+                // 当为decode core的时候，决定发送方的编号
+                if (recv_source < prefill_core)
+                    recv_source += decode_stage;
+                else if (stage_index[recv_source] == decode_stage)
+                    recv_source += decode_stage;
+            } else {
+                // 当为prefill core的时候，决定发送方的编号
+                if (recv_source < 0)
+                    recv_source += prefill_stage;
+                else if (stage_index[recv_source] == prefill_stage)
+                    recv_source += prefill_stage;
+            }
             recv_source *= tp_size;
 
             int send_tag = core_id + tp_size * send_dest;
@@ -677,15 +690,16 @@ void config_helper_pds::parse_ack_msg(Event_engine *event_engine, int flow_id,
                             Trace_event_util());
 
     for (auto m : g_temp_ack_msg) {
-        int cid = m.source_ / tp_size;
+        int cid = m.source_;
         cout << sc_time_stamp()
-             << ": Config helper PDS: received ack packet from "
-             << cid * tp_size << ", type: " << coreStatus[cid].job_type;
+             << ": Config helper PDS: received ack packet from " << cid
+             << ", type: " << coreStatus[cid / tp_size].job_type;
 
-        if (coreStatus[cid].job_type == JOB_PREFILL) {
+        if (coreStatus[cid / tp_size].job_type == JOB_PREFILL) {
             g_recv_ack_cnt_p++;
-            cout << ", total " << g_recv_ack_cnt_p << endl;
-        } else if (coreStatus[cid].job_type == JOB_DECODE) {
+            cout << ", total " << g_recv_ack_cnt_p << "/"
+                 << prefill_core * tp_size << endl;
+        } else if (coreStatus[cid / tp_size].job_type == JOB_DECODE) {
             g_recv_ack_cnt_d++;
             cout << ", total " << g_recv_ack_cnt_d << endl;
         }
@@ -714,16 +728,16 @@ void config_helper_pds::parse_done_msg(Event_engine *event_engine,
                             Trace_event_util());
 
     for (auto m : g_temp_done_msg) {
-        int cid = m.source_ / tp_size;
+        int cid = m.source_;
         cout << sc_time_stamp()
              << ": Config helper PD: received done packet from " << cid
-             << ", type: " << coreStatus[cid].job_type;
+             << ", type: " << coreStatus[cid / tp_size].job_type;
 
-        if (coreStatus[cid].job_type == JOB_PREFILL) {
+        if (coreStatus[cid / tp_size].job_type == JOB_PREFILL) {
             g_recv_done_cnt_p++;
             cout << ", total " << g_recv_done_cnt_p << endl;
             g_done_msg_p.push_back(m);
-        } else if (coreStatus[cid].job_type == JOB_DECODE) {
+        } else if (coreStatus[cid / tp_size].job_type == JOB_DECODE) {
             g_recv_done_cnt_d++;
             cout << ", total " << g_recv_done_cnt_d << endl;
             g_done_msg_d.push_back(m);

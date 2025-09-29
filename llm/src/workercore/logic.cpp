@@ -566,8 +566,6 @@ void WorkerCoreExecutor::recv_logic() {
 
                     Msg m = msg_buffer_[MSG_TYPE::CONFIG].front();
                     msg_buffer_[MSG_TYPE::CONFIG].pop();
-                    cout << "Core " << cid << " get config msg, buffer  size "
-                         << msg_buffer_[MSG_TYPE::CONFIG].size() << endl;
                     prim_queue.emplace_back(parse_prim(m.data_));
 
                     // 检查是否为end config包，如果是，需要向host发送ack包
