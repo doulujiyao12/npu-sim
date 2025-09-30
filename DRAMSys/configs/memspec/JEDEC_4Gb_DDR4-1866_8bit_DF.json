@@ -7,7 +7,7 @@
             "nbrOfBanks": 16,
             "nbrOfChannels": 1,
             "nbrOfColumns": 1024,
-            "nbrOfDevices": 8,
+            "nbrOfDevices": 32,
             "nbrOfRanks": 1,
             "nbrOfRows": 32768,
             "width": 8

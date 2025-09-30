@@ -77,6 +77,7 @@ EOF
 
         echo "$CONFIG_CONTENT" >"${TEMP_JSON_CONFIG_FULL_PATH}"
         echo "INFO: Created temp JSON config: ${TEMP_JSON_CONFIG_FULL_PATH}"
+        echo "INFO: Executing: ./npusim --config-file=\"../llm/test/${NPUSIM_MAIN_CONFIG_FILE}\" --core-config-file=\"../llm/test/${TEMP_JSON_CONFIG_BASENAME}\" --sram-max=\"${JSON_SRAM_MAX_SIZE}\" --df_dram_bw=\"${JSON_DRAM_BANDWIDTH}\""
 
         ./npusim --config-file="../llm/test/${NPUSIM_MAIN_CONFIG_FILE}" \
                  --core-config-file="../llm/test/${TEMP_JSON_CONFIG_BASENAME}" \
