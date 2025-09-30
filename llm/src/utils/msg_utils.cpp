@@ -1,88 +1,84 @@
 #include "utils/msg_utils.h"
+#include "defs/global.h"
 
-sc_bv<256> serialize_msg(Msg msg) {
+sc_bv<256> SerializeMsg(Msg msg) {
     sc_bv<256> serialized_msg;
 
     int pos = 0;
 
     serialized_msg.range(pos + M_D_IS_END - 1, pos) =
-        sc_bv<M_D_IS_END>(msg.is_end);
+        sc_bv<M_D_IS_END>(msg.is_end_);
     pos += M_D_IS_END;
     serialized_msg.range(pos + M_D_MSG_TYPE - 1, pos) =
-        sc_bv<M_D_MSG_TYPE>(int(msg.msg_type));
+        sc_bv<M_D_MSG_TYPE>(int(msg.msg_type_));
     pos += M_D_MSG_TYPE;
     serialized_msg.range(pos + M_D_SEQ_ID - 1, pos) =
-        sc_bv<M_D_SEQ_ID>(msg.seq_id);
+        sc_bv<M_D_SEQ_ID>(msg.seq_id_);
     pos += M_D_SEQ_ID;
-    serialized_msg.range(pos + M_D_DES - 1, pos) = sc_bv<M_D_DES>(msg.des);
+    serialized_msg.range(pos + M_D_DES - 1, pos) = sc_bv<M_D_DES>(msg.des_);
     pos += M_D_DES;
     serialized_msg.range(pos + M_D_OFFSET - 1, pos) =
-        sc_bv<M_D_OFFSET>(msg.offset);
+        sc_bv<M_D_OFFSET>(msg.offset_);
     pos += M_D_OFFSET;
     serialized_msg.range(pos + M_D_TAG_ID - 1, pos) =
-        sc_bv<M_D_TAG_ID>(msg.tag_id);
+        sc_bv<M_D_TAG_ID>(msg.tag_id_);
     pos += M_D_TAG_ID;
     serialized_msg.range(pos + M_D_SOURCE - 1, pos) =
-        sc_bv<M_D_SOURCE>(msg.source);
+        sc_bv<M_D_SOURCE>(msg.source_);
     pos += M_D_SOURCE;
     serialized_msg.range(pos + M_D_LENGTH - 1, pos) =
-        sc_bv<M_D_LENGTH>(msg.length);
+        sc_bv<M_D_LENGTH>(msg.length_);
     pos += M_D_LENGTH;
     serialized_msg.range(pos + M_D_REFILL - 1, pos) =
-        sc_bv<M_D_REFILL>(msg.refill);
+        sc_bv<M_D_REFILL>(msg.refill_);
     pos += M_D_REFILL;
-    serialized_msg.range(pos + M_D_DATA - 1, pos) = msg.data;
+    serialized_msg.range(pos + M_D_DATA - 1, pos) = msg.data_;
     pos += M_D_DATA;
     serialized_msg.range(255, pos) = sc_bv<32>(0);
 
     return serialized_msg;
 }
 
-Msg deserialize_msg(sc_bv<256> buffer) {
+Msg DeserializeMsg(sc_bv<256> buffer) {
     Msg msg;
 
     int pos = 0;
 
-    msg.is_end = buffer.range(pos + M_D_IS_END - 1, pos).to_uint64(),
+    msg.is_end_ = buffer.range(pos + M_D_IS_END - 1, pos).to_uint64(),
     pos += M_D_IS_END;
-    msg.msg_type =
+    msg.msg_type_ =
         MSG_TYPE(buffer.range(pos + M_D_MSG_TYPE - 1, pos).to_uint64()),
     pos += M_D_MSG_TYPE;
-    msg.seq_id = buffer.range(pos + M_D_SEQ_ID - 1, pos).to_uint64(),
+    msg.seq_id_ = buffer.range(pos + M_D_SEQ_ID - 1, pos).to_uint64(),
     pos += M_D_SEQ_ID;
-    msg.des = buffer.range(pos + M_D_DES - 1, pos).to_uint64(), pos += M_D_DES;
-    msg.offset = buffer.range(pos + M_D_OFFSET - 1, pos).to_uint64(),
+    msg.des_ = buffer.range(pos + M_D_DES - 1, pos).to_uint64(), pos += M_D_DES;
+    msg.offset_ = buffer.range(pos + M_D_OFFSET - 1, pos).to_uint64(),
     pos += M_D_OFFSET;
-    msg.tag_id = buffer.range(pos + M_D_TAG_ID - 1, pos).to_uint64(),
+    msg.tag_id_ = buffer.range(pos + M_D_TAG_ID - 1, pos).to_uint64(),
     pos += M_D_TAG_ID;
-    msg.source = buffer.range(pos + M_D_SOURCE - 1, pos).to_uint64(),
+    msg.source_ = buffer.range(pos + M_D_SOURCE - 1, pos).to_uint64(),
     pos += M_D_SOURCE;
-    msg.length = buffer.range(pos + M_D_LENGTH - 1, pos).to_uint64(),
+    msg.length_ = buffer.range(pos + M_D_LENGTH - 1, pos).to_uint64(),
     pos += M_D_LENGTH;
-    msg.refill = buffer.range(pos + M_D_REFILL - 1, pos).to_uint64(),
+    msg.refill_ = buffer.range(pos + M_D_REFILL - 1, pos).to_uint64(),
     pos += M_D_REFILL;
-    msg.data = buffer.range(pos + M_D_DATA - 1, pos);
-    
+    msg.data_ = buffer.range(pos + M_D_DATA - 1, pos);
+
     return msg;
 }
 
-MSG_TYPE get_msg_type(sc_bv<256> buffer) {
-    int pos = 0;
-    pos += M_D_IS_END;
+void CalculatePacketNum(int output_size, int weight, int data_byte,
+                        int &packet_num, int &end_length) {
+    int slice_size = (output_size % weight) ? (output_size / weight + 1)
+                                            : (output_size / weight);
 
-    return MSG_TYPE(buffer.range(pos + M_D_MSG_TYPE - 1, pos).to_uint64());
-}
+    int slice_size_in_bit = slice_size * data_byte * 8;
+    packet_num = (slice_size_in_bit % M_D_DATA)
+                     ? (slice_size_in_bit / M_D_DATA + 1)
+                     : (slice_size_in_bit / M_D_DATA);
+    end_length = slice_size_in_bit - (packet_num - 1) * M_D_DATA;
 
-int get_msg_des_id(sc_bv<256> buffer) {
-    int pos = 0;
-    pos += M_D_IS_END + M_D_MSG_TYPE + M_D_SEQ_ID;
-
-    return buffer.range(pos + M_D_DES - 1, pos).to_uint64();
-}
-
-int get_msg_tag_id(sc_bv<256> buffer) {
-    int pos = 0;
-    pos += M_D_IS_END + M_D_MSG_TYPE + M_D_SEQ_ID + M_D_DES + M_D_OFFSET;
-
-    return MSG_TYPE(buffer.range(pos + M_D_TAG_ID - 1, pos).to_uint64());
+    packet_num = packet_num % (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD)
+                     ? packet_num / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD) + 1
+                     : packet_num / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD);
 }

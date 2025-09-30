@@ -44,6 +44,8 @@ public:
     int kv_heads;
     int prefill_iters;
 
+    int tp_size;
+
     config_helper_pds(string filename, string font_ttf, sc_event *ev_sig,
                       int config_chip_id = 0);
 
@@ -53,9 +55,8 @@ public:
 
     void generate_prims(int i) {}
     void generate_prims(int i, vector<Msg> &temp_buffer);
-    void calculate_address(bool do_loop);
 
-    void print_self();
+    void printSelf();
 
     void random_core(string font_ttf);
 

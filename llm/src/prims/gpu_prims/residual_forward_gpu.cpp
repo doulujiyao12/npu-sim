@@ -2,26 +2,16 @@
 #include "utils/memory_utils.h"
 #include "utils/system_utils.h"
 
-int Residual_f_gpu::task_core(TaskCoreContext &context) {
-    int data_byte = 0;
-    if (datatype == INT8) {
-        data_byte = 1;
-    } else if (datatype == FP16) {
-        data_byte = 2;
-    }
-    N = find_var("T") * find_var("C");
-    N = N * gpu_B;
+void Residual_f_gpu::initialize() {
+    auto &p = param_value;
+    input_size = {data_byte * p["N"] * 2};
+    data_chunk = {{"output", data_byte * p["N"] / (slice_x * slice_y)}};
+}
 
-    int data_size_input = 2 * N * data_byte;
-    int data_size_single_input = N * data_byte;
-    int data_size_out = data_byte * N / (slice_x * slice_y);
 
-    int in_label_cnt = 0;
-    for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-        if (datapass_label.indata[i] == UNSET_LABEL)
-            continue;
-        in_label_cnt++;
-    }
+int Residual_f_gpu::taskCoreDefault(TaskCoreContext &context) {
+    auto &p = param_value;
+    p["N"] *= gpu_B;
 
     int mem_time = 0;
     int input_mem_offset[MAX_SPLIT_NUM];
@@ -29,44 +19,53 @@ int Residual_f_gpu::task_core(TaskCoreContext &context) {
         input_mem_offset[i] = 0;
     }
 
-    for (int i = 0; i < in_label_cnt; i++) {
-        if (datapass_label.indata[i] == UNSET_LABEL)
+    for (int i = 0; i < 2; i++) {
+        if (prim_context->datapass_label_->indata[i] == UNSET_LABEL)
             continue;
 
-        if (!gpu_pos_locator->findPair(datapass_label.indata[i],
-                                       input_mem_offset[i])) {
-            printf("[ERROR] Residual_f_gpu: gpu_pos_locator cannot find the "
+        if (!prim_context->gpu_pos_locator_->findPair(
+                prim_context->datapass_label_->indata[i],
+                input_mem_offset[i])) {
+            printf("[ERROR] Residual_f_gpu: prim_context->gpu_pos_locator_ "
+                   "cannot find the "
                    "label: "
                    "%s\n",
-                   datapass_label.indata[i].c_str());
+                   prim_context->datapass_label_->indata[i].c_str());
             sc_stop();
         }
     }
 
     int overlap_time = 0;
 #if USE_L1L2_CACHE == 1
-    for (int i = 0; i < in_label_cnt; i++) {
-        gpu_read_generic(
-            context,
-            input_mem_offset[i] +
-                data_size_single_input / (slice_x * slice_y) * fetch_index,
-            data_size_single_input / (slice_x * slice_y), mem_time);
+    for (int i = 0; i < 2; i++) {
+        gpu_read_generic(context,
+                         input_mem_offset[i] +
+                             input_size / 2 / (slice_x * slice_y) * fetch_index,
+                         input_size / 2 / (slice_x * slice_y), mem_time);
     }
 
     // overlap_time = mem_time;
     AddrPosKey out_key;
-    gpu_pos_locator->updatePair(datapass_label.outdata, data_size_out);
-    gpu_pos_locator->findPair(datapass_label.outdata, out_key);
+    prim_context->gpu_pos_locator_->updatePair(
+        prim_context->datapass_label_->outdata,
+        GetFromPairedVector(data_chunk, "output"));
+    prim_context->gpu_pos_locator_->findPair(
+        prim_context->datapass_label_->outdata, out_key);
 
-    gpu_write_generic(context, out_key.pos + data_size_out * fetch_index,
-                      data_size_out, mem_time);
+    gpu_write_generic(context,
+                      out_key.pos + GetFromPairedVector(data_chunk, "output") *
+                                        fetch_index,
+                      GetFromPairedVector(data_chunk, "output"), mem_time);
+
     int cycle = 0;
-    int cid = context.cid;
-    ExuConfig *exu = get_exu_config(cid);
-    SfuConfig *sfu = get_sfu_config(cid);
-                  
+
+    CoreHWConfig *core_config = GetCoreHWConfig(prim_context->cid);
+    ExuConfig *exu = core_config->exu;
+    SfuConfig *sfu = core_config->sfu;
+
     if (exu->type == MAC_Array)
-        cycle += N / (slice_x * slice_y) / (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+        cycle += p["N"] / (slice_x * slice_y) /
+                 (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
     else
         assert(false && "Unsupported tile type");
 
@@ -74,72 +73,27 @@ int Residual_f_gpu::task_core(TaskCoreContext &context) {
         cycle += 0 / (slice_x * slice_y) / sfu->x_dims * CYCLE;
     else
         assert(false && "Unsupported tile type");
-                  
+
 
     if (mem_time > cycle) {
         // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
         overlap_time = 0;
-        LOG_VERBOSE(1, context.cid, "Prim name:" << name << RED << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
-
-        // std::cout << RED << "cycle: " << cycle << ", dram_time: " << dram_time
-        //           << RESET << std::endl;
-
+        LOG_VERBOSE(1, prim_context->cid,
+                    "Prim name:" << name << RED << " cycle: " << cycle
+                                 << ", dram_time: " << mem_time << RESET);
     } else {
         overlap_time = cycle - mem_time;
-        LOG_VERBOSE(1, context.cid, "Prim name:" << name << GREEN << " cycle: " << cycle << ", dram_time: " << mem_time << RESET);
-
+        LOG_VERBOSE(1, prim_context->cid,
+                    "Prim name:" << name << GREEN << " cycle: " << cycle
+                                 << ", dram_time: " << mem_time << RESET);
     }
 #endif
 
     cout << "[Residual_f_gpu] after write: " << overlap_time << endl;
-    N = N / gpu_B;
-    assert(N > 0);
+
+    p["N"] /= gpu_B;
+
     return overlap_time;
 }
 
-int Residual_f_gpu::task() { return 0; }
-
-int Residual_f_gpu::sram_utilization(DATATYPE datatype, int cid) { return 0; }
-
-void Residual_f_gpu::deserialize(sc_bv<128> buffer) {
-    slice_x = buffer.range(15, 8).to_uint();
-    slice_y = buffer.range(23, 16).to_uint();
-    N = buffer.range(71, 40).to_uint64();
-    datatype = DATATYPE(buffer.range(73, 72).to_uint64());
-    fetch_index = buffer.range(89, 74).to_uint64();
-}
-
-sc_bv<128> Residual_f_gpu::serialize() {
-    sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(RESIDUAL_F_GPU_TYPE);
-    d.range(15, 8) = sc_bv<8>(slice_x);
-    d.range(23, 16) = sc_bv<8>(slice_y);
-    d.range(71, 40) = sc_bv<32>(N);
-    d.range(73, 72) = sc_bv<2>(datatype);
-    d.range(89, 74) = sc_bv<16>(fetch_index);
-
-    return d;
-}
-
-void Residual_f_gpu::print_self(string prefix) {
-    cout << prefix << "<residual_forward_gpu>\n";
-    cout << prefix << "\tN: " << N << endl;
-    cout << prefix << "slice_x: " << slice_x << ", slice_y: " << slice_y
-         << endl;
-}
-
-gpu_base *Residual_f_gpu::clone() { return new Residual_f_gpu(*this); }
-
-void Residual_f_gpu::parse_json(json j) {
-    N = find_var(j["N"]);
-    slice_x = j["slice_x"];
-    slice_y = j["slice_y"];
-
-    if (j.contains("compose")) {
-        parse_compose(j["compose"]);
-    }
-
-    if (j.contains("address")) {
-        parse_addr_label(j["address"]);
-    }
-}
+GpuBase *Residual_f_gpu::clone() { return new Residual_f_gpu(*this); }

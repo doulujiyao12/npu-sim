@@ -19,18 +19,18 @@ public:
         instr_type = SEQ_EXEC;
     }
 
-    void parse_json(json j) override {
+    void parseJson(json j) override {
         seq = j.contains("seq") ? j["seq"].get<int>() : -1;
         if (j.contains("event")) {
             event = j["event"];
         }
     }
 
-    void print_self(std::string prefix) override{
+    void printSelf(std::string prefix) override{
         std::cout << prefix << "<Wait_event>" << std::endl;
     }
 
-    int task_core(TaskChipContext &context) override {
+    int taskCoreDefault(TaskChipContext &context) override {
         return 0;
     }
 };

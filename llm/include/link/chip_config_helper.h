@@ -15,5 +15,5 @@ public:
 
     vector<chip_instr_base*> instr_list;
 
-    void print_self();
+    void printSelf();
 };

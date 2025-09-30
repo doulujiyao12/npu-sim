@@ -2,8 +2,28 @@
 #include <vector>
 
 #include "defs/enums.h"
-#include "prims/comp_base.h"
-#include "prims/prim_base.h"
+#include "prims/base.h"
+
+
+class ExuConfig {
+public:
+    Etype type; // exu type
+    int x_dims; // exu x array
+    int y_dims; // exu y array
+
+    ExuConfig() : type(MAC_Array), x_dims(128), y_dims(128) {}
+    ExuConfig(Etype t, int x, int y) : type(t), x_dims(x), y_dims(y) {}
+};
+
+class SfuConfig {
+public:
+    Sftype type; // exu type
+    int x_dims;  // exu x array
+
+    SfuConfig() : type(Linear), x_dims(16) {}
+    SfuConfig(Sftype t, int x) : type(t), x_dims(x) {}
+};
+
 
 class Cast {
 public:
@@ -32,11 +52,11 @@ public:
     int recv_cnt;
     int recv_tag;
 
-    vector<prim_base *> prims;
-    vector<prim_base *> prims_last_loop;
-    vector<prim_base *> prims_in_loop;
+    vector<PrimBase *> prims;
+    vector<PrimBase *> prims_last_loop;
+    vector<PrimBase *> prims_in_loop;
 
-    void print_self();
+    void printSelf();
     CoreJob() {}
     CoreJob(int recv_cnt, int recv_tag, int loop)
         : recv_cnt(recv_cnt), recv_tag(recv_tag) {
@@ -59,7 +79,7 @@ public:
 
     vector<CoreJob> worklist;
 
-    void print_self();
+    void printSelf();
 };
 
 void from_json(const json &j, CoreConfig &c);
@@ -67,7 +87,7 @@ void from_json(const json &j, CoreConfig &c);
 class LayerConfig {
 public:
     int id; // 全局的原语数组
-    comp_base *prim;
+    CompBase *prim;
     vector<Cast> cast;
 
     int loop;
@@ -85,7 +105,7 @@ public:
     int id;
     int loop;
 
-    vector<prim_base *> prims;
+    vector<PrimBase *> prims;
     vector<pair<string, int>> sources;
 };
 
@@ -94,31 +114,41 @@ void from_json(const json &j, StreamConfig &c);
 class CoreHWConfig {
 public:
     int id;
-    int exu_x;         // 执行单元的X轴数量
-    int exu_y;         // 执行单元的Y轴数量
-    int sfu_x;         // SFU的X轴数量
-    int sram_bitwidth; // SRAM的位宽
+    ExuConfig *exu;
+    SfuConfig *sfu;
+
     string dram_config; // DRAM配置文件名
     int dram_bw;
+    int sram_bitwidth; // SRAM的位宽
+
+    void printSelf() {
+        cout << "CoreHWConfig: " << id << endl;
+        cout << "ExuConfig: " << exu->type << " " << exu->x_dims << " "
+             << exu->y_dims << endl;
+        cout << "SfuConfig: " << sfu->type << " " << sfu->x_dims << endl;
+        cout << "DRAM Config: " << dram_config << " " << dram_bw << " "
+             << sram_bitwidth << endl;
+    }
+
+    CoreHWConfig()
+        : id(0),
+          exu(nullptr),
+          sfu(nullptr),
+          dram_config(""),
+          dram_bw(0),
+          sram_bitwidth(0) {}
+    CoreHWConfig(int id, ExuConfig *exu, SfuConfig *sfu, string dram_config,
+                 int dram_bw, int sram_bitwidth)
+        : id(id),
+          exu(exu),
+          sfu(sfu),
+          dram_config(dram_config),
+          dram_bw(dram_bw),
+          sram_bitwidth(sram_bitwidth) {}
+    ~CoreHWConfig() {
+        delete exu;
+        delete sfu;
+    }
 };
 
 void from_json(const json &j, CoreHWConfig &c);
-
-class ExuConfig {
-public:
-    Etype type; // exu type
-    int x_dims; // exu x array
-    int y_dims; // exu y array
-
-    ExuConfig() : type(MAC_Array), x_dims(128), y_dims(128) {}
-    ExuConfig(Etype t, int x, int y) : type(t), x_dims(x), y_dims(y) {}
-};
-
-class SfuConfig {
-public:
-    Sftype type; // exu type
-    int x_dims;  // exu x array
-
-    SfuConfig() : type(Linear), x_dims(16) {}
-    SfuConfig(Sftype t, int x) : type(t), x_dims(x) {}
-};

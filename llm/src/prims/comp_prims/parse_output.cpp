@@ -1,54 +1,17 @@
 #include "prims/comp_prims.h"
 #include "utils/system_utils.h"
 
-void parse_output::print_self(string prefix) {
-    cout << prefix << "<parse_output>" << endl;
-    cout << prefix << "size: " << size << endl;
-}
+REGISTER_PRIM(parse_output);
 
 void parse_output::initialize() {
-    out_size = size;
-    p_inp_size = size;
-    inp_size = size;
-
-    if (datatype == INT8)
-        data_byte = 1;
-    else if (datatype == FP16)
-        data_byte = 2;
+    auto &p = param_value;
+    data_size_input = {0};
+    data_chunk = {{"output", p["size"]}};
 }
 
-void parse_output::parse_json(json j) {
-    size = find_var(j["size"]);
-
-    initialize();
-
-    if (j.contains("dram_address"))
-        parse_address(j["dram_address"]);
-
-    if (j.contains("sram_address"))
-        parse_sram_label(j["sram_address"]);
+void parse_output::taskCore(TaskCoreContext &context, string prim_name,
+                           u_int64_t dram_time, u_int64_t &exu_ops,
+                           u_int64_t &sfu_ops) {
+    exu_ops = 0;
+    sfu_ops = 0;
 }
-
-int parse_output::sram_utilization(DATATYPE datatype, int cid) { return 0; }
-
-void parse_output::deserialize(sc_bv<128> buffer) {
-    size = buffer.range(39, 8).to_uint64();
-
-    initialize();
-}
-
-sc_bv<128> parse_output::serialize() {
-    sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(PARSE_OUTPUT_TYPE);
-    d.range(39, 8) = sc_bv<32>(size);
-
-    return d;
-}
-
-int parse_output::task_core(TaskCoreContext &context) {
-    // do nothing
-
-    return 0;
-}
-
-int parse_output::task() { return 0; }

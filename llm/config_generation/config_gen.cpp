@@ -3,8 +3,8 @@
 #include "defs/const.h"
 #include "defs/enums.h"
 #include "defs/global.h"
-#include "prims/comp_base.h"
-#include "prims/prim_base.h"
+#include "prims/base.h"
+#include "prims/base.h"
 #include "utils/prim_utils.h"
 #include <fstream>
 #include <iostream>
@@ -21,10 +21,10 @@ using json_order = nlohmann::ordered_json;
 
 class CorePrims {
 public:
-    vector<prim_base *> prims;
+    vector<PrimBase *> prims;
 
 
-    void print_self();
+    void printSelf();
     CorePrims() {}
 };
 
@@ -34,14 +34,14 @@ void from_json(const json &j, CorePrims &c) {
     if (j.contains("prims")) {
         auto prims = j["prims"];
         for (auto prim : prims) {
-            comp_base *p = nullptr;
+            CompBase *p = nullptr;
             string type = prim.at("type");
 
-            p = (comp_base *)new_prim(type);
-            p->parse_json(prim);
+            p = (CompBase *)new_prim(type);
+            p->parseJson(prim);
             p->initialize();
 
-            c.prims.push_back((prim_base *)p);
+            c.prims.push_back((PrimBase *)p);
         }
     }
 }

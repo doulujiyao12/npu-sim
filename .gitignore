@@ -16,8 +16,8 @@ aaa.cpp
 /llm/include/unit_module/sram_manager/build/*
 /llm/include/unit_module/dram_kvtable/build/*
 /llm/config_generation/build/*
-
-# /doc/make.bat
+/DRAMSys/configs/addressmapping/am_ddr4_8x4Gbx8_df.json
+/DRAMSys/configs/memspec/JEDEC_4Gb_DDR4-1866_8bit_DF.json# /doc/make.bat
 # /doc/Makefile
 
 !**/CMakeLists.txt

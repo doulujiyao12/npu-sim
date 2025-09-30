@@ -2,6 +2,7 @@
 
 #include "nlohmann/json.hpp"
 #include "utils/system_utils.h"
+#include "utils/config_utils.h"
 #include <string>
 #include <vector>
 
@@ -22,14 +23,14 @@ TopConfig::TopConfig(std::string filename, std::string font_ttf)
     auto config_source = j["source"];
     for (auto source : config_source) {
         if (source.contains("loop")) {
-            int loop_cnt = find_var(source["loop"]);
+            int loop_cnt = GetDefinedParam(source["loop"]);
             for (int i = 0; i < loop_cnt; i++) {
                 source_info.push_back(
-                    make_pair(source["dest"], find_var(source["size"])));
+                    make_pair(source["dest"], GetDefinedParam(source["size"])));
             }
         } else {
             source_info.push_back(
-                make_pair(source["dest"], find_var(source["size"])));
+                make_pair(source["dest"], GetDefinedParam(source["size"])));
         }
     }
 
@@ -80,7 +81,7 @@ void from_json(const json &j, TopConfig &c) {
     }
 }
 
-void TopConfig::print_self() {
+void TopConfig::printSelf() {
     std::cout << "TopConfig: " << std::endl;
     std::cout << "pipeline: " << pipeline << std::endl;
     std::cout << "sequential: " << sequential << std::endl;
@@ -90,6 +91,6 @@ void TopConfig::print_self() {
     }
 
     for (auto component_ptr : component_) {
-        component_ptr->print_self();
+        component_ptr->printSelf();
     }
 }

@@ -24,7 +24,7 @@ chip_instr_base* new_chip_prim(string type){
         assert(0 && "Chip Prim Not Implemented");
     }
 
-    global_chip_prim_stash.push_back(instr);
+    g_chip_prim_stash.push_back(instr);
 
     return instr;
 }

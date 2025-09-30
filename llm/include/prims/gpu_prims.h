@@ -1,155 +1,98 @@
 #pragma once
 #include "systemc.h"
 
-#include "prims/gpu_base.h"
-#include "prims/pd_base.h"
+#include "prims/base.h"
 
-class Matmul_f_gpu : public gpu_base {
+class Matmul_f_gpu : public GpuBase {
 public:
-    int B, T, C, OC;
-    int slice_x, slice_y;
+    int taskCoreDefault(TaskCoreContext &context);
+    void initialize();
 
-    int task_core(TaskCoreContext &context);
-    int task();
-    int sram_utilization(DATATYPE datatype, int cid = 0);
+    GpuBase *clone();
 
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void print_self(string prefix);
-    void parse_json(json j);
-
-    gpu_base *clone();
-
-    Matmul_f_gpu() { name = "Matmul_f_gpu"; }
+    Matmul_f_gpu() {
+        name = "Matmul_f_gpu";
+        param_name.insert(param_name.end(), {"B", "T", "C", "OC"});
+    }
 };
 
-class Attention_f_gpu : public gpu_base {
+class Attention_f_gpu : public GpuBase {
 public:
-    int B, T, C, NH;
-    int slice_x, slice_y;
+    int taskCoreDefault(TaskCoreContext &context);
+    void initialize();
 
-    int task_core(TaskCoreContext &context);
-    int task();
-    int sram_utilization(DATATYPE datatype, int cid = 0);
+    GpuBase *clone();
 
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void print_self(string prefix);
-    void parse_json(json j);
-
-    gpu_base *clone();
-
-    Attention_f_gpu() { name = "Attention_f_gpu"; }
+    Attention_f_gpu() {
+        name = "Attention_f_gpu";
+        param_name.insert(param_name.end(), {"B", "T", "C", "NH"});
+    }
 };
 
-class Gelu_f_gpu : public gpu_base {
+class Gelu_f_gpu : public GpuBase {
 public:
-    int N;
-    int slice_x, slice_y;
+    int taskCoreDefault(TaskCoreContext &context);
+    void initialize();
 
-    int task_core(TaskCoreContext &context);
-    int task();
-    int sram_utilization(DATATYPE datatype, int cid = 0);
+    GpuBase *clone();
 
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void print_self(string prefix);
-    void parse_json(json j);
-
-    gpu_base *clone();
-
-    Gelu_f_gpu() { name = "Gelu_f_gpu"; }
+    Gelu_f_gpu() {
+        name = "Gelu_f_gpu";
+        param_name.insert(param_name.end(), {"N"});
+    }
 };
 
-class Layernorm_f_gpu : public gpu_base {
+class Layernorm_f_gpu : public GpuBase {
 public:
-    int B, T, C;
-    int slice_x, slice_y;
+    int taskCoreDefault(TaskCoreContext &context);
+    void initialize();
 
-    int task_core(TaskCoreContext &context);
-    int task();
-    int sram_utilization(DATATYPE datatype, int cid = 0);
+    GpuBase *clone();
 
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void print_self(string prefix);
-    void parse_json(json j);
-
-    gpu_base *clone();
-
-    Layernorm_f_gpu() { name = "Layernorm_f_gpu"; }
+    Layernorm_f_gpu() {
+        name = "Layernorm_f_gpu";
+        param_name.insert(param_name.end(), {"B", "T", "C"});
+    }
 };
 
 
-class Residual_f_gpu : public gpu_base {
+class Residual_f_gpu : public GpuBase {
 public:
-    int N;
-    int slice_x, slice_y;
+    int taskCoreDefault(TaskCoreContext &context);
+    void initialize();
 
-    int task_core(TaskCoreContext &context);
-    int task();
-    int sram_utilization(DATATYPE datatype, int cid = 0);
+    GpuBase *clone();
 
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void print_self(string prefix);
-    void parse_json(json j);
-
-    gpu_base *clone();
-
-    Residual_f_gpu() { name = "Residual_f_gpu"; }
+    Residual_f_gpu() {
+        name = "Residual_f_gpu";
+        param_name.insert(param_name.end(), {"N"});
+    }
 };
 
 
-class matmul_forward_gpu_pd : public gpu_base {
+class matmul_forward_gpu_pd : public GpuBase {
 public:
-    int B, T, C, OC;
-    int NH, DH, R;
-    PD_JOB job_type = JOB_BOTH;
-    int slice_x, slice_y;
+    int taskCoreDefault(TaskCoreContext &context);
+    void initialize();
 
-    vector<Stage> batchInfo;
-    vector<bool> *decode_done;
+    GpuBase *clone();
 
-    int task();
-    int task_core(TaskCoreContext &context);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void parse_json(json j);
-    void print_self(string prefix);
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
-    gpu_base *clone() { return new matmul_forward_gpu_pd(*this); }
-
-    matmul_forward_gpu_pd() { name = "matmul_forward_gpu_pd"; }
+    matmul_forward_gpu_pd() {
+        name = "matmul_forward_gpu_pd";
+        param_name.insert(param_name.end(),
+                          {"B", "T", "C", "NH", "DH", "R", "job_type"});
+    }
 };
 
-class attention_forward_gpu_pd : public gpu_base {
+class attention_forward_gpu_pd : public GpuBase {
 public:
-    int B, T, C, NH;
-    int slice_x, slice_y;
+    int taskCoreDefault(TaskCoreContext &context);
+    void initialize();
 
-    vector<Stage> batchInfo;
-    vector<bool> *decode_done;
+    GpuBase *clone();
 
-    int task_core(TaskCoreContext &context);
-    int task();
-    int sram_utilization(DATATYPE datatype, int cid = 0);
-
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
-
-    void print_self(string prefix);
-    void parse_json(json j);
-
-    gpu_base *clone();
-
-    attention_forward_gpu_pd() { name = "attention_forward_gpu_pd"; }
+    attention_forward_gpu_pd() {
+        name = "attention_forward_gpu_pd";
+        param_name.insert(param_name.end(), {"B", "T", "C", "NH"});
+    }
 };

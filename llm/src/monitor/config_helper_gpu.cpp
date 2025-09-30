@@ -2,6 +2,7 @@
 #include "common/config.h"
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
+#include "utils/config_utils.h"
 
 config_helper_gpu::config_helper_gpu(string filename, string font_ttf,
                                      int config_chip_id) {
@@ -45,7 +46,7 @@ config_helper_gpu::config_helper_gpu(string filename, string font_ttf,
         auto prims = stream.prims;
 
         for (int j = 0; j < prims.size(); j++) {
-            gpu_base *prim = (gpu_base *)prims[j];
+            GpuBase *prim = (GpuBase *)prims[j];
             int sms = prim->req_sm;
 
             int cycles = sms / GRID_SIZE;
@@ -73,7 +74,7 @@ config_helper_gpu::config_helper_gpu(string filename, string font_ttf,
     gpu_index = 0;
     done_loop = 0;
 
-    print_self();
+    printSelf();
 }
 
 void config_helper_gpu::fill_queue_config(queue<Msg> *q) {
@@ -87,10 +88,10 @@ void config_helper_gpu::fill_queue_config(queue<Msg> *q) {
                           recv_weight->serialize()));
 
         vector<Stage> batchInfo;
-        for (int i = 0; i < find_var("B"); i++)
-            batchInfo.push_back(Stage(i + 1, PREFILL, find_var("T")));
+        for (int i = 0; i < GetDefinedParam("B"); i++)
+            batchInfo.push_back(Stage(i + 1, PREFILL, GetDefinedParam("T")));
 
-        prim_base *set_batch = new Set_batch(batchInfo, true);
+        PrimBase *set_batch = new Set_batch(batchInfo, true);
         single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, single_rep.size() + 1,
                                  config.id, set_batch->serialize()));
 
@@ -104,11 +105,11 @@ void config_helper_gpu::fill_queue_config(queue<Msg> *q) {
         for (int i = 0; i < streams[0].loop; i++) {
             for (int j = 1; j <= single_rep.size(); j++) {
                 Msg m = single_rep[j - 1];
-                m.seq_id = j + single_rep.size() * i + 1;
+                m.seq_id_ = j + single_rep.size() * i + 1;
 
                 if (i == streams[0].loop - 1 && j == single_rep.size()) {
-                    m.is_end = true;
-                    m.refill = false;
+                    m.is_end_ = true;
+                    m.refill_ = false;
                 }
 
                 q[index].push(m);
@@ -126,21 +127,21 @@ void config_helper_gpu::generate_prims(int i) {
             new Recv_prim(RECV_TYPE::RECV_START, work.recv_tag, work.recv_cnt));
 
         for (auto prim : work.prims) {
-            gpu_base *gp = (gpu_base *)prim;
+            GpuBase *gp = (GpuBase *)prim;
             int sms = gp->req_sm;
 
             // 只需要看单个原语重复次数
             int repeat = sms / GRID_SIZE + (sms % GRID_SIZE > i);
 
             for (int r = 0; r < repeat; r++) {
-                prim_base *p = new_prim("Set_addr");
-                auto label = ((Set_addr *)p)->datapass_label;
+                PrimBase *p = PrimFactory::getInstance().createPrim("Set_addr");
+                auto label = p->prim_context->datapass_label_;
 
                 // Set_addr 的label 指向其后面的那条原语
                 for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-                    label->indata[i] = gp->datapass_label.indata[i];
+                    label->indata[i] = gp->prim_context->datapass_label_->indata[i];
                 }
-                label->outdata = gp->datapass_label.outdata;
+                label->outdata = gp->prim_context->datapass_label_->outdata;
 
                 // 这里直接推入字符串形式的label，之后会在序列化的时候转化为整形label
                 work.prims_last_loop.push_back(p);
@@ -154,11 +155,9 @@ void config_helper_gpu::generate_prims(int i) {
     }
 }
 
-void config_helper_gpu::calculate_address(bool do_loop) {}
-
 void config_helper_gpu::fill_queue_start(queue<Msg> *q) {
     cout << "GPU fill start queue, phase " << gpu_index << "\n";
-    int sms = ((gpu_base *)(streams[0].prims[gpu_index]))->req_sm;
+    int sms = ((GpuBase *)(streams[0].prims[gpu_index]))->req_sm;
 
     for (auto stream : streams) {
         for (auto source : stream.sources) {
@@ -176,27 +175,27 @@ void config_helper_gpu::fill_queue_start(queue<Msg> *q) {
         sc_bv<128> d(0x1);
         Msg m = Msg(true, MSG_TYPE::S_DATA, pkg_index + 1, config.id, 0,
                     config.id, 0, d);
-        m.source = GRID_SIZE;
+        m.source_ = GRID_SIZE;
         q[index].push(m);
     }
 
     gpu_index++;
 }
 
-void config_helper_gpu::print_self() {
+void config_helper_gpu::printSelf() {
     for (auto core : coreconfigs) {
         cout << "[Core " << core.id << "]\n";
 
         cout << "\tCore prims: \n";
         for (auto work : core.worklist) {
             for (auto prim : work.prims_in_loop) {
-                prim->print_self("\t\t");
+                prim->printSelf();
             }
             for (auto prim : work.prims) {
-                prim->print_self("\t\t");
+                prim->printSelf();
             }
             for (auto prim : work.prims_last_loop) {
-                prim->print_self("\t\t");
+                prim->printSelf();
             }
         }
     }
@@ -228,7 +227,7 @@ void config_helper_gpu::parse_ack_msg(Event_engine *event_engine, int flow_id,
                             Trace_event_util());
 
     for (auto m : g_temp_ack_msg) {
-        int cid = m.source;
+        int cid = m.source_;
         cout << sc_time_stamp()
              << ": Config helper GPU: received ack packet from " << cid
              << ". total " << g_recv_ack_cnt + 1 << "/" << coreconfigs.size()
@@ -261,7 +260,7 @@ void config_helper_gpu::parse_done_msg(Event_engine *event_engine,
                             Trace_event_util());
 
     for (auto m : g_temp_done_msg) {
-        int cid = m.source;
+        int cid = m.source_;
         cout << sc_time_stamp()
              << ": Config helper GPU: received done packet from " << cid
              << ", total " << g_recv_done_cnt + 1 << ".\n";
@@ -274,7 +273,7 @@ void config_helper_gpu::parse_done_msg(Event_engine *event_engine,
                             Trace_event_util());
 
     auto prim = streams[0].prims[gpu_index - 1];
-    auto core_inv = ((gpu_base *)prim)->req_sm;
+    auto core_inv = ((GpuBase *)prim)->req_sm;
 
     if (core_inv >= GRID_SIZE)
         core_inv = GRID_SIZE;

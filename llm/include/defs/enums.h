@@ -66,7 +66,8 @@ enum MSG_TYPE {
     ACK,
     DONE,
     S_DATA, // start data
-    P_DATA  // prepare data
+    P_DATA,  // prepare data
+    MSG_TYPE_NUM
 };
 
 // 数据类型
@@ -119,66 +120,11 @@ enum PD_JOB {
 // 原语类型
 enum PRIM_TYPE {
     NORM_PRIM = 0,
-    COMP_PRIM,
-    GPU_PRIM,
-    PD_PRIM,
-    MOE_PRIM,
-};
-
-// 原语序列化后的类型编号
-enum PRIM_TYPE_CODE {
-    LAYERNORM_F_TYPE = 0x1,
-    MATMUL_F_TYPE = 0x2,
-    ATTENTION_F_TYPE = 0x3,
-    GELU_F_TYPE = 0x4,
-    RESIDUAL_F_TYPE = 0x5,
-    SEND_PRIM_TYPE = 0x6,
-    RECV_PRIM_TYPE = 0x7,
-    LOAD_PRIM_TYPE = 0x8,
-    STORE_PRIM_TYPE = 0x9,
-    CONV_F_TYPE = 0xa,
-    RELU_F_TYPE = 0xb,
-    SPLIT_MATMUL_TYPE = 0xc,
-    MERGE_MATMUL_TYPE = 0xd,
-    SPLIT_CONV_TYPE = 0xe,
-    MERGE_CONV_TYPE = 0xf,
-    BATCHNORM_F_TYPE = 0x10,
-    // MATMUL_F_DECODE_TYPE = 0x11,
-    // ATTENTION_F_DECODE_TYPE = 0x12,
-    MAX_POOL_TYPE = 0x13,
-    // MATMUL_F_PREFILL_TYPE = 0x14,
-    // ATTENTION_F_PREFILL_TYPE = 0x15,
-    ROPE_F_TYPE = 0x16,
-    SILU_F_TYPE = 0x17,
-    RMSNORM_F_TYPE = 0x18,
-    SWIGLU_F_TYPE = 0x19,
-    GATE_FORWARD_TYPE = 0x1a,
-    MATMUL_FORWARD_MOE_TYPE = 0x1b,
-    LOAD_EXPERT_TYPE = 0x1c,
-
-    PARSE_INPUT_TYPE = 0x20,
-    PARSE_OUTPUT_TYPE = 0x21,
-
-    SEND_GLOBAL_MEMORY_TYPE = 0x40,
-    RECV_GLOBAL_MEMORY_TYPE = 0x41,
-
-    MATMUL_FORWARD_PD_TYPE = 0xc0,
-    ATTENTION_FORWARD_PD_TYPE = 0xc1,
-    ROPE_FORWARD_PD_TYPE = 0xc2,
-
-    DUMMY_P_TYPE = 0xd0,
-    SET_ADDR_TYPE = 0xd1,
-    CLEAR_SRAM_TYPE = 0xd2,
-    SET_BATCH_TYPE = 0xd3,
-    SWITCH_DATA_TYPE = 0xd4,
-
-    MATMUL_F_GPU_TYPE = 0xe0,
-    ATTENTION_F_GPU_TYPE = 0xe1,
-    GELU_F_GPU_TYPE = 0xe2,
-    RESIDUAL_F_GPU_TYPE = 0xe3,
-    LAYERNORM_F_GPU_TYPE = 0xe4,
-    MATMUL_FORWARD_GPU_PD_TYPE = 0xe5,
-    ATTENTION_FORWARD_GPU_PD_TYPE = 0xe6,
+    COMP_PRIM = 1,
+    GPU_PRIM = 1 << 1,
+    NPU_PRIM = 1 << 2,
+    PD_PRIM = 1 << 3,
+    MOE_PRIM = 1 << 4,
 };
 
 // 用于计算核硬件配置

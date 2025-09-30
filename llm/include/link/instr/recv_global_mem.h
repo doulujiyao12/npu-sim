@@ -19,15 +19,15 @@ public:
         id = i;
     }
 
-    void parse_json(json j) override {
+    void parseJson(json j) override {
         seq = j.contains("seq") ? j["seq"].get<int>() : -1;
     }
 
-    void print_self(std::string prefix) override{
+    void printSelf(std::string prefix) override{
         std::cout << prefix << "<Recv_global_mem>" << std::endl;
     }
 
-    int task_core(TaskChipContext &context) override {
+    int taskCoreDefault(TaskChipContext &context) override {
         std::cout << "Executing <Recv_global_mem>" << std::endl;
         return 0;
     }

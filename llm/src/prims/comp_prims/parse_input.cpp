@@ -1,59 +1,26 @@
 #include "prims/comp_prims.h"
 #include "utils/system_utils.h"
 
-void parse_input::print_self(string prefix) {
-    cout << prefix << "<parse_input>" << endl;
-    cout << prefix << "size: " << size << endl;
-}
+REGISTER_PRIM(parse_input);
 
 void parse_input::initialize() {
-    out_size = size;
-    p_inp_size = size;
-    inp_size = size;
-
-    if (datatype == INT8)
-        data_byte = 1;
-    else if (datatype == FP16)
-        data_byte = 2;
+    auto &p = param_value;
+    data_size_input = {p["size"]};
+    data_chunk = {{"output", 0}};
 }
 
-void parse_input::parse_json(json j) {
-    size = find_var(j["size"]);
-
-    initialize();
-
-    if (j.contains("dram_address"))
-        parse_address(j["dram_address"]);
-
-    if (j.contains("sram_address"))
-        parse_sram_label(j["sram_address"]);
-}
-
-int parse_input::sram_utilization(DATATYPE datatype, int cid) { return 0; }
-
-void parse_input::deserialize(sc_bv<128> buffer) {
-    size = buffer.range(39, 8).to_uint64();
-
-    initialize();
-}
-
-sc_bv<128> parse_input::serialize() {
-    sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(PARSE_INPUT_TYPE);
-    d.range(39, 8) = sc_bv<32>(size);
-
-    return d;
-}
-
-int parse_input::task_core(TaskCoreContext &context) {
+void parse_input::taskCore(TaskCoreContext &context, string prim_name,
+                          u_int64_t dram_time, u_int64_t &exu_ops,
+                          u_int64_t &sfu_ops) {
     // 将input_label这个标签存储在指定label中
     string inp_label = INPUT_LABEL;
-    sram_pos_locator->changePairName(inp_label, datapass_label.indata[0]);
+    prim_context->sram_pos_locator_->changePairName(
+        inp_label, prim_context->datapass_label_->indata[0]);
 
-    cout << "[PARSE_INPUT] Core " << cid << ": Changed " << inp_label << " to "
-         << datapass_label.indata[0] << endl;
+    cout << "[PARSE_INPUT] Core " << prim_context->cid << ": Changed "
+         << inp_label << " to " << prim_context->datapass_label_->indata[0]
+         << endl;
 
-    return 0;
+    exu_ops = 0;
+    sfu_ops = 0;
 }
-
-int parse_input::task() { return 0; }

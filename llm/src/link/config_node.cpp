@@ -7,9 +7,9 @@
 
 using json = nlohmann::json;
 
-void NodeConfig::print_self() {
+void NodeConfig::printSelf() {
     for (auto chip : chips) {
-        chip.print_self();
+        chip.printSelf();
     }
 }
 

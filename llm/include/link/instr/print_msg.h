@@ -19,7 +19,7 @@ public:
         instr_type = SEQ_EXEC;
     }
 
-    void parse_json(json j) override {
+    void parseJson(json j) override {
         // Basic implementation - can be expanded based on needs
         seq = j.contains("seq") ? j["seq"].get<int>() : -1;
         if (j.contains("message")) {
@@ -27,12 +27,12 @@ public:
         }
     }
 
-    void print_self(std::string prefix) override{
+    void printSelf(std::string prefix) override{
         std::cout << prefix << "<Print_msg>" << std::endl;
         std::cout << prefix << "\tmsg: " << message << std::endl;
     }
 
-    int task_core(TaskChipContext &context) override {
+    int taskCoreDefault(TaskChipContext &context) override {
         std::cout << "Executing <Print_msg>" << std::endl;
         std::cout << "\t" << "message: " << message << std::endl;
         return 10000;

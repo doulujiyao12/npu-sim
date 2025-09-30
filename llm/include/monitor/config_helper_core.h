@@ -21,8 +21,7 @@ public:
     void generate_prims(int i);
     void calculate_address(bool do_loop);
 
-    void print_self();
-
+    void printSelf();
     void random_core(string font_ttf);
 
     void parse_ack_msg(Event_engine *event_engine, int flow_id,
@@ -31,5 +30,6 @@ public:
 
     void fill_queue_start(queue<Msg> *q);
     void fill_queue_config(queue<Msg> *q);
+
     CoreConfig *get_core(int id);
 };

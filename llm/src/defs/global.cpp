@@ -7,19 +7,9 @@ u_int64_t dcache_hits = 0;
 u_int64_t dcache_misses = 0;
 u_int64_t dcache_evictions = 0;
 
-class ExuConfig;
-class SfuConfig;
-vector<pair<int, ExuConfig *>> tile_exu;
-vector<pair<int, SfuConfig *>> tile_sfu;
-vector<pair<int, int>> mem_sram_bw; // 用于记录每个核的sram bitwidth 
-vector<pair<int, string>> mem_dram_config_str; // 用于记录每个核的dram配置文件名
-vector<pair<int, int>> mem_dram_bw; // 记录每个核的dram带宽
-
-class prim_base;
-vector<prim_base *> global_prim_stash;
-vector<chip_instr_base*> global_chip_prim_stash;
-
-KVCache KVCache_g;
+vector<pair<int, CoreHWConfig *>> g_core_hw_config;
+vector<PrimBase *> g_prim_stash;
+vector<chip_instr_base*> g_chip_prim_stash;
 AddrLabelTable g_addr_label_table;
 
 DramKVTable** g_dram_kvtable;
@@ -67,7 +57,7 @@ bool gpu_clog;
 int gpu_bw;
 int gpu_B;
 string g_config_file;
-int dram_bw;
+int g_default_dram_bw;
 bool beha_dram;
 float beha_dram_util;
 // int DRAM_BURST_BYTE;

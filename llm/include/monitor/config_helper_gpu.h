@@ -14,13 +14,12 @@ public:
     }
 
     void generate_prims(int i);
-    void calculate_address(bool do_loop);
 
     void parse_ack_msg(Event_engine *event_engine, int flow_id,
                        sc_event *notify_event);
     void parse_done_msg(Event_engine *event_engine, sc_event *notify_event);
 
-    void print_self();
+    void printSelf();
 
     void fill_queue_config(queue<Msg> *q);
     void fill_queue_start(queue<Msg> *q);

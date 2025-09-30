@@ -1103,7 +1103,7 @@ public:
 
 
         for (int i = 0; i < numL1Caches; i++) {
-            char txt[20];
+            char txt[30];
             sprintf(txt, "l1_socket_%d", i);
             l1_sockets[i] =
                 new tlm_utils::simple_target_socket_tagged<Bus>(txt);

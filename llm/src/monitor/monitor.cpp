@@ -79,7 +79,7 @@ void Monitor::init() {
 
     for (int i = 0; i < GRID_SIZE; i++) {
         workerCores[i] = new WorkerCore(sc_gen_unique_name("workercore"), i,
-                                        this->event_engine, get_dram_config(i));
+                                        this->event_engine, GetCoreHWConfig(i)->dram_config);
     }
 
     // 根据Config的设置连接到Globalmem
@@ -195,8 +195,8 @@ void Monitor::init() {
         RouterUnit *pos = routerMonitor->routers[j];
 
         for (int i = 0; i < DIRECTIONS - 1; i++) {
-            Directions input_dir = get_oppose_direction(Directions(i));
-            int input_source = get_input_source(Directions(i), j);
+            Directions input_dir = GetOpposeDirection(Directions(i));
+            int input_source = GetInputSource(Directions(i), j);
 
             pos->channel_o[i](channel[i][j]);
             pos->channel_i[i](channel[input_dir][input_source]);

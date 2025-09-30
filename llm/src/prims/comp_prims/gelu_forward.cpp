@@ -1,230 +1,26 @@
 #include "systemc.h"
 
 #include "memory/dram/Dcachecore.h"
-#include "prims/comp_base.h"
+#include "prims/base.h"
 #include "prims/comp_prims.h"
 #include "utils/memory_utils.h"
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
+REGISTER_PRIM(Gelu_f);
+
 #define GELU_SCALING_FACTOR sqrtf(2.0f / M_PI)
 
-void Gelu_f::print_self(string prefix) {
-    cout << prefix << "<gelu_forward>\n";
-    cout << prefix << "\tN: " << N << endl;
-    cout << prefix << "\tout_size: " << out_size << " , inp_size: " << inp_size
-         << ", previous_inp_size: " << p_inp_size << endl;
-    cout << prefix << "\toutput_offset: " << out_offset
-         << ", input_offset: " << inp_offset << endl;
-}
-
-
 void Gelu_f::initialize() {
-    inp_size = N;
-    out_size = N;
-    p_inp_size = N;
-
-    dram_inp_size = (N + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
-    dram_out_size = (N + (DRAM_ALIGN - 1)) / DRAM_ALIGN;
-    dram_data_size = 0;
-
-    if (datatype == INT8)
-        data_byte = 1;
-    else if (datatype == FP16)
-        data_byte = 2;
+    auto &p = param_value;
+    data_size_input = {p["N"]};
+    data_chunk = {{"output", p["N"]}};
 }
 
-void Gelu_f::parse_json(json j) {
-    N = find_var(j["N"]);
-
-    initialize();
-
-    if (j.contains("dram_address"))
-        parse_address(j["dram_address"]);
-
-    if (inp_offset == -1)
-        inp_offset = (out_offset * 1024 - N) / 1024;
-
-    if (out_offset == -1)
-        assert(0 && "Gelu_f: out_offset not set");
-
-    // 添加以下三行以打印相关信息
-    cout << "\033[1;33m" << "Gelu_f" << "\033[0m" << endl;
-    cout << "inp_offset: " << inp_offset << endl;
-    cout << "out_offset: " << out_offset << endl;
-
-
-    if (j.contains("sram_address"))
-        parse_sram_label(j["sram_address"]);
-}
-
-int Gelu_f::sram_utilization(DATATYPE datatype, int cid) {
-    int total_sram = 0;
-    int data_byte = 0;
-
-    if (datatype == DATATYPE::FP16) {
-        data_byte = 2;
-    } else if (datatype == DATATYPE::INT8) {
-        data_byte = 1;
-    }
-
-    int inp_sram = ceiling_division(N * data_byte * 8, get_sram_bitwidth(cid));
-    int out_sram = ceiling_division(N * data_byte * 8, get_sram_bitwidth(cid));
-
-    total_sram = inp_sram + out_sram;
-    total_sram *= get_sram_bitwidth(cid) / 8;
-
-    return total_sram;
-}
-
-void Gelu_f::deserialize(sc_bv<128> buffer) {
-    inp_offset = buffer.range(23, 8).to_uint64();
-    inp_offset *= 1024;
-    out_offset = buffer.range(39, 24).to_uint64();
-    out_offset *= 1024;
-    N = buffer.range(71, 40).to_uint64();
-    datatype = DATATYPE(buffer.range(73, 72).to_uint64());
-
-    initialize();
-}
-
-sc_bv<128> Gelu_f::serialize() {
-    sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(GELU_F_TYPE);
-    d.range(23, 8) = sc_bv<16>(inp_offset);
-    d.range(39, 24) = sc_bv<16>(out_offset);
-    d.range(71, 40) = sc_bv<32>(N);
-    d.range(73, 72) = sc_bv<2>(datatype);
-
-    return d;
-}
-
-int Gelu_f::task_core(TaskCoreContext &context) {
-    // 所用时间
-    u_int64_t dram_time = 0;
-    u_int64_t overlap_time = 0;
-
-    // 数据维度
-    vector<int> data_size_input = {N};
-    int data_size_out = N;
-
-    // dram地址
-    u_int64_t dram_addr_tile = 0; //cid * dataset_words_per_tile;
-    u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
-    u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
-
-    // 检查数据重利用
-    bool input_reuse = false;
-    if (datapass_label.indata[0][0] == '_') {
-        input_reuse = true;
-        datapass_label.indata[0] = datapass_label.indata[0].substr(1);
-    }
-
-    // 获取前缀label
-    std::size_t pos = datapass_label.outdata.find_last_of('_');
-    std::string prefix;
-    if (pos != std::string::npos)
-        prefix = datapass_label.outdata.substr(0, pos);
-    else
-        prefix = datapass_label.outdata;
-
-    // 读入input数据
-    check_input_data(context, dram_time, inp_global_addr, data_size_input);
-    BETTER_PRINT(dram_time);
-
-#if USE_SRAM == 1
-    {
-        // 删除标签
-        if (!input_reuse)
-            sram_pos_locator->deletePair(datapass_label.indata[0]);
-
-        BETTER_PRINT(dram_time);
-    }
-#endif
-    // 计算overlap并写回output数据
-    write_output_data(context, 0, N, dram_time, overlap_time, data_size_out,
-                      out_global_addr);
-    BETTER_PRINT(overlap_time);
-
-    return overlap_time;
-}
-
-int Gelu_f::task() {
-    //     int cycle = 0;
-    //     if (tile_sfu.type == Linear) {
-    //         cycle = (11 * N) / (tile_sfu.x_dims) * CYCLE;
-    //     } else {
-    //         assert(false && "Unsupported tile type");
-    //     }
-    //     // cycle = (11 * N) / (2 * 16 * 16);
-    //     int data_byte = 0;
-    //     if (datatype == INT8) {
-    //         data_byte = 1;
-    //     } else if (datatype == FP16) {
-    //         data_byte = 2;
-    //     }
-    //     u_int64_t dram_addr_tile = cid * dataset_words_per_tile;
-    //     u_int64_t out_global_addr = dram_addr_tile + out_offset * data_byte;
-    //     u_int64_t inp_global_addr = dram_addr_tile + inp_offset * data_byte;
-
-    //     u_int64_t time_fetched = 0;
-    //     u_int64_t time_prefetched = 0;
-    //     u_int64_t prefetch_tag = 0;
-
-    //     u_int64_t dram_time = 0;
-
-
-    //     u_int64_t in_dcacheline, out_dcacheline;
-
-    //     for (int i = 0; i < N; i++) {
-    //         in_dcacheline = (inp_global_addr >> dcache_words_in_line_log2) >>
-    //         2; dram_time += check_dcache(
-    //             0, 0, in_dcacheline << (dcache_words_in_line_log2 + 2),
-    //             dram_time, time_fetched, time_prefetched, prefetch_tag,
-    //             false);
-    //         in_dcacheline += data_byte;
-    //     }
-
-    //     u_int64_t overlap_time = 0;
-
-    //     if (dram_time > cycle) {
-    //         overlap_time = dram_time;
-    //     } else {
-    //         overlap_time = cycle;
-    //     }
-
-    //     for (int i = 0; i < N; i++) {
-    //         out_dcacheline = (out_global_addr >> dcache_words_in_line_log2)
-    //         >> 2; overlap_time += check_dcache(
-    //             0, 0, out_dcacheline << (dcache_words_in_line_log2 + 2),
-    //             overlap_time, time_fetched, time_prefetched, prefetch_tag,
-    //             false);
-    //         out_dcacheline += data_byte;
-    //     }
-
-    //     /*
-    //     --------------------------------------------------------------------------------------------
-    //      */
-    // #if DUMMY == 1
-
-
-    // #else
-    //     float *dram_start = (float *)(dram_array[cid]);
-    //     float *inp = dram_start + inp_offset;
-    //     float *out = dram_start + out_offset;
-    //     for (int i = 0; i < N; i++) {
-    //         float x = inp[i];
-    //         float cube = 0.044715f * x * x * x; // compute: 3N
-    //         out[i] = 0.5f * x *
-    //                  (1.0f +
-    //                   tanhf(GELU_SCALING_FACTOR * (x + cube))); // compute:
-    //                   (2+2+4)N
-    //     }
-    // #endif
-    //     cout << "gelu" << endl;
-
-
-    //     return overlap_time;
-
-    return 0;
+void Gelu_f::taskCore(TaskCoreContext &context, string prim_name,
+                     u_int64_t dram_time, u_int64_t &exu_ops,
+                     u_int64_t &sfu_ops) {
+    auto &p = param_value;
+    exu_ops = 0;
+    sfu_ops = (u_int64_t)p["N"];
 }

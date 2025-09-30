@@ -11,7 +11,7 @@
 #include "monitor/mem_interface.h"
 #include "prims/comp_prims.h"
 #include "prims/norm_prims.h"
-#include "utils/file_utils.h"
+#include "utils/print_utils.h"
 #include "utils/msg_utils.h"
 #include "utils/prim_utils.h"
 #include "trace/Event_engine.h"

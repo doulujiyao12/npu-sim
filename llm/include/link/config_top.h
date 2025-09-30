@@ -27,7 +27,7 @@ public:
     bool sequential;
     std::vector<std::pair<int, int>> source_info; // 记录一些全局变量
 
-    void print_self();
+    void printSelf();
     Type getType() const override { return Type::TYPE_TOP; }
 
     ~TopConfig();

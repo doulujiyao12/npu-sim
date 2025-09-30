@@ -1,7 +1,7 @@
 #pragma once
 #include "common/pd.h"
 #include "monitor/config_helper_base.h"
-#include "prims/gpu_base.h"
+#include "prims/base.h"
 
 class config_helper_gpu_pd : public config_helper_base {
 public:
@@ -17,7 +17,7 @@ public:
     GpuPosLocator *gpu_pos_locator;
 
     int prim_index;               // 正在执行的原语编号
-    vector<prim_base *> prim_list; // 所有需要执行的原语内容（每一个iter刷新）
+    vector<PrimBase *> prim_list; // 所有需要执行的原语内容（每一个iter刷新）
 
     // 模型配置
     int heads;
@@ -41,13 +41,12 @@ public:
 
     void generate_prims();
     void generate_prims(int i);
-    void calculate_address(bool do_loop);
 
     void parse_ack_msg(Event_engine *event_engine, int flow_id,
                        sc_event *notify_event);
     void parse_done_msg(Event_engine *event_engine, sc_event *notify_event);
 
-    void print_self();
+    void printSelf();
 
     void fill_queue_config(queue<Msg> *q);
     void fill_queue_start(queue<Msg> *q);

@@ -3,47 +3,14 @@
 #include <unordered_map>
 #include <vector>
 
-#include "common/system.h"
+#include "common/include.h"
 #include "macros/macros.h"
 #include "unit_module/sram_manager/sram_manager.h"
 #include "defs/global.h"
 
 using namespace std;
 
-class KVCache {
-public:
-    // 可能已经obsolete
-    int Kstart;
-    int Vstart;
-
-    float kvcache[KVCACHE_MAX_SIZE];
-
-    KVCache() {
-        Kstart = 0;
-        Vstart = KVCACHE_MAX_SIZE / 2;
-    }
-};
-
 // 以下为sram_pos_locator相关
-class AddrDatapassLabel {
-public:
-    string indata[MAX_SPLIT_NUM];
-    string outdata;
-    AddrDatapassLabel() {
-        for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-            indata[i] =
-                UNSET_LABEL; // 读入sram的输入数据标签，绝大多数情况下只使用第一个元素
-        }
-
-        outdata = UNSET_LABEL; // 写回sram的输出数据标签
-    }
-
-    AddrDatapassLabel(string indata_v, string outdata_v) : outdata(outdata_v) {
-        indata[0] = indata_v;
-    }
-};
-
-
 class AddrLabelTable {
 public:
     vector<string> table;
