@@ -90,8 +90,6 @@ void config_helper_pd::fill_queue_config(queue<Msg> *q) {
         auto des = msg.des_;
         int index = des / GRID_X;
         q[index].push(msg);
-        cout << "fill_queue_config: " << msg.msg_type_ << " " << msg.des_ << " "
-             << msg.source_ << endl;
     }
 
     temp_config.clear();

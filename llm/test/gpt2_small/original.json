@@ -13,6 +13,8 @@
     "2BTC": 196608,
     "3BTC": 294912,
     "4BTC": 393216,
+    "R": 1,
+    "CHUNK": 1,
     "layernorm1_data_": 98304,
     "layernorm1_data": 96,
     "matmul1_data_": 99840,
@@ -31,7 +33,7 @@
     "residual2_out": 7220,
     "TODO": 110
   },
-  "pipeline": 10,
+  "pipeline": 1,
   "source": [
     {
       "dest": 0,
@@ -67,12 +69,15 @@
               }
             },
             {
-              "type": "Matmul_f_pd",
+              "type": "matmul_forward_pd",
               "use_hw": false,
               "B": "B",
               "T": "T",
               "C": "C",
               "OC": "3C",
+              "R": "R",
+              "chunk": "CHUNK",
+              "job_type": 2,
               "sram_address": {
                 "indata": "layernorm1_out",
                 "outdata": "matmul1_out"
@@ -89,6 +94,7 @@
               "NH": "NH",
               "DH": "DH",
               "R": "R",
+              "job_type": 2,
               "sram_address": {
                 "indata": "matmul1_out",
                 "outdata": "attention1_out"

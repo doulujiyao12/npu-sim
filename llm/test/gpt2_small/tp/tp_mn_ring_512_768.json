@@ -155,7 +155,7 @@
                                     "type": "parse_output",
                                     "size": "3CC/4",
                                     "sram_address": {
-                                        "indata": "eternal_matmul1_2_w",
+                                        "indata": "DEL_eternal_matmul1_2_w",
                                         "outdata": "DEL_eternal_matmul1_2_w"
                                     }
                                 }
