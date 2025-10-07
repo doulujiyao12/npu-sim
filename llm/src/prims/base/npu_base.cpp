@@ -55,7 +55,7 @@ sc_bv<128> NpuBase::serialize() {
     d.range(56, 41) = sc_bv<16>(out_offset);
 
     // 所有参数平均分配
-    if (param_name.size() > 10) {
+    if (param_name.size() > 8) {
         ARGUS_EXIT("Primitive with # params = ", param_name.size(),
                    " is not supported.\n");
         return d;

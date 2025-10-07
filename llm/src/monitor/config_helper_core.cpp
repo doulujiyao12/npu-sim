@@ -405,9 +405,12 @@ void config_helper_core::calculate_address(bool do_loop) {
             if (!do_loop && judge_is_end_work(work))
                 continue; // 汇节点
 
+                cout << "1\n";
+
             // 拿到这个corejob的output size
             for (int j = v->size() - 1; j >= 0; j--) {
                 auto p = (*v)[j];
+                cout << p->prim_type << endl;
                 if (p->prim_type & PRIM_TYPE::COMP_PRIM) {
                     CompBase *cp = (CompBase *)p;
                     output_size = cp->out_size;

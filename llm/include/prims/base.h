@@ -27,7 +27,7 @@ public:
 
     PrimBase() {
         name = "PrimBase";
-        prim_type |= NORM_PRIM;
+        prim_type = NORM_PRIM;
     }
     virtual ~PrimBase() = default;
 };

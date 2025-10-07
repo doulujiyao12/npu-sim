@@ -9,7 +9,7 @@ public:
     matmul_forward_pd() {
         name = "matmul_forward_pd";
         param_name.insert(param_name.end(),
-                          {"B", "T", "C", "OC", "NH", "DH", "R", "chunk"});
+                          {"B", "T", "C", "OC", "R", "chunk"});
     }
 };
 
