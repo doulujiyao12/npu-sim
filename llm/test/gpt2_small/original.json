@@ -67,7 +67,7 @@
               }
             },
             {
-              "type": "Matmul_f_pd",
+              "type": "matmul_forward_pd",
               "use_hw": false,
               "B": "B",
               "T": "T",
