@@ -12,7 +12,7 @@
         "NH/4": 8,
         "L": 20,
         "loop": 20,
-        "3C":   7680,
+        "3C": 7680,
         "4C": 10240,
         "5C": 12800,
         "5C/4": 3200,
@@ -125,6 +125,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -184,6 +185,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -243,6 +245,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -297,6 +300,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -428,6 +432,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -1116,6 +1121,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -1175,6 +1181,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -1234,6 +1241,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -1288,6 +1296,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -1419,6 +1428,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -2107,6 +2117,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -2166,6 +2177,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -2225,6 +2237,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -2279,6 +2292,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -2410,6 +2424,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -3098,6 +3113,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -3157,6 +3173,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -3216,6 +3233,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -3270,6 +3288,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -3401,6 +3420,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -4102,6 +4122,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -4167,6 +4188,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -4232,6 +4254,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -4297,6 +4320,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -4409,6 +4433,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -5133,6 +5158,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -5198,6 +5224,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -5263,6 +5290,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -5328,6 +5356,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -5440,6 +5469,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -6164,6 +6194,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -6229,6 +6260,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -6294,6 +6326,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -6359,6 +6392,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -6471,6 +6505,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -7195,6 +7230,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -7260,6 +7296,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -7325,6 +7362,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -7390,6 +7428,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -7502,6 +7541,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -8249,6 +8289,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -8308,6 +8349,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -8367,6 +8409,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -8421,6 +8464,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -8552,6 +8596,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -9240,6 +9285,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -9299,6 +9345,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -9358,6 +9405,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -9412,6 +9460,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -9543,6 +9592,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -10231,6 +10281,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -10290,6 +10341,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -10349,6 +10401,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -10403,6 +10456,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -10534,6 +10588,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -11222,6 +11277,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -11281,6 +11337,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -11340,6 +11397,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -11394,6 +11452,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -11525,6 +11584,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -12226,6 +12286,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -12291,6 +12352,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -12356,6 +12418,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -12421,6 +12484,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -12533,6 +12597,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -13257,6 +13322,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -13322,6 +13388,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -13387,6 +13454,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -13452,6 +13520,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -13564,6 +13633,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -14288,6 +14358,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -14353,6 +14424,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -14418,6 +14490,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -14483,6 +14556,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -14595,6 +14669,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
@@ -15319,6 +15394,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -15384,6 +15460,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -15449,6 +15526,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -15514,6 +15592,7 @@
                                 },
                                 {
                                     "type": "rope_forward_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "3C-R/4",
@@ -15626,6 +15705,7 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",

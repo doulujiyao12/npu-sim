@@ -228,8 +228,10 @@ void WorkerCoreExecutor::worker_core_execute() {
                     "Send_prim" +
                     GetEnumSendType(dynamic_cast<Send_prim *>(p)->type)));
 #else
-            while (!send_done)
+            while (!send_done) {
                 wait(CYCLE, SC_NS);
+                cout << "1919" << endl;
+            }
 
             // send 模块处理的四条指令
             while ((typeid(*p) == typeid(Recv_prim) &&
@@ -304,7 +306,10 @@ void WorkerCoreExecutor::worker_core_execute() {
         }
 
         prim_queue.pop_front();
-        wait(CYCLE, SC_NS);
+        {
+            wait(CYCLE, SC_NS);
+            cout << "2020" << endl;
+        }
     }
 }
 
@@ -314,7 +319,10 @@ void WorkerCoreExecutor::switch_prim_block() {
         wait();
 
         prim_block.write(false);
-        wait(CYCLE, SC_NS);
+        {
+            wait(CYCLE, SC_NS);
+            cout << "2121" << endl;
+        }
     }
 }
 
@@ -330,18 +338,38 @@ PrimBase *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
 }
 
 void WorkerCoreExecutor::poll_buffer_i() {
+    MSG_TYPE block_mark = MSG_TYPE::MSG_TYPE_NUM;
+
     while (true) {
-        if (!data_sent_i.read())
-            wait(ev_data_sent_i);
+        if (!data_sent_i.read()) {
+            if (block_mark < MSG_TYPE::MSG_TYPE_NUM) {
+                if (msg_buffer_[block_mark].size() < MAX_BUFFER_PACKET_SIZE) {
+                    block_mark = MSG_TYPE::MSG_TYPE_NUM;
+                    core_busy_o.write(false);
+                    continue;
+                }
+
+                wait(ev_msg_process_end);
+                continue;
+            } else {
+                wait(ev_data_sent_i);
+            }
+        }
 
         Msg m = DeserializeMsg(channel_i.read());
         msg_buffer_[m.msg_type_].push(m);
         ev_recv_msg_type_[m.msg_type_].notify(0, SC_NS);
 
-        core_busy_o.write(msg_buffer_[m.msg_type_].size() >=
-                          MAX_BUFFER_PACKET_SIZE);
+        if (msg_buffer_[m.msg_type_].size() >= MAX_BUFFER_PACKET_SIZE) {
+            core_busy_o.write(true);
+            block_mark = m.msg_type_;
+        } else
+            core_busy_o.write(false);
 
+            {
         wait(CYCLE, SC_NS);
+        // cout << "2626" << endl;
+            }
     }
 }
 

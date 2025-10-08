@@ -287,7 +287,7 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
             batchInfo.emplace_back(i + 1, PREFILL, seq_len);
         PrimBase *set_batch = new Set_batch(batchInfo, true);
 
-        cout << "core " << config.id << ", loop: " << config.loop << endl;
+        // cout << "core " << config.id << ", loop: " << config.loop << endl;
 
         // 主循环，将pipeline视为一种循环
         for (int j = 0; j < pipeline; j++) {
@@ -405,7 +405,7 @@ void config_helper_core::calculate_address(bool do_loop) {
             if (!do_loop && judge_is_end_work(work))
                 continue; // 汇节点
 
-                cout << "1\n";
+            cout << "1\n";
 
             // 拿到这个corejob的output size
             for (int j = v->size() - 1; j >= 0; j--) {
@@ -497,6 +497,11 @@ void config_helper_core::fill_queue_start(queue<Msg> *q) {
             int pkg_num = (send_size_in_bit % M_D_DATA)
                               ? (send_size_in_bit / M_D_DATA + 1)
                               : (send_size_in_bit / M_D_DATA);
+            pkg_num = pkg_num % (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD)
+                          ? pkg_num / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD) + 1
+                          : pkg_num / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD);
+
+            cout << "pkg_num: " << pkg_num << endl;
 
             for (int j = 1; j <= pkg_num; j++) {
                 sc_bv<M_D_DATA> d(0x1);

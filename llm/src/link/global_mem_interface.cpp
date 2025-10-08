@@ -58,7 +58,8 @@ void GlobalMemInterface::switch_chip_prim_block() {
         wait();
 
         chip_prim_block.write(false);
-        wait(CYCLE, SC_NS);
+        {wait(CYCLE, SC_NS);
+cout << "666" << endl;}
     }
 }
 
@@ -163,7 +164,8 @@ void GlobalMemInterface::instr_executor() {
             }
 
             global_instrs_queue.pop_front();
-            wait(CYCLE, SC_NS);
+            {wait(CYCLE, SC_NS);
+cout << "777" << endl;}
         }
     }
 }

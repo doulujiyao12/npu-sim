@@ -36,6 +36,7 @@ public:
     sc_event ev_dis_config;
 
     sc_event ev_recv_helper;
+    sc_event ev_host_channel_available;
     sc_event ev_recv_ack;
     sc_event ev_recv_done;
     sc_event ev_req_handler; // 在PD模式中用于在正确的时刻分发所有请求
@@ -64,6 +65,7 @@ public:
 
     void recv_helper();
     void catch_host_data_sent_i();
+    void catch_host_channel_available_i();
 
     void recv_ack();
     void recv_done();

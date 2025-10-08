@@ -150,7 +150,10 @@ void WorkerCoreExecutor::send_logic() {
             }
 
 
-            wait(CYCLE, SC_NS);
+            {
+                wait(CYCLE, SC_NS);
+                cout << "1010" << endl;
+            }
             if (need_long_wait) {
                 wait((CORE_ACC_PAYLOAD - 1) * 2, SC_NS);
             }
@@ -193,8 +196,10 @@ void WorkerCoreExecutor::send_para_logic() {
                 if (atomic_helper_lock(sc_time_stamp(), 0))
                     ev_send_helper.notify(0, SC_NS);
 #else
-                while (atomic_helper_lock(sc_time_stamp(), 0) == false)
+                while (atomic_helper_lock(sc_time_stamp(), 0) == false) {
                     wait(CYCLE, SC_NS);
+                    cout << "1111" << endl;
+                }
 
                 ev_send_helper.notify(0, SC_NS);
 #endif
@@ -236,7 +241,10 @@ void WorkerCoreExecutor::send_para_logic() {
                                 wait(ev_send_last_packet);
                                 while (atomic_helper_lock(sc_time_stamp(), 0) ==
                                        false) {
-                                    wait(CYCLE, SC_NS);
+                                    {
+                                        wait(CYCLE, SC_NS);
+                                        cout << "1212" << endl;
+                                    }
                                 }
                             }
 #endif
@@ -281,7 +289,10 @@ void WorkerCoreExecutor::send_para_logic() {
                                 send_helper_write = 0;
                             }
 
-                            wait(CYCLE, SC_NS);
+                            {
+                                wait(CYCLE, SC_NS);
+                                cout << "1313" << endl;
+                            }
                             atomic_helper_lock(sc_time_stamp(), 0);
                             // cout << "Core " << channel_avail_i.read() <<
                             // endl;
@@ -356,7 +367,10 @@ void WorkerCoreExecutor::send_para_logic() {
                 }
 
                 // 等待下一个时钟周期
-                wait(CYCLE, SC_NS);
+                {
+                    wait(CYCLE, SC_NS);
+                    cout << "1414" << endl;
+                }
             }
 
             if (typeid(*prim) == typeid(Send_prim)) {
@@ -406,7 +420,7 @@ void WorkerCoreExecutor::recv_logic() {
             if (prim->type == RECV_ACK) {
                 // [发送方] 接收来自接收方的ack包，收到之后结束此原语，进入
                 // SEND_DATA 或 SEND_SRAM
-                if (!msg_buffer_[MSG_TYPE::ACK].size())
+                while (!msg_buffer_[MSG_TYPE::ACK].size())
                     wait(ev_recv_msg_type_[MSG_TYPE::ACK]);
 
                 // 接收到数据包
@@ -433,7 +447,7 @@ void WorkerCoreExecutor::recv_logic() {
 
                 Msg temp;
                 // 表示 当前周期该核有需要处理的msg 的recv包
-                if (!msg_buffer_[MSG_TYPE::P_DATA].size())
+                while (!msg_buffer_[MSG_TYPE::P_DATA].size())
                     wait(ev_recv_msg_type_[MSG_TYPE::P_DATA]);
 
                 temp = msg_buffer_[MSG_TYPE::P_DATA].front();
@@ -443,8 +457,10 @@ void WorkerCoreExecutor::recv_logic() {
                 // 如果是end包，则将recv_index归零，表示开始接收下一个core传来的数据（如果有的话）
                 if (temp.is_end_) {
                     while (!atomic_helper_lock(sc_time_stamp(), 3) ||
-                           !channel_avail_i.read())
+                           !channel_avail_i.read()) {
                         wait(CYCLE, SC_NS);
+                        cout << "1515" << endl;
+                    }
 
                     // 这里是针对host data 和 start 包
                     cout << sc_time_stamp() << ": Worker " << cid
@@ -475,16 +491,17 @@ void WorkerCoreExecutor::recv_logic() {
                     // data buffer，再查看recv buffer
                     // 如果tag不等同于id，则不允许查看start data buffer
                     ev_prim_recv_notice.notify(0, SC_NS);
+                    // cout << "Core " << cid << ": in RECV_START/RECV_DATA.\n";
 
                     Msg temp;
                     // 表示 当前周期该核有需要处理的msg 的recv包
                     if (prim->type == RECV_DATA) {
-                        if (!msg_buffer_[MSG_TYPE::DATA].size())
+                        while (!msg_buffer_[MSG_TYPE::DATA].size())
                             wait(ev_recv_msg_type_[MSG_TYPE::DATA]);
 
                         temp = msg_buffer_[MSG_TYPE::DATA].front();
                     } else if (prim->type == RECV_START) {
-                        if (!msg_buffer_[MSG_TYPE::S_DATA].size())
+                        while (!msg_buffer_[MSG_TYPE::S_DATA].size())
                             wait(ev_recv_msg_type_[MSG_TYPE::S_DATA]);
 
                         temp = msg_buffer_[MSG_TYPE::S_DATA].front();
@@ -520,6 +537,9 @@ void WorkerCoreExecutor::recv_logic() {
                     TaskCoreContext context = generate_context(this);
                     delay = prim->taskCoreDefault(context);
 
+                    // cout << sc_time_stamp() << ": Worker " << cid
+                    //      << ": received packet: " << temp.seq_id_ << endl;
+
                     // 如果是end包，则将recv_index归零，表示开始接收下一个core传来的数据（如果有的话）
                     if (temp.is_end_) {
                         end_cnt++;
@@ -549,8 +569,10 @@ void WorkerCoreExecutor::recv_logic() {
                 // 在模拟开始时接收配置，接收完毕之后发送一个ACK包给host，此原语需要对prim_queue进行压入，此原语执行完毕之后，进入RECV_DATA
                 if (wait_send) {
                     while (!atomic_helper_lock(sc_time_stamp(), 3) ||
-                           !channel_avail_i.read())
+                           !channel_avail_i.read()) {
                         wait(CYCLE, SC_NS);
+                        cout << "1616" << endl;
+                    }
 
                     // 正在等待向host发送ack包
                     send_buffer =
@@ -561,7 +583,7 @@ void WorkerCoreExecutor::recv_logic() {
 
                     job_done = true;
                 } else {
-                    if (!msg_buffer_[MSG_TYPE::CONFIG].size())
+                    while (!msg_buffer_[MSG_TYPE::CONFIG].size())
                         wait(ev_recv_msg_type_[MSG_TYPE::CONFIG]);
 
                     Msg m = msg_buffer_[MSG_TYPE::CONFIG].front();
@@ -584,14 +606,24 @@ void WorkerCoreExecutor::recv_logic() {
                 sc_stop();
             }
 
-            if (job_done)
+            if (job_done) {
+                ev_msg_process_end.notify();
                 break;
+            }
 
             // 等待下一个时钟周期
+            {
             wait(CYCLE, SC_NS);
+            // cout << "2525" << endl;
+            }
+
             if (need_long_wait) {
+                // cout << sc_time_stamp() << ": Worker " << cid
+                //      << ": long wait.\n";
                 wait((CORE_ACC_PAYLOAD - 1) * 2, SC_NS);
             }
+
+            ev_msg_process_end.notify();
         }
 
         ev_block.notify(CYCLE, SC_NS);
@@ -649,8 +681,10 @@ void WorkerCoreExecutor::req_logic() {
                 // 发送ack包
                 while (ack_queue.size()) {
                     while (!atomic_helper_lock(sc_time_stamp(), 3) ||
-                           !channel_avail_i.read())
+                           !channel_avail_i.read()) {
                         wait(CYCLE, SC_NS);
+                        cout << "1818" << endl;
+                    }
 
                     int des = ack_queue.front();
                     ack_queue.pop();
