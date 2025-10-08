@@ -152,7 +152,7 @@ void WorkerCoreExecutor::send_logic() {
 
             {
                 wait(CYCLE, SC_NS);
-                cout << "1010" << endl;
+                // cout << "1010" << endl;
             }
             if (need_long_wait) {
                 wait((CORE_ACC_PAYLOAD - 1) * 2, SC_NS);

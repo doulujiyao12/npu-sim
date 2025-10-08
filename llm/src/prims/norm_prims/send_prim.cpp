@@ -84,8 +84,10 @@ int Send_prim::taskCoreDefault(TaskCoreContext &context) {
 #else
         // ERROT SRAM BITWIDTH
         for (int i = 0; i < 1; i++) {
-            {wait(CYCLE, SC_NS);
-cout << "999" << endl;}
+            {
+                wait(CYCLE, SC_NS);
+                // cout << "999" << endl;
+            }
         }
 #endif
         if (need_delete)
