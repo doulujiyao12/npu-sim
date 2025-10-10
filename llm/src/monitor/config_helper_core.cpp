@@ -8,6 +8,7 @@
 #include "prims/base.h"
 #include "utils/config_utils.h"
 #include "utils/display_utils.h"
+#include "utils/msg_utils.h"
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
@@ -435,41 +436,13 @@ void config_helper_core::calculate_address(bool do_loop) {
                     if (temp->type != SEND_DATA)
                         continue;
 
-                    int weight = work.cast[index].weight;
-                    int slice_size = (output_size % weight)
-                                         ? (output_size / weight + 1)
-                                         : (output_size / weight);
-                    cout << "output_size: " << output_size
-                         << ", slice_size: " << slice_size << endl;
-                    int slice_size_in_bit =
-                        slice_size * (prim->datatype ? 2 : 1) * 8;
-                    int pkg_nums = (slice_size_in_bit % M_D_DATA)
-                                       ? (slice_size_in_bit / M_D_DATA + 1)
-                                       : (slice_size_in_bit / M_D_DATA);
-                    int end_length =
-                        slice_size_in_bit - (pkg_nums - 1) * M_D_DATA;
+                    CalculatePacketNum(output_size, work.cast[index].weight,
+                                       (prim->datatype ? 2 : 1),
+                                       temp->max_packet, temp->end_length);
 
-                    // max pkg nums
-                    temp->max_packet =
-                        pkg_nums % (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD)
-                            ? pkg_nums /
-                                      (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD) +
-                                  1
-                            : pkg_nums / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD);
-                    cout << "max_packet: " << temp->max_packet
-                         << ", COREACC: " << CORE_ACC_PAYLOAD
-                         << ", pkg_nums: " << pkg_nums << endl;
-                    if (pkg_nums == 0) {
-                        cout << "weight " << weight << " slice size "
-                             << slice_size << " slice size in bit "
-                             << slice_size_in_bit << " pkg nums " << pkg_nums
-                             << " end length " << end_length << endl;
-                    }
                     temp->output_label = output_label_split.size() == 1
                                              ? output_label_split[0]
                                              : output_label_split[index];
-                    temp->end_length = end_length;
-
                     index++;
                 }
             }
@@ -485,7 +458,6 @@ void config_helper_core::fill_queue_start(queue<Msg> *q) {
             int size = source.second;
 
             int index = i / GRID_X;
-            int pkg_index = 0;
             int send_offset = 0;
             for (auto config : coreconfigs) {
                 if (config.id == i)
@@ -497,12 +469,21 @@ void config_helper_core::fill_queue_start(queue<Msg> *q) {
             int pkg_num = (send_size_in_bit % M_D_DATA)
                               ? (send_size_in_bit / M_D_DATA + 1)
                               : (send_size_in_bit / M_D_DATA);
-            pkg_num = pkg_num % (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD)
-                          ? pkg_num / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD) + 1
-                          : pkg_num / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD);
+            pkg_num = pkg_num % CORE_COMM_PAYLOAD
+                          ? pkg_num / CORE_COMM_PAYLOAD + 1
+                          : pkg_num / CORE_COMM_PAYLOAD;
 
             cout << "pkg_num: " << pkg_num << endl;
 
+#if USE_BEHA_NOC == 1
+            sc_bv<M_D_DATA> d(0x1);
+            int length = M_D_DATA;
+            Msg m =
+                Msg(true, MSG_TYPE::S_DATA, 1, i, send_offset, i, length, d);
+            m.source_ = GRID_SIZE;
+            m.roofline_packets_ = pkg_num;
+            q[index].push(m);
+#else
             for (int j = 1; j <= pkg_num; j++) {
                 sc_bv<M_D_DATA> d(0x1);
                 int length = M_D_DATA;
@@ -510,12 +491,13 @@ void config_helper_core::fill_queue_start(queue<Msg> *q) {
                 if (is_end_packet)
                     length = size * sizeof(float) - M_D_DATA * (pkg_num - 1);
 
-                // CTODO: recv_tag default to i
-                Msg m = Msg(j == pkg_num, MSG_TYPE::S_DATA, j + pkg_index, i,
+                Msg m = Msg(j == pkg_num, MSG_TYPE::S_DATA, j, i,
                             send_offset + M_D_DATA * (j - 1), i, length, d);
                 m.source_ = GRID_SIZE;
+                m.roofline_packets_ = 1;
                 q[index].push(m);
             }
+#endif
         }
     }
 }

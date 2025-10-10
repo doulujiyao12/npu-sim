@@ -16,6 +16,7 @@ public:
     int source_;        // 发送此msg的core id
     int length_;        // 真实数据的长度，避免end包覆盖
     bool refill_;       // 在end包中表示是否需要refill
+    int roofline_packets_; // 视作发送X个数据包，加快模拟速度
     sc_bv<128> data_;
 
     Msg(bool e, MSG_TYPE m, int seq, int des, int offset, int tag, int length,

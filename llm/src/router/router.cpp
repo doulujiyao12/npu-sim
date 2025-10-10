@@ -221,6 +221,8 @@ void RouterUnit::router_execute() {
                 cout << "[INFO] Router " << rid << ", checking req from "
                      << source << endl;
                 if (buffer_o[CENTER].size() < MAX_BUFFER_PACKET_SIZE) {
+                    cout << "[INFO] Router " << rid
+                         << ", push req into core.\n";
                     it = req_queue.erase(it);
                     buffer_o[CENTER].emplace(SerializeMsg(req));
                     flag_trigger = true;
@@ -251,7 +253,8 @@ void RouterUnit::router_execute() {
                 req_queue.push_back(m);
 
                 cout << "[REQUEST] Router " << rid << " received REQ from "
-                     << m.source_ << ", put into req_queue.\n";
+                     << m.source_ << ", put into req_queue, size "
+                     << req_queue.size() << "\n";
                 continue;
             }
 
