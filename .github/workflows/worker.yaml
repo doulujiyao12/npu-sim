@@ -31,7 +31,7 @@ jobs:
           unzip systemc-2.3.3.zip
           cd systemc-2.3.3
           mkdir -p build && cd build
-          cmake .. -DCMAKE_INSTALL_PREFIX=$PWD/systemc-2.3.3 \
+          cmake .. -DCMAKE_INSTALL_PREFIX=$PWD/.. \
                   -DCMAKE_INSTALL_LIBDIR=lib-linux64 \
                   -DCMAKE_CXX_STANDARD=17
           make -j$(nproc)
