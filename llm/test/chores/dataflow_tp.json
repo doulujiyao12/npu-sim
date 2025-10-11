@@ -21,6 +21,8 @@
         "C/2": 128,
         "C/4": 64,
         "2C": 1024,
+        "DH": 64,
+        "R": 1,
         "layernorm1_data": 96,
         "split_matmul1_out": 97,
         "matmul1_data": 96,
@@ -99,6 +101,8 @@
                                 },
                                 {
                                     "type": "matmul_forward_pd",
+                                    "job_type": 2,
+                                    "chunk": "CHUNK",
                                     "use_hw": false,
                                     "B": "B",
                                     "T": "T",
@@ -327,11 +331,12 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
                                     "NH": "NH/4",
-"DH": "DH",
+                                    "DH": "DH",
                                     "R": "R",
                                     "sram_address": {
                                         "indata": "switch_out",
@@ -1134,6 +1139,8 @@
                                 },
                                 {
                                     "type": "matmul_forward_pd",
+                                    "job_type": 2,
+                                    "chunk": "CHUNK",
                                     "use_hw": false,
                                     "B": "B",
                                     "T": "T",
@@ -1332,11 +1339,12 @@
                             "prims": [
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
                                     "NH": "NH/4",
-"DH": "DH",
+                                    "DH": "DH",
                                     "R": "R",
                                     "sram_address": {
                                         "indata": "switch_out",
@@ -2043,6 +2051,8 @@
                                 },
                                 {
                                     "type": "matmul_forward_pd",
+                                    "job_type": 2,
+                                    "chunk": "CHUNK",
                                     "use_hw": false,
                                     "B": "B",
                                     "T": "T",
@@ -2271,11 +2281,12 @@
                                 },
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
                                     "NH": "NH/4",
-"DH": "DH",
+                                    "DH": "DH",
                                     "R": "R",
                                     "sram_address": {
                                         "indata": "switch_out",
@@ -3078,6 +3089,8 @@
                                 },
                                 {
                                     "type": "matmul_forward_pd",
+                                    "job_type": 2,
+                                    "chunk": "CHUNK",
                                     "use_hw": false,
                                     "B": "B",
                                     "T": "T",
@@ -3276,11 +3289,12 @@
                             "prims": [
                                 {
                                     "type": "Attention_f_pd",
+                                    "job_type": 2,
                                     "B": "B",
                                     "T": "T",
                                     "C": "C/4",
                                     "NH": "NH/4",
-"DH": "DH",
+                                    "DH": "DH",
                                     "R": "R",
                                     "sram_address": {
                                         "indata": "switch_out",
