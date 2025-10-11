@@ -8,7 +8,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install build dependencies
-        run: sudo apt-get update && sudo apt-get install -y g++ make unzip wget libsfml-dev libcairo2-dev xorg
+        run: sudo apt-get update && sudo apt-get install -y g++ make unzip wget libsfml-dev libcairo2-dev xorg cmake
 
       - name: Cache SystemC
         id: cache-systemc
@@ -30,17 +30,23 @@ jobs:
           make -j$(nproc)
           make install
 
-
       - name: Set SystemC environment variables
         run: |
-          echo "SYSTEMC_HOME=/usr/local/systemc-2.3.3" >> $GITHUB_ENV
-          echo "LD_LIBRARY_PATH=/usr/local/systemc-2.3.3/lib-linux64:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-          echo "CPLUS_INCLUDE_PATH=/usr/local/systemc-2.3.3/include:$CPLUS_INCLUDE_PATH" >> $GITHUB_ENV
+          echo "SYSTEMC_HOME=$HOME/systemc-2.3.3" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=$HOME/systemc-2.3.3/lib-linux64:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+          echo "CPLUS_INCLUDE_PATH=$HOME/systemc-2.3.3/include:$CPLUS_INCLUDE_PATH" >> $GITHUB_ENV
+
+      - name: Cache project build
+        id: cache-project
+        uses: actions/cache@v4
+        with:
+          path: build
+          key: project-build-${{ runner.os }}-${{ hashFiles('**/CMakeLists.txt') }}
 
       - name: Build repository
         run: |
           cmake --version
-          mkdir build && cd build
+          mkdir -p build && cd build
           cmake .. -DBUILD_DEBUG_TARGETS=OFF
           make -j$(nproc)
 
