@@ -13,7 +13,7 @@ jobs:
       - name: Install CMake
         uses: jwlawson/actions-setup-cmake@v1
         with:
-          version: 3.20.5
+          version: 3.31.3
 
       - name: Cache SystemC 2.3.3
         id: cache-systemc
@@ -29,7 +29,10 @@ jobs:
           unzip systemc-2.3.3.zip
           cd systemc-2.3.3
           mkdir build && cd build
-          cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/systemc-2.3.3 -DCMAKE_INSTALL_LIBDIR=lib-linux64
+          cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/systemc-2.3.3 \
+                   -DCMAKE_INSTALL_LIBDIR=lib-linux64 \ 
+                   -DCXXFLAGS="-std=c++17" \
+                   -DCMAKE_POLICY_VERSION_MINIMUM=3.5
           make -j$(nproc)
           sudo make install
 
