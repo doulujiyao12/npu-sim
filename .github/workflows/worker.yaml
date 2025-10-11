@@ -46,25 +46,17 @@ jobs:
         with:
           path: build
           key: project-build-${{ runner.os }}-${{ hashFiles('**/CMakeLists.txt') }}
-          restore-keys: |
-            project-build-${{ runner.os }}-
-        continue-on-error: true 
 
-      - name: Build repository
+      - name: Configure and build repository
         run: |
-          mkdir -p build
-          cd build
-          if [ -f CMakeCache.txt ]; then
-            echo "Using existing CMake configuration (from cache)"
-            cmake -N .
+          set -e
+          if [ ! -f build/Makefile ]; then
+            mkdir -p build && cd build
+            cmake .. -DSYSTEMC_HOME=${SYSTEMC_HOME}
           else
-            echo "Configuring CMake (first build)"
-            cmake .. -DBUILD_DEBUG_TARGETS=OFF \
-                     -DSYSTEMC_HOME=${SYSTEMC_HOME} \
-                     -DCMAKE_PREFIX_PATH=${SYSTEMC_HOME}
+            cd build
           fi
-          find . -type f -name "*.o" -exec touch -r ../CMakeLists.txt {} +
-          make -j$(nproc)
+          cmake --build . -- -j$(nproc)
 
       - name: Test all chores JSON files
         run: |
@@ -91,9 +83,10 @@ jobs:
             echo "----------------------------------------"
 
             cd build
+            echo "Go into build directory..."
             if ! timeout $TIMEOUT_SEC ./npusim \
-              --config-file "$CONFIG" \
-              --core-config-file "$HW_CONFIG" \
+              --config-file "../$CONFIG" \
+              --core-config-file "../$HW_CONFIG" \
               &> "$LOGFILE"; then
               echo "Crash or timeout for $CONFIG"
               FAIL=1
