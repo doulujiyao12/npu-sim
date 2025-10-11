@@ -86,3 +86,12 @@ void CalculatePacketNum(int output_size, int weight, int data_byte,
                      ? packet_num / CORE_COMM_PAYLOAD + 1
                      : packet_num / CORE_COMM_PAYLOAD;
 }  
+
+bool IsBlockableMsgType(MSG_TYPE type) {
+    switch (type) {
+        case MSG_TYPE::DATA:
+            return true;
+        default:
+            return false;
+    }
+}

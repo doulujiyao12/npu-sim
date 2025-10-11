@@ -353,7 +353,8 @@ void WorkerCoreExecutor::poll_buffer_i() {
         msg_buffer_[m.msg_type_].push(m);
         ev_recv_msg_type_[m.msg_type_].notify(0, SC_NS);
 
-        if (msg_buffer_[m.msg_type_].size() >= MAX_BUFFER_PACKET_SIZE) {
+        if (IsBlockableMsgType(m.msg_type_) &&
+            msg_buffer_[m.msg_type_].size() >= MAX_BUFFER_PACKET_SIZE) {
             core_busy_o.write(true);
             block_mark = m.msg_type_;
         } else
@@ -476,8 +477,6 @@ void WorkerCoreExecutor::send_helper() {
         if (send_helper_write >= 2) {
 #endif
             auto ser = SerializeMsg(send_buffer);
-            cout << "Core " << cid << " ready to send "
-                 << DeserializeMsg(ser).roofline_packets_ << endl;
             channel_o.write(ser);
             data_sent_o.write(true);
             ev_next_write_clear.notify(CYCLE, SC_NS);
