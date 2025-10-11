@@ -10,13 +10,21 @@ jobs:
       - name: Install build dependencies
         run: sudo apt-get update && sudo apt-get install -y cmake g++ make unzip wget libsfml-dev libcairo2-dev xorg
 
+      - name: Cache SystemC 2.3.3
+        id: cache-systemc
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/systemc-2.3.3
+          key: systemc-2.3.3-${{ runner.os }}
+
       - name: Install SystemC 2.3.3
+        if: steps.cache-systemc.outputs.cache-hit != 'true'
         run: |
           wget https://accellera.org/images/downloads/standards/systemc/systemc-2.3.3.zip
           unzip systemc-2.3.3.zip
           cd systemc-2.3.3
           mkdir build && cd build
-          cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/systemc-2.3.3
+          cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/systemc-2.3.3 -DCMAKE_INSTALL_LIBDIR=lib-linux64
           make -j$(nproc)
           sudo make install
 
@@ -29,4 +37,4 @@ jobs:
       - name: Build repository
         run: |
           mkdir build && cd build
-          cmake .. && make -j$(nproc)
+          cmake .. -DBUILD_DEBUG_TARGETS=OFF && make -j$(nproc)
