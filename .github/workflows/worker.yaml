@@ -1,0 +1,32 @@
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake g++ make unzip wget
+
+      - name: Install SystemC 2.3.3
+        run: |
+          wget https://accellera.org/images/downloads/standards/systemc/systemc-2.3.3.zip
+          unzip systemc-2.3.3.zip
+          cd systemc-2.3.3
+          mkdir build && cd build
+          cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/systemc-2.3.3
+          make -j$(nproc)
+          sudo make install
+
+      - name: Set environment variables
+        run: |
+          echo "SYSTEMC_HOME=/usr/local/systemc-2.3.3" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=/usr/local/systemc-2.3.3/lib-linux64:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+          echo "CPLUS_INCLUDE_PATH=/usr/local/systemc-2.3.3/include:$CPLUS_INCLUDE_PATH" >> $GITHUB_ENV
+
+      - name: Build repository
+        run: |
+          mkdir build && cd build
+          cmake .. & make -j$(nproc)
