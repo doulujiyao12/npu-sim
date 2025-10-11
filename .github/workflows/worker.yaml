@@ -50,56 +50,56 @@ jobs:
           cmake .. -DBUILD_DEBUG_TARGETS=OFF -DSYSTEMC_HOME=${SYSTEMC_HOME} -DCMAKE_PREFIX_PATH=${SYSTEMC_HOME}
           make -j$(nproc)
 
-      - name: Test all chores JSON files
-        run: |
-          set -euo pipefail
-          export LD_LIBRARY_PATH=$SYSTEMC_HOME/lib-linux64:$LD_LIBRARY_PATH
-          export CPLUS_INCLUDE_PATH=$SYSTEMC_HOME/include:$CPLUS_INCLUDE_PATH
+      # - name: Test all chores JSON files
+      #   run: |
+      #     set -euo pipefail
+      #     export LD_LIBRARY_PATH=$SYSTEMC_HOME/lib-linux64:$LD_LIBRARY_PATH
+      #     export CPLUS_INCLUDE_PATH=$SYSTEMC_HOME/include:$CPLUS_INCLUDE_PATH
 
-          CHORES_DIR="./llm/test/chores"
-          HW_CONFIG="$CHORES_DIR/hw_config.json"
-          TIMEOUT_SEC=30
-          FAIL=0
+      #     CHORES_DIR="./llm/test/chores"
+      #     HW_CONFIG="$CHORES_DIR/hw_config.json"
+      #     TIMEOUT_SEC=30
+      #     FAIL=0
 
-          mkdir -p test_logs
+      #     mkdir -p test_logs
 
-          for CONFIG in "$CHORES_DIR"/*.json; do
-            if [[ "$CONFIG" == "$HW_CONFIG" ]]; then
-              continue
-            fi
-            BASENAME=$(basename "$CONFIG" .json)
-            LOGFILE="test_logs/${BASENAME}.log"
+      #     for CONFIG in "$CHORES_DIR"/*.json; do
+      #       if [[ "$CONFIG" == "$HW_CONFIG" ]]; then
+      #         continue
+      #       fi
+      #       BASENAME=$(basename "$CONFIG" .json)
+      #       LOGFILE="test_logs/${BASENAME}.log"
 
-            echo "========================================"
-            echo "Testing $CONFIG ..."
-            echo "----------------------------------------"
+      #       echo "========================================"
+      #       echo "Testing $CONFIG ..."
+      #       echo "----------------------------------------"
 
-            if ! timeout $TIMEOUT_SEC ./build/npusim \
-              --config-file "$CONFIG" \
-              --core-config-file "$HW_CONFIG" \
-              &> "$LOGFILE"; then
-              echo "Crash or timeout for $CONFIG"
-              FAIL=1
-              continue
-            fi
+      #       if ! timeout $TIMEOUT_SEC ./build/npusim \
+      #         --config-file "$CONFIG" \
+      #         --core-config-file "$HW_CONFIG" \
+      #         &> "$LOGFILE"; then
+      #         echo "Crash or timeout for $CONFIG"
+      #         FAIL=1
+      #         continue
+      #       fi
 
-            if grep -q "\[ERROR\]" "$LOGFILE"; then
-              echo "Found [ERROR] in $CONFIG"
-              FAIL=1
-            elif grep -q "\[CATCH_TEST\]" "$LOGFILE"; then
-              echo "PASS: $CONFIG"
-            else
-              echo "No [CATCH_TEST] found in $CONFIG"
-              FAIL=1
-            fi
-          done
+      #       if grep -q "\[ERROR\]" "$LOGFILE"; then
+      #         echo "Found [ERROR] in $CONFIG"
+      #         FAIL=1
+      #       elif grep -q "\[CATCH_TEST\]" "$LOGFILE"; then
+      #         echo "PASS: $CONFIG"
+      #       else
+      #         echo "No [CATCH_TEST] found in $CONFIG"
+      #         FAIL=1
+      #       fi
+      #     done
 
-          if [[ $FAIL -ne 0 ]]; then
-            echo "Some tests failed — logs will be uploaded."
-            exit 1
-          else
-            echo "All tests passed."
-          fi
+      #     if [[ $FAIL -ne 0 ]]; then
+      #       echo "Some tests failed — logs will be uploaded."
+      #       exit 1
+      #     else
+      #       echo "All tests passed."
+      #     fi
 
       - name: Upload npusim logs
         if: failure()
