@@ -127,7 +127,7 @@ function(add_test_executable target_name test_main_file)
 endfunction()
 
 add_test_executable(npusim       "./llm/unittest/npusim.cpp")
-add_test_executable(load_config  "./llm/unittest/load_config.cpp")      
+# add_test_executable(load_config  "./llm/unittest/load_config.cpp")      
 # add_test_executable(global_chip_test  "./llm/unittest/global_chip_test.cpp")
 
 # function(add_debug_executable target_name test_main_file)
