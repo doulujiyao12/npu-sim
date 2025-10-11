@@ -67,6 +67,7 @@ jobs:
 
             echo "Testing $CONFIG ..."
 
+            cd build
             timeout $TIMEOUT_SEC ./npusim --config-file "$CONFIG" --core-config-file "$HW_CONFIG" 2>&1 | \
             awk '
             /\[CATCH_TEST\]/ { found=1; exit }
