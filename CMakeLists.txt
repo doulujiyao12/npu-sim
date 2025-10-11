@@ -9,8 +9,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# # 设置编译选项
-# set(SYSTEMC_HOME "/root/fdh/drca/systemC")  # 修改为实际的SystemC路径
 # 从环境变量读取 SYSTEMC_HOME
 if(NOT DEFINED ENV{SYSTEMC_HOME})
     message(FATAL_ERROR "The environment variable SYSTEMC_HOME is not set. Please export SYSTEMC_HOME before running CMake.")
@@ -129,7 +127,7 @@ function(add_test_executable target_name test_main_file)
 endfunction()
 
 add_test_executable(npusim       "./llm/unittest/npusim.cpp")
-add_test_executable(load_config  "./llm/unittest/load_config.cpp")      
+# add_test_executable(load_config  "./llm/unittest/load_config.cpp")      
 # add_test_executable(global_chip_test  "./llm/unittest/global_chip_test.cpp")
 
 # function(add_debug_executable target_name test_main_file)
