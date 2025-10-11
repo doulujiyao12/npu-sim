@@ -5,6 +5,7 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+
     env:
       SYSTEMC_HOME: ${{ github.workspace }}/systemc-2.3.3
       LD_LIBRARY_PATH: ${{ github.workspace }}/systemc-2.3.3/lib-linux64:$LD_LIBRARY_PATH
@@ -34,8 +35,8 @@ jobs:
           cd systemc-2.3.3
           mkdir -p build && cd build
           cmake .. -DCMAKE_INSTALL_PREFIX=$PWD/.. \
-                  -DCMAKE_INSTALL_LIBDIR=lib-linux64 \
-                  -DCMAKE_CXX_STANDARD=17
+                   -DCMAKE_INSTALL_LIBDIR=lib-linux64 \
+                   -DCMAKE_CXX_STANDARD=17
           make -j$(nproc)
           make install
 
@@ -45,11 +46,24 @@ jobs:
         with:
           path: build
           key: project-build-${{ runner.os }}-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            project-build-${{ runner.os }}-
+        continue-on-error: true 
 
       - name: Build repository
         run: |
-          mkdir -p build && cd build
-          cmake .. -DBUILD_DEBUG_TARGETS=OFF -DSYSTEMC_HOME=${SYSTEMC_HOME} -DCMAKE_PREFIX_PATH=${SYSTEMC_HOME}
+          mkdir -p build
+          cd build
+          if [ -f CMakeCache.txt ]; then
+            echo "Using existing CMake configuration (from cache)"
+            cmake -N .
+          else
+            echo "Configuring CMake (first build)"
+            cmake .. -DBUILD_DEBUG_TARGETS=OFF \
+                     -DSYSTEMC_HOME=${SYSTEMC_HOME} \
+                     -DCMAKE_PREFIX_PATH=${SYSTEMC_HOME}
+          fi
+          find . -type f -name "*.o" -exec touch -r ../CMakeLists.txt {} +
           make -j$(nproc)
 
       - name: Test all chores JSON files
@@ -70,7 +84,7 @@ jobs:
               continue
             fi
             BASENAME=$(basename "$CONFIG" .json)
-            LOGFILE="test_logs/${BASENAME}.log"
+            LOGFILE="$(pwd)/test_logs/${BASENAME}.log"
 
             echo "========================================"
             echo "Testing $CONFIG ..."
@@ -80,9 +94,10 @@ jobs:
             if ! timeout $TIMEOUT_SEC ./npusim \
               --config-file "$CONFIG" \
               --core-config-file "$HW_CONFIG" \
-              &> "$LOGFILE"; then
+              &> "../$LOGFILE"; then
               echo "Crash or timeout for $CONFIG"
               FAIL=1
+              cd ..
               continue
             fi
             cd ..
