@@ -331,7 +331,7 @@
                                     "T": "T",
                                     "C": "C/4",
                                     "NH": "NH/4",
-"DH": "DH",
+                                    "DH": "DH",
                                     "R": "R",
                                     "sram_address": {
                                         "indata": "switch_out",
@@ -1336,7 +1336,7 @@
                                     "T": "T",
                                     "C": "C/4",
                                     "NH": "NH/4",
-"DH": "DH",
+                                    "DH": "DH",
                                     "R": "R",
                                     "sram_address": {
                                         "indata": "switch_out",
@@ -2275,7 +2275,7 @@
                                     "T": "T",
                                     "C": "C/4",
                                     "NH": "NH/4",
-"DH": "DH",
+                                    "DH": "DH",
                                     "R": "R",
                                     "sram_address": {
                                         "indata": "switch_out",
@@ -3280,7 +3280,7 @@
                                     "T": "T",
                                     "C": "C/4",
                                     "NH": "NH/4",
-"DH": "DH",
+                                    "DH": "DH",
                                     "R": "R",
                                     "sram_address": {
                                         "indata": "switch_out",
@@ -14848,7 +14848,12 @@
                             "recv_cnt": 0,
                             "cast": [
                                 {
-                                    "dest": 62
+                                    "dest": -1,
+                                    "loopout": "true"
+                                },
+                                {
+                                    "dest": 0,
+                                    "loopout": "false"
                                 }
                             ]
                         }
@@ -15071,7 +15076,12 @@
                             "recv_cnt": 0,
                             "cast": [
                                 {
-                                    "dest": 62
+                                    "dest": -1,
+                                    "loopout": "true"
+                                },
+                                {
+                                    "dest": 1,
+                                    "loopout": "false"
                                 }
                             ]
                         }
@@ -15378,7 +15388,12 @@
                             "recv_cnt": 0,
                             "cast": [
                                 {
-                                    "dest": 62
+                                    "dest": -1,
+                                    "loopout": "true"
+                                },
+                                {
+                                    "dest": 9,
+                                    "loopout": "false"
                                 }
                             ]
                         }
@@ -15601,39 +15616,12 @@
                             "recv_cnt": 0,
                             "cast": [
                                 {
-                                    "dest": 62
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "loop": "L",
-                    "id": 62,
-                    "worklist": [
-                        {
-                            "recv_cnt": 4,
-                            "cast": [
-                                {
-                                    "dest": -1
-                                }
-                            ],
-                            "prims": [
-                                {
-                                    "type": "parse_input",
-                                    "size": "BTC",
-                                    "sram_address": {
-                                        "indata": "result",
-                                        "outdata": "result"
-                                    }
+                                    "dest": -1,
+                                    "loopout": "true"
                                 },
                                 {
-                                    "type": "parse_output",
-                                    "size": "BTC",
-                                    "sram_address": {
-                                        "indata": "result",
-                                        "outdata": "result"
-                                    }
+                                    "dest": 8,
+                                    "loopout": "false"
                                 }
                             ]
                         }
