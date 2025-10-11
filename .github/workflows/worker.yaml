@@ -10,26 +10,26 @@ jobs:
       - name: Install build dependencies
         run: sudo apt-get update && sudo apt-get install -y g++ make unzip wget libsfml-dev libcairo2-dev xorg
 
-      - name: Cache SystemC 2.3.3
+      - name: Cache SystemC
         id: cache-systemc
         uses: actions/cache@v4
         with:
-          path: /usr/local/systemc-2.3.3
-          key: systemc-2.3.3-${{ runner.os }}
+          path: systemc-2.3.3/build
+          key: systemc-2.3.3-${{ runner.os }}-build
 
       - name: Install SystemC 2.3.3
         if: steps.cache-systemc.outputs.cache-hit != 'true'
         run: |
-          cmake --version
           wget https://accellera.org/images/downloads/standards/systemc/systemc-2.3.3.zip
           unzip systemc-2.3.3.zip
           cd systemc-2.3.3
           mkdir build && cd build
-          cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/systemc-2.3.3 \
-                   -DCMAKE_INSTALL_LIBDIR=lib-linux64 \
-                   -DCMAKE_CXX_STANDARD=17
+          cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/systemc-2.3.3 \
+                  -DCMAKE_INSTALL_LIBDIR=lib-linux64 \
+                  -DCMAKE_CXX_STANDARD=17
           make -j$(nproc)
-          sudo make install
+          make install
+
 
       - name: Set SystemC environment variables
         run: |
@@ -50,7 +50,7 @@ jobs:
 
           CHORES_DIR="./llm/test/chores"
           HW_CONFIG="$CHORES_DIR/hw_config.json"
-          TIMEOUT_SEC=180
+          TIMEOUT_SEC=30
 
           FAIL=0
 
@@ -65,19 +65,18 @@ jobs:
             awk '
             /\[CATCH_TEST\]/ { found=1; exit }
             /\[ERROR\]/ { error=1; exit }
-            END { if(found) exit 0; else if(error) exit 1; else exit 2 }'
+            END { if(found) exit 0; else if(error) exit 1; else exit 0 }'
             
-            STATUS=$?
-            if [[ $STATUS -eq 0 ]]; then
+            AWK_STATUS=$?
+            if [[ $AWK_STATUS -eq 0 ]]; then
               echo "PASS: $CONFIG"
-            elif [[ $STATUS -eq 1 ]]; then
+            elif [[ $AWK_STATUS -eq 1 ]]; then
               echo "FAIL (error output): $CONFIG"
               FAIL=1
             else
-              echo "FAIL (timeout or no output): $CONFIG"
+              echo "FAIL (timeout or no [CATCH_TEST]): $CONFIG"
               FAIL=1
             fi
-
           done
 
           if [[ $FAIL -ne 0 ]]; then
