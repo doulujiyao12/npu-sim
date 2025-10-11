@@ -53,39 +53,57 @@ jobs:
       - name: Test all chores JSON files
         run: |
           set -euo pipefail
+          export LD_LIBRARY_PATH=$SYSTEMC_HOME/lib-linux64:$LD_LIBRARY_PATH
+          export CPLUS_INCLUDE_PATH=$SYSTEMC_HOME/include:$CPLUS_INCLUDE_PATH
 
           CHORES_DIR="./llm/test/chores"
           HW_CONFIG="$CHORES_DIR/hw_config.json"
           TIMEOUT_SEC=30
-
           FAIL=0
+
+          mkdir -p test_logs
 
           for CONFIG in "$CHORES_DIR"/*.json; do
             if [[ "$CONFIG" == "$HW_CONFIG" ]]; then
               continue
             fi
+            BASENAME=$(basename "$CONFIG" .json)
+            LOGFILE="test_logs/${BASENAME}.log"
 
+            echo "========================================"
             echo "Testing $CONFIG ..."
+            echo "----------------------------------------"
 
-            timeout $TIMEOUT_SEC ./build/npusim --config-file "$CONFIG" --core-config-file "$HW_CONFIG" 2>&1 | tee npusim.log | \
-            awk '
-            /\[CATCH_TEST\]/ { found=1; exit }
-            /\[ERROR\]/ { error=1; exit }
-            END { if(found) exit 0; else if(error) exit 1; else exit 0 }'
-
-            AWK_STATUS=$?
-            if [[ $AWK_STATUS -eq 0 ]]; then
-              echo "PASS: $CONFIG"
-            elif [[ $AWK_STATUS -eq 1 ]]; then
-              echo "FAIL (error output): $CONFIG"
+            if ! timeout $TIMEOUT_SEC ./build/npusim \
+              --config-file "$CONFIG" \
+              --core-config-file "$HW_CONFIG" \
+              &> "$LOGFILE"; then
+              echo "Crash or timeout for $CONFIG"
               FAIL=1
+              continue
+            fi
+
+            if grep -q "\[ERROR\]" "$LOGFILE"; then
+              echo "Found [ERROR] in $CONFIG"
+              FAIL=1
+            elif grep -q "\[CATCH_TEST\]" "$LOGFILE"; then
+              echo "PASS: $CONFIG"
             else
-              echo "FAIL (timeout or no [CATCH_TEST]): $CONFIG"
+              echo "No [CATCH_TEST] found in $CONFIG"
               FAIL=1
             fi
           done
 
           if [[ $FAIL -ne 0 ]]; then
-            echo "Some tests failed"
+            echo "Some tests failed — logs will be uploaded."
             exit 1
+          else
+            echo "All tests passed."
           fi
+
+      - name: Upload npusim logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npusim-logs
+          path: test_logs/
