@@ -40,6 +40,13 @@ jobs:
           make -j$(nproc)
           make install
 
+      - name: Cache DRAMsys build
+        id: cache-dramsys
+        uses: actions/cache@v4
+        with:
+          path: DRAMSys/src
+          key: dramsys-build-${{ runner.os }}
+
       - name: Cache project build
         id: cache-project
         uses: actions/cache@v4
@@ -98,10 +105,10 @@ jobs:
             if grep -q "\[ERROR\]" "$LOGFILE"; then
               echo "Found [ERROR] in $CONFIG"
               FAIL=1
-            elif grep -q "\[CATCH_TEST\]" "$LOGFILE"; then
+            elif grep -q "\[CATCH TEST\]" "$LOGFILE"; then
               echo "PASS: $CONFIG"
             else
-              echo "No [CATCH_TEST] found in $CONFIG"
+              echo "No [CATCH TEST] found in $CONFIG"
               FAIL=1
             fi
           done

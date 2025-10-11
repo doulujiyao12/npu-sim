@@ -300,12 +300,12 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
                     push_msg(m);
             }
 
-            for (size_t j = 0; j < last_loop.size(); j++) {
+            for (size_t k = 0; k < last_loop.size(); k++) {
                 push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
                              set_batch->serialize()));
 
-                Msg m = last_loop[j];
-                m.refill_ = m.is_end_ = (j + 1 == last_loop.size());
+                Msg m = last_loop[k];
+                m.refill_ = m.is_end_ = (k + 1 == last_loop.size() && j == pipeline - 1);
                 push_msg(m);
             }
         }
