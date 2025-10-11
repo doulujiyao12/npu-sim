@@ -10,6 +10,11 @@ jobs:
       - name: Install build dependencies
         run: sudo apt-get update && sudo apt-get install -y cmake g++ make unzip wget libsfml-dev libcairo2-dev xorg
 
+      - name: Install CMake
+        uses: jwlawson/actions-setup-cmake@v1
+        with:
+          version: 3.31.3
+
       - name: Cache SystemC 2.3.3
         id: cache-systemc
         uses: actions/cache@v4
