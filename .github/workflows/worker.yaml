@@ -1,8 +1,15 @@
-on: push
+name: CI Build
+
+on: [push, pull_request]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      SYSTEMC_HOME: ${{ github.workspace }}/systemc-2.3.3
+      LD_LIBRARY_PATH: ${{ github.workspace }}/systemc-2.3.3/lib-linux64:$LD_LIBRARY_PATH
+      CPLUS_INCLUDE_PATH: ${{ github.workspace }}/systemc-2.3.3/include:$CPLUS_INCLUDE_PATH
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,18 +30,12 @@ jobs:
           wget https://accellera.org/images/downloads/standards/systemc/systemc-2.3.3.zip
           unzip systemc-2.3.3.zip
           cd systemc-2.3.3
-          mkdir build && cd build
-          cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/systemc-2.3.3 \
+          mkdir -p build && cd build
+          cmake .. -DCMAKE_INSTALL_PREFIX=$PWD/systemc-2.3.3 \
                   -DCMAKE_INSTALL_LIBDIR=lib-linux64 \
                   -DCMAKE_CXX_STANDARD=17
           make -j$(nproc)
           make install
-
-      - name: Set SystemC environment variables
-        run: |
-          echo "SYSTEMC_HOME=$HOME/systemc-2.3.3" >> $GITHUB_ENV
-          echo "LD_LIBRARY_PATH=$HOME/systemc-2.3.3/lib-linux64:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-          echo "CPLUS_INCLUDE_PATH=$HOME/systemc-2.3.3/include:$CPLUS_INCLUDE_PATH" >> $GITHUB_ENV
 
       - name: Cache project build
         id: cache-project
@@ -45,9 +46,8 @@ jobs:
 
       - name: Build repository
         run: |
-          cmake --version
           mkdir -p build && cd build
-          cmake .. -DBUILD_DEBUG_TARGETS=OFF
+          cmake .. -DBUILD_DEBUG_TARGETS=OFF -DSYSTEMC_HOME=${SYSTEMC_HOME} -DCMAKE_PREFIX_PATH=${SYSTEMC_HOME}
           make -j$(nproc)
 
       - name: Test all chores JSON files
@@ -67,13 +67,12 @@ jobs:
 
             echo "Testing $CONFIG ..."
 
-            cd build
-            timeout $TIMEOUT_SEC ./npusim --config-file "$CONFIG" --core-config-file "$HW_CONFIG" 2>&1 | \
+            timeout $TIMEOUT_SEC ./build/npusim --config-file "$CONFIG" --core-config-file "$HW_CONFIG" 2>&1 | \
             awk '
             /\[CATCH_TEST\]/ { found=1; exit }
             /\[ERROR\]/ { error=1; exit }
             END { if(found) exit 0; else if(error) exit 1; else exit 0 }'
-            
+
             AWK_STATUS=$?
             if [[ $AWK_STATUS -eq 0 ]]; then
               echo "PASS: $CONFIG"
