@@ -21,8 +21,10 @@ jobs:
         id: cache-systemc
         uses: actions/cache@v4
         with:
-          path: systemc-2.3.3/build
-          key: systemc-2.3.3-${{ runner.os }}-build
+          path: systemc-2.3.3
+          key: systemc-2.3.3-${{ runner.os }}-install
+          restore-keys: |
+            systemc-2.3.3-
 
       - name: Install SystemC 2.3.3
         if: steps.cache-systemc.outputs.cache-hit != 'true'
