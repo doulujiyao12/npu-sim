@@ -13,7 +13,7 @@ jobs:
       - name: Install CMake
         uses: jwlawson/actions-setup-cmake@v1
         with:
-          version: 3.31.3
+          version: 3.20.5
 
       - name: Cache SystemC 2.3.3
         id: cache-systemc
