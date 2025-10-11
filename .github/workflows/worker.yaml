@@ -87,14 +87,14 @@ jobs:
             LOGFILE="$(pwd)/test_logs/${BASENAME}.log"
 
             echo "========================================"
-            echo "Testing $CONFIG ..."
+            echo "Testing $CONFIG, writing into $LOGFILE"
             echo "----------------------------------------"
 
             cd build
             if ! timeout $TIMEOUT_SEC ./npusim \
               --config-file "$CONFIG" \
               --core-config-file "$HW_CONFIG" \
-              &> "../$LOGFILE"; then
+              &> "$LOGFILE"; then
               echo "Crash or timeout for $CONFIG"
               FAIL=1
               cd ..
