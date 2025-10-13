@@ -8,6 +8,8 @@
 *.vscode
 *.results
 *.data
+timeline copy.js
+timeline2.js
 batch.sh
 /test/
 aaa.cpp

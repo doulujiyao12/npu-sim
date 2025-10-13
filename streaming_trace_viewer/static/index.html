@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Streaming Trace Viewer</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+      color: #333;
+    }
+
+    #controls {
+      background: #fff;
+      padding: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    #controls input[type="text"] {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      width: 220px;
+    }
+
+    #controls button {
+      padding: 6px 14px;
+      border: none;
+      border-radius: 4px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+
+    #controls button:hover {
+      background: #0056b3;
+    }
+
+    #controls label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 14px;
+    }
+
+    .sim-panel {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      border: 1px solid #e9ecef;
+    }
+
+    #timeline {
+      padding: 20px;
+      background: #fff;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      margin: 20px auto;
+      max-width: 100%;
+      overflow-x: auto;
+    }
+
+    svg {
+      border: 1px solid #ddd;
+      background: #fafafa;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .event {
+      stroke: #fff;
+      stroke-width: 0.5;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .event:hover {
+      opacity: 0.8;
+    }
+
+    .flow-arrow {
+      stroke: #f00;
+      stroke-width: 1;
+      marker-end: url(#arrowhead);
+      opacity: 0.7;
+    }
+
+    .track-label {
+      font-size: 11px;
+      font-weight: bold;
+      fill: #555;
+    }
+
+    #simStatus {
+      font-size: 12px;
+      min-width: 150px;
+      margin-left: 8px;
+    }
+
+    /* Log Panel */
+    #logPanel {
+      margin: 20px auto;
+      max-width: 1600px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+    }
+
+    #logHeader {
+      padding: 10px 15px;
+      background: #f1f3f5;
+      border-bottom: 1px solid #ddd;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #logContent {
+      padding: 10px;
+      height: 200px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      background: #fdf6e3;
+      color: #586e75;
+    }
+
+    #clearLogBtn {
+      padding: 4px 10px;
+      background: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    #clearLogBtn:hover {
+      background: #5a6268;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <input type="text" id="searchInput" placeholder="Search event name..." oninput="filterEvents()">
+    <button onclick="resetZoom()">Reset Zoom</button>
+    <button onclick="clearTrace()">Clear Trace</button> <!-- 新增按钮 -->
+    <label>
+      <input type="checkbox" id="autoReload" onchange="toggleAutoReload()">
+      Auto Reload
+    </label>
+
+    <!-- 新增：Hide Log 复选框 -->
+    <label>
+      <input type="checkbox" id="hideLog" checked onchange="toggleLogVisibility()">
+      Hide Log
+    </label>
+
+    <div class="sim-panel">
+      <strong>Run Simulation:</strong>
+      <input type="text" id="configFile" value="../llm/test/gpt2_small/original.json" />
+      <input type="text" id="coreConfigFile" value="../llm/test/core_configs/core_4x4.json" />
+      <button onclick="runSimulation()">▶️ Run NPU Simulator</button>
+      <div id="simStatus"></div>
+    </div>
+  </div>
+  <div id="timeline"></div>
+
+  <!-- Log Panel -->
+  <div id="logPanel">
+    <div id="logHeader">
+      <span>Simulation Log</span>
+      <button id="clearLogBtn" onclick="clearLog()">Clear Log</button>
+    </div>
+    <div id="logContent"></div>
+  </div>
+
+  <script src="/static/timeline.js"></script>
+</body>
+</html>
