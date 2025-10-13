@@ -230,7 +230,6 @@ void WorkerCoreExecutor::worker_core_execute() {
 #else
             while (!send_done) {
                 wait(CYCLE, SC_NS);
-                cout << "1919" << endl;
             }
 
             // send 模块处理的四条指令
@@ -306,10 +305,7 @@ void WorkerCoreExecutor::worker_core_execute() {
         }
 
         prim_queue.pop_front();
-        {
-            wait(CYCLE, SC_NS);
-            cout << "2020" << endl;
-        }
+        wait(CYCLE, SC_NS);
     }
 }
 
@@ -319,10 +315,7 @@ void WorkerCoreExecutor::switch_prim_block() {
         wait();
 
         prim_block.write(false);
-        {
-            wait(CYCLE, SC_NS);
-            cout << "2121" << endl;
-        }
+        wait(CYCLE, SC_NS);
     }
 }
 
@@ -360,16 +353,14 @@ void WorkerCoreExecutor::poll_buffer_i() {
         msg_buffer_[m.msg_type_].push(m);
         ev_recv_msg_type_[m.msg_type_].notify(0, SC_NS);
 
-        if (msg_buffer_[m.msg_type_].size() >= MAX_BUFFER_PACKET_SIZE) {
+        if (IsBlockableMsgType(m.msg_type_) &&
+            msg_buffer_[m.msg_type_].size() >= MAX_BUFFER_PACKET_SIZE) {
             core_busy_o.write(true);
             block_mark = m.msg_type_;
         } else
             core_busy_o.write(false);
 
-            {
         wait(CYCLE, SC_NS);
-        // cout << "2626" << endl;
-            }
     }
 }
 
@@ -482,11 +473,11 @@ void WorkerCoreExecutor::send_helper() {
     while (true) {
 #if ROUTER_PIPE == 1
         if (send_helper_write >= 1) {
-
 #else
         if (send_helper_write >= 2) {
 #endif
-            channel_o.write(SerializeMsg(send_buffer));
+            auto ser = SerializeMsg(send_buffer);
+            channel_o.write(ser);
             data_sent_o.write(true);
             ev_next_write_clear.notify(CYCLE, SC_NS);
         } else

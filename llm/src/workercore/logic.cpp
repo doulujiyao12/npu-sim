@@ -40,6 +40,7 @@ void WorkerCoreExecutor::send_logic() {
 
         while (true) {
             bool need_long_wait = false;
+            int roofline_packets = 1;
 
             if (atomic_helper_lock(sc_time_stamp(), 0))
                 ev_send_helper.notify(0, SC_NS);
@@ -54,10 +55,12 @@ void WorkerCoreExecutor::send_logic() {
 
                     bool is_end_packet =
                         prim->data_packet_id == prim->max_packet;
-                    int length = M_D_DATA;
-                    if (is_end_packet) {
-                        length = prim->end_length;
-                    }
+                    int length = is_end_packet ? prim->end_length : M_D_DATA;
+
+#if USE_BEHA_NOC == 1
+                    is_end_packet = true;
+                    roofline_packets = prim->max_packet;
+#endif
 
                     int delay = 0;
                     TaskCoreContext context = generate_context(this);
@@ -69,16 +72,21 @@ void WorkerCoreExecutor::send_logic() {
                     if (!channel_avail_i.read())
                         wait(ev_channel_avail_i);
 
-                    send_buffer =
-                        Msg(prim->data_packet_id == prim->max_packet,
-                            MSG_TYPE::DATA, prim->data_packet_id, prim->des_id,
-                            0, prim->tag_id, length, sc_bv<128>(0x1));
+                    Msg temp_msg = Msg(is_end_packet, MSG_TYPE::DATA,
+                                       prim->data_packet_id, prim->des_id, 0,
+                                       prim->tag_id, length, sc_bv<128>(0x1));
+                    temp_msg.roofline_packets_ = roofline_packets;
+                    send_buffer = temp_msg;
 
                     // send_helper_write = 3;
                     atomic_helper_lock(sc_time_stamp(), 3);
                     ev_send_helper.notify(0, SC_NS);
 
-                    if (prim->data_packet_id == prim->max_packet) {
+                    cout << "Core " << cid << ": send " << send_buffer.seq_id_
+                         << " to " << send_buffer.des_ << " at "
+                         << sc_time_stamp() << endl;
+
+                    if (is_end_packet) {
                         cout << "Core " << cid
                              << " max_packet: " << prim->max_packet << " "
                              << send_buffer.is_end_ << endl;
@@ -142,20 +150,13 @@ void WorkerCoreExecutor::send_logic() {
                 sc_stop();
             }
 
+            wait(roofline_packets * CYCLE, SC_NS);
+
             if (job_done) {
                 cout << "[SEND DONE] Core " << cid << ": running send "
                      << GetEnumSendType(prim->type) << " done at "
                      << sc_time_stamp() << "\n";
                 break;
-            }
-
-
-            {
-                wait(CYCLE, SC_NS);
-                // cout << "1010" << endl;
-            }
-            if (need_long_wait) {
-                wait((CORE_ACC_PAYLOAD - 1) * 2, SC_NS);
             }
         }
 
@@ -198,7 +199,6 @@ void WorkerCoreExecutor::send_para_logic() {
 #else
                 while (atomic_helper_lock(sc_time_stamp(), 0) == false) {
                     wait(CYCLE, SC_NS);
-                    cout << "1111" << endl;
                 }
 
                 ev_send_helper.notify(0, SC_NS);
@@ -241,10 +241,7 @@ void WorkerCoreExecutor::send_para_logic() {
                                 wait(ev_send_last_packet);
                                 while (atomic_helper_lock(sc_time_stamp(), 0) ==
                                        false) {
-                                    {
-                                        wait(CYCLE, SC_NS);
-                                        cout << "1212" << endl;
-                                    }
+                                    wait(CYCLE, SC_NS);
                                 }
                             }
 #endif
@@ -289,10 +286,7 @@ void WorkerCoreExecutor::send_para_logic() {
                                 send_helper_write = 0;
                             }
 
-                            {
-                                wait(CYCLE, SC_NS);
-                                cout << "1313" << endl;
-                            }
+                            wait(CYCLE, SC_NS);
                             atomic_helper_lock(sc_time_stamp(), 0);
                             // cout << "Core " << channel_avail_i.read() <<
                             // endl;
@@ -367,10 +361,7 @@ void WorkerCoreExecutor::send_para_logic() {
                 }
 
                 // 等待下一个时钟周期
-                {
-                    wait(CYCLE, SC_NS);
-                    cout << "1414" << endl;
-                }
+                wait(CYCLE, SC_NS);
             }
 
             if (typeid(*prim) == typeid(Send_prim)) {
@@ -413,6 +404,7 @@ void WorkerCoreExecutor::recv_logic() {
 
         while (true) {
             bool need_long_wait = false;
+            int roofline_packets = 1;
 
             if (atomic_helper_lock(sc_time_stamp(), 0))
                 ev_send_helper.notify(0, SC_NS);
@@ -459,7 +451,6 @@ void WorkerCoreExecutor::recv_logic() {
                     while (!atomic_helper_lock(sc_time_stamp(), 3) ||
                            !channel_avail_i.read()) {
                         wait(CYCLE, SC_NS);
-                        cout << "1515" << endl;
                     }
 
                     // 这里是针对host data 和 start 包
@@ -548,7 +539,9 @@ void WorkerCoreExecutor::recv_logic() {
                         cout << sc_time_stamp() << ": Worker " << cid
                              << " receive end packet: end_cnt " << end_cnt
                              << ", recv_cnt " << recv_cnt << ", max_recv "
-                             << max_recv << endl;
+                             << max_recv
+                             << ", roofline: " << temp.roofline_packets_
+                             << endl;
 
                         // prim->recv_cnt 记录的是 receive 原语 需要接受的
                         // end 包的数量 多发一的实现 max_recv 表示当前 DATA
@@ -561,6 +554,9 @@ void WorkerCoreExecutor::recv_logic() {
                     }
 
                     need_long_wait = true;
+#if USE_BEHA_NOC == 1
+                    roofline_packets = temp.roofline_packets_;
+#endif
                 }
             }
 
@@ -571,7 +567,6 @@ void WorkerCoreExecutor::recv_logic() {
                     while (!atomic_helper_lock(sc_time_stamp(), 3) ||
                            !channel_avail_i.read()) {
                         wait(CYCLE, SC_NS);
-                        cout << "1616" << endl;
                     }
 
                     // 正在等待向host发送ack包
@@ -606,24 +601,12 @@ void WorkerCoreExecutor::recv_logic() {
                 sc_stop();
             }
 
-            if (job_done) {
-                ev_msg_process_end.notify();
-                break;
-            }
-
             // 等待下一个时钟周期
-            {
-            wait(CYCLE, SC_NS);
-            // cout << "2525" << endl;
-            }
-
-            if (need_long_wait) {
-                // cout << sc_time_stamp() << ": Worker " << cid
-                //      << ": long wait.\n";
-                wait((CORE_ACC_PAYLOAD - 1) * 2, SC_NS);
-            }
+            wait(roofline_packets * CYCLE, SC_NS);
 
             ev_msg_process_end.notify();
+            if (job_done)
+                break;
         }
 
         ev_block.notify(CYCLE, SC_NS);
@@ -683,7 +666,6 @@ void WorkerCoreExecutor::req_logic() {
                     while (!atomic_helper_lock(sc_time_stamp(), 3) ||
                            !channel_avail_i.read()) {
                         wait(CYCLE, SC_NS);
-                        cout << "1818" << endl;
                     }
 
                     int des = ack_queue.front();

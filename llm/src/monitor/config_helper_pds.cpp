@@ -137,27 +137,38 @@ void config_helper_pds::fill_queue_start(queue<Msg> *q) {
             int pkg_num = (send_size_in_bit % M_D_DATA)
                               ? (send_size_in_bit / M_D_DATA + 1)
                               : (send_size_in_bit / M_D_DATA);
-            pkg_num = pkg_num % (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD)
-                          ? pkg_num / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD) + 1
-                          : pkg_num / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD);
+            pkg_num = pkg_num % CORE_COMM_PAYLOAD
+                          ? pkg_num / CORE_COMM_PAYLOAD + 1
+                          : pkg_num / CORE_COMM_PAYLOAD;
 
+#if USE_BEHA_NOC == 1
+            sc_bv<M_D_DATA> d(0x1);
+            int length = M_D_DATA;
+            Msg m = Msg(false, MSG_TYPE::S_DATA, ++total_pkg, status.id, 0,
+                        status.id, M_D_DATA, d);
+            m.source_ = GRID_SIZE;
+            m.roofline_packets_ = pkg_num;
+            q[index].push(m);
+#else
             for (int j = 1; j <= pkg_num; j++) {
                 sc_bv<M_D_DATA> d(0x1);
 
                 Msg m = Msg(false, MSG_TYPE::S_DATA, j + total_pkg, status.id,
                             M_D_DATA * (j - 1), status.id, M_D_DATA, d);
                 m.source_ = GRID_SIZE;
+                m.roofline_packets_ = 1;
                 q[index].push(m);
             }
 
             total_pkg += pkg_num;
+#endif
         }
 
         sc_bv<M_D_DATA> d(0x1);
-        q[index].push(Msg(true, MSG_TYPE::S_DATA, total_pkg + 1, status.id, 0,
+        q[index].push(Msg(true, MSG_TYPE::S_DATA, ++total_pkg, status.id, 0,
                           status.id, 1, d));
 
-        cout << "Send start data: " << total_pkg + 1 << " pkgs to core "
+        cout << "Send start data: " << total_pkg << " pkgs to core "
              << status.id << endl;
     }
 
@@ -625,17 +636,9 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
                 new Send_prim(SEND_TYPE::SEND_DATA, send_dest, send_tag);
             send_data->output_label = output_label;
 
-            int output_size = max(int(C * T * B * sizeof(float)), 1);
-            int pkg_nums = (output_size % M_D_DATA)
-                               ? (output_size / M_D_DATA + 1)
-                               : (output_size / M_D_DATA);
-            int end_length = output_size - (pkg_nums - 1) * M_D_DATA;
-
-            send_data->max_packet = pkg_nums % CORE_COMM_PAYLOAD
-                                        ? pkg_nums / CORE_COMM_PAYLOAD + 1
-                                        : pkg_nums / CORE_COMM_PAYLOAD;
-            ;
-            send_data->end_length = end_length;
+            int output_size = max(int(C * T * B), 1);
+            CalculatePacketNum(output_size, 1, 1, send_data->max_packet,
+                               send_data->end_length);
 
             if (core_id / tp_size < prefill_core &&
                 stage_index[core_id / tp_size] == 1) {

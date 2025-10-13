@@ -369,7 +369,6 @@ void MemInterface::write_helper() {
                 wait(ev_host_channel_available);
             else {
                 wait(CYCLE, SC_NS);
-                // cout << "2727" << endl;
             }
         }
 

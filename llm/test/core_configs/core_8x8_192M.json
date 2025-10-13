@@ -3,7 +3,7 @@
     "sram_size": 201326592,
     "comm_acc": 1,
     "cores": [
-        {
+        { 
             "id": 0,
             "exu_x": 128,
             "exu_y": 128,

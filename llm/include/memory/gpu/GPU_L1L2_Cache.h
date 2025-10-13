@@ -506,8 +506,7 @@ public:
             bus_socket->nb_transport_fw(*newTrans, phase, delay);
 
             // 等待响应（简化处理）
-            {wait(CYCLE, SC_NS);
-cout << "111" << endl;}
+            wait(CYCLE, SC_NS);
 
             // 如果是写回请求，释放数据内存
             if (req.type == CacheRequest::WRITEBACK_REQ) {
@@ -1161,12 +1160,10 @@ public:
                 status = l2_socket->nb_transport_fw(*request.transaction, phase,
                                                     delay);
                 if (status == TLM_COMPLETED) {
-                    {wait(CYCLE, SC_NS);
-cout << "222" << endl;} // 总线仲裁延迟
+                    wait(CYCLE, SC_NS); // 总线仲裁延迟
 
                 } else {
-                    {wait(CYCLE, SC_NS);
-cout << "333" << endl;} // 总线仲裁延迟
+                    wait(CYCLE, SC_NS); // 总线仲裁延迟
                     requestQueue.pop();
                 }
 
@@ -1193,8 +1190,7 @@ cout << "333" << endl;} // 总线仲裁延迟
                      << " Time stamp: " << sc_time_stamp() << endl;
        
 #endif
-                {wait(CYCLE, SC_NS);
-cout << "444" << endl;} // 总线仲裁延迟
+                wait(CYCLE, SC_NS); // 总线仲裁延迟
                 requestQueue.pop();
 
                 // 无效化请求完成后，回复发起者
@@ -2846,8 +2842,7 @@ public:
             cache_socket->nb_transport_fw(*trans, phase, delay);
 
             // 等待随机时间后继续
-            {wait(CYCLE, SC_NS);
-cout << "555" << endl;}
+            wait(CYCLE, SC_NS);
         }
     }
 };
