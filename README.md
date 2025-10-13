@@ -85,7 +85,7 @@ sudo apt install xorg
 sudo apt install ttf-mscorefonts-installer  # 需要在弹出界面选择 OK
 ```
 
-## 2. Compile and Run
+### 2. Compile and Run
 
 ```bash
 cd /path/to/NPU-SIM/src
