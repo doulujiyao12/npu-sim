@@ -20,7 +20,10 @@ void Send_prim::printSelf() {
         cout << "\tout_label: " << output_label << endl;
 }
 
-void Send_prim::deserialize(sc_bv<128> buffer) {
+void Send_prim::deserialize(vector<sc_bv<128>> segments) {
+        cout << "Start deserialize " << name << endl;
+    auto buffer = segments[0];
+    
     des_id = buffer.range(23, 8).to_uint64();
 
     if (type == SEND_DATA)
@@ -34,7 +37,9 @@ void Send_prim::deserialize(sc_bv<128> buffer) {
     datatype = DATATYPE(buffer.range(109, 108).to_uint64());
 }
 
-sc_bv<128> Send_prim::serialize() {
+vector<sc_bv<128>> Send_prim::serialize() {
+    vector<sc_bv<128>> segments;
+
     sc_bv<128> d;
     d.range(7, 0) = sc_bv<8>(PrimFactory::getInstance().getPrimId(name));
     d.range(23, 8) = sc_bv<16>(des_id);
@@ -52,8 +57,9 @@ sc_bv<128> Send_prim::serialize() {
     d.range(99, 92) = sc_bv<8>(tag_id);
     d.range(107, 100) = sc_bv<8>(end_length);
     d.range(109, 108) = sc_bv<2>(datatype);
+    segments.push_back(d);
 
-    return d;
+    return segments;
 }
 int Send_prim::taskCoreDefault(TaskCoreContext &context) {
 #if USE_NB_DRAMSYS == 0

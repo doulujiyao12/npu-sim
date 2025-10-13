@@ -397,6 +397,7 @@ void WorkerCoreExecutor::recv_logic() {
         // 在RECV_CONFIG中，接收到最后一个config包之后，需要等待发送ack
         bool wait_send = false;
         bool job_done = false;
+        vector<sc_bv<128>> segments; // 单个原语配置的所有数据包
 
         cout << "[RECV] Core " << cid << ": running recv "
              << GetEnumRecvType(prim->type) << ", recv_cnt " << prim->recv_cnt
@@ -583,7 +584,25 @@ void WorkerCoreExecutor::recv_logic() {
 
                     Msg m = msg_buffer_[MSG_TYPE::CONFIG].front();
                     msg_buffer_[MSG_TYPE::CONFIG].pop();
-                    prim_queue.emplace_back(parse_prim(m.data_));
+
+                    if (m.config_end_) {
+                        cout << "[RECV] Core " << cid
+                             << ": received CONFIG end, "
+                             << PrimFactory::getInstance().getPrimType(
+                                    m.data_.range(7, 0).to_uint64())
+                             << endl;
+                        segments.push_back(m.data_);
+                        prim_queue.emplace_back(parse_prim(segments));
+                        segments.clear();
+                    } else {
+                        cout << "[RECV] Core " << cid
+                             << ": received CONFIG segment, "
+                             << PrimFactory::getInstance().getPrimType(
+                                    m.data_.range(7, 0).to_uint64())
+                             << endl;
+                        segments.push_back(m.data_);
+                    }
+
 
                     // 检查是否为end config包，如果是，需要向host发送ack包
                     if (m.is_end_) {

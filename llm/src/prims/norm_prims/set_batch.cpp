@@ -22,7 +22,10 @@ int Set_batch::taskCoreDefault(TaskCoreContext &context) {
 
 void Set_batch::printSelf() { cout << "<Set_batch>\n"; }
 
-void Set_batch::deserialize(sc_bv<128> buffer) {
+void Set_batch::deserialize(vector<sc_bv<128>> segments) {
+        cout << "Start deserialize " << name << endl;
+    auto buffer = segments[0];
+    
     int batch_size = buffer.range(11, 8).to_uint64();
     auto_pd = buffer.range(13, 12).to_uint64();
     int pos = 14;
@@ -35,7 +38,9 @@ void Set_batch::deserialize(sc_bv<128> buffer) {
     }
 }
 
-sc_bv<128> Set_batch::serialize() {
+vector<sc_bv<128>> Set_batch::serialize() {
+    vector<sc_bv<128>> segments;
+
     sc_bv<128> d;
     d.range(7, 0) = sc_bv<8>(PrimFactory::getInstance().getPrimId(name));
     d.range(11, 8) = sc_bv<4>(batch_info.size());
@@ -48,6 +53,7 @@ sc_bv<128> Set_batch::serialize() {
         d.range(pos + 21, pos + 10) = sc_bv<12>(batch_info[i].token_num);
         pos += 22;
     }
+    segments.push_back(d);
 
-    return d;
+    return segments;
 }

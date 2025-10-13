@@ -4,76 +4,109 @@
 #include "utils/print_utils.h"
 #include "utils/system_utils.h"
 
-sc_bv<128> GpuBase::serialize() {
-    sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(PrimFactory::getInstance().getPrimId(name));
-    d.range(8, 8) = sc_bv<1>(datatype);
-    d.range(24, 9) = sc_bv<16>(fetch_index);
-    d.range(32, 25) = sc_bv<8>(slice_x);
-    d.range(40, 33) = sc_bv<8>(slice_y);
-    d.range(56, 41) = sc_bv<16>(req_sm);
+vector<sc_bv<128>> GpuBase::serialize() {
+    cout << "Start serialize " << name << endl;
 
-    // 所有参数平均分配
-    if (param_name.size() > 10) {
-        ARGUS_EXIT("Primitive with # params = ", param_name.size(),
-                   " is not supported.\n");
-        return d;
+    vector<sc_bv<128>> segments;
+
+    // metadata
+    sc_bv<128> metadata;
+    metadata.range(7, 0) = sc_bv<8>(PrimFactory::getInstance().getPrimId(name));
+    metadata.range(8, 8) = sc_bv<1>(datatype);
+    metadata.range(24, 9) = sc_bv<16>(fetch_index);
+    metadata.range(56, 41) = sc_bv<16>(req_sm);
+    segments.push_back(metadata);
+
+    std::vector<std::pair<std::string, int>> vec(param_value.begin(),
+                                                 param_value.end());
+    std::sort(vec.begin(), vec.end(),
+              [](auto &a, auto &b) { return a.first < b.first; });
+
+    // 规定一个参数使用32位存储，即一个segment存储4个参数
+    for (auto it = vec.begin(); it != vec.end();) {
+        sc_bv<128> d;
+        d.range(7, 0) = sc_bv<8>(PrimFactory::getInstance().getPrimId(name));
+        int pos = 8;
+        for (int i = 0; i < 4 && it != vec.end(); i++, it++, pos += 30) {
+            d.range(pos + 29, pos) = sc_bv<30>(it->second);
+            cout << "Pos " << pos << ": " << it->first << ": " << it->second
+                 << endl;
+        }
+
+        segments.push_back(d);
     }
 
-    int pos = 57;
-    if (param_name.size() <= 2) {
-        for (auto &pair : param_value) {
-            d.range(pos + 31, pos) = sc_bv<32>(pair.second);
-            pos += 32;
-        }
-    } else if (param_name.size() <= 4) {
-        for (auto &pair : param_value) {
-            d.range(pos + 15, pos) = sc_bv<16>(pair.second);
-            pos += 16;
-        }
-    } else {
-        for (auto &pair : param_value) {
-            d.range(pos + 7, pos) = sc_bv<8>(pair.second);
-            pos += 8;
-        }
-    }
-
-    return d;
+    return segments;
 }
 
-void GpuBase::deserialize(sc_bv<128> buffer) {
+void GpuBase::deserialize(vector<sc_bv<128>> segments) {
+    cout << "Start deserialize " << name << endl;
+
+    // 解析metadata
+    auto buffer = segments[0];
     datatype = DATATYPE(buffer.range(8, 8).to_uint64());
     fetch_index = buffer.range(24, 9).to_uint64();
-    slice_x = buffer.range(32, 25).to_uint64();
-    slice_y = buffer.range(40, 33).to_uint64();
     req_sm = buffer.range(56, 41).to_uint64();
 
-    int pos = 5761;
-    if (param_name.size() <= 2) {
-        for (auto &param : param_name) {
-            param_value[param] = buffer.range(pos + 31, pos).to_uint64();
-            pos += 32;
-        }
-    } else if (param_name.size() <= 4) {
-        for (auto &param : param_name) {
-            param_value[param] = buffer.range(pos + 15, pos).to_uint64();
-            pos += 16;
-        }
-    } else {
-        for (auto &param : param_name) {
-            param_value[param] = buffer.range(pos + 7, pos).to_uint64();
-            pos += 8;
+    vector<string> vec(param_name.begin(), param_name.end());
+    sort(vec.begin(), vec.end());
+
+    // 依次解析参数，每一个segment存储4个参数
+    if (segments.size() - 1 != (vec.size() + 3) / 4)
+        ARGUS_EXIT("In deserialize ", name,
+                   ": the number of segments does not match the number of "
+                   "parameters.\n");
+
+    for (int i = 1; i < segments.size(); i++) {
+        auto buffer = segments[i];
+        for (int j = 0; j < 4; j++) {
+            int index = (i - 1) * 4 + j;
+            if (index >= vec.size())
+                break;
+            param_value[vec[index]] =
+                buffer.range(29 + j * 30, j * 30 + 8).to_uint64();
+
+            cout << "Parameter " << vec[index] << ": "
+                 << param_value[vec[index]] << endl;
         }
     }
 
     initialize();
     initializeDefault();
+
+    cout << "Finish deserialize " << name << endl;
 }
 
 void GpuBase::parseCompose(json j) {
-    SetParamFromJson(j, "slice_x", &slice_x);
-    SetParamFromJson(j, "slice_y", &slice_y);
-    SetParamFromJson(j, "req_sm", &req_sm);
+    SetParamFromJson(j, "require_sm", &req_sm);
+}
+
+void GpuBase::parseAddress(json j) {
+    string in_label = j["indata"];
+    prim_context->datapass_label_->outdata = j["outdata"];
+
+    std::vector<std::string> in_labels;
+
+    std::istringstream iss(in_label);
+    std::string word;
+    std::string temp;
+
+    // 保证DRAM_LABEL后面跟着另一个label
+    while (iss >> word) {
+        if (word == DRAM_LABEL || word == "_" + string(DRAM_LABEL)) {
+            temp = word;
+            if (iss >> word) {
+                temp += " " + word;
+            }
+            in_labels.push_back(temp);
+        } else {
+            in_labels.push_back(word);
+        }
+    }
+
+    for (int i = 0; i < in_labels.size(); i++) {
+        prim_context->datapass_label_->indata[i] = in_labels[i];
+    }
 }
 
 void GpuBase::parseJson(json j) {
@@ -86,6 +119,9 @@ void GpuBase::parseJson(json j) {
 
     if (j.contains("compose"))
         parseCompose(j["compose"]);
+
+    if (j.contains("address"))
+        parseAddress(j["address"]);
 }
 
 void GpuBase::initializeDefault() {
@@ -100,6 +136,7 @@ void GpuBase::initializeDefault() {
 
     out_size = -1;
     for (const auto &chunk : data_chunk) {
+        cout << "Chunk " << chunk.first << ": " << chunk.second << endl;
         if (chunk.first == "output") {
             out_size = chunk.second;
             break;

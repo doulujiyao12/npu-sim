@@ -1,14 +1,22 @@
 #include "prims/gpu_prims.h"
 #include "utils/memory_utils.h"
+#include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
+REGISTER_PRIM(matmul_forward_gpu_pd);
+
 void matmul_forward_gpu_pd::initialize() {
+    if (datatype == INT8)
+        data_byte = 1;
+    else if (datatype == FP16)
+        data_byte = 2;
+
     auto &p = param_value;
     input_size = {data_byte * p["B"] * p["T"] * p["C"]};
     data_chunk = {{"weight", data_byte * p["C"] * p["OC"]},
                   {"bias", data_byte * p["C"]},
                   {"output", data_byte * p["B"] * p["T"] * p["oC"] /
-                                 (3 * slice_x * slice_y)}};
+                                 (3 * p["slice_x"] * p["slice_y"])}};
 }
 
 int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
@@ -57,28 +65,28 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
 #if USE_L1L2_CACHE == 1
     if (gpu_inner == true) {
         // 通过fetch_index计算位置
-        int row_index = fetch_index / slice_x;
-        int col_index = fetch_index % slice_x;
+        int row_index = fetch_index / p["slice_x"];
+        int col_index = fetch_index % p["slice_x"];
 
         // input 读入
         gpu_read_generic(
-            context, input_mem_offset + input_size / slice_y * row_index,
-            input_size / slice_y, mem_time);
+            context, input_mem_offset + input_size / p["slice_y"] * row_index,
+            input_size / p["slice_y"], mem_time);
 #if GPU_CACHE_DEBUG == 1
 
-        cout << " data_size_weight / slice_x " << data_size_weight / slice_x
-             << endl;
+        cout << " data_size_weight / p[" slice_x "] "
+             << data_size_weight / p["slice_x"] << endl;
 
 #endif
         // weight 读入
 
-        gpu_read_generic(context, w_key.pos + w_key.size / slice_x * col_index,
-                         GetFromPairedVector(data_chunk, "weight") / slice_x,
-                         mem_time);
+        gpu_read_generic(
+            context, w_key.pos + w_key.size / p["slice_x"] * col_index,
+            GetFromPairedVector(data_chunk, "weight") / p["slice_x"], mem_time);
         // bias 读入
-        gpu_read_generic(context, b_key.pos + b_key.size / slice_x * col_index,
-                         GetFromPairedVector(data_chunk, "bias") / slice_x,
-                         mem_time);
+        gpu_read_generic(
+            context, b_key.pos + b_key.size / p["slice_x"] * col_index,
+            GetFromPairedVector(data_chunk, "bias") / p["slice_x"], mem_time);
 
         for (auto stage : prim_context->batch_info_) {
             int size = 0;
@@ -86,11 +94,11 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
             case JOB_PREFILL:
             case JOB_BOTH:
                 size = data_byte * p["B"] * p["OC"] * stage.token_num /
-                       (slice_y * slice_x) / 3;
+                       (p["slice_y"] * p["slice_x"]) / 3;
                 break;
             case JOB_DECODE:
-                size =
-                    data_byte * p["B"] * p["OC"] * 1 / (slice_y * slice_x) / 3;
+                size = data_byte * p["B"] * p["OC"] * 1 /
+                       (p["slice_y"] * p["slice_x"]) / 3;
                 break;
             default:
                 assert(false && "Unsupported job type");
@@ -99,13 +107,13 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
             cout << "[GPU MATMUL PD]: size: " << size << endl;
 
             char format_label_k[100];
-            sprintf(format_label_k, "%s%s%sk#%d", prefix.c_str(), ETERNAL_PREFIX,
-                    KVCACHE_PREFIX, stage.req_id);
+            sprintf(format_label_k, "%s%s%sk#%d", prefix.c_str(),
+                    ETERNAL_PREFIX, KVCACHE_PREFIX, stage.req_id);
             string label_k = format_label_k;
 
             char format_label_v[100];
-            sprintf(format_label_v, "%s%s%sv#%d", prefix.c_str(), ETERNAL_PREFIX,
-                    KVCACHE_PREFIX, stage.req_id);
+            sprintf(format_label_v, "%s%s%sv#%d", prefix.c_str(),
+                    ETERNAL_PREFIX, KVCACHE_PREFIX, stage.req_id);
             string label_v = format_label_v;
 
             prim_context->gpu_pos_locator_->updatePair(label_k, size);
@@ -143,9 +151,9 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
         SfuConfig *sfu = core_config->sfu;
 
         if (exu->type == MAC_Array)
-            cycle +=
-                (p["B"] * p["T"] * p["C"] * p["OC"] * 2 / (slice_x * slice_y)) /
-                (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+            cycle += (p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
+                      (p["slice_x"] * p["slice_y"])) /
+                     (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
         else
             assert(false && "Unsupported tile type");
 
@@ -173,23 +181,22 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
                                      << ", dram_time: " << mem_time << RESET);
         }
     } else {
-        int slice_total = slice_x * slice_y;
+        int slice_total = p["slice_x"] * p["slice_y"];
         // input 读入
-        gpu_read_generic(context,
-                         input_mem_offset +
-                             input_size / slice_total * fetch_index,
-                         input_size / slice_total, mem_time);
+        gpu_read_generic(
+            context, input_mem_offset + input_size / slice_total * fetch_index,
+            input_size / slice_total, mem_time);
 #if GPU_CACHE_DEBUG == 1
 
         LOG_VERBOSE(1, context.prim_context->cid,
-                    " data_size_weight / slice_x "
-                        << data_size_weight / slice_x);
+                    " data_size_weight / p[" slice_x "] "
+                        << data_size_weight / p["slice_x"]);
 
 
 #endif
         // weight 读入
-        // LOG_VERBOSE(1, context.prim_context->cid," data_size_weight / slice_x
-        // " << data_size_weight / slice_x);
+        // LOG_VERBOSE(1, context.prim_context->cid," data_size_weight /
+        // p["slice_x"] " << data_size_weight / p["slice_x"]);
 
         gpu_read_generic(
             context, w_key.pos + w_key.size / slice_total * fetch_index,
@@ -206,11 +213,11 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
             case JOB_PREFILL:
             case JOB_BOTH:
                 size = data_byte * p["B"] * p["OC"] * stage.token_num /
-                       (slice_y * slice_x) / 3;
+                       (p["slice_y"] * p["slice_x"]) / 3;
                 break;
             case JOB_DECODE:
-                size =
-                    data_byte * p["B"] * p["OC"] * 1 / (slice_y * slice_x) / 3;
+                size = data_byte * p["B"] * p["OC"] * 1 /
+                       (p["slice_y"] * p["slice_x"]) / 3;
                 break;
             default:
                 assert(false && "Unsupported job type");
@@ -266,9 +273,9 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
         SfuConfig *sfu = core_config->sfu;
 
         if (exu->type == MAC_Array)
-            cycle +=
-                (p["B"] * p["T"] * p["C"] * p["OC"] * 2 / (slice_x * slice_y)) /
-                (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+            cycle += (p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
+                      (p["slice_x"] * p["slice_y"])) /
+                     (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
         else
             assert(false && "Unsupported tile type");
 
@@ -309,4 +316,6 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
     return overlap_time;
 }
 
-GpuBase *matmul_forward_gpu_pd::clone() { return new matmul_forward_gpu_pd(*this); }
+GpuBase *matmul_forward_gpu_pd::clone() {
+    return new matmul_forward_gpu_pd(*this);
+}
