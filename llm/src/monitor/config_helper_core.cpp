@@ -250,9 +250,12 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
                             recv_prim->type = RECV_TYPE::RECV_DATA;
                     }
                 }
-                msgs.emplace_back(false, MSG_TYPE::CONFIG,
-                                  static_cast<int>(msgs.size()) + 1, config.id,
-                                  prim->serialize());
+
+                auto segments = prim->serialize();
+                for (int seg = 0; seg < segments.size(); seg++)
+                    msgs.emplace_back(
+                        Msg(false, MSG_TYPE::CONFIG, msgs.size() + 1, config.id,
+                            seg == segments.size() - 1, segments[seg]));
             }
             return msgs;
         };
@@ -273,14 +276,14 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
         int seq_cnt = 1;
         auto push_msg = [&](Msg m) {
             m.seq_id_ = seq_cnt++;
-            q[index].push(std::move(m));
+            q[index].push(m);
         };
 
         // RECV_WEIGHT
         PrimBase *recv_weight = new Recv_prim(RECV_TYPE::RECV_WEIGHT,
                                               config.worklist[0].recv_tag, 0);
         push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
-                     recv_weight->serialize()));
+                     recv_weight->serialize()[0]));
 
         // Set_batch
         vector<Stage> batchInfo;
@@ -294,18 +297,18 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
         for (int j = 0; j < pipeline; j++) {
             for (int i = 0; i < config.loop - 1; i++) {
                 push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
-                             set_batch->serialize()));
+                             set_batch->serialize()[0]));
                 auto &reps = (i == 0) ? in_loop : next_loop;
-                for (auto &m : reps)
+                for (auto m : reps)
                     push_msg(m);
             }
 
+            push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
+                         set_batch->serialize()[0]));
             for (size_t k = 0; k < last_loop.size(); k++) {
-                push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
-                             set_batch->serialize()));
-
                 Msg m = last_loop[k];
-                m.refill_ = m.is_end_ = (k + 1 == last_loop.size() && j == pipeline - 1);
+                m.refill_ = m.is_end_ =
+                    (k + 1 == last_loop.size() && j == pipeline - 1);
                 push_msg(m);
             }
         }

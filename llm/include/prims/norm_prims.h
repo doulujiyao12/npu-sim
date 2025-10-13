@@ -9,8 +9,8 @@ class Clear_sram : public PrimBase {
 public:
     int taskCoreDefault(TaskCoreContext &context);
 
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
+    vector<sc_bv<128>> serialize();
+    void deserialize(vector<sc_bv<128>> buffer);
     void printSelf();
 
     Clear_sram() { name = "Clear_sram"; }
@@ -21,8 +21,8 @@ class Load_prim : public PrimBase {
 public:
     int taskCoreDefault(TaskCoreContext &context);
 
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
+    vector<sc_bv<128>> serialize();
+    void deserialize(vector<sc_bv<128>> buffer);
     void printSelf();
 
     Load_prim() { name = "Load_prim"; }
@@ -37,8 +37,8 @@ public:
 
     int taskCoreDefault(TaskCoreContext &context);
 
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
+    vector<sc_bv<128>> serialize();
+    void deserialize(vector<sc_bv<128>> buffer);
     void printSelf();
 
     Recv_prim() { name = "Recv_prim"; }
@@ -63,8 +63,8 @@ public:
 
     int taskCoreDefault(TaskCoreContext &context);
 
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
+    vector<sc_bv<128>> serialize();
+    void deserialize(vector<sc_bv<128>> buffer);
 
     void printSelf();
 
@@ -87,8 +87,8 @@ public:
 
     int taskCoreDefault(TaskCoreContext &context);
 
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
+    vector<sc_bv<128>> serialize();
+    void deserialize(vector<sc_bv<128>> buffer);
 
     void printSelf();
     Set_addr() { name = "Set_addr"; }
@@ -101,8 +101,8 @@ public:
 
     int taskCoreDefault(TaskCoreContext &context);
 
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
+    vector<sc_bv<128>> serialize();
+    void deserialize(vector<sc_bv<128>> buffer);
 
     void printSelf();
 
@@ -132,8 +132,8 @@ public:
 
     int taskCoreDefault(TaskCoreContext &context);
 
-    void deserialize(sc_bv<128> buffer);
-    sc_bv<128> serialize();
+    void deserialize(vector<sc_bv<128>> buffer);
+    vector<sc_bv<128>> serialize();
 
     void printSelf();
 

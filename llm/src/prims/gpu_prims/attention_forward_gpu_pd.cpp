@@ -2,16 +2,24 @@
 #include "defs/global.h"
 #include "prims/gpu_prims.h"
 #include "utils/memory_utils.h"
+#include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 #include <regex>
 
+REGISTER_PRIM(attention_forward_gpu_pd);
+
 void attention_forward_gpu_pd::initialize() {
+    if (datatype == INT8)
+        data_byte = 1;
+    else if (datatype == FP16)
+        data_byte = 2;
+
     auto &p = param_value;
     data_size_input = {data_byte * p["B"] * p["T"] * p["C"]};
     data_chunk = {{"preatt", data_byte * p["B"] * p["NH"] * p["T"] * p["T"]},
                   {"att", data_byte * p["B"] * p["NH"] * p["T"] * p["T"]},
                   {"output", data_byte * p["B"] * p["NH"] * p["T"] * p["C"] /
-                                 (slice_x * slice_y)}};
+                                 (p["slice_x"] * p["slice_y"])}};
 }
 
 int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
@@ -77,37 +85,46 @@ int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
         // size" << k_key.size<< " " << label_k);
 
         gpu_read_generic(
-            context, k_key.pos + k_key.size / (slice_x * slice_y) * fetch_index,
-            k_key.size / (slice_x * slice_y), mem_time, true);
+            context,
+            k_key.pos +
+                k_key.size / (p["slice_x"] * p["slice_y"]) * fetch_index,
+            k_key.size / (p["slice_x"] * p["slice_y"]), mem_time, true);
         gpu_read_generic(
-            context, v_key.pos + v_key.size / (slice_x * slice_y) * fetch_index,
-            v_key.size / (slice_x * slice_y), mem_time, true);
+            context,
+            v_key.pos +
+                v_key.size / (p["slice_x"] * p["slice_y"]) * fetch_index,
+            v_key.size / (p["slice_x"] * p["slice_y"]), mem_time, true);
     }
 
     auto data_size_preatt = GetFromPairedVector(data_chunk, "preatt");
     auto data_size_att = GetFromPairedVector(data_chunk, "att");
 
-    gpu_write_generic(context,
-                      p_key.pos +
-                          data_size_preatt / (slice_x * slice_y) * fetch_index,
-                      data_size_preatt / (slice_x * slice_y), mem_time);
-    gpu_read_generic(context,
-                     p_key.pos +
-                         data_size_preatt / (slice_x * slice_y) * fetch_index,
-                     data_size_preatt / (slice_x * slice_y), mem_time);
+    gpu_write_generic(
+        context,
+        p_key.pos +
+            data_size_preatt / (p["slice_x"] * p["slice_y"]) * fetch_index,
+        data_size_preatt / (p["slice_x"] * p["slice_y"]), mem_time);
+    gpu_read_generic(
+        context,
+        p_key.pos +
+            data_size_preatt / (p["slice_x"] * p["slice_y"]) * fetch_index,
+        data_size_preatt / (p["slice_x"] * p["slice_y"]), mem_time);
 
     gpu_write_generic(
-        context, a_key.pos + data_size_att / (slice_x * slice_y) * fetch_index,
-        data_size_att / (slice_x * slice_y), mem_time);
-    gpu_read_generic(
-        context, a_key.pos + data_size_att / (slice_x * slice_y) * fetch_index,
-        data_size_att / (slice_x * slice_y), mem_time);
+        context,
+        a_key.pos + data_size_att / (p["slice_x"] * p["slice_y"]) * fetch_index,
+        data_size_att / (p["slice_x"] * p["slice_y"]), mem_time);
+    gpu_read_generic(context,
+                     a_key.pos + data_size_att / (p["slice_x"] * p["slice_y"]) *
+                                     fetch_index,
+                     data_size_att / (p["slice_x"] * p["slice_y"]), mem_time);
 
     // Q
     gpu_read_generic(context,
-                     input_mem_offset +
-                         input_size / (3 * slice_x * slice_y) * fetch_index,
-                     input_size / (3 * slice_x * slice_y), mem_time);
+                     input_mem_offset + input_size /
+                                            (3 * p["slice_x"] * p["slice_y"]) *
+                                            fetch_index,
+                     input_size / (3 * p["slice_x"] * p["slice_y"]), mem_time);
 
     // overlap_time = 0;
     AddrPosKey out_key;
@@ -128,13 +145,13 @@ int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
 
     if (exu->type == MAC_Array)
         cycle += p["B"] * p["NH"] * p["T"] * (p["T"] - 1) / 2 *
-                 (4 * p["C"] / p["NH"] + 5) / (slice_x * slice_y) /
+                 (4 * p["C"] / p["NH"] + 5) / (p["slice_x"] * p["slice_y"]) /
                  (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
     else
         assert(false && "Unsupported tile type");
 
     if (sfu->type == Linear)
-        cycle += 0 / (slice_x * slice_y) / sfu->x_dims * CYCLE;
+        cycle += 0 / (p["slice_x"] * p["slice_y"]) / sfu->x_dims * CYCLE;
     else
         assert(false && "Unsupported tile type");
 

@@ -345,7 +345,8 @@ void SramPosLocator::updateKVPair(TaskCoreContext &context, std::string &key,
         // cout << "left_byte" << result.left_byte << endl;
         return;
     } else {
-        int alignment = std::max(GetCoreHWConfig(cid)->sram_bitwidth, SRAM_BLOCK_SIZE * 8);
+        int alignment =
+            std::max(GetCoreHWConfig(cid)->sram_bitwidth, SRAM_BLOCK_SIZE * 8);
         int alignment_byte = alignment / 8;
         int tmp = 1;
 
@@ -442,7 +443,8 @@ int SramPosLocator::rearrangeAll(TaskCoreContext &context) {
         auto spill_size = record.second.spill_size;
 
         int dma_read_count =
-            spill_size * 8 / (int)(GetCoreHWConfig(cid)->sram_bitwidth * SRAM_BANKS);
+            spill_size * 8 /
+            (int)(GetCoreHWConfig(cid)->sram_bitwidth * SRAM_BANKS);
         int byte_residue =
             spill_size * 8 -
             dma_read_count * (GetCoreHWConfig(cid)->sram_bitwidth * SRAM_BANKS);
@@ -505,6 +507,7 @@ void GpuPosLocator::fetchPair(std::string &key, AddrPosKey &result) {
 
 bool GpuPosLocator::findPair(std::string &key, int &result) {
     cout << "[GpuPosLocator] try to find key: " << key << endl;
+
     auto it = data_map.find(key);
     if (it != data_map.end()) {
         result = it->second.pos;

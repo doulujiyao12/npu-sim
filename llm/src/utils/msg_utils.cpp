@@ -35,6 +35,8 @@ sc_bv<256> SerializeMsg(Msg msg) {
     serialized_msg.range(pos + M_D_ROOFLINE - 1, pos) =
         sc_bv<M_D_ROOFLINE>(msg.roofline_packets_);
     pos += M_D_ROOFLINE;
+    serialized_msg.range(pos + M_D_CONF_END - 1, pos) = msg.config_end_;
+    pos += M_D_CONF_END;
     serialized_msg.range(pos + M_D_DATA - 1, pos) = msg.data_;
     pos += M_D_DATA;
     serialized_msg.range(255, pos) = sc_bv<32>(0);
@@ -64,8 +66,11 @@ Msg DeserializeMsg(sc_bv<256> buffer) {
     pos += M_D_LENGTH;
     msg.refill_ = buffer.range(pos + M_D_REFILL - 1, pos).to_uint64(),
     pos += M_D_REFILL;
-    msg.roofline_packets_ = buffer.range(pos + M_D_ROOFLINE - 1, pos).to_uint64(),
+    msg.roofline_packets_ =
+        buffer.range(pos + M_D_ROOFLINE - 1, pos).to_uint64(),
     pos += M_D_ROOFLINE;
+    msg.config_end_ = buffer.range(pos + M_D_CONF_END - 1, pos).to_uint64(),
+    pos += M_D_CONF_END;
     msg.data_ = buffer.range(pos + M_D_DATA - 1, pos);
 
     return msg;
@@ -85,13 +90,13 @@ void CalculatePacketNum(int output_size, int weight, int data_byte,
     packet_num = packet_num % CORE_COMM_PAYLOAD
                      ? packet_num / CORE_COMM_PAYLOAD + 1
                      : packet_num / CORE_COMM_PAYLOAD;
-}  
+}
 
 bool IsBlockableMsgType(MSG_TYPE type) {
     switch (type) {
-        case MSG_TYPE::DATA:
-            return true;
-        default:
-            return false;
+    case MSG_TYPE::DATA:
+        return true;
+    default:
+        return false;
     }
 }

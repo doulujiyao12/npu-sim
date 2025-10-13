@@ -1,11 +1,20 @@
 #include "prims/gpu_prims.h"
 #include "utils/memory_utils.h"
+#include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
+REGISTER_PRIM(Gelu_f_gpu);
+
 void Gelu_f_gpu::initialize() {
+    if (datatype == INT8)
+        data_byte = 1;
+    else if (datatype == FP16)
+        data_byte = 2;
+
     auto &p = param_value;
     input_size = {data_byte * p["N"]};
-    data_chunk = {{"output", data_byte * p["N"] / (slice_x * slice_y)}};
+    data_chunk = {
+        {"output", data_byte * p["N"] / (p["slice_x"] * p["slice_y"])}};
 }
 
 
@@ -27,9 +36,10 @@ int Gelu_f_gpu::taskCoreDefault(TaskCoreContext &context) {
     int overlap_time = 0;
 #if USE_L1L2_CACHE == 1
     gpu_read_generic(context,
-                     input_mem_offset +
-                         input_size / (slice_x * slice_y) * fetch_index,
-                     input_size / (slice_x * slice_y), mem_time);
+                     input_mem_offset + input_size /
+                                            (p["slice_x"] * p["slice_y"]) *
+                                            fetch_index,
+                     input_size / (p["slice_x"] * p["slice_y"]), mem_time);
 
     // overlap_time = mem_time;
     AddrPosKey out_key;
@@ -51,13 +61,13 @@ int Gelu_f_gpu::taskCoreDefault(TaskCoreContext &context) {
     SfuConfig *sfu = core_config->sfu;
 
     if (exu->type == MAC_Array)
-        cycle += 0 / (slice_x * slice_y) /
+        cycle += 0 / (p["slice_x"] * p["slice_y"]) /
                  (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
     else
         assert(false && "Unsupported tile type");
 
     if (sfu->type == Linear)
-        cycle += p["N"] / (slice_x * slice_y) / sfu->x_dims * CYCLE;
+        cycle += p["N"] / (p["slice_x"] * p["slice_y"]) / sfu->x_dims * CYCLE;
     else
         assert(false && "Unsupported tile type");
 

@@ -15,22 +15,28 @@ void Recv_prim::printSelf() {
          << " recv_cnt: " << recv_cnt << endl;
 }
 
-void Recv_prim::deserialize(sc_bv<128> buffer) {
+void Recv_prim::deserialize(vector<sc_bv<128>> segments) {
+        cout << "Start deserialize " << name << endl;
+    auto buffer = segments[0];
+    
     type = RECV_TYPE(buffer.range(11, 8).to_uint64());
     tag_id = buffer.range(19, 12).to_uint64();
     recv_cnt = buffer.range(27, 20).to_uint64();
     datatype = DATATYPE(buffer.range(29, 28).to_uint64());
 }
 
-sc_bv<128> Recv_prim::serialize() {
+vector<sc_bv<128>> Recv_prim::serialize() {
+    vector<sc_bv<128>> segments;
+
     sc_bv<128> d;
     d.range(7, 0) = sc_bv<8>(PrimFactory::getInstance().getPrimId(name));
     d.range(11, 8) = sc_bv<4>(type);
     d.range(19, 12) = sc_bv<8>(tag_id);
     d.range(27, 20) = sc_bv<8>(recv_cnt);
     d.range(29, 28) = sc_bv<2>(datatype);
+    segments.push_back(d);
 
-    return d;
+    return segments;
 }
 int Recv_prim::taskCoreDefault(TaskCoreContext &context) {
     u_int64_t elapsed_time;

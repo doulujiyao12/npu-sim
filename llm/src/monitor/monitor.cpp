@@ -78,8 +78,9 @@ void Monitor::init() {
     //     config_name, font_ttf);
 
     for (int i = 0; i < GRID_SIZE; i++) {
-        workerCores[i] = new WorkerCore(sc_gen_unique_name("workercore"), i,
-                                        this->event_engine, GetCoreHWConfig(i)->dram_config);
+        workerCores[i] =
+            new WorkerCore(sc_gen_unique_name("workercore"), i,
+                           this->event_engine, GetCoreHWConfig(i)->dram_config);
     }
 
     // 根据Config的设置连接到Globalmem
@@ -111,16 +112,19 @@ void Monitor::init() {
         processors.push_back(workerCores[i]->executor->gpunb_dcache_if);
     }
 
-    cacheSystem = new L1L2CacheSystem(
-        "l1l2-cache_system", GRID_SIZE, l1caches, processors,
-        gpu_dram_config, "../DRAMSys/configs");
+    cacheSystem =
+        new L1L2CacheSystem("l1l2-cache_system", GRID_SIZE, l1caches,
+                            processors, gpu_dram_config, "../DRAMSys/configs");
 
     if (SYSTEM_MODE == SIM_GPU) {
         gpu_pos_locator = new GpuPosLocator();
         ((config_helper_gpu *)memInterface->config_helper)->gpu_pos_locator =
             gpu_pos_locator;
-        for (int i = 0; i < GRID_SIZE; i++)
+        for (int i = 0; i < GRID_SIZE; i++) {
             workerCores[i]->executor->gpu_pos_locator = gpu_pos_locator;
+            workerCores[i]->executor->core_context->gpu_pos_locator_ =
+                gpu_pos_locator;
+        }
     } else if (SYSTEM_MODE == SIM_GPU_PD) {
         gpu_pos_locator = new GpuPosLocator();
         ((config_helper_gpu_pd *)memInterface->config_helper)->gpu_pos_locator =
