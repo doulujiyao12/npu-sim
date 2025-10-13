@@ -7,7 +7,7 @@
 欢迎了解 NPU-SIM!
 ==================
 
-.. figure:: ./assets/logo/npusim.png
+.. figure:: ./assets/logo/npusim.svg
   :width: 100%
   :align: center
   :alt: NPUSIM
