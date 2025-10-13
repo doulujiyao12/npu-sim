@@ -141,7 +141,6 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
 
     // 初始化PrimCoreContext
     core_context = new PrimCoreContext(cid);
-    core_context->gpu_pos_locator_ = gpu_pos_locator;
 
     send_done = true;
     send_last_packet = false;
@@ -320,11 +319,11 @@ void WorkerCoreExecutor::switch_prim_block() {
 }
 
 // 指令被 RECV_CONF发送过来后，会在本地核实例化对应的指令类
-PrimBase *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
-    int type = buffer.range(7, 0).to_uint64();
+PrimBase *WorkerCoreExecutor::parse_prim(vector<sc_bv<128>> segments) {
+    int type = segments[0].range(7, 0).to_uint64();
     PrimBase *task = PrimFactory::getInstance().createPrim(type, false);
 
-    task->deserialize(buffer);
+    task->deserialize(segments);
     task->prim_context = core_context;
 
     return task;

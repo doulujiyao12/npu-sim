@@ -155,6 +155,7 @@
 #define M_D_LENGTH 8
 #define M_D_REFILL 1
 #define M_D_ROOFLINE 24
+#define M_D_CONF_END 1
 #define M_D_DATA 128
 
 // 路由消息负载相关

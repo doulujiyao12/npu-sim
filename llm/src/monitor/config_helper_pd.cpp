@@ -381,7 +381,7 @@ void config_helper_pd::generate_prims(int i) {
         recv_data->tag_id = recv_tag;
 
         Msg m = Msg(false, MSG_TYPE::CONFIG, ++prim_seq, core_id,
-                    recv_data->serialize());
+                    recv_data->serialize()[0]);
 
         temp_config.push_back(m);
     };
@@ -406,7 +406,7 @@ void config_helper_pd::generate_prims(int i) {
         PrimBase *set_batch = new Set_batch(status.batchInfo);
         temp_config.push_back(Msg(!status.batchInfo.size() && core_id % tp_size,
                                   MSG_TYPE::CONFIG, ++prim_seq, core_id,
-                                  set_batch->serialize()));
+                                  set_batch->serialize()[0]));
 
         if (status.batchInfo.size()) {
             for (int w = 0; w < template_cores[core_id - i].worklist.size();
@@ -437,10 +437,12 @@ void config_helper_pd::generate_prims(int i) {
 
                     temp_config.push_back(Msg(false, MSG_TYPE::CONFIG,
                                               ++prim_seq, core_id,
-                                              set_addr->serialize()));
-                    temp_config.push_back(Msg(false, MSG_TYPE::CONFIG,
-                                              ++prim_seq, core_id,
-                                              prim->serialize()));
+                                              set_addr->serialize()[0]));
+                    auto segments = prim->serialize();
+                    for (int seg = 0; seg < segments.size(); seg++)
+                        temp_config.push_back(
+                            Msg(false, MSG_TYPE::CONFIG, ++prim_seq, core_id,
+                                seg == segments.size() - 1, segments[seg]));
 
                     if (w == template_cores[core_id - i].worklist.size() &&
                         p == work.prims.size() - 1 && i % tp_size == 0)
@@ -469,16 +471,16 @@ void config_helper_pd::generate_prims(int i) {
 
                     temp_config.push_back(Msg(false, MSG_TYPE::CONFIG,
                                               ++prim_seq, core_id,
-                                              send_req->serialize()));
+                                              send_req->serialize()[0]));
                     temp_config.push_back(Msg(false, MSG_TYPE::CONFIG,
                                               ++prim_seq, core_id,
-                                              recv_ack->serialize()));
+                                              recv_ack->serialize()[0]));
                     temp_config.push_back(Msg(
                         core_id != i &&
                             w ==
                                 template_cores[core_id - i].worklist.size() - 1,
                         MSG_TYPE::CONFIG, ++prim_seq, core_id,
-                        send_data->serialize()));
+                        send_data->serialize()[0]));
                 }
             }
         } else if (!(core_id % tp_size)) {
@@ -520,30 +522,30 @@ void config_helper_pd::generate_prims(int i) {
             if ((core_id / tp_size + 1) % model_stage != 1) {
                 // 不是stage 1 就是接收上一个 stage 传过来的中间结果
                 temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, recv_data_2->serialize()));
+                                          core_id, recv_data_2->serialize()[0]));
                 temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, send_req->serialize()));
+                                          core_id, send_req->serialize()[0]));
                 temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, recv_ack->serialize()));
+                                          core_id, recv_ack->serialize()[0]));
                 temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, send_data->serialize()));
+                                          core_id, send_data->serialize()[0]));
             } else {
                 temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, send_req->serialize()));
+                                          core_id, send_req->serialize()[0]));
                 temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, recv_ack->serialize()));
+                                          core_id, recv_ack->serialize()[0]));
                 temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, send_data->serialize()));
+                                          core_id, send_data->serialize()[0]));
                 // stage 1 的话又要接受新的prefilling recv_data1
                 // 这里的recv_data2 是来自decoding 的数据
                 temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, recv_data_2->serialize()));
+                                          core_id, recv_data_2->serialize()[0]));
             }
 
             // tp组的第一个核需要向memInterface发送DONE信号
             PrimBase *send_done = new Send_prim(SEND_TYPE::SEND_DONE);
             Msg m = Msg(true, MSG_TYPE::CONFIG, ++prim_seq, core_id,
-                        send_done->serialize());
+                        send_done->serialize()[0]);
             m.refill_ = false;
             temp_config.push_back(m);
         }

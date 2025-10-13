@@ -46,48 +46,40 @@ void NpuBase::parseSramLabel(json j) {
     }
 }
 
-sc_bv<128> NpuBase::serialize() {
-    sc_bv<128> d;
-    d.range(7, 0) = sc_bv<8>(PrimFactory::getInstance().getPrimId(name));
-    d.range(8, 8) = sc_bv<1>(datatype);
-    d.range(24, 9) = sc_bv<16>(inp_offset);
-    d.range(40, 25) = sc_bv<16>(data_offset);
-    d.range(56, 41) = sc_bv<16>(out_offset);
+vector<sc_bv<128>> NpuBase::serialize() {
+    vector<sc_bv<128>> segments;
 
-    // 所有参数平均分配
-    if (param_name.size() > 8) {
-        ARGUS_EXIT("Primitive with # params = ", param_name.size(),
-                   " is not supported.\n");
-        return d;
-    }
+    sc_bv<128> metadata;
+    metadata.range(7, 0) = sc_bv<8>(PrimFactory::getInstance().getPrimId(name));
+    metadata.range(8, 8) = sc_bv<1>(datatype);
+    metadata.range(24, 9) = sc_bv<16>(inp_offset);
+    metadata.range(40, 25) = sc_bv<16>(data_offset);
+    metadata.range(56, 41) = sc_bv<16>(out_offset);
+    segments.push_back(metadata);
 
     std::vector<std::pair<std::string, int>> vec(param_value.begin(),
                                                  param_value.end());
     std::sort(vec.begin(), vec.end(),
               [](auto &a, auto &b) { return a.first < b.first; });
 
-    int pos = 57;
-    if (param_name.size() <= 2) {
-        for (auto &pair : vec) {
-            d.range(pos + 31, pos) = sc_bv<32>(pair.second);
-            pos += 32;
+    // 规定一个参数使用32位存储，即一个segment存储4个参数
+    for (auto it = vec.begin(); it != vec.end();) {
+        sc_bv<128> d;
+        d.range(7, 0) = sc_bv<8>(PrimFactory::getInstance().getPrimId(name));
+        int pos = 8;
+        for (int i = 0; i < 4 && it != vec.end(); i++, it++, pos += 30) {
+            d.range(pos + 29, pos) = sc_bv<30>(it->second);
         }
-    } else if (param_name.size() <= 4) {
-        for (auto &pair : vec) {
-            d.range(pos + 15, pos) = sc_bv<16>(pair.second);
-            pos += 16;
-        }
-    } else {
-        for (auto &pair : vec) {
-            d.range(pos + 7, pos) = sc_bv<8>(pair.second);
-            pos += 8;
-        }
+
+        segments.push_back(d);
     }
 
-    return d;
+    return segments;
 }
 
-void NpuBase::deserialize(sc_bv<128> buffer) {
+void NpuBase::deserialize(vector<sc_bv<128>> segments) {
+    // 解析metadata
+    auto buffer = segments[0];
     datatype = DATATYPE(buffer.range(8, 8).to_uint64());
     inp_offset = buffer.range(24, 9).to_uint64();
     data_offset = buffer.range(40, 25).to_uint64();
@@ -96,21 +88,22 @@ void NpuBase::deserialize(sc_bv<128> buffer) {
     vector<string> vec(param_name.begin(), param_name.end());
     sort(vec.begin(), vec.end());
 
-    int pos = 57;
-    if (vec.size() <= 2) {
-        for (auto &param : vec) {
-            param_value[param] = buffer.range(pos + 31, pos).to_uint64();
-            pos += 32;
-        }
-    } else if (vec.size() <= 4) {
-        for (auto &param : vec) {
-            param_value[param] = buffer.range(pos + 15, pos).to_uint64();
-            pos += 16;
-        }
-    } else {
-        for (auto &param : vec) {
-            param_value[param] = buffer.range(pos + 7, pos).to_uint64();
-            pos += 8;
+    // 依次解析参数，每一个segment存储4个参数
+    if (segments.size() - 1 != (vec.size() + 3) / 4)
+        ARGUS_EXIT("In deserialize ", name, ": the number of segments ",
+                   segments.size(),
+                   " does not match the number of "
+                   "parameters ",
+                   vec.size(), "\n");
+
+    for (int i = 1; i < segments.size(); i++) {
+        auto buffer = segments[i];
+        for (int j = 0; j < 4; j++) {
+            int index = (i - 1) * 4 + j;
+            if (index >= vec.size())
+                break;
+            param_value[vec[index]] =
+                buffer.range(29 + j * 30 + 8, j * 30 + 8).to_uint64();
         }
     }
 
@@ -179,7 +172,8 @@ void NpuBase::initializeDefault() {
     int pos = data_offset;
     for (auto &chunk : data_chunk) {
         data_chunk_addr[chunk.first] = pos;
-        pos += chunk.second * data_byte;
+        chunk.second *= data_byte;
+        pos += chunk.second;
     }
 }
 

@@ -1,14 +1,22 @@
 #include "prims/gpu_prims.h"
 #include "utils/memory_utils.h"
+#include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
+REGISTER_PRIM(Matmul_f_gpu);
+
 void Matmul_f_gpu::initialize() {
+    if (datatype == INT8)
+        data_byte = 1;
+    else if (datatype == FP16)
+        data_byte = 2;
+
     auto &p = param_value;
     input_size = {data_byte * p["B"] * p["T"] * p["C"]};
     data_chunk = {{"weight", data_byte * p["C"] * p["OC"]},
                   {"bias", data_byte * p["C"]},
-                  {"output", data_byte * p["B"] * p["T"] * p["oC"] /
-                                 (slice_x * slice_y)}};
+                  {"output", data_byte * p["B"] * p["T"] * p["OC"] /
+                                 (p["slice_x"] * p["slice_y"])}};
 }
 
 int Matmul_f_gpu::taskCoreDefault(TaskCoreContext &context) {
@@ -50,30 +58,31 @@ int Matmul_f_gpu::taskCoreDefault(TaskCoreContext &context) {
 #if USE_L1L2_CACHE == 1
     if (gpu_inner == true) {
         // 通过fetch_index计算位置
-        int row_index = fetch_index / slice_x;
-        int col_index = fetch_index % slice_x;
+        int row_index = fetch_index / p["slice_x"];
+        int col_index = fetch_index % p["slice_x"];
 
         // input 读入
-        gpu_read_generic(context,
-                         input_mem_offset + input_size / slice_y * row_index,
-                         input_size / slice_y, mem_time);
+        gpu_read_generic(
+            context, input_mem_offset + input_size / p["slice_y"] * row_index,
+            input_size / p["slice_y"], mem_time);
 
         // weight 读入
-        gpu_read_generic(context, w_key.pos + w_key.size / slice_x * col_index,
-                         GetFromPairedVector(data_chunk, "weight") / slice_x,
-                         mem_time);
+        gpu_read_generic(
+            context, w_key.pos + w_key.size / p["slice_x"] * col_index,
+            GetFromPairedVector(data_chunk, "weight") / p["slice_x"], mem_time);
 
         // bias 读入
-        gpu_read_generic(context, b_key.pos + b_key.size / slice_x * col_index,
-                         GetFromPairedVector(data_chunk, "bias") / slice_x,
-                         mem_time);
+        gpu_read_generic(
+            context, b_key.pos + b_key.size / p["slice_x"] * col_index,
+            GetFromPairedVector(data_chunk, "bias") / p["slice_x"], mem_time);
 
         // TODO: 模拟计算cycle数
         // overlap_time = mem_time;
         AddrPosKey out_key;
         prim_context->gpu_pos_locator_->updatePair(
             prim_context->datapass_label_->outdata,
-            GetFromPairedVector(data_chunk, "output") * (slice_x * slice_y));
+            GetFromPairedVector(data_chunk, "output") *
+                (p["slice_x"] * p["slice_y"]));
         prim_context->gpu_pos_locator_->findPair(
             prim_context->datapass_label_->outdata, out_key);
         cout << prim_context->cid
@@ -92,9 +101,9 @@ int Matmul_f_gpu::taskCoreDefault(TaskCoreContext &context) {
         SfuConfig *sfu = core_config->sfu;
 
         if (exu->type == MAC_Array)
-            cycle +=
-                (p["B"] * p["T"] * p["C"] * p["OC"] * 2 / (slice_x * slice_y)) /
-                (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+            cycle += (p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
+                      (p["slice_x"] * p["slice_y"])) /
+                     (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
         else
             assert(false && "Unsupported tile type");
 
@@ -123,7 +132,7 @@ int Matmul_f_gpu::taskCoreDefault(TaskCoreContext &context) {
         }
     } else {
 
-        int slice_total = slice_x * slice_y;
+        int slice_total = p["slice_x"] * p["slice_y"];
         // input 读入
         gpu_read_generic(
             context, input_mem_offset + input_size / slice_total * fetch_index,
@@ -159,9 +168,9 @@ int Matmul_f_gpu::taskCoreDefault(TaskCoreContext &context) {
         SfuConfig *sfu = core_config->sfu;
 
         if (exu->type == MAC_Array)
-            cycle +=
-                (p["B"] * p["T"] * p["C"] * p["OC"] * 2 / (slice_x * slice_y)) /
-                (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+            cycle += (p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
+                      (p["slice_x"] * p["slice_y"])) /
+                     (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
         else
             assert(false && "Unsupported tile type");
 

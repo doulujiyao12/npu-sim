@@ -1,9 +1,9 @@
 #include "monitor/config_helper_gpu_pd.h"
 #include "prims/gpu_prims.h"
 #include "prims/norm_prims.h"
+#include "utils/config_utils.h"
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
-#include "utils/config_utils.h"
 
 config_helper_gpu_pd::config_helper_gpu_pd(string filename, string font_ttf,
                                            sc_event *ev_sig,
@@ -84,7 +84,8 @@ void config_helper_gpu_pd::fill_queue_start(queue<Msg> *q) {
     // 发送数据的大小等于通过source查找
     if (prim_index == 0 && has_prefill) {
         for (auto source : source_info) {
-            AddrPosKey source_key = AddrPosKey(0, GetDefinedParam(source.second));
+            AddrPosKey source_key =
+                AddrPosKey(0, GetDefinedParam(source.second));
             gpu_pos_locator->addPair(source.first, source_key);
         }
     }
@@ -128,12 +129,15 @@ void config_helper_gpu_pd::iter_done(vector<Msg> done_msg) {
                         cout << "[CATCH TEST] " << sc_time_stamp() << endl;
                         ofstream outfile("simulation_result.txt", ios::app);
                         if (outfile.is_open()) {
-                            outfile << "[CATCH TEST] " << sc_time_stamp() << "L1CACHESIZE " << L1CACHESIZE << " L2CACHESIZE "
-                            << L2CACHESIZE << " BANDWIDTH " << gpu_bw
-                            << endl;
+                            outfile << "[CATCH TEST] " << sc_time_stamp()
+                                    << "L1CACHESIZE " << L1CACHESIZE
+                                    << " L2CACHESIZE " << L2CACHESIZE
+                                    << " BANDWIDTH " << gpu_bw << endl;
                             outfile.close();
                         } else {
-                            cout << "Error: Unable to open file for writing timestamp." << endl;
+                            cout << "Error: Unable to open file for writing "
+                                    "timestamp."
+                                 << endl;
                         }
                         sc_stop();
                     }
@@ -298,11 +302,11 @@ void config_helper_gpu_pd::generate_prims(int i) {
 
         PrimBase *recv_data_1 = new Recv_prim(RECV_TYPE::RECV_START, c, 1);
         temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, c,
-                                  recv_data_1->serialize()));
+                                  recv_data_1->serialize()[0]));
 
         PrimBase *set_batch = new Set_batch(iter_status.batchInfo, false);
         temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, c,
-                                  set_batch->serialize()));
+                                  set_batch->serialize()[0]));
 
         // 只需要看单个原语重复次数
         int repeat = sms / GRID_SIZE + (sms % GRID_SIZE > c);
@@ -311,23 +315,27 @@ void config_helper_gpu_pd::generate_prims(int i) {
 
         for (int r = 0; r < repeat; r++) {
             for (int i = 0; i < MAX_SPLIT_NUM; i++) {
-                label->indata[i] = prim->prim_context->datapass_label_->indata[i];
+                label->indata[i] =
+                    prim->prim_context->datapass_label_->indata[i];
             }
             label->outdata = prim->prim_context->datapass_label_->outdata;
 
             temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, c,
-                                      set_addr->serialize()));
+                                      set_addr->serialize()[0]));
 
             prim->fetch_index = c + r * GRID_SIZE;
-            temp_config.push_back(
-                Msg(false, MSG_TYPE::CONFIG, ++prim_seq, c, prim->serialize()));
+            auto segments = prim->serialize();
+            for (int seg = 0; seg < segments.size(); seg++)
+                temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
+                                          c, seg == segments.size() - 1,
+                                          segments[seg]));
             prim->fetch_index = 0;
         }
 
         // 发送DONE信号
         PrimBase *send_done = new Send_prim(SEND_TYPE::SEND_DONE);
         Msg m =
-            Msg(true, MSG_TYPE::CONFIG, ++prim_seq, c, send_done->serialize());
+            Msg(true, MSG_TYPE::CONFIG, ++prim_seq, c, send_done->serialize()[0]);
         m.refill_ = false;
         temp_config.push_back(m);
     }

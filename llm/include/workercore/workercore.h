@@ -177,7 +177,7 @@ public:
 
     bool atomic_helper_lock(sc_time try_time, int status, bool force = false);
 
-    PrimBase *parse_prim(sc_bv<128> buffer);
+    PrimBase *parse_prim(vector<sc_bv<128>> buffer);
 
     void end_of_elaboration();
 };

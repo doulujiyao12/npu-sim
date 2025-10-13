@@ -14,7 +14,9 @@ void Set_addr::printSelf() {
     cout << "\tSram_addr: " << sram_addr << endl;
 }
 
-void Set_addr::deserialize(sc_bv<128> buffer) {
+void Set_addr::deserialize(vector<sc_bv<128>> segments) {
+    auto buffer = segments[0];
+
     sram_addr = buffer.range(31, 8).to_uint64();
     datatype = (DATATYPE)buffer.range(33, 32).to_uint64();
 
@@ -23,12 +25,16 @@ void Set_addr::deserialize(sc_bv<128> buffer) {
         datapass_label.indata[i] = g_addr_label_table.findRecord(
             buffer.range(offset + 11, offset).to_uint64());
         offset += 12;
+        cout << "Set_addr des: " << i << " " << datapass_label.indata[i]
+             << endl;
     }
     datapass_label.outdata = g_addr_label_table.findRecord(
         buffer.range(offset + 11, offset).to_uint64());
 }
 
-sc_bv<128> Set_addr::serialize() {
+vector<sc_bv<128>> Set_addr::serialize() {
+    vector<sc_bv<128>> segments;
+
     sc_bv<128> d;
     d.range(7, 0) = sc_bv<8>(PrimFactory::getInstance().getPrimId(name));
     d.range(31, 8) = sc_bv<24>(sram_addr);
@@ -39,11 +45,15 @@ sc_bv<128> Set_addr::serialize() {
         d.range(offset + 11, offset) = sc_bv<12>(g_addr_label_table.addRecord(
             prim_context->datapass_label_->indata[i]));
         offset += 12;
+        cout << "Set_addr se: " << i << " "
+             << prim_context->datapass_label_->indata[i] << endl;
     }
     d.range(offset + 11, offset) = sc_bv<12>(
         g_addr_label_table.addRecord(prim_context->datapass_label_->outdata));
 
-    return d;
+    segments.push_back(d);
+
+    return segments;
 }
 
 int Set_addr::taskCoreDefault(TaskCoreContext &context) {
