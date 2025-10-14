@@ -747,7 +747,7 @@
                   "C": "3C-R",
                   "R": "R",
                   "NH": "NH",
-                  "job_type": 1,
+                  "job_type": "1",
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "rope1_out"
@@ -764,7 +764,7 @@
                   "R": "R",
                   "NH": "NH",
                   "DH": "DH",
-                  "job_type": 1,
+                  "job_type": "1",
                   "sram_address": {
                     "indata": "rope1_out",
                     "outdata": "attention1_out"
@@ -916,7 +916,7 @@
                   "C": "3C-R",
                   "R": "R",
                   "NH": "NH",
-                  "job_type": 1,
+                  "job_type": "1",
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "rope1_out"
@@ -1085,7 +1085,7 @@
                   "C": "3C-R",
                   "R": "R",
                   "NH": "NH",
-                  "job_type": 1,
+                  "job_type": "1",
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "rope1_out"
@@ -1254,7 +1254,7 @@
                   "C": "3C-R",
                   "R": "R",      
                   "NH": "NH",
-                  "job_type": 1,
+                  "job_type": "1",
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "rope1_out"

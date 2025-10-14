@@ -550,7 +550,7 @@
                   "T": "1",
                   "C": "C",
                   "OC": "3C",
-                  "job_type": 1,
+                  "job_type": "1",
                   "sram_address": {
                     "indata": "layernorm1_out",
                     "outdata": "matmul1_out"
@@ -567,7 +567,7 @@
                   "NH": "NH",
                   "R": "R",
                   "DH": "DH",
-                  "job_type": 1,
+                  "job_type": "1",
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "attention1_out"
