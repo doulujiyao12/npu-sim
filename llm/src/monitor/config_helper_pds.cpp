@@ -558,6 +558,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
 
                 // 需要计算send_data的发送包裹数，首先找到这个work的最后一个计算原语
                 CompBase *last_comp = (CompBase *)work.prims.back();
+                if (tp_size == 1) continue;
 
                 // 发送原语，遵循work中的cast，编号和tag需要自定义
                 for (auto ca : work.cast) {
@@ -655,7 +656,8 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
                        stage_index[core_id / tp_size] == prefill_stage) {
                 // 如果是prefill最后一个核，则只收不发
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, recv_data_2->serialize()[0]));
+                                          core_id,
+                                          recv_data_2->serialize()[0]));
             } else if (core_id / tp_size >= prefill_core &&
                        stage_index[core_id / tp_size] == 1) {
                 // 如果是decode的第一个核，则先发后收
@@ -666,11 +668,13 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
                                           core_id, send_data->serialize()[0]));
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, recv_data_2->serialize()[0]));
+                                          core_id,
+                                          recv_data_2->serialize()[0]));
             } else {
                 // 其余的核，统一先收后发
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, recv_data_2->serialize()[0]));
+                                          core_id,
+                                          recv_data_2->serialize()[0]));
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
                                           core_id, send_req->serialize()[0]));
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,

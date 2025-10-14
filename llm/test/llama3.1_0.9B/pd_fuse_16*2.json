@@ -78,7 +78,7 @@
                   "R": "R",
                   "NH": "NH",
                   "DH": "DH",
-                  "job_type": "prefill",
+                  "job_type": 0,
                   "sram_address": {
                     "indata": "rope1_out",
                     "outdata": "attention1_out"
@@ -247,7 +247,7 @@
                   "R": "R",
                   "NH": "NH",
                   "DH": "DH",
-                  "job_type": "prefill",
+                  "job_type": 0,
                   "sram_address": {
                     "indata": "rope21_out",
                     "outdata": "attention21_out"
