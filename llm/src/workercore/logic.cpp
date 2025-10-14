@@ -586,20 +586,10 @@ void WorkerCoreExecutor::recv_logic() {
                     msg_buffer_[MSG_TYPE::CONFIG].pop();
 
                     if (m.config_end_) {
-                        cout << "[RECV] Core " << cid
-                             << ": received CONFIG end, "
-                             << PrimFactory::getInstance().getPrimType(
-                                    m.data_.range(7, 0).to_uint64())
-                             << endl;
                         segments.push_back(m.data_);
                         prim_queue.emplace_back(parse_prim(segments));
                         segments.clear();
                     } else {
-                        cout << "[RECV] Core " << cid
-                             << ": received CONFIG segment, "
-                             << PrimFactory::getInstance().getPrimType(
-                                    m.data_.range(7, 0).to_uint64())
-                             << endl;
                         segments.push_back(m.data_);
                     }
 

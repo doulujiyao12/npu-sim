@@ -44,7 +44,7 @@
                     }
                   },
                   {
-                    "type": "matmul_forward_pd",
+                    "type": "matmul_forward_pd", "R": "R",
                     "use_hw": false,
                     "B": "B",
                     "T": "T",
@@ -186,7 +186,7 @@
                     }
                   },
                   {
-                    "type": "matmul_forward_pd",
+                    "type": "matmul_forward_pd", "R": "R",
                     "use_hw": false,
                     "B": "B",
                     "T": "T",
@@ -325,7 +325,7 @@
                     }
                   },
                   {
-                    "type": "matmul_forward_pd",
+                    "type": "matmul_forward_pd", "R": "R",
                     "use_hw": false,
                     "B": "B",
                     "T": "T",
@@ -461,7 +461,7 @@
                     }
                   },
                   {
-                    "type": "matmul_forward_pd",
+                    "type": "matmul_forward_pd", "R": "R",
                     "use_hw": false,
                     "B": "B",
                     "T": "T",
@@ -610,14 +610,14 @@
                       }
                     },
                     {
-                      "type": "matmul_forward_pd",
+                      "type": "matmul_forward_pd", "R": "R",
                       "use_hw": false,
                       "B": "B",
                       "T": "T",
                       "C": "C",
                       "OC": "3C",
                       "chunk": "CHUNK",
-                      "job_type": 1,
+                      "job_type": "1",
                       "sram_address": {
                         "indata": "layernorm1_out",
                         "outdata": "matmul1_out"
@@ -634,7 +634,7 @@
                       "NH": "NH",
                       "R": "R",
                       "DH": "DH",
-                      "job_type": 1,
+                      "job_type": "1",
                       "sram_address": {
                         "indata": "matmul1_out",
                         "outdata": "attention1_out"
@@ -747,14 +747,14 @@
                       }
                     },
                     {
-                      "type": "matmul_forward_pd",
+                      "type": "matmul_forward_pd", "R": "R",
                       "use_hw": false,
                       "B": "B",
                       "T": "T",
                       "C": "C",
                       "OC": "3C",
                       "chunk": "CHUNK",
-                      "job_type": 1,
+                      "job_type": "1",
                       "sram_address": {
                         "indata": "layernorm21_out",
                         "outdata": "matmul21_out"
@@ -771,7 +771,7 @@
                       "NH": "NH",
                       "R": "R",
                       "DH": "DH",
-                      "job_type": 1,
+                      "job_type": "1",
                       "sram_address": {
                         "indata": "matmul21_out",
                         "outdata": "attention21_out"
@@ -884,14 +884,14 @@
                       }
                     },
                     {
-                      "type": "matmul_forward_pd",
+                      "type": "matmul_forward_pd", "R": "R",
                       "use_hw": false,
                       "B": "B",
                       "T": "T",
                       "C": "C",
                       "OC": "3C",
                       "chunk": "CHUNK",
-                      "job_type": 1,
+                      "job_type": "1",
                       "sram_address": {
                         "indata": "layernorm31_out",
                         "outdata": "matmul31_out"
@@ -908,7 +908,7 @@
                       "NH": "NH",
                       "R": "R",
                       "DH": "DH",
-                      "job_type": 1,
+                      "job_type": "1",
                       "sram_address": {
                         "indata": "matmul31_out",
                         "outdata": "attention31_out"
@@ -1021,14 +1021,14 @@
                       }
                     },
                     {
-                      "type": "matmul_forward_pd",
+                      "type": "matmul_forward_pd", "R": "R",
                       "use_hw": false,
                       "B": "B",
                       "T": "T",
                       "C": "C",
                       "OC": "3C",
                       "chunk": "CHUNK",
-                      "job_type": 1,
+                      "job_type": "1",
                       "sram_address": {
                         "indata": "layernorm41_out",
                         "outdata": "matmul41_out"
@@ -1045,7 +1045,7 @@
                       "NH": "NH",
                       "R": "R",
                       "DH": "DH",
-                      "job_type": 1,
+                      "job_type": "1",
                       "sram_address": {
                         "indata": "matmul41_out",
                         "outdata": "attention41_out"
