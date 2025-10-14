@@ -144,11 +144,12 @@ void from_json(const json &j, StreamConfig &c) {
     if (j.contains("prims")) {
         auto prims = j["prims"];
         for (auto prim : prims) {
-            string type;
-            SetParamFromJson<string>(prim, "type", &type);
+            string type = prim.at("type");
+            cout << "Parsing " << type << endl;
             GpuBase *p =
                 (GpuBase *)(PrimFactory::getInstance().createPrim(type));
             p->parseJson(prim);
+            cout << "Parsing done\n";
 
             c.prims.push_back((PrimBase *)p);
         }

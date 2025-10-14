@@ -76,6 +76,10 @@
 #define FAST_WARMUP 1
 #endif
 
+#ifndef USE_BEHA_NOC
+#define USE_BEHA_NOC 1
+#endif
+
 #ifndef SR_PARA
 #define SR_PARA 0
 #endif
@@ -143,13 +147,15 @@
 // 数据包占位
 #define M_D_IS_END 1
 #define M_D_MSG_TYPE 4
-#define M_D_SEQ_ID 32
+#define M_D_SEQ_ID 16
 #define M_D_DES 16
-#define M_D_OFFSET 32
+#define M_D_OFFSET 8
 #define M_D_TAG_ID 16
 #define M_D_SOURCE 16
 #define M_D_LENGTH 8
 #define M_D_REFILL 1
+#define M_D_ROOFLINE 24
+#define M_D_CONF_END 1
 #define M_D_DATA 128
 
 // 路由消息负载相关

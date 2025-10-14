@@ -82,6 +82,9 @@ public:
     sc_event
         ev_next_write_clear; // 当write_helper写完一次之后在下一个时钟周期触发
 
+    sc_event
+        ev_msg_process_end; // 当单个数据包处理结束之后触发，避免每个周期轮询
+
     bool send_done; // 并行策略：send和recv并行
     bool send_last_packet;
     sc_event
@@ -174,7 +177,7 @@ public:
 
     bool atomic_helper_lock(sc_time try_time, int status, bool force = false);
 
-    PrimBase *parse_prim(sc_bv<128> buffer);
+    PrimBase *parse_prim(vector<sc_bv<128>> buffer);
 
     void end_of_elaboration();
 };

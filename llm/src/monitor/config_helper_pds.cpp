@@ -137,27 +137,38 @@ void config_helper_pds::fill_queue_start(queue<Msg> *q) {
             int pkg_num = (send_size_in_bit % M_D_DATA)
                               ? (send_size_in_bit / M_D_DATA + 1)
                               : (send_size_in_bit / M_D_DATA);
-            pkg_num = pkg_num % (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD)
-                          ? pkg_num / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD) + 1
-                          : pkg_num / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD);
+            pkg_num = pkg_num % CORE_COMM_PAYLOAD
+                          ? pkg_num / CORE_COMM_PAYLOAD + 1
+                          : pkg_num / CORE_COMM_PAYLOAD;
 
+#if USE_BEHA_NOC == 1
+            sc_bv<M_D_DATA> d(0x1);
+            int length = M_D_DATA;
+            Msg m = Msg(false, MSG_TYPE::S_DATA, ++total_pkg, status.id, 0,
+                        status.id, M_D_DATA, d);
+            m.source_ = GRID_SIZE;
+            m.roofline_packets_ = pkg_num;
+            q[index].push(m);
+#else
             for (int j = 1; j <= pkg_num; j++) {
                 sc_bv<M_D_DATA> d(0x1);
 
                 Msg m = Msg(false, MSG_TYPE::S_DATA, j + total_pkg, status.id,
                             M_D_DATA * (j - 1), status.id, M_D_DATA, d);
                 m.source_ = GRID_SIZE;
+                m.roofline_packets_ = 1;
                 q[index].push(m);
             }
 
             total_pkg += pkg_num;
+#endif
         }
 
         sc_bv<M_D_DATA> d(0x1);
-        q[index].push(Msg(true, MSG_TYPE::S_DATA, total_pkg + 1, status.id, 0,
+        q[index].push(Msg(true, MSG_TYPE::S_DATA, ++total_pkg, status.id, 0,
                           status.id, 1, d));
 
-        cout << "Send start data: " << total_pkg + 1 << " pkgs to core "
+        cout << "Send start data: " << total_pkg << " pkgs to core "
              << status.id << endl;
     }
 
@@ -465,7 +476,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
         recv_data->tag_id = recv_tag;
 
         Msg m = Msg(false, MSG_TYPE::CONFIG, ++prim_seq, core_id,
-                    recv_data->serialize());
+                    recv_data->serialize()[0]);
 
         temp_config.push_back(m);
     };
@@ -499,7 +510,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
         PrimBase *set_batch = new Set_batch(status.batchInfo);
         temp_config.push_back(Msg(!status.batchInfo.size() && core_id % tp_size,
                                   MSG_TYPE::CONFIG, ++prim_seq, core_id,
-                                  set_batch->serialize()));
+                                  set_batch->serialize()[0]));
 
         if (status.batchInfo.size()) {
             for (int w = 0; w < template_cores[core_id - i].worklist.size();
@@ -532,10 +543,12 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
 
                         temp_config.push_back(Msg(false, MSG_TYPE::CONFIG,
                                                   ++prim_seq, core_id,
-                                                  set_addr->serialize()));
-                        temp_config.push_back(Msg(false, MSG_TYPE::CONFIG,
-                                                  ++prim_seq, core_id,
-                                                  prim->serialize()));
+                                                  set_addr->serialize()[0]));
+                        auto segments = prim->serialize();
+                        for (int seg = 0; seg < segments.size(); seg++)
+                            temp_config.push_back(Msg(
+                                false, MSG_TYPE::CONFIG, ++prim_seq, core_id,
+                                seg == segments.size() - 1, segments[seg]));
 
                         if (w == template_cores[core_id - i].worklist.size() &&
                             p == work.prims.size() - 1 && i % tp_size == 0)
@@ -565,10 +578,10 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
 
                     temp_config.push_back(Msg(false, MSG_TYPE::CONFIG,
                                               ++prim_seq, core_id,
-                                              send_req->serialize()));
+                                              send_req->serialize()[0]));
                     temp_config.push_back(Msg(false, MSG_TYPE::CONFIG,
                                               ++prim_seq, core_id,
-                                              recv_ack->serialize()));
+                                              recv_ack->serialize()[0]));
 
                     // 如果为最后一个work，且不为tp组第一个核，则为最后一条原语
                     temp_config.push_back(Msg(
@@ -576,7 +589,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
                             w ==
                                 template_cores[core_id - i].worklist.size() - 1,
                         MSG_TYPE::CONFIG, ++prim_seq, core_id,
-                        send_data->serialize()));
+                        send_data->serialize()[0]));
                 }
             }
         } else if (!(core_id % tp_size)) {
@@ -625,59 +638,51 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
                 new Send_prim(SEND_TYPE::SEND_DATA, send_dest, send_tag);
             send_data->output_label = output_label;
 
-            int output_size = max(int(C * T * B * sizeof(float)), 1);
-            int pkg_nums = (output_size % M_D_DATA)
-                               ? (output_size / M_D_DATA + 1)
-                               : (output_size / M_D_DATA);
-            int end_length = output_size - (pkg_nums - 1) * M_D_DATA;
-
-            send_data->max_packet = pkg_nums % CORE_COMM_PAYLOAD
-                                        ? pkg_nums / CORE_COMM_PAYLOAD + 1
-                                        : pkg_nums / CORE_COMM_PAYLOAD;
-            ;
-            send_data->end_length = end_length;
+            int output_size = max(int(C * T * B), 1);
+            CalculatePacketNum(output_size, 1, 1, send_data->max_packet,
+                               send_data->end_length);
 
             if (core_id / tp_size < prefill_core &&
                 stage_index[core_id / tp_size] == 1) {
                 // 如果是第一个核，则只发不收
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, send_req->serialize()));
+                                          core_id, send_req->serialize()[0]));
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, recv_ack->serialize()));
+                                          core_id, recv_ack->serialize()[0]));
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, send_data->serialize()));
+                                          core_id, send_data->serialize()[0]));
             } else if (core_id / tp_size < prefill_core &&
                        stage_index[core_id / tp_size] == prefill_stage) {
                 // 如果是prefill最后一个核，则只收不发
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, recv_data_2->serialize()));
+                                          core_id, recv_data_2->serialize()[0]));
             } else if (core_id / tp_size >= prefill_core &&
                        stage_index[core_id / tp_size] == 1) {
                 // 如果是decode的第一个核，则先发后收
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, send_req->serialize()));
+                                          core_id, send_req->serialize()[0]));
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, recv_ack->serialize()));
+                                          core_id, recv_ack->serialize()[0]));
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, send_data->serialize()));
+                                          core_id, send_data->serialize()[0]));
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, recv_data_2->serialize()));
+                                          core_id, recv_data_2->serialize()[0]));
             } else {
                 // 其余的核，统一先收后发
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, recv_data_2->serialize()));
+                                          core_id, recv_data_2->serialize()[0]));
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, send_req->serialize()));
+                                          core_id, send_req->serialize()[0]));
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, recv_ack->serialize()));
+                                          core_id, recv_ack->serialize()[0]));
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, send_data->serialize()));
+                                          core_id, send_data->serialize()[0]));
             }
 
             // tp组的第一个核需要向memInterface发送DONE信号
             PrimBase *send_done = new Send_prim(SEND_TYPE::SEND_DONE);
             Msg m = Msg(true, MSG_TYPE::CONFIG, ++prim_seq, core_id,
-                        send_done->serialize());
+                        send_done->serialize()[0]);
             m.refill_ = false;
             temp_buffer.push_back(m);
         }

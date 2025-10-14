@@ -141,7 +141,6 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
 
     // 初始化PrimCoreContext
     core_context = new PrimCoreContext(cid);
-    core_context->gpu_pos_locator_ = gpu_pos_locator;
 
     send_done = true;
     send_last_packet = false;
@@ -228,8 +227,9 @@ void WorkerCoreExecutor::worker_core_execute() {
                     "Send_prim" +
                     GetEnumSendType(dynamic_cast<Send_prim *>(p)->type)));
 #else
-            while (!send_done)
+            while (!send_done) {
                 wait(CYCLE, SC_NS);
+            }
 
             // send 模块处理的四条指令
             while ((typeid(*p) == typeid(Recv_prim) &&
@@ -319,27 +319,45 @@ void WorkerCoreExecutor::switch_prim_block() {
 }
 
 // 指令被 RECV_CONF发送过来后，会在本地核实例化对应的指令类
-PrimBase *WorkerCoreExecutor::parse_prim(sc_bv<128> buffer) {
-    int type = buffer.range(7, 0).to_uint64();
+PrimBase *WorkerCoreExecutor::parse_prim(vector<sc_bv<128>> segments) {
+    int type = segments[0].range(7, 0).to_uint64();
     PrimBase *task = PrimFactory::getInstance().createPrim(type, false);
 
-    task->deserialize(buffer);
+    task->deserialize(segments);
     task->prim_context = core_context;
 
     return task;
 }
 
 void WorkerCoreExecutor::poll_buffer_i() {
+    MSG_TYPE block_mark = MSG_TYPE::MSG_TYPE_NUM;
+
     while (true) {
-        if (!data_sent_i.read())
-            wait(ev_data_sent_i);
+        if (!data_sent_i.read()) {
+            if (block_mark < MSG_TYPE::MSG_TYPE_NUM) {
+                if (msg_buffer_[block_mark].size() < MAX_BUFFER_PACKET_SIZE) {
+                    block_mark = MSG_TYPE::MSG_TYPE_NUM;
+                    core_busy_o.write(false);
+                    continue;
+                }
+
+                wait(ev_msg_process_end);
+                continue;
+            } else {
+                wait(ev_data_sent_i);
+            }
+        }
 
         Msg m = DeserializeMsg(channel_i.read());
         msg_buffer_[m.msg_type_].push(m);
         ev_recv_msg_type_[m.msg_type_].notify(0, SC_NS);
 
-        core_busy_o.write(msg_buffer_[m.msg_type_].size() >=
-                          MAX_BUFFER_PACKET_SIZE);
+        if (IsBlockableMsgType(m.msg_type_) &&
+            msg_buffer_[m.msg_type_].size() >= MAX_BUFFER_PACKET_SIZE) {
+            core_busy_o.write(true);
+            block_mark = m.msg_type_;
+        } else
+            core_busy_o.write(false);
 
         wait(CYCLE, SC_NS);
     }
@@ -454,11 +472,11 @@ void WorkerCoreExecutor::send_helper() {
     while (true) {
 #if ROUTER_PIPE == 1
         if (send_helper_write >= 1) {
-
 #else
         if (send_helper_write >= 2) {
 #endif
-            channel_o.write(SerializeMsg(send_buffer));
+            auto ser = SerializeMsg(send_buffer);
+            channel_o.write(ser);
             data_sent_o.write(true);
             ev_next_write_clear.notify(CYCLE, SC_NS);
         } else

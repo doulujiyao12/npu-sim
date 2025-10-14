@@ -60,7 +60,7 @@ html_css_files = [
 ]
 
 # html_theme = 'sphinx_rtd_theme'
-html_logo = "assets/logo/npusim.png"
+html_logo = "assets/logo/npusim.svg"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

@@ -5,8 +5,8 @@
 #include <vector>
 
 #include "common/msg.h"
-#include "monitor/config_helper_base.h"
 #include "defs/global.h"
+#include "monitor/config_helper_base.h"
 
 using json = nlohmann::json;
 
@@ -56,11 +56,25 @@ void config_helper_base::fill_queue_data(queue<Msg> *q) {
 
                 // input_size 是 输入 input的大小
                 int send_size = cp->inp_size - cp->input_size;
-                int send_size_in_bit = send_size * 8;
+                int send_size_in_bit = send_size * sizeof(float) * 8;
                 int pkg_num = (send_size_in_bit % M_D_DATA)
                                   ? (send_size_in_bit / M_D_DATA + 1)
                                   : (send_size_in_bit / M_D_DATA);
+                pkg_num = pkg_num % CORE_COMM_PAYLOAD
+                              ? pkg_num / CORE_COMM_PAYLOAD + 1
+                              : pkg_num / CORE_COMM_PAYLOAD;
 
+                cout << "pkg_num: " << pkg_num << endl;
+
+#if USE_BEHA_NOC == 1
+                sc_bv<M_D_DATA> d(0x1);
+                int length = M_D_DATA;
+                Msg m = Msg(false, MSG_TYPE::P_DATA, ++pkg_index, config.id,
+                            send_offset, (1 << M_D_TAG_ID) - 1, length, d);
+                m.source_ = GRID_SIZE;
+                m.roofline_packets_ = pkg_num;
+                q[index].push(m);
+#else
                 for (int j = 1; j <= pkg_num; j++) {
                     // CTODO: 拿到真正的数据
                     sc_bv<M_D_DATA> d(0x1);
@@ -78,8 +92,7 @@ void config_helper_base::fill_queue_data(queue<Msg> *q) {
                 }
 
                 pkg_index += pkg_num;
-                // cout << "prim " << prim->name << " send " << pkg_num << "
-                // packages, now total " << pkg_index << " packages.\n";
+#endif
             }
         }
         cout << "core " << config.id << " send " << core_prim_cnt
@@ -99,6 +112,7 @@ void config_helper_base::fill_queue_data(queue<Msg> *q) {
         Msg m = Msg(true, MSG_TYPE::P_DATA, pkg_index + 1, config.id,
                     (1 << 16) - 1, (1 << M_D_TAG_ID) - 1, 0, d);
         m.source_ = GRID_SIZE;
+        m.roofline_packets_ = 1;
         q[index].push(m);
 
         cout << "core " << config.id << " send " << pkg_index + 1

@@ -8,6 +8,7 @@
 #include "prims/base.h"
 #include "utils/config_utils.h"
 #include "utils/display_utils.h"
+#include "utils/msg_utils.h"
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
@@ -249,9 +250,12 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
                             recv_prim->type = RECV_TYPE::RECV_DATA;
                     }
                 }
-                msgs.emplace_back(false, MSG_TYPE::CONFIG,
-                                  static_cast<int>(msgs.size()) + 1, config.id,
-                                  prim->serialize());
+
+                auto segments = prim->serialize();
+                for (int seg = 0; seg < segments.size(); seg++)
+                    msgs.emplace_back(
+                        Msg(false, MSG_TYPE::CONFIG, msgs.size() + 1, config.id,
+                            seg == segments.size() - 1, segments[seg]));
             }
             return msgs;
         };
@@ -272,14 +276,14 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
         int seq_cnt = 1;
         auto push_msg = [&](Msg m) {
             m.seq_id_ = seq_cnt++;
-            q[index].push(std::move(m));
+            q[index].push(m);
         };
 
         // RECV_WEIGHT
         PrimBase *recv_weight = new Recv_prim(RECV_TYPE::RECV_WEIGHT,
                                               config.worklist[0].recv_tag, 0);
         push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
-                     recv_weight->serialize()));
+                     recv_weight->serialize()[0]));
 
         // Set_batch
         vector<Stage> batchInfo;
@@ -287,24 +291,24 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
             batchInfo.emplace_back(i + 1, PREFILL, seq_len);
         PrimBase *set_batch = new Set_batch(batchInfo, true);
 
-        cout << "core " << config.id << ", loop: " << config.loop << endl;
+        // cout << "core " << config.id << ", loop: " << config.loop << endl;
 
         // 主循环，将pipeline视为一种循环
         for (int j = 0; j < pipeline; j++) {
             for (int i = 0; i < config.loop - 1; i++) {
                 push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
-                             set_batch->serialize()));
+                             set_batch->serialize()[0]));
                 auto &reps = (i == 0) ? in_loop : next_loop;
-                for (auto &m : reps)
+                for (auto m : reps)
                     push_msg(m);
             }
 
-            for (size_t j = 0; j < last_loop.size(); j++) {
-                push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
-                             set_batch->serialize()));
-
-                Msg m = last_loop[j];
-                m.refill_ = m.is_end_ = (j + 1 == last_loop.size());
+            push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
+                         set_batch->serialize()[0]));
+            for (size_t k = 0; k < last_loop.size(); k++) {
+                Msg m = last_loop[k];
+                m.refill_ = m.is_end_ =
+                    (k + 1 == last_loop.size() && j == pipeline - 1);
                 push_msg(m);
             }
         }
@@ -405,9 +409,12 @@ void config_helper_core::calculate_address(bool do_loop) {
             if (!do_loop && judge_is_end_work(work))
                 continue; // 汇节点
 
+            cout << "1\n";
+
             // 拿到这个corejob的output size
             for (int j = v->size() - 1; j >= 0; j--) {
                 auto p = (*v)[j];
+                cout << p->prim_type << endl;
                 if (p->prim_type & PRIM_TYPE::COMP_PRIM) {
                     CompBase *cp = (CompBase *)p;
                     output_size = cp->out_size;
@@ -432,41 +439,13 @@ void config_helper_core::calculate_address(bool do_loop) {
                     if (temp->type != SEND_DATA)
                         continue;
 
-                    int weight = work.cast[index].weight;
-                    int slice_size = (output_size % weight)
-                                         ? (output_size / weight + 1)
-                                         : (output_size / weight);
-                    cout << "output_size: " << output_size
-                         << ", slice_size: " << slice_size << endl;
-                    int slice_size_in_bit =
-                        slice_size * (prim->datatype ? 2 : 1) * 8;
-                    int pkg_nums = (slice_size_in_bit % M_D_DATA)
-                                       ? (slice_size_in_bit / M_D_DATA + 1)
-                                       : (slice_size_in_bit / M_D_DATA);
-                    int end_length =
-                        slice_size_in_bit - (pkg_nums - 1) * M_D_DATA;
+                    CalculatePacketNum(output_size, work.cast[index].weight,
+                                       (prim->datatype ? 2 : 1),
+                                       temp->max_packet, temp->end_length);
 
-                    // max pkg nums
-                    temp->max_packet =
-                        pkg_nums % (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD)
-                            ? pkg_nums /
-                                      (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD) +
-                                  1
-                            : pkg_nums / (CORE_COMM_PAYLOAD * CORE_ACC_PAYLOAD);
-                    cout << "max_packet: " << temp->max_packet
-                         << ", COREACC: " << CORE_ACC_PAYLOAD
-                         << ", pkg_nums: " << pkg_nums << endl;
-                    if (pkg_nums == 0) {
-                        cout << "weight " << weight << " slice size "
-                             << slice_size << " slice size in bit "
-                             << slice_size_in_bit << " pkg nums " << pkg_nums
-                             << " end length " << end_length << endl;
-                    }
                     temp->output_label = output_label_split.size() == 1
                                              ? output_label_split[0]
                                              : output_label_split[index];
-                    temp->end_length = end_length;
-
                     index++;
                 }
             }
@@ -482,7 +461,6 @@ void config_helper_core::fill_queue_start(queue<Msg> *q) {
             int size = source.second;
 
             int index = i / GRID_X;
-            int pkg_index = 0;
             int send_offset = 0;
             for (auto config : coreconfigs) {
                 if (config.id == i)
@@ -494,7 +472,21 @@ void config_helper_core::fill_queue_start(queue<Msg> *q) {
             int pkg_num = (send_size_in_bit % M_D_DATA)
                               ? (send_size_in_bit / M_D_DATA + 1)
                               : (send_size_in_bit / M_D_DATA);
+            pkg_num = pkg_num % CORE_COMM_PAYLOAD
+                          ? pkg_num / CORE_COMM_PAYLOAD + 1
+                          : pkg_num / CORE_COMM_PAYLOAD;
 
+            cout << "pkg_num: " << pkg_num << endl;
+
+#if USE_BEHA_NOC == 1
+            sc_bv<M_D_DATA> d(0x1);
+            int length = M_D_DATA;
+            Msg m =
+                Msg(true, MSG_TYPE::S_DATA, 1, i, send_offset, i, length, d);
+            m.source_ = GRID_SIZE;
+            m.roofline_packets_ = pkg_num;
+            q[index].push(m);
+#else
             for (int j = 1; j <= pkg_num; j++) {
                 sc_bv<M_D_DATA> d(0x1);
                 int length = M_D_DATA;
@@ -502,12 +494,13 @@ void config_helper_core::fill_queue_start(queue<Msg> *q) {
                 if (is_end_packet)
                     length = size * sizeof(float) - M_D_DATA * (pkg_num - 1);
 
-                // CTODO: recv_tag default to i
-                Msg m = Msg(j == pkg_num, MSG_TYPE::S_DATA, j + pkg_index, i,
+                Msg m = Msg(j == pkg_num, MSG_TYPE::S_DATA, j, i,
                             send_offset + M_D_DATA * (j - 1), i, length, d);
                 m.source_ = GRID_SIZE;
+                m.roofline_packets_ = 1;
                 q[index].push(m);
             }
+#endif
         }
     }
 }

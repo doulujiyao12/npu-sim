@@ -9,9 +9,9 @@
 #include "monitor/mem_interface.h"
 #include "prims/comp_prims.h"
 #include "prims/norm_prims.h"
-#include "utils/print_utils.h"
 #include "utils/msg_utils.h"
 #include "utils/prim_utils.h"
+#include "utils/print_utils.h"
 
 MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
                            const char *config_name, const char *font_ttf)
@@ -89,6 +89,12 @@ void MemInterface::init() {
     }
     dont_initialize();
 
+    SC_THREAD(catch_host_channel_available_i);
+    for (int i = 0; i < GRID_X; i++) {
+        sensitive << host_channel_avail_i[i].pos();
+    }
+    dont_initialize();
+
     SC_THREAD(recv_helper);
     sensitive << ev_recv_helper;
     dont_initialize();
@@ -137,9 +143,11 @@ void MemInterface::end_of_simulation() {
         int total_utilization = 0;
         for (auto work : c->worklist) {
             for (auto prim : work.prims_in_loop) {
-                if (prim && prim->prim_type & PRIM_TYPE::NPU_PRIM) { // 确保指针非空
+                if (prim &&
+                    prim->prim_type & PRIM_TYPE::NPU_PRIM) { // 确保指针非空
                     total_utilization +=
-                        ((NpuBase *)prim)->sramUtilization(prim->datatype, c->id);
+                        ((NpuBase *)prim)
+                            ->sramUtilization(prim->datatype, c->id);
                 }
             }
         }
@@ -169,7 +177,7 @@ void MemInterface::distribute_config() {
                 helper->iter_start(JOB_PREFILL);
             if (helper->wait_schedule_d)
                 helper->iter_start(JOB_DECODE);
-        } else if (SYSTEM_MODE == SIM_GPU_PD) 
+        } else if (SYSTEM_MODE == SIM_GPU_PD)
             ((config_helper_gpu_pd *)config_helper)->iter_start();
 
         config_helper->fill_queue_config(write_buffer);
@@ -332,7 +340,8 @@ void MemInterface::write_helper() {
         }
 
         while (true) {
-            bool stop_flag = true;
+            bool stop_flag = true; // 是否已经全部发送完毕
+            bool all_block = true; // 是否所有节点都已经被阻塞
             for (int i = 0; i < GRID_X; i++) {
                 host_data_sent_o[i].write(false);
                 if (!temp_buffer[i].size()) {
@@ -342,6 +351,7 @@ void MemInterface::write_helper() {
                 stop_flag = false;
                 if (host_channel_avail_i[i].read() == false)
                     continue;
+                all_block = false;
 
                 // send data
                 Msg t = temp_buffer[i].front();
@@ -349,13 +359,17 @@ void MemInterface::write_helper() {
                 host_channel_o[i].write(SerializeMsg(t));
                 host_data_sent_o[i].write(true);
                 // cout << "SEND DATA to: " << t.des_ << ",seq: " << t.seq_id_
-                //      << endl;
+                //      << ", end ?: " << t.is_end_ << endl;
             }
 
             if (stop_flag)
                 break;
 
-            wait(CYCLE, SC_NS);
+            if (all_block)
+                wait(ev_host_channel_available);
+            else {
+                wait(CYCLE, SC_NS);
+            }
         }
 
         cout << "Mem Interface: write done\n";
@@ -419,6 +433,14 @@ void MemInterface::req_handler() {
 void MemInterface::catch_host_data_sent_i() {
     while (true) {
         ev_recv_helper.notify(CYCLE, SC_NS);
+
+        wait();
+    }
+}
+
+void MemInterface::catch_host_channel_available_i() {
+    while (true) {
+        ev_host_channel_available.notify(CYCLE, SC_NS);
 
         wait();
     }

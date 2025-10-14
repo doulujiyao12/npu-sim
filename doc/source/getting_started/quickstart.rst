@@ -23,6 +23,17 @@
 
 
 
+配置文件说明
+-------------
+
+以下是常用的配置文件介绍：
+
+.. toctree::
+   :maxdepth: 1
+
+   config_core
+
+
 
 .. _configuration-fields:
 

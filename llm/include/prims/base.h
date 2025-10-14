@@ -21,13 +21,13 @@ public:
     DATATYPE datatype = INT8;
 
     virtual int taskCoreDefault(TaskCoreContext &context) = 0;
-    virtual sc_bv<128> serialize() = 0;
-    virtual void deserialize(sc_bv<128> buffer) = 0;
+    virtual vector<sc_bv<128>> serialize() = 0;
+    virtual void deserialize(vector<sc_bv<128>>) = 0;
     virtual void printSelf() = 0;
 
     PrimBase() {
         name = "PrimBase";
-        prim_type |= NORM_PRIM;
+        prim_type = NORM_PRIM;
     }
     virtual ~PrimBase() = default;
 };
@@ -56,8 +56,8 @@ public:
     virtual int taskCoreDefault(TaskCoreContext &context) = 0;
 
     // 从配置文件中解析原语的工具函数
-    virtual sc_bv<128> serialize() = 0;
-    virtual void deserialize(sc_bv<128> buffer) = 0;
+    virtual vector<sc_bv<128>> serialize() = 0;
+    virtual void deserialize(vector<sc_bv<128>> buffer) = 0;
     virtual void parseJson(json j) = 0;
 
     // 打印原语信息
@@ -85,12 +85,12 @@ public:
     // 向上暴露的工作函数
     int taskCoreDefault(TaskCoreContext &context);
     virtual void taskCore(TaskCoreContext &context, string prim_name,
-                         u_int64_t dram_time, u_int64_t &exu_ops,
-                         u_int64_t &sfu_ops) = 0;
+                          u_int64_t dram_time, u_int64_t &exu_ops,
+                          u_int64_t &sfu_ops) = 0;
 
     // 原语解析函数
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
+    vector<sc_bv<128>> serialize();
+    void deserialize(vector<sc_bv<128>> buffer);
     void parseJson(json j);
 
     // 打印原语信息
@@ -128,8 +128,6 @@ private:
 class GpuBase : public CompBase {
 public:
     // 原语的算力需求
-    int slice_x;
-    int slice_y;
     int req_sm;
 
     int fetch_index; // 用于记录取权重需要偏移的offset
@@ -137,17 +135,21 @@ public:
     virtual GpuBase *clone() = 0;
 
     // 原语解析函数
-    sc_bv<128> serialize();
-    void deserialize(sc_bv<128> buffer);
+    vector<sc_bv<128>> serialize();
+    void deserialize(vector<sc_bv<128>> buffer);
     void parseJson(json j);
 
     // 打印原语信息
     void printSelf();
 
-    GpuBase() { prim_type |= GPU_PRIM; }
+    GpuBase() {
+        prim_type |= GPU_PRIM;
+        param_name.insert(param_name.end(), {"slice_x", "slice_y"});
+    }
 
 private:
     void parseCompose(json j);
+    void parseAddress(json j);
     void initializeDefault();
 };
 
