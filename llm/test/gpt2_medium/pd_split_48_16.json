@@ -47,7 +47,7 @@
                   "T": "T",
                   "C": "C",
                   "OC": "3C",
-                  "job_type": "prefill",
+                  "job_type": 0,
                   "sram_address": {
                     "indata": "layernorm1_out",
                     "outdata": "matmul1_out"
@@ -64,7 +64,7 @@
                   "NH": "NH",
                   "R": "R",
                   "DH": "DH",
-                  "job_type": "prefill",
+                  "job_type": 0,
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "attention1_out"
@@ -181,7 +181,7 @@
                   "T": "T",
                   "C": "C",
                   "OC": "3C",
-                  "job_type": "prefill",
+                  "job_type": 0,
                   "sram_address": {
                     "indata": "layernorm1_out",
                     "outdata": "matmul1_out"
@@ -198,7 +198,7 @@
                   "NH": "NH",
                   "R": "R",
                   "DH": "DH",
-                  "job_type": "prefill",
+                  "job_type": 0,
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "attention1_out"
@@ -315,7 +315,7 @@
                   "T": "T",
                   "C": "C",
                   "OC": "3C",
-                  "job_type": "prefill",
+                  "job_type": 0,
                   "sram_address": {
                     "indata": "layernorm1_out",
                     "outdata": "matmul1_out"
@@ -332,7 +332,7 @@
                   "NH": "NH",
                   "R": "R",
                   "DH": "DH",
-                  "job_type": "prefill",
+                  "job_type": 0,
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "attention1_out"
@@ -460,7 +460,7 @@
                   "T": "T",
                   "C": "C",
                   "OC": "3C",
-                  "job_type": "decode",
+                  "job_type": 1,
                   "sram_address": {
                     "indata": "layernorm1_out",
                     "outdata": "matmul1_out"
@@ -477,7 +477,7 @@
                   "NH": "NH",
                   "R": "R",
                   "DH": "DH",
-                  "job_type": "decode",
+                  "job_type": 1,
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "attention1_out"
@@ -596,7 +596,7 @@
                   "T": "T",
                   "C": "C",
                   "OC": "3C",
-                  "job_type": "decode",
+                  "job_type": 1,
                   "sram_address": {
                     "indata": "layernorm1_out",
                     "outdata": "matmul1_out"
@@ -613,7 +613,7 @@
                   "NH": "NH",
                   "R": "R",
                   "DH": "DH",
-                  "job_type": "decode",
+                  "job_type": 1,
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "attention1_out"
@@ -732,7 +732,7 @@
                   "T": "T",
                   "C": "C",
                   "OC": "3C",
-                  "job_type": "decode",
+                  "job_type": 1,
                   "sram_address": {
                     "indata": "layernorm1_out",
                     "outdata": "matmul1_out"
@@ -749,7 +749,7 @@
                   "NH": "NH",
                   "R": "R",
                   "DH": "DH",
-                  "job_type": "decode",
+                  "job_type": 1,
                   "sram_address": {
                     "indata": "matmul1_out",
                     "outdata": "attention1_out"
