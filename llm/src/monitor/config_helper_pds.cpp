@@ -28,11 +28,14 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
     head_size = config_reqs["head_size"];
     kv_heads = config_reqs["kv_heads"];
     eof_chance = config_reqs["eof_chance"];
+    // prefill 的 pp 阶数
     prefill_stage = config_reqs["prefill_stage"];
     decode_stage = config_reqs["decode_stage"];
+    // 总共参与prefill的核数，pp * dp 不包括 tp 的数量
     prefill_core = config_reqs["prefill_cores"];
     decode_core = config_reqs["decode_cores"];
     batch_size = config_reqs["batch_size"];
+    // prefill_iter 表示 prefill 的 chunk 数量
     if (config_reqs.contains("prefill_iters"))
         prefill_iters = config_reqs["prefill_iters"];
     else
@@ -57,7 +60,7 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
     if (arr_size < req_cnt) {
         for (int i = 0; i < arr_size; i++)
             arrival_time.push_back(config_reqs["arrival"][i]);
-
+        // 后续 都按照 最后要给 到达时间来计算
         for (int i = arr_size; i < req_cnt; i++)
             arrival_time.push_back(config_reqs["arrival"][arr_size - 1]);
     } else {
@@ -66,12 +69,14 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
     }
 
     // 检查batch_size参数的合理性，同时依此修改arrive时间
+    // 能放的下 prefill
     if (batch_size * PD_RATIO > CORE_CREDIT) {
         cout << "[ERROR] In config helper pd: batch size too large.\n";
         sc_stop();
     } else {
         for (int i = 0; i < req_cnt; i++) {
             int target = min((i / batch_size + 1) * batch_size - 1, req_cnt);
+            // 按照 batch 重新调整arrival_time
             arrival_time[i] = arrival_time[target];
         }
     }

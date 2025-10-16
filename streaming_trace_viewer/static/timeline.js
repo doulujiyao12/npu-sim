@@ -298,26 +298,36 @@ function render() {
 }
 
 function drawTrackLabels() {
+  // 确保离屏 canvas 覆盖整个可视高度
   trackLabelCanvas.width = margin.left;
-  trackLabelCanvas.height = canvasHeight;
+  trackLabelCanvas.height = canvasHeight; // 关键：必须和主 canvas 高度一致
   trackLabelCtx.clearRect(0, 0, margin.left, canvasHeight);
-  trackLabelCtx.font = "12px sans-serif";
-  trackLabelCtx.textAlign = "end";
+
+  // 使用更醒目的颜色（白色带一点发光感）
+  trackLabelCtx.fillStyle = "#e0e0ff"; // 浅青白，适配深色主题
+  trackLabelCtx.font = "12px 'Roboto Mono', monospace";
+  trackLabelCtx.textAlign = "right";   // 改为 right 更安全
   trackLabelCtx.textBaseline = "middle";
+
   for (const [label, y] of Object.entries(trackY)) {
+    // 计算在可视区域内的 Y 位置（考虑 pan/zoom 的 y 偏移）
     const drawY = margin.top + y - transform.y;
-    if (drawY > -10 && drawY < canvasHeight) {
-      trackLabelCtx.fillText(label, margin.left - 10, drawY + threadHeight / 2);
+
+    // 只绘制在可视区域内的标签（加一点缓冲）
+    if (drawY + threadHeight > 0 && drawY - threadHeight < canvasHeight) {
+      trackLabelCtx.fillText(label, margin.left - 12, drawY + threadHeight / 2);
     }
   }
+
+  // 将离屏 canvas 绘制到主 canvas 左侧
   ctx.drawImage(trackLabelCanvas, 0, 0);
 }
 
 function drawXAxis(xScaleZoom) {
   ctx.save();
   ctx.translate(margin.left, margin.top + height);
-  ctx.strokeStyle = "#000";
-  ctx.fillStyle = "#000";
+  ctx.fillStyle = "#e0e0ff";
+ ctx.strokeStyle = "#a0a0ff";
   ctx.font = "12px sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
