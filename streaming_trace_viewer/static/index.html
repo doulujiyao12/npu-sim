@@ -162,7 +162,7 @@
 
     canvas {
       /* 淡色科技背景：微青白，呼应霓虹主色 */
-      background: #f0f9ff;
+      background:#0a0815;
       border: 1px solid var(--border); /* 可选：加边框提升层次 */
       border-radius: 6px;
       display: block;
@@ -269,8 +269,24 @@
 
     <div class="sim-panel">
       <strong>RUN SIMULATION</strong>
-      <input type="text" id="configFile" value="../llm/test/gpt2_small/original.json" />
-      <input type="text" id="coreConfigFile" value="../llm/test/core_configs/core_4x4.json" />
+      <input type="text" id="configFile" list="configFileOptions" value="../llm/test/gpt2_small/original.json" />
+      <datalist id="configFileOptions">
+        <option value="../llm/test/gpt2_small/original.json">
+        <option value="../llm/test/gpt2_small/original2.json">
+        <option value="../llm/test/gpt2_small/original3.json">
+        <option value="../llm/test/gpt2_small/original4.json">
+        <option value="../llm/test/chores/dataflow_tp.json">
+        <option value="../llm/test/chores/gpu_basic.json">
+        <option value="../llm/test/chores/pd_fuse.json">
+        <option value="../llm/test/chores/pd_split.json">   
+        <option value="../llm/test/gpt2_small/pd_split/pd_split_49_14_100_100.json">
+      </datalist>
+      <input type="text" id="coreConfigFile" list="HWConfigFileOptions" value="../llm/test/core_configs/core_4x4.json" />
+      <datalist id="HWConfigFileOptions">
+        <option value="../llm/test/core_configs/core_4x4.json">
+        <option value="../llm/test/chores/hw_config.json">
+        <option value="../llm/test/temp_config.json">
+      </datalist>
       <button onclick="runSimulation()">▶️ Start</button>
       <div id="simStatus"></div>
     </div>
