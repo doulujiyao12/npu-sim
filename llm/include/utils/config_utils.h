@@ -18,6 +18,11 @@ template <typename T> void SetParamFromJson(json j, string field, T *target) {
             return;
         }
 
+        if (value.is_boolean()) {
+            *target = value.get<bool>();
+            return;
+        }
+
         for (auto v : vtable) {
             if (v.first == value) {
                 *target = v.second;
@@ -37,6 +42,11 @@ void SetParamFromJson(json j, string field, T *target, T default_value) {
 
         if (value.is_number_integer()) {
             *target = value;
+            return;
+        }
+
+        if (value.is_boolean()) {
+            *target = value.get<bool>();
             return;
         }
 

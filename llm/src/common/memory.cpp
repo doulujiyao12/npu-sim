@@ -219,7 +219,7 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
         used -= spill_size;
         data_map[min_label].spill_size += spill_size;
         // data_map[min_label].size -= spill_size;
-#if USE_SRAM_MANAGER
+#if USE_SRAM_MANAGER == 1
         cout << "add pair " << key << endl;
         sram_manager_->deallocate(sram_id);
         cout << " Deallocate " << sram_id << " from sram manager." << key

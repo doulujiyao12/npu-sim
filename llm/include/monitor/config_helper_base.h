@@ -21,17 +21,19 @@ public:
     vector<CoreConfig> coreconfigs;     // 记录所有核的工作配置，包括所有原语
 
     int pipeline; // 是否进行input连续输入，从而增加pipeline并行度，数值大小为需要连续进行的pipe段数
+    int end_count_sources; // 此变量协助记录汇节点个数（done接收次数），参考source中的is_end字段
 
     virtual void fill_queue_config(queue<Msg> *q) = 0; // 下发原语配置
-    virtual void fill_queue_start(queue<Msg> *q) = 0; // 下发初始数据
-    void fill_queue_data(queue<Msg> *q); // 下发权重数据
+    virtual void fill_queue_start(queue<Msg> *q) = 0;  // 下发初始数据
+    void fill_queue_data(queue<Msg> *q);               // 下发权重数据
 
     bool judge_is_end_core(int i);
     bool judge_is_end_work(CoreJob work);
 
     virtual void parse_ack_msg(Event_engine *event_engine, int flow_id,
-                       sc_event *notify_event) = 0;
-    virtual void parse_done_msg(Event_engine *event_engine, sc_event *notify_event) = 0;
+                               sc_event *notify_event) = 0;
+    virtual void parse_done_msg(Event_engine *event_engine,
+                                sc_event *notify_event) = 0;
 
     string name() { return "Config helper"; }
 

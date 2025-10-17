@@ -13,7 +13,7 @@ void rmsnorm_forward::initialize() {
 }
 
 void rmsnorm_forward::taskCore(TaskCoreContext &context, string prim_name,
-                              u_int64_t dram_time, u_int64_t &exu_ops,
+                              u_int64_t &dram_time, u_int64_t &exu_ops,
                               u_int64_t &sfu_ops) {
     // 读入weight数据
     auto label_weight = ETERNAL_PREFIX + prim_name + "_w";
