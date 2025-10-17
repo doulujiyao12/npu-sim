@@ -28,11 +28,14 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
     head_size = config_reqs["head_size"];
     kv_heads = config_reqs["kv_heads"];
     eof_chance = config_reqs["eof_chance"];
+    // prefill 的 pp 阶数
     prefill_stage = config_reqs["prefill_stage"];
     decode_stage = config_reqs["decode_stage"];
+    // 总共参与prefill的核数，pp * dp 不包括 tp 的数量
     prefill_core = config_reqs["prefill_cores"];
     decode_core = config_reqs["decode_cores"];
     batch_size = config_reqs["batch_size"];
+    // prefill_iter 表示 prefill 的 chunk 数量
     if (config_reqs.contains("prefill_iters"))
         prefill_iters = config_reqs["prefill_iters"];
     else
@@ -57,7 +60,7 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
     if (arr_size < req_cnt) {
         for (int i = 0; i < arr_size; i++)
             arrival_time.push_back(config_reqs["arrival"][i]);
-
+        // 后续 都按照 最后要给 到达时间来计算
         for (int i = arr_size; i < req_cnt; i++)
             arrival_time.push_back(config_reqs["arrival"][arr_size - 1]);
     } else {
@@ -66,12 +69,14 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
     }
 
     // 检查batch_size参数的合理性，同时依此修改arrive时间
+    // 能放的下 prefill
     if (batch_size * PD_RATIO > CORE_CREDIT) {
         cout << "[ERROR] In config helper pd: batch size too large.\n";
         sc_stop();
     } else {
         for (int i = 0; i < req_cnt; i++) {
             int target = min((i / batch_size + 1) * batch_size - 1, req_cnt);
+            // 按照 batch 重新调整arrival_time
             arrival_time[i] = arrival_time[target];
         }
     }
@@ -558,6 +563,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
 
                 // 需要计算send_data的发送包裹数，首先找到这个work的最后一个计算原语
                 CompBase *last_comp = (CompBase *)work.prims.back();
+                if (tp_size == 1) continue;
 
                 // 发送原语，遵循work中的cast，编号和tag需要自定义
                 for (auto ca : work.cast) {
@@ -655,7 +661,8 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
                        stage_index[core_id / tp_size] == prefill_stage) {
                 // 如果是prefill最后一个核，则只收不发
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, recv_data_2->serialize()[0]));
+                                          core_id,
+                                          recv_data_2->serialize()[0]));
             } else if (core_id / tp_size >= prefill_core &&
                        stage_index[core_id / tp_size] == 1) {
                 // 如果是decode的第一个核，则先发后收
@@ -666,11 +673,13 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
                                           core_id, send_data->serialize()[0]));
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, recv_data_2->serialize()[0]));
+                                          core_id,
+                                          recv_data_2->serialize()[0]));
             } else {
                 // 其余的核，统一先收后发
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, recv_data_2->serialize()[0]));
+                                          core_id,
+                                          recv_data_2->serialize()[0]));
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
                                           core_id, send_req->serialize()[0]));
                 temp_buffer.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,

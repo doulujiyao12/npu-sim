@@ -291,8 +291,6 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
             batchInfo.emplace_back(i + 1, PREFILL, seq_len);
         PrimBase *set_batch = new Set_batch(batchInfo, true);
 
-        // cout << "core " << config.id << ", loop: " << config.loop << endl;
-
         // 主循环，将pipeline视为一种循环
         for (int j = 0; j < pipeline; j++) {
             for (int i = 0; i < config.loop - 1; i++) {
