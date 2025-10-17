@@ -177,7 +177,7 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
         int source_loop = 0;
         bool is_end = false;
         SetParamFromJson(source, "loop", &source_loop, 1);
-        SetParamFromJson(source, "is_end", &is_end);
+        SetParamFromJson(source, "is_end", &is_end, false);
 
         if (is_end)
             end_count_sources += source_loop;
