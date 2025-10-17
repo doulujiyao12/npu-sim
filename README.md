@@ -15,6 +15,14 @@ Furthermore, NPU-SIM extends its capabilities to the modeling of next-generation
 
 ![](doc/images/arch.png)
 
+### GUI Visualization
+
+NPU-SIM provides an interactive GUI for real-time visualization of the simulation process:
+
+<video src="https://raw.githubusercontent.com/doulujiyao12/npu-sim/refactor/doc/images/gui_video.mp4" controls width="640"></video>
+
+<!-- *Alternatively, you can view the video [here](./doc/images/gui_video.mp4)* -->
+
 For more details, please access the [NPU-SIM](https://npu-sim.readthedocs.io/zh-cn/latest/) documentation.
 
 

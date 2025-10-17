@@ -26,6 +26,7 @@
           "worklist": [
             {
               "recv_cnt": 1,
+              "cast": [],
               "prims": [
                 {
                   "type": "Layernorm_f",
@@ -589,6 +590,7 @@
           "worklist": [
             {
               "recv_cnt": 1,
+              "cast": [],
               "prims": [
                 {
                   "type": "Layernorm_f",

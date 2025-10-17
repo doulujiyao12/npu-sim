@@ -48,12 +48,12 @@
                   },
                   {
                     "type": "matmul_forward_pd",
-                    "R": "R",
                     "use_hw": false,
                     "B": "B",
                     "T": "T",
                     "C": "C",
                     "OC": "3C",
+                    "R": "R",
                     "chunk": "CHUNK",
                     "job_type": 0,
                     "sram_address": {
@@ -191,12 +191,12 @@
                   },
                   {
                     "type": "matmul_forward_pd",
-                    "R": "R",
                     "use_hw": false,
                     "B": "B",
                     "T": "T",
                     "C": "C",
                     "OC": "3C",
+                    "R": "R",
                     "chunk": "CHUNK",
                     "job_type": 0,
                     "sram_address": {
@@ -331,12 +331,12 @@
                   },
                   {
                     "type": "matmul_forward_pd",
-                    "R": "R",
                     "use_hw": false,
                     "B": "B",
                     "T": "T",
                     "C": "C",
                     "OC": "3C",
+                    "R": "R",
                     "chunk": "CHUNK",
                     "job_type": 0,
                     "sram_address": {
@@ -468,12 +468,12 @@
                   },
                   {
                     "type": "matmul_forward_pd",
-                    "R": "R",
                     "use_hw": false,
                     "B": "B",
                     "T": "T",
                     "C": "C",
                     "OC": "3C",
+                    "R": "R",
                     "chunk": "CHUNK",
                     "job_type": 0,
                     "sram_address": {
@@ -761,12 +761,12 @@
                   },
                   {
                     "type": "matmul_forward_pd",
-                    "R": "R",
                     "use_hw": false,
                     "B": "B",
                     "T": "T",
                     "C": "C",
                     "OC": "3C",
+                    "R": "R",
                     "chunk": "CHUNK",
                     "job_type": 1,
                     "sram_address": {
@@ -899,12 +899,12 @@
                   },
                   {
                     "type": "matmul_forward_pd",
-                    "R": "R",
                     "use_hw": false,
                     "B": "B",
                     "T": "T",
                     "C": "C",
                     "OC": "3C",
+                    "R": "R",
                     "chunk": "CHUNK",
                     "job_type": 1,
                     "sram_address": {
@@ -1037,12 +1037,12 @@
                   },
                   {
                     "type": "matmul_forward_pd",
-                    "R": "R",
                     "use_hw": false,
                     "B": "B",
                     "T": "T",
                     "C": "C",
                     "OC": "3C",
+                    "R": "R",
                     "chunk": "CHUNK",
                     "job_type": 1,
                     "sram_address": {
