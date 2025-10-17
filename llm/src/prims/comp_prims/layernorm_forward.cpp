@@ -18,7 +18,7 @@ void Layernorm_f::initialize() {
 }
 
 void Layernorm_f::taskCore(TaskCoreContext &context, string prim_name,
-                          u_int64_t dram_time, u_int64_t &exu_ops,
+                          u_int64_t &dram_time, u_int64_t &exu_ops,
                           u_int64_t &sfu_ops) {
     auto label_weight = ETERNAL_PREFIX + prim_name + "_w";
     checkStaticData(context, dram_time, data_chunk_addr["weight"],

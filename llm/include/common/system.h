@@ -1,10 +1,10 @@
 #pragma once
+#include "common/include.h"
+#include "common/memory.h"
 #include "defs/const.h"
 #include "defs/enums.h"
 #include "trace/Event_engine.h"
 #include "unit_module/sram_manager/sram_manager.h"
-#include "common/memory.h"
-#include "common/include.h"
 
 #include <vector>
 
@@ -19,6 +19,7 @@ class PrimCoreContext {
 public:
     int cid;
     int loop_cnt; // 当前prim执行的循环次数
+    int auto_pd_; // 仅适用于数据流模式下的自动serving
 
     SramManager *sram_manager_;
     SramPosLocator *sram_pos_locator_;
@@ -45,7 +46,8 @@ public:
 
     PrimCoreContext(int id) : cid(id) {
         loop_cnt = 0;
-        
+        auto_pd_ = 0; // 默认不做自动pd，仅在set_batch中设置
+
         sram_manager_ =
             new SramManager(0, cid, MAX_SRAM_SIZE, SRAM_BLOCK_SIZE, 0);
         sram_pos_locator_ = new SramPosLocator(cid, sram_manager_);
@@ -53,8 +55,11 @@ public:
     }
 
     ~PrimCoreContext() {
-        if (sram_manager_) delete sram_manager_;
-        if (sram_pos_locator_) delete sram_pos_locator_;
-        if (datapass_label_) delete datapass_label_;
+        if (sram_manager_)
+            delete sram_manager_;
+        if (sram_pos_locator_)
+            delete sram_pos_locator_;
+        if (datapass_label_)
+            delete datapass_label_;
     }
 };

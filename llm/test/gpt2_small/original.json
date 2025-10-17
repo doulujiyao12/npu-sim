@@ -1,18 +1,18 @@
 {
   "vars": {
     "B": 1,
-    "T": 128,
+    "T": 1280,
     "C": 768,
     "NH": 12,
     "DH": 64,
     "L": 12,
-    "loop": 3,
+    "loop": 1,
     "3C": 2304,
     "4C": 3072,
-    "BTC": 98304,
-    "2BTC": 196608,
-    "3BTC": 294912,
-    "4BTC": 393216,
+    "BTC": 983040,
+    "2BTC": 1966080,
+    "3BTC": 2949120,
+    "4BTC": 3932160,
     "R": 1,
     "CHUNK": 1,
     "layernorm1_data_": 98304,
@@ -33,11 +33,13 @@
     "residual2_out": 7220,
     "TODO": 110
   },
-  "pipeline": 1,
+  "pipeline": 10,
   "source": [
     {
       "dest": 0,
-      "size": "BTC"
+      "size": "BTC",
+      "loop": 2,
+      "is_end": true
     }
   ],
   "chips": [

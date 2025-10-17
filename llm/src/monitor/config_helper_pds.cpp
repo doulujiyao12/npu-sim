@@ -720,8 +720,9 @@ void config_helper_pds::parse_ack_msg(Event_engine *event_engine, int flow_id,
     }
 
     g_temp_ack_msg.clear();
-    event_engine->add_event(this->name(), "Waiting Recv Ack", "E",
-                            Trace_event_util());
+    // wait(sc_core::sc_time(10, sc_core::SC_NS));
+    event_engine->add_event(this->name(), "Waiting Recv Ack", "E", 
+                            Trace_event_util(), sc_time(2, SC_NS));
 
     if (g_recv_ack_cnt_p >= prefill_core * tp_size) {
         g_recv_ack_cnt_p = 0;

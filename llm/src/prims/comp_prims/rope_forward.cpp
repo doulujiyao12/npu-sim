@@ -11,7 +11,7 @@ void rope_forward::initialize() {
 }
 
 void rope_forward::taskCore(TaskCoreContext &context, string prim_name,
-                           u_int64_t dram_time, u_int64_t &exu_ops,
+                           u_int64_t &dram_time, u_int64_t &exu_ops,
                            u_int64_t &sfu_ops) {
     // 此时默认已经分好注意力头了。对于每一个注意力头，对应的sincos数据大小均为B
     // * T * (C / NH) (最后一个维度已扩展)
