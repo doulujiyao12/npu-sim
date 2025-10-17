@@ -178,6 +178,14 @@ void NpuBase::initializeDefault() {
 }
 
 int NpuBase::taskCoreDefault(TaskCoreContext &context) {
+    // 检查是否满足auto_pd的条件，若是，则将T参数设置为1，并重新初始化
+    if (prim_context->auto_pd_ &&
+        prim_context->loop_cnt > prim_context->auto_pd_) {
+        param_value["T"] = 1;
+        initialize();
+        initializeDefault();
+    }
+
     // 所用时间
     u_int64_t dram_time = 0;
     u_int64_t overlap_time = 0;
@@ -343,7 +351,7 @@ void NpuBase::checkInputData(TaskCoreContext &context, uint64_t &dram_time,
                                 << " with flag: " << flag);
 
                 AddrPosKey inp_key;
-                int flag = sram_pos_locator_->findPair(
+                int flag = prim_context->sram_pos_locator_->findPair(
                     prim_context->datapass_label_->indata[p], inp_key);
                 if (inp_key.alloc_id == 0) {
                     sram_first_write_generic(
@@ -506,7 +514,7 @@ void NpuBase::prefReadData(TaskCoreContext &context, uint64_t &dram_time,
     int sram_offset = 0;
     prim_context->sram_pos_locator_->findPair(label_name, sc_key);
 #if USE_SRAM_MANAGER == 1
-    sram_pos_locator_->printAllKeysWithAllocId();
+    prim_context->sram_pos_locator_->printAllKeysWithAllocId();
     // Print allocation IDs for debugging
     std::cout << label_name << " Key Allocation ID: " << sc_key.alloc_id
               << std::endl;
@@ -579,7 +587,7 @@ void NpuBase::checkStaticData(TaskCoreContext &context, uint64_t &dram_time,
     LOG_VERBOSE(1, context.cid,
                 "Prim name:" << name << " read weight data from sram");
 #if USE_SRAM_MANAGER == 1
-    sram_pos_locator_->printAllKeysWithAllocId();
+    prim_context->sram_pos_locator_->printAllKeysWithAllocId();
     // Print allocation IDs for debugging
     std::cout << label_name << " Key Allocation ID: " << sc_key.alloc_id
               << std::endl;

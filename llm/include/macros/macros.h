@@ -206,7 +206,9 @@
 
 // PD中的分块策略
 #define MAX_PREFILL_WORKLOAD 384
+// P 占据资源 ： D 占据资源
 #define PD_RATIO 4
+// 每个核的总资源 如果是 5 表示能放得下 1 个 Prefill 和 1 个 Decode
 #define CORE_CREDIT 5
 
 // 函数宏

@@ -97,7 +97,7 @@ public:
 class Set_batch : public PrimBase {
 public:
     vector<Stage> batch_info;
-    bool auto_pd;
+    int auto_pd;
 
     int taskCoreDefault(TaskCoreContext &context);
 
@@ -108,16 +108,16 @@ public:
 
     Set_batch() {
         name = "Set_batch";
-        auto_pd = false;
+        auto_pd = 0;
     }
 
     Set_batch(vector<Stage> batchInfo) {
         name = "Set_batch";
         this->batch_info = batchInfo;
-        auto_pd = false;
+        auto_pd = 0;
     }
 
-    Set_batch(vector<Stage> batchInfo, bool auto_pd) {
+    Set_batch(vector<Stage> batchInfo, int auto_pd) {
         name = "Set_batch";
         this->batch_info = batchInfo;
         this->auto_pd = auto_pd;

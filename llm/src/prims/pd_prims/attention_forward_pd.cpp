@@ -13,7 +13,7 @@ void attention_forward_pd::initialize() {
 }
 
 void attention_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
-                                    u_int64_t dram_time, u_int64_t &exu_ops,
+                                    u_int64_t &dram_time, u_int64_t &exu_ops,
                                     u_int64_t &sfu_ops) {
     auto &p = param_value;
     int cur_tokens = 0;

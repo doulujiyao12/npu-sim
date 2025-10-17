@@ -172,9 +172,16 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
     SetParamFromJson(config_vars, "T", &seq_len, 128);
 
     auto config_source = j["source"];
+    end_count_sources = 0;
     for (auto source : config_source) {
         int source_loop = 0;
+        bool is_end = false;
         SetParamFromJson(source, "loop", &source_loop, 1);
+        SetParamFromJson(source, "is_end", &is_end);
+
+        if (is_end)
+            end_count_sources += source_loop;
+
         for (; source_loop > 0; source_loop--)
             source_info.push_back(
                 make_pair(source["dest"], GetDefinedParam(source["size"])));
@@ -289,9 +296,7 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
         vector<Stage> batchInfo;
         for (int i = 0; i < batch_size; i++)
             batchInfo.emplace_back(i + 1, PREFILL, seq_len);
-        PrimBase *set_batch = new Set_batch(batchInfo, true);
-
-        // cout << "core " << config.id << ", loop: " << config.loop << endl;
+        PrimBase *set_batch = new Set_batch(batchInfo, pipeline);
 
         // 主循环，将pipeline视为一种循环
         for (int j = 0; j < pipeline; j++) {
@@ -557,12 +562,15 @@ void config_helper_core::parse_done_msg(Event_engine *event_engine,
     event_engine->add_event(this->name(), "Waiting Core busy", "E",
                             Trace_event_util());
 
-    cout << "g_recv_done_cnt " << g_recv_done_cnt << " end " << end_cores
-         << " total pipe " << pipeline << endl;
+    cout << "g_recv_done_cnt: " << g_recv_done_cnt
+         << ", end_cores: " << end_cores << ", total pipe: " << pipeline
+         << ", end_count_sources: " << end_count_sources << endl;
 
-    if (g_recv_done_cnt >= end_cores * pipeline) {
-        cout << "Config helper DATAFLOW: all work done, end_core: " << end_cores
-             << ", recv_cnt: " << g_recv_done_cnt << endl;
+    if (g_recv_done_cnt >= end_cores * pipeline * max(1, end_count_sources)) {
+        cout << "Config helper DATAFLOW: all work done, g_recv_done_cnt: "
+             << g_recv_done_cnt << ", end_cores: " << end_cores
+             << ", total pipe: " << pipeline
+             << ", end_count_sources: " << end_count_sources << endl;
 
         g_recv_done_cnt = 0;
         cout << "[CATCH TEST] " << sc_time_stamp() << endl;

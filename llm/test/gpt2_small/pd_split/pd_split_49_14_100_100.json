@@ -1,14 +1,14 @@
 {
   "mode": "sched_pds",
   "requests": {
-    "count": 200,
+    "count": 2,
     "seq_len": 100,
     "arrival": [
       1
     ],
     "heads": 20,
     "kv_heads": 5,
-    "eof_chance": 0.02,
+    "eof_chance": 0.5,
     "prefill_stage": 7,
     "decode_stage": 7,
     "prefill_cores": 49,
@@ -27,6 +27,11 @@
             "worklist": [
               {
                 "recv_cnt": 1,
+                "cast": [
+                  {
+                    "dest": 0
+                  }
+                ],
                 "prims": [
                   {
                     "type": "Layernorm_f",
@@ -48,8 +53,9 @@
                     "T": "T",
                     "C": "C",
                     "OC": "3C",
+                    "R": "R",
                     "chunk": "CHUNK",
-                    "job_type": "prefill",
+                    "job_type": 0,
                     "sram_address": {
                       "indata": "layernorm1_out",
                       "outdata": "matmul1_out"
@@ -66,7 +72,7 @@
                     "NH": "NH",
                     "R": "R",
                     "DH": "DH",
-                    "job_type": "prefill",
+                    "job_type": 0,
                     "sram_address": {
                       "indata": "matmul1_out",
                       "outdata": "attention1_out"
@@ -190,8 +196,9 @@
                     "T": "T",
                     "C": "C",
                     "OC": "3C",
+                    "R": "R",
                     "chunk": "CHUNK",
-                    "job_type": "prefill",
+                    "job_type": 0,
                     "sram_address": {
                       "indata": "layernorm21_out",
                       "outdata": "matmul21_out"
@@ -208,7 +215,7 @@
                     "NH": "NH",
                     "R": "R",
                     "DH": "DH",
-                    "job_type": "prefill",
+                    "job_type": 0,
                     "sram_address": {
                       "indata": "matmul21_out",
                       "outdata": "attention21_out"
@@ -329,8 +336,9 @@
                     "T": "T",
                     "C": "C",
                     "OC": "3C",
+                    "R": "R",
                     "chunk": "CHUNK",
-                    "job_type": "prefill",
+                    "job_type": 0,
                     "sram_address": {
                       "indata": "layernorm31_out",
                       "outdata": "matmul31_out"
@@ -347,7 +355,7 @@
                     "NH": "NH",
                     "R": "R",
                     "DH": "DH",
-                    "job_type": "prefill",
+                    "job_type": 0,
                     "sram_address": {
                       "indata": "matmul31_out",
                       "outdata": "attention31_out"
@@ -465,8 +473,9 @@
                     "T": "T",
                     "C": "C",
                     "OC": "3C",
+                    "R": "R",
                     "chunk": "CHUNK",
-                    "job_type": "prefill",
+                    "job_type": 0,
                     "sram_address": {
                       "indata": "layernorm41_out",
                       "outdata": "matmul41_out"
@@ -483,7 +492,7 @@
                     "NH": "NH",
                     "R": "R",
                     "DH": "DH",
-                    "job_type": "prefill",
+                    "job_type": 0,
                     "sram_address": {
                       "indata": "matmul41_out",
                       "outdata": "attention41_out"
@@ -586,12 +595,17 @@
             ]
           }
         ],
-        "decoding": [
+        "decode": [
           {
             "id": 0,
             "worklist": [
               {
                 "recv_cnt": 1,
+                "cast": [
+                  {
+                    "dest": 0
+                  }
+                ],
                 "prims": [
                   {
                     "type": "Layernorm_f",
@@ -609,13 +623,14 @@
                   },
                   {
                     "type": "matmul_forward_pd",
+                    "R": "R",
                     "use_hw": false,
                     "B": "B",
                     "T": "T",
                     "C": "C",
                     "OC": "3C",
                     "chunk": "CHUNK",
-                    "job_type": "decode",
+                    "job_type": 1,
                     "sram_address": {
                       "indata": "layernorm1_out",
                       "outdata": "matmul1_out"
@@ -632,7 +647,7 @@
                     "NH": "NH",
                     "R": "R",
                     "DH": "DH",
-                    "job_type": "decode",
+                    "job_type": 1,
                     "sram_address": {
                       "indata": "matmul1_out",
                       "outdata": "attention1_out"
@@ -751,8 +766,9 @@
                     "T": "T",
                     "C": "C",
                     "OC": "3C",
+                    "R": "R",
                     "chunk": "CHUNK",
-                    "job_type": "decode",
+                    "job_type": 1,
                     "sram_address": {
                       "indata": "layernorm21_out",
                       "outdata": "matmul21_out"
@@ -769,7 +785,7 @@
                     "NH": "NH",
                     "R": "R",
                     "DH": "DH",
-                    "job_type": "decode",
+                    "job_type": 1,
                     "sram_address": {
                       "indata": "matmul21_out",
                       "outdata": "attention21_out"
@@ -888,8 +904,9 @@
                     "T": "T",
                     "C": "C",
                     "OC": "3C",
+                    "R": "R",
                     "chunk": "CHUNK",
-                    "job_type": "decode",
+                    "job_type": 1,
                     "sram_address": {
                       "indata": "layernorm31_out",
                       "outdata": "matmul31_out"
@@ -906,7 +923,7 @@
                     "NH": "NH",
                     "R": "R",
                     "DH": "DH",
-                    "job_type": "decode",
+                    "job_type": 1,
                     "sram_address": {
                       "indata": "matmul31_out",
                       "outdata": "attention31_out"
@@ -1025,8 +1042,9 @@
                     "T": "T",
                     "C": "C",
                     "OC": "3C",
+                    "R": "R",
                     "chunk": "CHUNK",
-                    "job_type": "decode",
+                    "job_type": 1,
                     "sram_address": {
                       "indata": "layernorm41_out",
                       "outdata": "matmul41_out"
@@ -1043,7 +1061,7 @@
                     "NH": "NH",
                     "R": "R",
                     "DH": "DH",
-                    "job_type": "decode",
+                    "job_type": 1,
                     "sram_address": {
                       "indata": "matmul41_out",
                       "outdata": "attention41_out"

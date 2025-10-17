@@ -25,8 +25,6 @@ void Set_addr::deserialize(vector<sc_bv<128>> segments) {
         datapass_label.indata[i] = g_addr_label_table.findRecord(
             buffer.range(offset + 11, offset).to_uint64());
         offset += 12;
-        cout << "Set_addr des: " << i << " " << datapass_label.indata[i]
-             << endl;
     }
     datapass_label.outdata = g_addr_label_table.findRecord(
         buffer.range(offset + 11, offset).to_uint64());
@@ -45,8 +43,6 @@ vector<sc_bv<128>> Set_addr::serialize() {
         d.range(offset + 11, offset) = sc_bv<12>(g_addr_label_table.addRecord(
             prim_context->datapass_label_->indata[i]));
         offset += 12;
-        cout << "Set_addr se: " << i << " "
-             << prim_context->datapass_label_->indata[i] << endl;
     }
     d.range(offset + 11, offset) = sc_bv<12>(
         g_addr_label_table.addRecord(prim_context->datapass_label_->outdata));
