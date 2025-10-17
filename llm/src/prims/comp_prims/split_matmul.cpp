@@ -15,7 +15,7 @@ void Split_matmul::initialize() {
 }
 
 void Split_matmul::taskCore(TaskCoreContext &context, string prim_name,
-                           u_int64_t dram_time, u_int64_t &exu_ops,
+                           u_int64_t &dram_time, u_int64_t &exu_ops,
                            u_int64_t &sfu_ops) {
     auto &p = param_value;
     exu_ops = 0;

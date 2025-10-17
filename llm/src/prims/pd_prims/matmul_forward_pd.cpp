@@ -16,7 +16,7 @@ void matmul_forward_pd::initialize() {
 }
 
 void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
-                                 u_int64_t dram_time, u_int64_t &exu_ops,
+                                 u_int64_t &dram_time, u_int64_t &exu_ops,
                                  u_int64_t &sfu_ops) {
     // 空转一轮，直接退出（PD模式）
     auto &p = param_value;
@@ -83,11 +83,12 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
 
 #if USE_SRAM_MANAGER == 1
         sram_update_cache(context, label_k, prim_context->sram_pos_locator_,
-                          size, dram_time, cid);
+                          size, dram_time, prim_context->cid);
 #else
         sram_write_append_generic(context, size, dram_time);
         prim_context->sram_pos_locator_->updatePair(label_k, size, context,
                                                     dram_time);
+        ARGUS_PRINT(dram_time);
 #endif
         cout << "[Matmul_pd_f] Core " << prim_context->cid
              << " Ready to add label: " << label_v << ", size: " << size
@@ -95,11 +96,12 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
 
 #if USE_SRAM_MANAGER == 1
         sram_update_cache(context, label_v, prim_context->sram_pos_locator_,
-                          size, dram_time, cid);
+                          size, dram_time, prim_context->cid);
 #else
         sram_write_append_generic(context, size, dram_time);
         prim_context->sram_pos_locator_->updatePair(label_v, size, context,
                                                     dram_time);
+        ARGUS_PRINT(dram_time);
 #endif
     }
 
@@ -146,6 +148,7 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
     }
 
     exu_ops = performance_comp;
+    ARGUS_PRINT(dram_time);
 #else
     exu_ops = (u_int64_t)p["B"] * p["T"] * p["C"] * p["OC"] * 2;
 #endif

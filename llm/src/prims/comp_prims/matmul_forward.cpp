@@ -23,8 +23,11 @@ void Matmul_f::initialize() {
 }
 
 void Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
-                       u_int64_t dram_time, u_int64_t &exu_ops,
-                       u_int64_t &sfu_ops) {
+                        u_int64_t &dram_time, u_int64_t &exu_ops,
+                        u_int64_t &sfu_ops) {
+    cout << "Core " << prim_context->cid << " Matmul_f\n";
+    ARGUS_PRINT(dram_time);
+
     auto label_weight = ETERNAL_PREFIX + prim_name + "_w";
     checkStaticData(context, dram_time, data_chunk_addr["weight"],
                     GetFromPairedVector(data_chunk, "weight"), label_weight,
@@ -33,6 +36,7 @@ void Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
     auto label_bias = ETERNAL_PREFIX + prim_name + "_b";
     checkStaticData(context, dram_time, data_chunk_addr["bias"],
                     GetFromPairedVector(data_chunk, "bias"), label_bias, false);
+    cout << "Core " << prim_context->cid << " Matmul_f\n";
     ARGUS_PRINT(dram_time);
 
     auto &p = param_value;
@@ -62,7 +66,8 @@ void Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
         for (int p = 0; p < data_size_input.size(); p++) {
             if (prim_context->datapass_label_->indata[p].find(DRAM_LABEL) ==
                 0) {
-                cout << "[MATMUL] Core " << prim_context->cid << ": Checking input "
+                cout << "[MATMUL] Core " << prim_context->cid
+                     << ": Checking input "
                      << prim_context->datapass_label_->indata[p] << "..."
                      << endl;
                 prefReadData(context, dram_time, data_size_input[p],
