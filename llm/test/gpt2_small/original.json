@@ -6,7 +6,7 @@
     "NH": 12,
     "DH": 64,
     "L": 12,
-    "loop": 1,
+    "loop": 5,
     "3C": 2304,
     "4C": 3072,
     "BTC": 983040,
@@ -33,12 +33,12 @@
     "residual2_out": 7220,
     "TODO": 110
   },
-  "pipeline": 10,
+  "pipeline": 3,
   "source": [
     {
       "dest": 0,
       "size": "BTC",
-      "loop": 2,
+      "loop": 1,
       "is_end": true
     }
   ],

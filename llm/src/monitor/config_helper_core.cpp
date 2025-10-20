@@ -270,8 +270,11 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
         // 三类循环消息
         vector<Msg> in_loop, next_loop, last_loop;
         for (auto &work : config.worklist) {
+            // 第一个循环接受 start 数据包
             auto tmp_in = build_msgs(work.prims_in_loop);
+            // 中间的循环 原本接受start数据包的接受data数据包
             auto tmp_next = build_msgs(work.prims_in_loop, true);
+            // 最后一个循环，如果只有一个循环就是最后一个循环
             auto tmp_last = build_msgs(work.prims_last_loop);
 
             in_loop.insert(in_loop.end(), tmp_in.begin(), tmp_in.end());
@@ -300,6 +303,8 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
 
         // 主循环，将pipeline视为一种循环
         for (int j = 0; j < pipeline; j++) {
+            // 如果 默认的 loop = 1 其实 in_loop 和 next_loop 都不会执行
+            // 这里的loop 不为 1 就是 decoding 的数量
             for (int i = 0; i < config.loop - 1; i++) {
                 push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
                              set_batch->serialize()[0]));
@@ -307,11 +312,12 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
                 for (auto m : reps)
                     push_msg(m);
             }
-
+            // 默认执行最后一个循环
             push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
                          set_batch->serialize()[0]));
             for (size_t k = 0; k < last_loop.size(); k++) {
                 Msg m = last_loop[k];
+                // 最后一个原语， 然后循环重填
                 m.refill_ = m.is_end_ =
                     (k + 1 == last_loop.size() && j == pipeline - 1);
                 push_msg(m);
@@ -351,6 +357,7 @@ void config_helper_core::generate_prims(int i) {
     auto add_sends = [&](vector<PrimBase *> &prims, const vector<Cast> &casts,
                          bool loopout) {
         for (auto &ca : casts) {
+            // loopout pipeline的最后一个核是发给 0 核还是发给host
             if ((loopout && ca.loopout == FALSE) ||
                 (!loopout && ca.loopout == TRUE))
                 continue;
@@ -369,6 +376,7 @@ void config_helper_core::generate_prims(int i) {
             end_cores++;
 
         // 非最后循环
+        // loop = 1 的 时候只有last_loop 循环
         add_recv(work.prims_in_loop, (is_source && w == 0), work.recv_tag,
                  work.recv_cnt);
         add_comps(work.prims_in_loop, work.prims);
@@ -385,6 +393,8 @@ void config_helper_core::generate_prims(int i) {
                 PrimFactory::getInstance().createPrim("Clear_sram"));
             continue;
         }
+
+        // 现在不会有不是is_end 的核心有 loopout
 
         add_sends(work.prims_last_loop, work.cast, true);
 
@@ -461,6 +471,9 @@ void config_helper_core::calculate_address(bool do_loop) {
 void config_helper_core::fill_queue_start(queue<Msg> *q) {
     for (int pipe = 0; pipe < pipeline; pipe++) {
         for (auto source : source_info) {
+            // 从这里看pipeline 和 source_loop 的功能是一样的
+            // start 数据包一次性都下发完成 但是可以分阶段使用
+            // source loop 的循环是靠prim refill 实现的
             int i = source.first;
             cout << "Sending source to " << i << endl;
             int size = source.second;

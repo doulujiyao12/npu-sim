@@ -106,6 +106,7 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
 
 void config_helper_pds::fill_queue_config(queue<Msg> *q) {
     // 将temp中的所有内容搬运到q中，并清空temp
+    cout << "Prepare to send config!\n";
     for (auto msg : temp_config) {
         auto des = msg.des_;
         int index = des / GRID_X;
@@ -121,12 +122,12 @@ void config_helper_pds::fill_queue_start(queue<Msg> *q) {
     cout << "Prepare to send start data!\n";
     if (!wait_send_start_prefill && !wait_send_start_decode)
         return;
-
+    // 为什么这里start 都需要发
     for (auto status : coreStatus) {
         cout << "status " << status.id << endl;
         int index = status.id / GRID_X;
         int total_pkg = 0;
-
+        // 是 prefill 的核 但是prefill已经结束了
         if (!wait_send_start_prefill && status.id / tp_size < prefill_core)
             continue;
 
@@ -192,6 +193,7 @@ void config_helper_pds::iter_done(PD_JOB type) {
 
     for (auto msg : done_msg) {
         int id = msg.source_ / tp_size;
+        // 不是prefil 和 decoding 最后一个核发过来的
         if (id < prefill_core && stage_index[id] != prefill_stage ||
             id >= prefill_core && stage_index[id] != decode_stage)
             continue;
@@ -214,7 +216,9 @@ void config_helper_pds::iter_done(PD_JOB type) {
                 break;
             case DECODE:
                 record.decode_counter++;
+                // 记录decoding 的某一个token的时间
                 token_record[record.id].push_back(sc_time_stamp().to_double());
+                // decoding 阶段结束
                 if (record.decode_counter >= (2) / (eof_chance)) {
                     stage.type = record.phase = PD_DONE;
 
@@ -253,7 +257,7 @@ void config_helper_pds::iter_done(PD_JOB type) {
             stage_count++;
         }
     }
-
+    // 无论chunk prefil 是否结束，当前的p_busy 都为false
     if (type == JOB_PREFILL)
         busy_p = false;
     else if (type == JOB_DECODE)
@@ -760,7 +764,7 @@ void config_helper_pds::parse_done_msg(Event_engine *event_engine,
     }
     g_temp_done_msg.clear();
     event_engine->add_event(this->name(), "Waiting Core busy", "E",
-                            Trace_event_util());
+                            Trace_event_util(), sc_time(2, SC_NS));
 
     if (g_recv_done_cnt_p >= prefill_core) {
         iter_done(JOB_PREFILL);

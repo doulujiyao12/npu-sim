@@ -131,6 +131,32 @@ MemInterface::~MemInterface() {
     // delete config_helper;
 }
 
+
+/*
+SIM_DATAFLOW 
+[PRO_CONF]
+   │
+   ▼ (start_i.pos() 或 ev_dis_config)
+发送 config → 等待 write_done
+   │
+   ▼ (收到 ACK → ev_recv_ack → ev_switch_phase)
+[PRO_DATA]
+   │
+   ▼ (ev_dis_data)
+发送 weight data → 等待 write_done
+   │
+   ▼ (收到 ACK → ev_switch_phase)
+[PRO_START]
+   │
+   ▼ (ev_dis_start)
+发送 input data → 等待 write_done
+   │
+   ▼ (收到 ACK → ev_switch_phase，但 phase 已是 PRO_START，所以再次触发 ev_dis_start)
+循环发送 input data（持续）
+
+
+*/
+
 void MemInterface::end_of_simulation() {
 
     // 美观的打印输出
@@ -285,11 +311,13 @@ void MemInterface::recv_ack() {
         switch (SYSTEM_MODE) {
         case SIM_DATAFLOW:
         case SIM_GPU:
+            // GPU 和 DATAFLOW 模式下，需要 SEND weight
             notify_event = &ev_switch_phase;
             break;
         case SIM_PD:
         case SIM_PDS:
         case SIM_GPU_PD:
+            // 无需send weight 直接 start
             notify_event = &ev_dis_start;
             break;
         }
@@ -318,12 +346,12 @@ void MemInterface::recv_done() {
         }
 
         config_helper->parse_done_msg(event_engine, notify_event);
-
+        cout << "Mem Interface: done recv done.\n";
         wait();
     }
 }
 
-// 从write_buffer里面取出数据，发送到host
+// 从write_buffer里面取出数据，发送到 对应的 Core 中，包括 Config Weight Data 和 Start Data
 void MemInterface::write_helper() {
     while (true) {
         write_done.write(false);
@@ -410,6 +438,7 @@ void MemInterface::req_handler() {
                 }
 
                 wait(next_time - sc_time_stamp());
+                cout << "Mem Interface: start to dispatch req " << i << endl;
                 ev_dis_config.notify(0, SC_NS);
             }
         } else if (SYSTEM_MODE == SIM_GPU_PD) {
@@ -445,7 +474,7 @@ void MemInterface::catch_host_channel_available_i() {
         wait();
     }
 }
-
+// 只有DATAFLOW 和 GPU 模式有 weight data 模式
 void MemInterface::switch_phase() {
     while (true) {
         if (phase == PRO_CONF) {
