@@ -605,9 +605,9 @@ void NpuBase::checkStaticData(TaskCoreContext &context, uint64_t &dram_time,
 }
 
 
-void checkStaticDataTile(TaskCoreContext &context, uint64_t &dram_time,
+void NpuBase::checkStaticDataTile(TaskCoreContext &context, uint64_t &dram_time,
                          uint64_t label_global_addr, int data_size_label,
-                         string label_name, bool use_pf = false) {
+                         string label_name, bool use_pf) {
 #if USE_NB_DRAMSYS == 0
     auto wc = context.wc;
 #endif
@@ -626,7 +626,7 @@ void checkStaticDataTile(TaskCoreContext &context, uint64_t &dram_time,
     int mac_size = 128;
     for (auto core : g_core_hw_config) {
         if (core.first == context.cid)
-            mac_size = core.second.exu->x_dims * core.second.exu->y_dims;
+            mac_size = core.second->exu->x_dims * core.second->exu->y_dims;
     }
 
     for (int i = 0; i < data_size_label / mac_size; i++) {
