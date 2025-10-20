@@ -615,7 +615,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
             if (group_i >= prefill_core) {
                 // prefill core只需要向下加一即可，只有decode core需要进行处理
                 if (send_dest >= decode_core + prefill_core)
-                    send_dest -= decode_core;
+                    send_dest -= decode_stage;
                 else if (stage_index[send_dest] == 1)
                     send_dest -= decode_stage;
             }
