@@ -604,6 +604,46 @@ void NpuBase::checkStaticData(TaskCoreContext &context, uint64_t &dram_time,
 #endif
 }
 
+
+void checkStaticDataTile(TaskCoreContext &context, uint64_t &dram_time,
+                         uint64_t label_global_addr, int data_size_label,
+                         string label_name, bool use_pf = false) {
+#if USE_NB_DRAMSYS == 0
+    auto wc = context.wc;
+#endif
+    auto sram_addr = context.sram_addr;
+    int sram_offset = *sram_addr;
+
+#if DUMMY == 1
+    float *dram_start = nullptr;
+#else
+    float *dram_start = (float *)(dram_array[cid]);
+    float *inp = dram_start + inp_offset;
+    float *out = dram_start + out_offset;
+#endif
+
+    AddrPosKey sc_key;
+    int mac_size = 128;
+    for (auto core : g_core_hw_config) {
+        if (core.first == context.cid)
+            mac_size = core.second.exu->x_dims * core.second.exu->y_dims;
+    }
+
+    for (int i = 0; i < data_size_label / mac_size; i++) {
+        sram_first_write_generic(context, data_byte * mac_size,
+                                 label_global_addr + i * mac_size, dram_time,
+                                 dram_start);
+        sc_key = AddrPosKey(*sram_addr, data_byte * mac_size);
+        prim_context->sram_pos_locator_->addPair(label_name, sc_key, context,
+                                                 dram_time);
+        if (use_pf == false) {
+            sram_read_generic(context, data_byte * mac_size, sram_offset,
+                              dram_time);
+        }
+    }
+}
+
+
 void NpuBase::writeOutputData(TaskCoreContext &context, uint64_t exu_flops,
                               uint64_t sfu_flops, uint64_t dram_time,
                               uint64_t &overlap_time, int data_size_out,

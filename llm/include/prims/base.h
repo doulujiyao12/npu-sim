@@ -103,6 +103,9 @@ public:
     void checkStaticData(TaskCoreContext &context, uint64_t &dram_time,
                          uint64_t label_global_addr, int data_size_label,
                          string label_name, bool use_pf = false);
+    void checkStaticDataTile(TaskCoreContext &context, uint64_t &dram_time,
+                             uint64_t label_global_addr, int data_size_label,
+                             string label_name, bool use_pf = false);
     void prefReadData(TaskCoreContext &context, uint64_t &dram_time,
                       int data_size_label, string label_name);
 
