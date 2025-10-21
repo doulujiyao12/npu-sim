@@ -93,9 +93,9 @@ cout << "3\n";
 
     int cycle = 0;
 
-    CoreHWConfig *core_config = GetCoreHWConfig(prim_context->cid);
-    ExuConfig *exu = core_config->exu;
-    SfuConfig *sfu = core_config->sfu;
+    CoreHWConfig *hardware_config = GetCoreHWConfig(prim_context->cid);
+    ExuConfig *exu = hardware_config->exu;
+    SfuConfig *sfu = hardware_config->sfu;
 
     if (exu->type == MAC_Array)
         cycle += 0 / (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;

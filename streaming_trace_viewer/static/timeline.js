@@ -439,7 +439,7 @@ function runSimulation() {
   fetch("/run-simulation", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ config_file: configFile, core_config_file: coreConfigFile })
+    body: JSON.stringify({ workload_config: configFile, hardware_config: coreConfigFile })
   })
   .then(res => res.json())
   .then(data => {

@@ -1,6 +1,7 @@
 #include <regex>
 
 #include "common/config.h"
+#include "defs/spec.h"
 #include "utils/config_utils.h"
 #include "utils/print_utils.h"
 
@@ -45,16 +46,17 @@ void ParseSimulationType(json j) {
 void ParseHardwareConfig(json j) {
     if (j.contains("x"))
         GRID_X = j["x"];
-    else
-        GRID_X = 4;
-
-    if (j.contains("comm_acc"))
-        CORE_ACC_PAYLOAD = j["comm_acc"];
-    else
-        CORE_ACC_PAYLOAD = 1;
 
     if (j.contains("sram_size"))
-        MAX_SRAM_SIZE = j["sram_size"];
+        HW_SRAM_SIZE = j["sram_size"];
+    if (j.contains("core_credit"))
+        HW_CORE_CREDIT = j["core_credit"];
+    if (j.contains("pd_ratio"))
+        HW_PD_RATIO = j["pd_ratio"];
+    if (j.contains("dram_bitwidth"))
+        HW_DRAM_BITWIDTH = j["dram_bitwidth"];
+    if (j.contains("noc_payload_per_cycle"))
+        HW_NOC_PAYLOAD_PER_CYCLE = j["noc_payload_per_cycle"];
 
     GRID_Y = GRID_X;
     GRID_SIZE = GRID_X * GRID_Y;
@@ -95,4 +97,24 @@ void ParseHardwareConfig(json j) {
 
     for (auto core : g_core_hw_config)
         core.second->printSelf();
+}
+
+void ParseSimulationConfig(json j) {
+    // 设置仿真相关参数
+    if (j.contains("use_beha_noc"))
+        SPEC_USE_BEHA_NOC = j["use_beha_noc"];
+    if (j.contains("use_beha_sram"))
+        SPEC_USE_BEHA_SRAM = j["use_beha_sram"];
+    if (j.contains("use_beha_dram"))
+        SPEC_USE_BEHA_DRAM = j["use_beha_dram"];
+    if (j.contains("use_beha_gemm"))
+        SPEC_USE_PERF_GEMM = j["use_perf_gemm"];
+    if (j.contains("kvcache_spill"))
+        SPEC_KVCACHE_SPILL = j["kvcache_spill"];
+    if (j.contains("load_static_as_tile"))
+        SPEC_LOAD_STATIC_AS_TILE = j["load_static_as_tile"];
+    if (j.contains("ttf_file"))
+        SPEC_TTF_FILE = j["ttf_file"];
+    if (j.contains("use_dramsys"))
+        SPEC_USE_DRAMSYS = j["use_dramsys"];
 }

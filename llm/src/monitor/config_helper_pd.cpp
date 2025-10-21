@@ -1,12 +1,13 @@
 #include "monitor/config_helper_pd.h"
 #include "defs/global.h"
+#include "defs/spec.h"
 #include "prims/base.h"
 #include "prims/norm_prims.h"
 #include "utils/msg_utils.h"
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
-config_helper_pd::config_helper_pd(string filename, string font_ttf,
+config_helper_pd::config_helper_pd(string filename,
                                    sc_event *ev_sig, int config_chip_id) {
     cout << "Loading config file " << filename << endl;
 
@@ -111,34 +112,34 @@ void config_helper_pd::fill_queue_start(queue<Msg> *q) {
                 int pkg_num = (send_size_in_bit % M_D_DATA)
                                   ? (send_size_in_bit / M_D_DATA + 1)
                                   : (send_size_in_bit / M_D_DATA);
-                pkg_num = pkg_num % CORE_COMM_PAYLOAD
-                              ? pkg_num / CORE_COMM_PAYLOAD + 1
-                              : pkg_num / CORE_COMM_PAYLOAD;
+                pkg_num = pkg_num % HW_NOC_PAYLOAD_PER_CYCLE
+                              ? pkg_num / HW_NOC_PAYLOAD_PER_CYCLE + 1
+                              : pkg_num / HW_NOC_PAYLOAD_PER_CYCLE;
 
                 cout << "pkg_num: " << pkg_num << endl;
 
-#if USE_BEHA_NOC == 1
-                sc_bv<M_D_DATA> d(0x1);
-                int length = M_D_DATA;
-                Msg m = Msg(false, MSG_TYPE::S_DATA, ++total_pkg, status.id, 0,
-                            status.id, M_D_DATA, d);
-                m.source_ = GRID_SIZE;
-                m.roofline_packets_ = pkg_num;
-                q[index].push(m);
-#else
-                for (int j = 1; j <= pkg_num; j++) {
+                if (SPEC_USE_BEHA_NOC) {
                     sc_bv<M_D_DATA> d(0x1);
-
-                    Msg m =
-                        Msg(false, MSG_TYPE::S_DATA, j + total_pkg, status.id,
-                            M_D_DATA * (j - 1), status.id, M_D_DATA, d);
+                    int length = M_D_DATA;
+                    Msg m = Msg(false, MSG_TYPE::S_DATA, ++total_pkg, status.id,
+                                0, status.id, M_D_DATA, d);
                     m.source_ = GRID_SIZE;
-                    m.roofline_packets_ = 1;
+                    m.roofline_packets_ = pkg_num;
                     q[index].push(m);
-                }
+                } else {
+                    for (int j = 1; j <= pkg_num; j++) {
+                        sc_bv<M_D_DATA> d(0x1);
 
-                total_pkg += pkg_num;
-#endif
+                        Msg m = Msg(false, MSG_TYPE::S_DATA, j + total_pkg,
+                                    status.id, M_D_DATA * (j - 1), status.id,
+                                    M_D_DATA, d);
+                        m.source_ = GRID_SIZE;
+                        m.roofline_packets_ = 1;
+                        q[index].push(m);
+                    }
+
+                    total_pkg += pkg_num;
+                }
             }
         }
 
@@ -228,7 +229,7 @@ void config_helper_pd::iter_start() {
                 case PREFILL:
                     break;
                 case DECODE:
-                    if (credit < CORE_CREDIT) {
+                    if (credit < HW_CORE_CREDIT) {
                         credit += 1;
                         new_stage_1.push_back(stage);
                     } else {
@@ -246,7 +247,7 @@ void config_helper_pd::iter_start() {
             cout << "[PD SCHEDULE] Core " << id * tp_size
                  << " credit: " << credit << endl;
 
-            while (credit < CORE_CREDIT) {
+            while (credit < HW_CORE_CREDIT) {
                 // PREFILL new iter > UNTOUCHED
 
                 if (decode_waiting_list.size()) {
@@ -259,12 +260,12 @@ void config_helper_pd::iter_start() {
                          << " push in new request DECODE " << req_id << endl;
                 }
 
-                else if (CORE_CREDIT - credit >= PD_RATIO &&
+                else if (HW_CORE_CREDIT - credit >= HW_PD_RATIO &&
                          prefill_waiting_list.size()) {
                     // 这里选取还没有做完的prefill任务
                     int req_id = prefill_waiting_list.front();
                     prefill_waiting_list.pop();
-                    credit += PD_RATIO;
+                    credit += HW_PD_RATIO;
 
                     auto &record = requestRecords[req_id];
                     new_stage_1.push_back(
@@ -275,7 +276,7 @@ void config_helper_pd::iter_start() {
                         prefill_waiting_list.push(req_id);
                 }
 
-                else if (CORE_CREDIT - credit >= PD_RATIO && new_reqs) {
+                else if (HW_CORE_CREDIT - credit >= HW_PD_RATIO && new_reqs) {
                     // 统计现在可以被指派的请求个数
                     new_reqs = false;
 
@@ -284,7 +285,7 @@ void config_helper_pd::iter_start() {
                                                   sc_core::SC_NS);
                         if (req.phase == UNTOUCHED &&
                             arv_time <= sc_time_stamp()) {
-                            credit += PD_RATIO;
+                            credit += HW_PD_RATIO;
                             new_stage_1.push_back(
                                 Stage(req.id, PREFILL,
                                       req.seq_len / req.prefill_iters));
@@ -522,7 +523,8 @@ void config_helper_pd::generate_prims(int i) {
             if ((core_id / tp_size + 1) % model_stage != 1) {
                 // 不是stage 1 就是接收上一个 stage 传过来的中间结果
                 temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, recv_data_2->serialize()[0]));
+                                          core_id,
+                                          recv_data_2->serialize()[0]));
                 temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
                                           core_id, send_req->serialize()[0]));
                 temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
@@ -539,7 +541,8 @@ void config_helper_pd::generate_prims(int i) {
                 // stage 1 的话又要接受新的prefilling recv_data1
                 // 这里的recv_data2 是来自decoding 的数据
                 temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
-                                          core_id, recv_data_2->serialize()[0]));
+                                          core_id,
+                                          recv_data_2->serialize()[0]));
             }
 
             // tp组的第一个核需要向memInterface发送DONE信号
@@ -637,8 +640,8 @@ void config_helper_pd::printResults() {
     cout << "[CATCH TEST] " << sc_time_stamp() << endl;
     ofstream outfile("simulation_result_df_pd.txt", ios::app);
     if (outfile.is_open()) {
-        outfile << "[CATCH TEST] " << sc_time_stamp() << "MAX_SRAM_SIZE "
-                << MAX_SRAM_SIZE << " BANDWIDTH " << g_default_dram_bw << endl;
+        outfile << "[CATCH TEST] " << sc_time_stamp() << "HW_SRAM_SIZE "
+                << HW_SRAM_SIZE << " BANDWIDTH " << g_default_dram_bw << endl;
         outfile.close();
     } else
         ARGUS_EXIT("Failed to open file simulation_result_df_pd.txt.\n");
@@ -651,7 +654,7 @@ void config_helper_pd::printResults() {
     // 设置输出格式，避免科学计数法
     file << fixed << setprecision(6); // 设置小数点后6位精度，可根据需要调整
 
-    file << "*" << g_config_file << "*\n";
+    file << "*" << g_workload_config << "*\n";
     for (int i = 0; i < token_record.size(); i++) {
         file << "Request " << i << ": \n";
         for (int j = 0; j < token_record[i].size(); j++) {

@@ -1,21 +1,23 @@
 #pragma once
+#include "common/config.h"
 #include <iostream>
 #include <string>
 #include <utility>
-#include "common/config.h"
 
 using namespace std;
 
 bool RandResult(int threshold);
 int GetFromPairedVector(vector<pair<string, int>> &vector, string key);
-
 CoreHWConfig *GetCoreHWConfig(int id);
-
 int CeilingDivision(int a, int b);
 
-void InitGrid(string config_path, string core_config_path);
+void InitGrid(string workload_config_path, string hardware_config_path,
+              string simulation_config_path);
 void InitGlobalMembers();
 void SystemCleanup();
+
+void DeleteCoreLogFiles();
+void DeleteMemoryLogFiles();
 
 // void initialize_cache_structures();
 // void init_dram_areas();

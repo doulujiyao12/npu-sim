@@ -6,7 +6,7 @@ using json = nlohmann::json;
 
 int GetDefinedParam(string var);
 void ParseSimulationType(json j);
-void ParseWorkloadConfig(json j);
+void ParseSimulationConfig(json j);
 void ParseHardwareConfig(json j);
 
 template <typename T> void SetParamFromJson(json j, string field, T *target) {

@@ -5,7 +5,7 @@
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
-config_helper_gpu_pd::config_helper_gpu_pd(string filename, string font_ttf,
+config_helper_gpu_pd::config_helper_gpu_pd(string filename,
                                            sc_event *ev_sig,
                                            int config_chip_id) {
     cout << "Loading config file: " << filename << endl;
@@ -171,7 +171,7 @@ void config_helper_gpu_pd::iter_start() {
             case PREFILL:
                 break;
             case DECODE:
-                if (credit < CORE_CREDIT) {
+                if (credit < HW_CORE_CREDIT) {
                     credit += 1;
                     new_stage.push_back(stage);
                 } else {
@@ -187,7 +187,7 @@ void config_helper_gpu_pd::iter_start() {
         bool new_reqs = true;
         cout << "[GPU PD SCHEDULE] Now credit: " << credit << endl;
 
-        while (credit < CORE_CREDIT) {
+        while (credit < HW_CORE_CREDIT) {
             if (idle_decode.size()) {
                 // 这里从idle_decode中取
                 int req_id = idle_decode.front();
@@ -198,12 +198,12 @@ void config_helper_gpu_pd::iter_start() {
                      << req_id << endl;
             }
 
-            else if (CORE_CREDIT - credit >= PD_RATIO &&
+            else if (HW_CORE_CREDIT - credit >= HW_PD_RATIO &&
                      unfinished_prefill.size()) {
                 // 这里选取还没有做完的prefill任务
                 int req_id = unfinished_prefill.front();
                 unfinished_prefill.pop();
-                credit += PD_RATIO;
+                credit += HW_PD_RATIO;
 
                 auto &record = requestRecords[req_id];
                 new_stage.push_back(Stage(
@@ -213,14 +213,14 @@ void config_helper_gpu_pd::iter_start() {
                     unfinished_prefill.push(req_id);
             }
 
-            else if (CORE_CREDIT - credit >= PD_RATIO && new_reqs) {
+            else if (HW_CORE_CREDIT - credit >= HW_PD_RATIO && new_reqs) {
                 // 统计现在可以被指派的请求个数
                 new_reqs = false;
 
                 for (auto &req : requestRecords) {
                     sc_core::sc_time arv_time(req.arrival_time, sc_core::SC_NS);
                     if (req.phase == UNTOUCHED && arv_time <= sc_time_stamp()) {
-                        credit += PD_RATIO;
+                        credit += HW_PD_RATIO;
                         new_stage.push_back(Stage(
                             req.id, PREFILL, req.seq_len / req.prefill_iters));
                         req.phase = PREFILL;

@@ -8,8 +8,8 @@
 
 using json = nlohmann::json;
 
-TopConfig::TopConfig(std::string filename, std::string font_ttf)
-    : filename(filename), font_ttf(font_ttf) {
+TopConfig::TopConfig(std::string filename)
+    : filename(filename) {
     std::cout << "Loading Top config from " << filename << std::endl;
     std::ifstream file(filename);
     json j;

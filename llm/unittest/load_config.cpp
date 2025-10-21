@@ -17,12 +17,10 @@ using namespace std;
 #define CHECK_C cout << total_cycle << endl;
 Define_bool_opt("--help", g_flag_help, false, "show these help information");
 Define_bool_opt("--node-mode", g_flag_node, false, "whether to sim in a node");
-Define_string_opt("--config-file", g_flag_config_file,
-                  "../llm/test/config_gpt2_tiny_cluster.json", "config file");
-Define_string_opt("--core-config-file", g_flag_core_config_file,
-                  "../llm/test/core_4x4.json", "core config file");
-Define_string_opt("--ttf-file", g_flag_ttf, "../font/NotoSansDisplay-Bold.ttf",
-                  "font ttf file");
+Define_string_opt("--workload-config", g_flag_workload_config,
+                  "../llm/test/workload_config/config_gpt2_tiny_cluster.json", "config file");
+Define_string_opt("--hardware-config", g_flag_hardware_config,
+                  "../llm/test/hardware_config/core_4x4.json", "core config file");
 Define_bool_opt("--use-dramsys", g_flag_dramsys, true,
                 "whether to use DRAMSys");
 Define_float_opt("--comp_util", g_flag_comp_util, 0.7,
@@ -62,15 +60,15 @@ int sc_main(int argc, char *argv[]) {
 
     comp_util = g_flag_comp_util;
 
-    InitGrid(g_flag_config_file.c_str(), g_flag_core_config_file.c_str());
+    InitGrid(g_flag_workload_config.c_str(), g_flag_hardware_config.c_str());
     InitGlobalMembers();
     // init_dram_areas();
     // initialize_cache_structures();
     // init_perf_counters();
 
     TopConfig *top_config =
-        new TopConfig(g_flag_config_file.c_str(), g_flag_ttf.c_str());
-    // TopConfig top_config(g_flag_config_file.c_str());
+        new TopConfig(g_flag_workload_config.c_str(), g_flag_ttf.c_str());
+    // TopConfig top_config(g_flag_workload_config.c_str());
     top_config->printSelf();
 
     Event_engine *event_engine = new Event_engine("event-engine", 10);

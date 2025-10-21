@@ -34,7 +34,7 @@ public:
 
     int tp_size; // tp组的大小
 
-    config_helper_pd(string filename, string font_ttf, sc_event *ev_sig,
+    config_helper_pd(string filename, sc_event *ev_sig,
                      int config_chip_id = 0);
 
     config_helper_pd *clone() const override {
@@ -45,7 +45,7 @@ public:
 
     void printSelf();
 
-    void random_core(string font_ttf);
+    void random_core();
 
     void fill_queue_start(queue<Msg> *q);
     void fill_queue_config(queue<Msg> *q);

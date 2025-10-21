@@ -14,24 +14,24 @@
 #include "utils/print_utils.h"
 
 MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
-                           const char *config_name, const char *font_ttf)
+                           const char *config_name)
     : event_engine(event_engine) {
 
     cout << "SIMULATION MODE: " << SYSTEM_MODE << endl;
 
     if (SYSTEM_MODE == SIM_DATAFLOW)
-        config_helper = new config_helper_core(config_name, font_ttf);
+        config_helper = new config_helper_core(config_name);
     else if (SYSTEM_MODE == SIM_GPU)
-        config_helper = new config_helper_gpu(config_name, font_ttf);
+        config_helper = new config_helper_gpu(config_name);
     else if (SYSTEM_MODE == SIM_PD)
-        config_helper =
-            new config_helper_pd(config_name, font_ttf, &ev_req_handler);
+        config_helper = 
+            new config_helper_pd(config_name, &ev_req_handler);
     else if (SYSTEM_MODE == SIM_PDS)
         config_helper =
-            new config_helper_pds(config_name, font_ttf, &ev_req_handler);
+            new config_helper_pds(config_name, &ev_req_handler);
     else if (SYSTEM_MODE == SIM_GPU_PD)
         config_helper =
-            new config_helper_gpu_pd(config_name, font_ttf, &ev_req_handler);
+            new config_helper_gpu_pd(config_name, &ev_req_handler);
 
     init();
 }

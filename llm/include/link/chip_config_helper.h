@@ -11,7 +11,7 @@ using namespace std;
 class chip_config_helper{
 public:
     int cid;
-    chip_config_helper(string filename, string font_ttf, int cid = 0);
+    chip_config_helper(string filename, int cid = 0);
 
     vector<chip_instr_base*> instr_list;
 

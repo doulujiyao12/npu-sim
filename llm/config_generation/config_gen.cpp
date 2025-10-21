@@ -57,7 +57,7 @@ struct prim_dram_info {
 
 int sc_main(int argc, char *argv[]) {
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <config_file_path>" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <workload_config_path>" << std::endl;
         return 1;
     }
 

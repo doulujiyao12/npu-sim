@@ -4,6 +4,7 @@
 #include <sstream>
 
 #include "common/system.h"
+#include "defs/spec.h"
 #include "monitor/config_helper_core.h"
 #include "prims/base.h"
 #include "utils/config_utils.h"
@@ -62,7 +63,7 @@ void config_helper_core::printSelf() {
     }
 }
 
-void config_helper_core::random_core(string font_ttf) {
+void config_helper_core::random_core() {
     int o2r[GRID_SIZE];
     int r2o[GRID_SIZE];
     for (int i = 0; i < GRID_SIZE; i++) {
@@ -142,13 +143,13 @@ void config_helper_core::random_core(string font_ttf) {
         core_id++;
     }
 
-    plot_dataflow(cores, source_ids, font_ttf);
+    plot_dataflow(cores, source_ids);
 }
 
-config_helper_core::config_helper_core(string filename, string font_ttf,
+config_helper_core::config_helper_core(string filename,
                                        int config_chip_id) {
     cout << "Loading config file " << filename << endl;
-    plot_dataflow(filename, font_ttf);
+    plot_dataflow(filename);
     ifstream jfile(filename);
     if (!jfile.is_open()) {
         cout << "[ERROR] Cannot open config file " << filename << endl;
@@ -195,7 +196,7 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
     }
 
     if (j.contains("random") && j["random"]) {
-        random_core(font_ttf);
+        random_core();
     }
 
     SetParamFromJson(j, "pipeline", &pipeline, 1);
@@ -490,35 +491,36 @@ void config_helper_core::fill_queue_start(queue<Msg> *q) {
             int pkg_num = (send_size_in_bit % M_D_DATA)
                               ? (send_size_in_bit / M_D_DATA + 1)
                               : (send_size_in_bit / M_D_DATA);
-            pkg_num = pkg_num % CORE_COMM_PAYLOAD
-                          ? pkg_num / CORE_COMM_PAYLOAD + 1
-                          : pkg_num / CORE_COMM_PAYLOAD;
+            pkg_num = pkg_num % HW_NOC_PAYLOAD_PER_CYCLE
+                          ? pkg_num / HW_NOC_PAYLOAD_PER_CYCLE + 1
+                          : pkg_num / HW_NOC_PAYLOAD_PER_CYCLE;
 
             cout << "pkg_num: " << pkg_num << endl;
 
-#if USE_BEHA_NOC == 1
-            sc_bv<M_D_DATA> d(0x1);
-            int length = M_D_DATA;
-            Msg m =
-                Msg(true, MSG_TYPE::S_DATA, 1, i, send_offset, i, length, d);
-            m.source_ = GRID_SIZE;
-            m.roofline_packets_ = pkg_num;
-            q[index].push(m);
-#else
-            for (int j = 1; j <= pkg_num; j++) {
+            if (SPEC_USE_BEHA_NOC) {
                 sc_bv<M_D_DATA> d(0x1);
                 int length = M_D_DATA;
-                bool is_end_packet = j == pkg_num;
-                if (is_end_packet)
-                    length = size * sizeof(float) - M_D_DATA * (pkg_num - 1);
-
-                Msg m = Msg(j == pkg_num, MSG_TYPE::S_DATA, j, i,
-                            send_offset + M_D_DATA * (j - 1), i, length, d);
+                Msg m = Msg(true, MSG_TYPE::S_DATA, 1, i, send_offset, i,
+                            length, d);
                 m.source_ = GRID_SIZE;
-                m.roofline_packets_ = 1;
+                m.roofline_packets_ = pkg_num;
                 q[index].push(m);
+            } else {
+                for (int j = 1; j <= pkg_num; j++) {
+                    sc_bv<M_D_DATA> d(0x1);
+                    int length = M_D_DATA;
+                    bool is_end_packet = j == pkg_num;
+                    if (is_end_packet)
+                        length =
+                            size * sizeof(float) - M_D_DATA * (pkg_num - 1);
+
+                    Msg m = Msg(j == pkg_num, MSG_TYPE::S_DATA, j, i,
+                                send_offset + M_D_DATA * (j - 1), i, length, d);
+                    m.source_ = GRID_SIZE;
+                    m.roofline_packets_ = 1;
+                    q[index].push(m);
+                }
             }
-#endif
         }
     }
 }

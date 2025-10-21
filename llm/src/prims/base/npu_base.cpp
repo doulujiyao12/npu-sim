@@ -650,9 +650,9 @@ void NpuBase::writeOutputData(TaskCoreContext &context, uint64_t exu_flops,
                               uint64_t out_global_addr) {
     int cycle = 0;
     int cid = context.cid;
-    CoreHWConfig *core_config = GetCoreHWConfig(cid);
-    ExuConfig *exu = core_config->exu;
-    SfuConfig *sfu = core_config->sfu;
+    CoreHWConfig *hardware_config = GetCoreHWConfig(cid);
+    ExuConfig *exu = hardware_config->exu;
+    SfuConfig *sfu = hardware_config->sfu;
 
     cout << "exu_flops: " << exu_flops << " sfu_flops: " << sfu_flops << endl;
     cout << exu->x_dims << " " << exu->y_dims << " " << comp_util << endl;

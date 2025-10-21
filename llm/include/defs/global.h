@@ -3,14 +3,14 @@
 #include "macros/macros.h"
 #include "systemc.h"
 
+#include "../unit_module/dram_kvtable/dram_kvtable.h"
 #include <cstdint>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <unordered_map>
-#include <vector>
-#include "../unit_module/dram_kvtable/dram_kvtable.h"
 #include <unordered_set>
-#include <sstream>
+#include <vector>
 
 using namespace std;
 
@@ -20,12 +20,8 @@ class chip_instr_base;
 extern vector<PrimBase *> g_prim_stash;
 extern vector<chip_instr_base *> g_chip_prim_stash;
 
-extern int MAX_SRAM_SIZE;
-extern int CORE_COMM_PAYLOAD;
-extern int CORE_ACC_PAYLOAD;
-
 class DramKVTable;
-extern DramKVTable** g_dram_kvtable;
+extern DramKVTable **g_dram_kvtable;
 
 extern sc_event kv_event;
 extern int dram_aligned;
@@ -74,19 +70,15 @@ extern u_int64_t *mc_latency;
 extern u_int64_t *mc_writebacks;
 extern u_int32_t ***frame_counters;
 
-extern bool use_node;
-extern bool use_DramSys;
 extern bool gpu_inner;
 extern float comp_util;
 extern bool gpu_clog;
 extern int gpu_bw;
 extern int gpu_B;
-extern string g_config_file;
 extern int g_default_dram_bw;
-extern bool beha_dram;
 extern float beha_dram_util;
 
-#define RESET "\x1B[0m"  // 重置颜色
+#define RESET "\x1B[0m"    // 重置颜色
 #define RED "\x1B[1;31m"   // 红色
 #define GREEN "\x1B[1;32m" // 绿色
 
@@ -97,42 +89,17 @@ extern vector<pair<int, CoreHWConfig *>> g_core_hw_config;
 
 extern int verbose_level;
 
-const char* get_core_color(int core_id);
+const char *get_core_color(int core_id);
 void close_log_files();
-void log_verbose_impl(int level, int core_id, const std::string& message);
-extern std::unordered_map<int, std::ofstream*> log_streams;
+void log_verbose_impl(int level, int core_id, const std::string &message);
+extern std::unordered_map<int, std::ofstream *> log_streams;
 
 
-#define LOG_VERBOSE(level, core_id, message) \
-    do { \
-        if (verbose_level >= (level)) { \
-            std::ostringstream __oss; \
-            __oss << message; \
-            log_verbose_impl(level, core_id, __oss.str()); \
-        } \
+#define LOG_VERBOSE(level, core_id, message)                                   \
+    do {                                                                       \
+        if (verbose_level >= (level)) {                                        \
+            std::ostringstream __oss;                                          \
+            __oss << message;                                                  \
+            log_verbose_impl(level, core_id, __oss.str());                     \
+        }                                                                      \
     } while (0)
-
-// #define LOG_VERBOSE(level, core_id, message) \
-//     do { \
-//         if (verbose_level >= (level)) { \
-//             std::ostringstream __log_stream; \
-//             const char* color = get_core_color(core_id); \
-//             __log_stream << color << "[INFO] Core " << (core_id) << " " << message << "\033[0m"; \
-//             // __log_stream << "[INFO] Core " << (core_id) << " " << message; \
-//             std::string log_msg = __log_stream.str(); \
-//             /* 控制台输出 */ \
-            
-//             std::cout << log_msg << std::endl; \
-//             /* 文件输出 */ \
-//             auto it = log_streams.find((core_id)); \
-//             if (it == log_streams.end()) { \
-//                 std::string filename = "core_" + std::to_string(core_id) + ".log"; \
-//                 log_streams[core_id] = new std::ofstream(filename, std::ios::app); \
-//                 *log_streams[core_id] << "-- New Session --\n"; \
-//             } \
-//             *log_streams[core_id] << log_msg << std::endl; \
-//         } \
-//     } while (0)
-
-// #define LOG_VERBOSE(level, core_id, message) \
-//     do { if (verbose_level >= (level)) std::cout << "[INFO] Core " << (core_id) << " " << (message) << std::endl; } while(0)

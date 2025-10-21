@@ -7,6 +7,7 @@
 #include "macros/macros.h"
 #include "unit_module/sram_manager/sram_manager.h"
 #include "defs/global.h"
+#include "defs/spec.h"
 
 using namespace std;
 
@@ -80,10 +81,10 @@ public:
     SramPosLocator(int id) {
         cid = id;
         visit = 1;
-        max_sram_size = MAX_SRAM_SIZE;
+        max_sram_size = HW_SRAM_SIZE;
     }
     SramPosLocator(int id, SramManager* sram_mgr)
-        : cid(id), visit(1), max_sram_size(MAX_SRAM_SIZE), sram_manager_(sram_mgr) {}
+        : cid(id), visit(1), max_sram_size(HW_SRAM_SIZE), sram_manager_(sram_mgr) {}
 
     void addPair(std::string &key, AddrPosKey value,
                  TaskCoreContext &context, u_int64_t &dram_time, bool update_key = false);

@@ -18,13 +18,12 @@ using namespace std;
 class ChipMonitor : public BaseComponent, public sc_module {
 public:
     ChipMonitor(const sc_module_name &name, Event_engine *event_engine,
-                BaseConfig *config, std::string font_ttf);
+                BaseConfig *config);
     ~ChipMonitor() = default;
 
     BaseConfig *config;
 
     std::string filename;
-    std::string font_ttf;
 
     Type getType() const override { return Type::TYPE_CHIP; }
 

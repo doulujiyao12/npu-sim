@@ -1,5 +1,6 @@
 #include "utils/msg_utils.h"
 #include "defs/global.h"
+#include "defs/spec.h"
 
 sc_bv<256> SerializeMsg(Msg msg) {
     sc_bv<256> serialized_msg;
@@ -87,9 +88,9 @@ void CalculatePacketNum(int output_size, int weight, int data_byte,
                      : (slice_size_in_bit / M_D_DATA);
     end_length = slice_size_in_bit - (packet_num - 1) * M_D_DATA;
 
-    packet_num = packet_num % CORE_COMM_PAYLOAD
-                     ? packet_num / CORE_COMM_PAYLOAD + 1
-                     : packet_num / CORE_COMM_PAYLOAD;
+    packet_num = packet_num % HW_NOC_PAYLOAD_PER_CYCLE
+                     ? packet_num / HW_NOC_PAYLOAD_PER_CYCLE + 1
+                     : packet_num / HW_NOC_PAYLOAD_PER_CYCLE;
 }
 
 bool IsBlockableMsgType(MSG_TYPE type) {

@@ -44,7 +44,7 @@ public:
 
     SC_HAS_PROCESS(GlobalMemInterface);  // Enable SystemC processes for this module
     GlobalMemInterface(const sc_module_name &n, Event_engine *event_engine,
-                        const char *config_name, const char *font_ttf);
+                        const char *config_name);
 
     GlobalMemInterface(const sc_module_name &n, Event_engine *event_engine,
                 config_helper_base *input_config);
@@ -52,7 +52,7 @@ public:
     GlobalMemInterface();
 
     void init();
-    void load_global_prims(const char *config_name, const char *font_ttf);
+    void load_global_prims(const char *config_name);
     void task_logic();
     void switch_chip_prim_block();
     void instr_executor();

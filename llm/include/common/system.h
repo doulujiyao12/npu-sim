@@ -49,7 +49,7 @@ public:
         auto_pd_ = 0; // 默认不做自动pd，仅在set_batch中设置
 
         sram_manager_ =
-            new SramManager(0, cid, MAX_SRAM_SIZE, SRAM_BLOCK_SIZE, 0);
+            new SramManager(0, cid, HW_SRAM_SIZE, SRAM_BLOCK_SIZE, 0);
         sram_pos_locator_ = new SramPosLocator(cid, sram_manager_);
         datapass_label_ = new AddrDatapassLabel();
     }

@@ -11,7 +11,7 @@ public:
     int batch_size;
     int seq_len;
 
-    config_helper_core(string filename, string font_ttf,
+    config_helper_core(string filename,
                        int config_chip_id = 0);
 
     config_helper_core *clone() const override {
@@ -22,7 +22,7 @@ public:
     void calculate_address(bool do_loop);
 
     void printSelf();
-    void random_core(string font_ttf);
+    void random_core();
 
     void parse_ack_msg(Event_engine *event_engine, int flow_id,
                        sc_event *notify_event);

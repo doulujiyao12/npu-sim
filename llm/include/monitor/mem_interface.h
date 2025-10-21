@@ -54,7 +54,7 @@ public:
 
     SC_HAS_PROCESS(MemInterface);
     MemInterface(const sc_module_name &n, Event_engine *event_engine,
-                 const char *config_name, const char *font_ttf);
+                 const char *config_name);
     MemInterface(const sc_module_name &n, Event_engine *event_engine,
                  config_helper_base *input_config);
     ~MemInterface();

@@ -16,13 +16,12 @@ class TopConfig;
 class TopMonitor : public BaseComponent, public sc_module {
 public:
     TopMonitor(sc_module_name name, Event_engine *event_engine,
-               TopConfig *config, std::string font_ttf);
+               TopConfig *config);
     TopMonitor(sc_module_name name, Event_engine *event_engine,
-               std::string config_file, std::string font_ttf);
+               std::string workload_config);
     ~TopMonitor() = default;
 
     TopConfig *config;
-    std::string font_ttf;
 
     Event_engine *event_engine;
 

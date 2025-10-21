@@ -7,6 +7,7 @@
 
 #include "defs/const.h"
 #include "defs/global.h"
+#include "defs/spec.h"
 #include "link/nb_global_memif_v2.h"
 #include "memory/dram/GPUNB_DcacheIF.h"
 #include "memory/gpu/GPU_L1L2_Cache.h"
@@ -19,7 +20,6 @@
 #include "trace/Event_engine.h"
 #include "utils/memory_utils.h"
 #include "utils/msg_utils.h"
-#include "utils/pe_utils.h"
 #include "utils/prim_utils.h"
 #include "utils/print_utils.h"
 #include "utils/system_utils.h"
@@ -57,10 +57,10 @@ void WorkerCoreExecutor::send_logic() {
                         prim->data_packet_id == prim->max_packet;
                     int length = is_end_packet ? prim->end_length : M_D_DATA;
 
-#if USE_BEHA_NOC == 1
-                    is_end_packet = true;
-                    roofline_packets = prim->max_packet;
-#endif
+                    if (SPEC_USE_BEHA_NOC) {
+                        is_end_packet = true;
+                        roofline_packets = prim->max_packet;
+                    }
 
                     int delay = 0;
                     TaskCoreContext context = generate_context(this);
@@ -555,9 +555,8 @@ void WorkerCoreExecutor::recv_logic() {
                     }
 
                     need_long_wait = true;
-#if USE_BEHA_NOC == 1
-                    roofline_packets = temp.roofline_packets_;
-#endif
+                    if (SPEC_USE_BEHA_NOC)
+                        roofline_packets = temp.roofline_packets_;
                 }
             }
 

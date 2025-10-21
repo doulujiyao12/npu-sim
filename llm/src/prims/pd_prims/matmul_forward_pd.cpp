@@ -114,42 +114,42 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
             prim_context->decode_done_.push_back(false);
     }
 
-#if PERFORMANCE_MODE == 1
+    if (SPEC_USE_PERF_GEMM) {
+        ExuConfig *exu = GetCoreHWConfig(context.cid)->exu;
 
-    ExuConfig *exu = GetCoreHWConfig(context.cid)->exu;
+        uint64_t weight_tile_x = (p["C"] + exu->x_dims - 1) / exu->x_dims;
+        uint64_t weight_tile_y = (p["OC"] + exu->y_dims - 1) / exu->y_dims;
 
-    uint64_t weight_tile_x = (p["C"] + exu->x_dims - 1) / exu->x_dims;
-    uint64_t weight_tile_y = (p["OC"] + exu->y_dims - 1) / exu->y_dims;
+        uint64_t padding_input_x =
+            (p["B"] * p["T"]) > exu->x_dims ? p["B"] * p["T"] : exu->x_dims;
 
-    uint64_t padding_input_x =
-        (p["B"] * p["T"]) > exu->x_dims ? p["B"] * p["T"] : exu->x_dims;
+        uint64_t performance_cycle =
+            (exu->x_dims + exu->x_dims + padding_input_x) * weight_tile_x *
+            weight_tile_y;
 
-    uint64_t performance_cycle = (exu->x_dims + exu->x_dims + padding_input_x) *
-                                 weight_tile_x * weight_tile_y;
+        uint64_t performance_comp =
+            performance_cycle * exu->y_dims * exu->x_dims * comp_util;
+        LOG_VERBOSE(1, context.cid,
+                    "Prim name:" << name << " performance_cycle "
+                                 << performance_cycle);
 
-    uint64_t performance_comp =
-        performance_cycle * exu->y_dims * exu->x_dims * comp_util;
-    LOG_VERBOSE(1, context.cid,
-                "Prim name:" << name << " performance_cycle "
-                             << performance_cycle);
+        int loop_input_count =
+            weight_tile_y - 1; // read loop_input_count Repetitive input
 
-    int loop_input_count =
-        weight_tile_y - 1; // read loop_input_count Repetitive input
+        for (int loop = 0; loop < loop_input_count; loop++) {
+            for (int p = 0; p < data_size_input.size(); p++) {
+                if (prim_context->datapass_label_->indata[p].find(DRAM_LABEL) ==
+                    0) {
 
-    for (int loop = 0; loop < loop_input_count; loop++) {
-        for (int p = 0; p < data_size_input.size(); p++) {
-            if (prim_context->datapass_label_->indata[p].find(DRAM_LABEL) ==
-                0) {
-
-                prefReadData(context, dram_time, data_size_input[p],
-                             prim_context->datapass_label_->indata[p]);
+                    prefReadData(context, dram_time, data_size_input[p],
+                                 prim_context->datapass_label_->indata[p]);
+                }
             }
         }
-    }
 
-    exu_ops = performance_comp;
-    ARGUS_PRINT(dram_time);
-#else
-    exu_ops = (u_int64_t)p["B"] * p["T"] * p["C"] * p["OC"] * 2;
-#endif
+        exu_ops = performance_comp;
+        ARGUS_PRINT(dram_time);
+    } else {
+        exu_ops = (u_int64_t)p["B"] * p["T"] * p["C"] * p["OC"] * 2;
+    }
 }

@@ -1,4 +1,5 @@
 #include "monitor/config_helper_pds.h"
+#include "defs/spec.h"
 #include "prims/norm_prims.h"
 #include "prims/pd_prims.h"
 #include "utils/config_utils.h"
@@ -6,7 +7,7 @@
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
-config_helper_pds::config_helper_pds(string filename, string font_ttf,
+config_helper_pds::config_helper_pds(string filename,
                                      sc_event *ev_sig, int config_chip_id) {
     cout << "Loading config file " << filename << endl;
     json j;
@@ -70,7 +71,7 @@ config_helper_pds::config_helper_pds(string filename, string font_ttf,
 
     // 检查batch_size参数的合理性，同时依此修改arrive时间
     // 能放的下 prefill
-    if (batch_size * PD_RATIO > CORE_CREDIT) {
+    if (batch_size * HW_PD_RATIO > HW_CORE_CREDIT) {
         cout << "[ERROR] In config helper pd: batch size too large.\n";
         sc_stop();
     } else {
@@ -143,31 +144,32 @@ void config_helper_pds::fill_queue_start(queue<Msg> *q) {
             int pkg_num = (send_size_in_bit % M_D_DATA)
                               ? (send_size_in_bit / M_D_DATA + 1)
                               : (send_size_in_bit / M_D_DATA);
-            pkg_num = pkg_num % CORE_COMM_PAYLOAD
-                          ? pkg_num / CORE_COMM_PAYLOAD + 1
-                          : pkg_num / CORE_COMM_PAYLOAD;
+            pkg_num = pkg_num % HW_NOC_PAYLOAD_PER_CYCLE
+                          ? pkg_num / HW_NOC_PAYLOAD_PER_CYCLE + 1
+                          : pkg_num / HW_NOC_PAYLOAD_PER_CYCLE;
 
-#if USE_BEHA_NOC == 1
-            sc_bv<M_D_DATA> d(0x1);
-            int length = M_D_DATA;
-            Msg m = Msg(false, MSG_TYPE::S_DATA, ++total_pkg, status.id, 0,
-                        status.id, M_D_DATA, d);
-            m.source_ = GRID_SIZE;
-            m.roofline_packets_ = pkg_num;
-            q[index].push(m);
-#else
-            for (int j = 1; j <= pkg_num; j++) {
+            if (SPEC_USE_BEHA_NOC) {
                 sc_bv<M_D_DATA> d(0x1);
-
-                Msg m = Msg(false, MSG_TYPE::S_DATA, j + total_pkg, status.id,
-                            M_D_DATA * (j - 1), status.id, M_D_DATA, d);
+                int length = M_D_DATA;
+                Msg m = Msg(false, MSG_TYPE::S_DATA, ++total_pkg, status.id, 0,
+                            status.id, M_D_DATA, d);
                 m.source_ = GRID_SIZE;
-                m.roofline_packets_ = 1;
+                m.roofline_packets_ = pkg_num;
                 q[index].push(m);
-            }
+            } else {
+                for (int j = 1; j <= pkg_num; j++) {
+                    sc_bv<M_D_DATA> d(0x1);
 
-            total_pkg += pkg_num;
-#endif
+                    Msg m =
+                        Msg(false, MSG_TYPE::S_DATA, j + total_pkg, status.id,
+                            M_D_DATA * (j - 1), status.id, M_D_DATA, d);
+                    m.source_ = GRID_SIZE;
+                    m.roofline_packets_ = 1;
+                    q[index].push(m);
+                }
+
+                total_pkg += pkg_num;
+            }
         }
 
         sc_bv<M_D_DATA> d(0x1);
@@ -236,7 +238,7 @@ void config_helper_pds::iter_done(PD_JOB type) {
                              << setprecision(
                                     6); // 设置小数点后6位精度，可根据需要调整
 
-                        file << "*" << g_config_file << "*\n";
+                        file << "*" << g_workload_config << "*\n";
                         for (int i = 0; i < token_record.size(); i++) {
                             file << "Request " << i << ": \n";
                             for (int j = 0; j < token_record[i].size(); j++) {
@@ -360,7 +362,7 @@ void config_helper_pds::iter_start(PD_JOB type) {
                     if (stage.type == PD_DONE)
                         continue;
 
-                    if (credit < CORE_CREDIT) {
+                    if (credit < HW_CORE_CREDIT) {
                         credit += 1;
                         new_stage_1.push_back(stage);
                     } else {
@@ -372,7 +374,7 @@ void config_helper_pds::iter_start(PD_JOB type) {
                 // 如果此时还有空余，则查看是否有等待队列中的decode
                 auto &waiting_list =
                     idle_decode[(id - prefill_core) / decode_stage];
-                while (waiting_list.size() && credit < CORE_CREDIT) {
+                while (waiting_list.size() && credit < HW_CORE_CREDIT) {
                     int req_id = waiting_list.front();
                     waiting_list.pop();
                     credit += 1;
@@ -382,7 +384,7 @@ void config_helper_pds::iter_start(PD_JOB type) {
                 }
 
                 // 最后检查是否有新转为decode的请求
-                while (req_decode.size() && credit < CORE_CREDIT) {
+                while (req_decode.size() && credit < HW_CORE_CREDIT) {
                     int req_id = req_decode.front();
                     req_decode.pop();
                     credit += 1;
@@ -567,7 +569,8 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
 
                 // 需要计算send_data的发送包裹数，首先找到这个work的最后一个计算原语
                 CompBase *last_comp = (CompBase *)work.prims.back();
-                if (tp_size == 1) continue;
+                if (tp_size == 1)
+                    continue;
 
                 // 发送原语，遵循work中的cast，编号和tag需要自定义
                 for (auto ca : work.cast) {
@@ -725,7 +728,7 @@ void config_helper_pds::parse_ack_msg(Event_engine *event_engine, int flow_id,
 
     g_temp_ack_msg.clear();
     // wait(sc_core::sc_time(10, sc_core::SC_NS));
-    event_engine->add_event(this->name(), "Waiting Recv Ack", "E", 
+    event_engine->add_event(this->name(), "Waiting Recv Ack", "E",
                             Trace_event_util(), sc_time(2, SC_NS));
 
     if (g_recv_ack_cnt_p >= prefill_core * tp_size) {

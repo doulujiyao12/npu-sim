@@ -5,15 +5,14 @@
 #include "utils/system_utils.h"
 
 Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine,
-                 const char *config_name, const char *font_ttf)
+                 const char *config_name)
     : sc_module(n),
       event_engine(event_engine),
-      config_name(config_name),
-      font_ttf(font_ttf) {
+      config_name(config_name) {
     memInterface = new MemInterface("mem-interface", this->event_engine,
-                                    config_name, font_ttf);
+                                    config_name);
     globalMemInterface = new GlobalMemInterface(
-        "global-mem-interface", this->event_engine, config_name, font_ttf);
+        "global-mem-interface", this->event_engine, config_name);
 
     init();
 }
@@ -22,8 +21,7 @@ Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine,
                  config_helper_base *input_config)
     : sc_module(n),
       event_engine(event_engine),
-      config_name(nullptr),
-      font_ttf(nullptr) {
+      config_name(nullptr) {
     memInterface =
         new MemInterface("mem-interface", this->event_engine, input_config);
 
@@ -75,7 +73,7 @@ void Monitor::init() {
     // Initialize global memory interface with config parameters
     // globalMemInterface = new GlobalMemInterface(
     //     sc_gen_unique_name("global-mem-interface"), this->event_engine,
-    //     config_name, font_ttf);
+    //     config_name);
 
     for (int i = 0; i < GRID_SIZE; i++) {
         workerCores[i] =
@@ -129,8 +127,11 @@ void Monitor::init() {
         gpu_pos_locator = new GpuPosLocator();
         ((config_helper_gpu_pd *)memInterface->config_helper)->gpu_pos_locator =
             gpu_pos_locator;
-        for (int i = 0; i < GRID_SIZE; i++)
+        for (int i = 0; i < GRID_SIZE; i++) {
             workerCores[i]->executor->gpu_pos_locator = gpu_pos_locator;
+            workerCores[i]->executor->core_context->gpu_pos_locator_ =
+                gpu_pos_locator;
+        }
     }
 #endif
 

@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <regex>
 #include <sstream>
 
 #include "defs/const.h"
@@ -48,29 +49,38 @@ int CeilingDivision(int a, int b) {
     return (a + b - 1) / b;
 }
 
-void InitGrid(string config_path, string core_config_path) {
+void InitGrid(string workload_config_path, string hardware_config_path,
+              string simulation_config_path) {
     json j1;
-    ifstream jfile1(config_path);
+    ifstream jfile1(workload_config_path);
 
     if (!jfile1.is_open())
-        ARGUS_EXIT("Failed to open file ", config_path, ".\n");
+        ARGUS_EXIT("Failed to open file ", workload_config_path, ".\n");
 
     jfile1 >> j1;
     ParseSimulationType(j1);
 
     json j2;
-    ifstream jfile2(core_config_path);
+    ifstream jfile2(hardware_config_path);
 
     if (!jfile2.is_open())
-        ARGUS_EXIT("Failed to open file ", core_config_path, ".\n");
+        ARGUS_EXIT("Failed to open file ", hardware_config_path, ".\n");
 
     jfile2 >> j2;
     ParseHardwareConfig(j2);
+
+    json j3;
+    ifstream jfile3(simulation_config_path);
+
+    if (!jfile3.is_open())
+        ARGUS_EXIT("Failed to open file ", simulation_config_path, ".\n");
+
+    jfile3 >> j3;
 }
 
 void SystemCleanup() {
     // 清理所有原语
-    for (auto p : g_prim_stash) 
+    for (auto p : g_prim_stash)
         delete p;
 
     delete[] dram_array;
@@ -93,9 +103,60 @@ void InitGlobalMembers() {
 #endif
 }
 
+
+void DeleteCoreLogFiles() {
+    const std::string current_dir = ".";
+    try {
+        for (const auto &entry :
+             std::filesystem::directory_iterator(current_dir)) {
+            if (entry.is_regular_file() &&
+                entry.path().filename().string().find("core_") == 0 &&
+                entry.path().extension() == ".log") {
+                std::filesystem::remove(entry.path());
+                std::cout << "Deleted log file: "
+                          << entry.path().filename().string() << std::endl;
+            }
+        }
+    } catch (const std::filesystem::filesystem_error &e) {
+        ARGUS_EXIT("Fail to delete core log files, ", e.what());
+    }
+}
+
+
+void DeleteMemoryLogFiles() {
+    auto delete_mem = [](std::string log_dir_str, std::string log_pattern_str) {
+        try {
+            std::filesystem::path log_dir(log_dir_str);
+
+            if (!std::filesystem::exists(log_dir)) {
+                std::filesystem::create_directory(log_dir);
+                return;
+            }
+
+            std::regex log_pattern(log_pattern_str);
+
+            for (const auto &entry :
+                 std::filesystem::directory_iterator(log_dir)) {
+                if (entry.is_regular_file()) {
+                    std::string filename = entry.path().filename().string();
+
+                    if (std::regex_match(filename, log_pattern))
+                        std::filesystem::remove(entry.path());
+                }
+            }
+        } catch (const std::filesystem::filesystem_error &e) {
+            ARGUS_EXIT("Fail to delete memory log files, ", e.what());
+        }
+    };
+
+    delete_mem("gpu_cache", "L1Cache_cid_\\d+\\.log");
+    delete_mem("sram_util", "sram_manager_cid_\\d+\\.log");
+}
+
 // void initialize_cache_structures() {
 // #if DCACHE == 1
-//     // data_footprint_in_words = GRID_SIZE * dataset_words_per_tile; //global
+//     // data_footprint_in_words = GRID_SIZE * dataset_words_per_tile;
+//     //global
 //     // variable 全局的darray的大小 所有的tile
 
 //     data_footprint_in_words =
@@ -119,8 +180,8 @@ void InitGlobalMembers() {
 //     for (int i = 0; i < GRID_SIZE; i++) {
 //         u_int64_t *array_uint =
 //             (u_int64_t *)calloc(lines_per_tile, sizeof(u_int64_t));
-//         // bool *dcache_dirty = (bool *)calloc(total_lines, sizeof(bool));
-//         for (int j = 0; j < lines_per_tile; j++) {
+//         // bool *dcache_dirty = (bool *)calloc(total_lines,
+//         sizeof(bool)); for (int j = 0; j < lines_per_tile; j++) {
 //             array_uint[j] = UINT64_MAX;
 //         }
 //         dcache_tags[i] = array_uint;

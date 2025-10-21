@@ -13,13 +13,9 @@ vector<chip_instr_base*> g_chip_prim_stash;
 AddrLabelTable g_addr_label_table;
 
 DramKVTable** g_dram_kvtable;
-int MAX_SRAM_SIZE;
 sc_event kv_event;
 int dram_aligned;
 bool use_gpu;
-
-int CORE_COMM_PAYLOAD = 1; // 一个时钟周期可以一次性发送多少数据包
-int CORE_ACC_PAYLOAD = 1;
 
 string gpu_dram_config;
 
@@ -49,20 +45,13 @@ u_int64_t *mc_latency;
 u_int64_t *mc_writebacks;
 u_int32_t ***frame_counters;
 
-bool use_node;
-bool use_DramSys;
 bool gpu_inner;
 float comp_util;
 bool gpu_clog;
 int gpu_bw;
 int gpu_B;
-string g_config_file;
 int g_default_dram_bw;
-bool beha_dram;
 float beha_dram_util;
-// int DRAM_BURST_BYTE;
-// int L1CACHELINESIZE;
-// int L2CACHELINESIZE;
 
 // 网络拓扑大小
 int GRID_X;

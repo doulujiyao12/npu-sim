@@ -4,11 +4,11 @@
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
-config_helper_gpu::config_helper_gpu(string filename, string font_ttf,
+config_helper_gpu::config_helper_gpu(string filename,
                                      int config_chip_id) {
     cout << "Loading config file " << filename << endl;
     json j;
-    // plot_dataflow(filename, font_ttf);
+    // plot_dataflow(filename);
     ifstream jfile(filename);
     jfile >> j;
 

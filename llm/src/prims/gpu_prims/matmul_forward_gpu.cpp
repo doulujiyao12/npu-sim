@@ -96,9 +96,9 @@ int Matmul_f_gpu::taskCoreDefault(TaskCoreContext &context) {
 
         int cycle = 0;
 
-        CoreHWConfig *core_config = GetCoreHWConfig(prim_context->cid);
-        ExuConfig *exu = core_config->exu;
-        SfuConfig *sfu = core_config->sfu;
+        CoreHWConfig *hardware_config = GetCoreHWConfig(prim_context->cid);
+        ExuConfig *exu = hardware_config->exu;
+        SfuConfig *sfu = hardware_config->sfu;
 
         if (exu->type == MAC_Array)
             cycle += (p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
@@ -163,9 +163,9 @@ int Matmul_f_gpu::taskCoreDefault(TaskCoreContext &context) {
 
         int cycle = 0;
 
-        CoreHWConfig *core_config = GetCoreHWConfig(prim_context->cid);
-        ExuConfig *exu = core_config->exu;
-        SfuConfig *sfu = core_config->sfu;
+        CoreHWConfig *hardware_config = GetCoreHWConfig(prim_context->cid);
+        ExuConfig *exu = hardware_config->exu;
+        SfuConfig *sfu = hardware_config->sfu;
 
         if (exu->type == MAC_Array)
             cycle += (p["B"] * p["T"] * p["C"] * p["OC"] * 2 /

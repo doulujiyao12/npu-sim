@@ -56,9 +56,9 @@ int Gelu_f_gpu::taskCoreDefault(TaskCoreContext &context) {
     int cycle = 0;
     int cid = context.cid;
 
-    CoreHWConfig *core_config = GetCoreHWConfig(cid);
-    ExuConfig *exu = core_config->exu;
-    SfuConfig *sfu = core_config->sfu;
+    CoreHWConfig *hardware_config = GetCoreHWConfig(cid);
+    ExuConfig *exu = hardware_config->exu;
+    SfuConfig *sfu = hardware_config->sfu;
 
     if (exu->type == MAC_Array)
         cycle += 0 / (p["slice_x"] * p["slice_y"]) /

@@ -147,18 +147,18 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
                 pair.second.spill_size == pair.second.size)
                 continue; // 已经全部spill到dram中去了
 
-#if KVCACHE_PRIOR_SPILL == 1
-            string k_prefix =
-                ETERNAL_PREFIX + string(KVCACHE_PREFIX) + string("k");
-            string v_prefix =
-                ETERNAL_PREFIX + string(KVCACHE_PREFIX) + string("v");
+            if (SPEC_KVCACHE_SPILL) {
+                string k_prefix =
+                    ETERNAL_PREFIX + string(KVCACHE_PREFIX) + string("k");
+                string v_prefix =
+                    ETERNAL_PREFIX + string(KVCACHE_PREFIX) + string("v");
 
-            if ((pair.first.length() >= k_prefix.length() &&
-                 pair.first.substr(0, k_prefix.length()) == k_prefix) ||
-                (pair.first.length() >= v_prefix.length() &&
-                 pair.first.substr(0, v_prefix.length()) == v_prefix))
-                continue; // 简单策略：不spill kvcache
-#endif
+                if ((pair.first.length() >= k_prefix.length() &&
+                     pair.first.substr(0, k_prefix.length()) == k_prefix) ||
+                    (pair.first.length() >= v_prefix.length() &&
+                     pair.first.substr(0, v_prefix.length()) == v_prefix))
+                    continue; // 简单策略：不spill kvcache
+            }
 
             if (pair.second.record < min_record) {
                 min_record = pair.second.record;
@@ -172,27 +172,28 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
         //      << min_label << ", size " << data_map[min_label].size
         //      << ", spill_size: " << data_map[min_label].spill_size << endl;
 
-#if KVCACHE_PRIOR_SPILL == 1
-        if (min_record == 1e9 + 3) {
-            cout << "[SRAM] SRAM need to spill kvcache " << max_sram_size << "<"
-                 << used << endl;
+        if (SPEC_KVCACHE_SPILL) {
+            if (min_record == 1e9 + 3) {
+                cout << "[SRAM] SRAM need to spill kvcache " << max_sram_size
+                     << "<" << used << endl;
 
-            for (auto pair : data_map) {
-                if (pair.first == key)
-                    continue; // 不能spill自己
-                if (!pair.second.valid &&
-                    pair.second.spill_size == pair.second.size)
-                    continue; // 已经全部spill到dram中去了
+                for (auto pair : data_map) {
+                    if (pair.first == key)
+                        continue; // 不能spill自己
+                    if (!pair.second.valid &&
+                        pair.second.spill_size == pair.second.size)
+                        continue; // 已经全部spill到dram中去了
 
-                if (pair.second.record < min_record) {
-                    min_record = pair.second.record;
-                    min_label = pair.first;
-                    min_pos = pair.second.pos;
-                    sram_id = pair.second.alloc_id;
+                    if (pair.second.record < min_record) {
+                        min_record = pair.second.record;
+                        min_label = pair.first;
+                        min_pos = pair.second.pos;
+                        sram_id = pair.second.alloc_id;
+                    }
                 }
             }
         }
-#endif
+
         if (min_record == 1e9 + 3) {
             cout << "[ERROR] SRAM have no more data to spill " << max_sram_size
                  << "<" << used << endl;

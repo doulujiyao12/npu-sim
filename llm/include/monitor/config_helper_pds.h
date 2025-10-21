@@ -46,7 +46,7 @@ public:
 
     int tp_size;
 
-    config_helper_pds(string filename, string font_ttf, sc_event *ev_sig,
+    config_helper_pds(string filename, sc_event *ev_sig,
                       int config_chip_id = 0);
 
     config_helper_pds *clone() const override {
@@ -58,7 +58,7 @@ public:
 
     void printSelf();
 
-    void random_core(string font_ttf);
+    void random_core();
 
     void fill_queue_start(queue<Msg> *q);
     void fill_queue_config(queue<Msg> *q);
