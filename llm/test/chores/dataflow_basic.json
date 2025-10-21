@@ -38,6 +38,10 @@
     {
       "dest": 0,
       "size": "BTC"
+    },
+    {
+      "dest": 12,
+      "size": "BTC"
     }
   ],
   "chips": [
@@ -329,6 +333,35 @@
             {
               "dest": 0,
               "loopout": "false"
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "loop": "loop",
+          "id": 12,
+          "cast": [
+            {
+              "dest": 13,
+              "critical": true
+            }
+          ],
+          "recv_cnt": 1,
+          "prim_copy": 0
+        },
+        {
+          "loop": "loop",
+          "id": 13,
+          "cast": [
+            {
+              "dest": 12,
+              "critical": true,
+              "loopout": "false"
+            },
+            {
+              "dest": -1,
+              "loopout": "true"
             }
           ],
           "recv_cnt": 1,

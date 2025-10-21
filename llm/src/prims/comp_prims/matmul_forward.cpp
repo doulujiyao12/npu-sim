@@ -30,7 +30,7 @@ void Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
 
     auto label_weight = ETERNAL_PREFIX + prim_name + "_w";
     checkStaticData(context, dram_time, data_chunk_addr["weight"],
-                    GetFromPairedVector(data_chunk, "weigokht"), label_weight,
+                    GetFromPairedVector(data_chunk, "weight"), label_weight,
                     false);
 
     auto label_bias = ETERNAL_PREFIX + prim_name + "_b";

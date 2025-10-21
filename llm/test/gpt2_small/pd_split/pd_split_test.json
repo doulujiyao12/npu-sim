@@ -29,7 +29,7 @@
                 "recv_cnt": 1,
                 "cast": [
                   {
-                    "dest": 0
+                    "dest": -1
                   }
                 ],
                 "prims": [
