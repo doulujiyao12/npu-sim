@@ -1,0 +1,246 @@
+{
+  "vars": {
+    "B": 1,
+    "H1": 224,
+    "C1": 3,
+    "W1": 224,
+    "F1": 64,
+    "F1/2": 32,
+    "K1": 7,
+    "P1": 3,
+    "S1": 2,
+    "H2": 112,
+    "C2/2": 32,
+    "C2": 64,
+    "W2": 112,
+    "K2": 3,
+    "P2": 1,
+    "S2": 2,
+    "H3": 56,
+    "C3": 64,
+    "W3": 56,
+    "F3": 64,
+    "K3": 3,
+    "P3": 1,
+    "S3": 1,
+    "H7": 56,
+    "C7": 64,
+    "W7": 56,
+    "F7": 128,
+    "K7": 3,
+    "P7": 1,
+    "S7": 2,
+    "H8": 28,
+    "C8": 128,
+    "W8": 28,
+    "F8": 128,
+    "K8": 3,
+    "P8": 1,
+    "S8": 1,
+    "H11": 28,
+    "C11": 128,
+    "W11": 28,
+    "F11": 256,
+    "K11": 3,
+    "P11": 1,
+    "S11": 2,
+    "H12": 14,
+    "C12": 256,
+    "W12": 14,
+    "F12": 256,
+    "K12": 3,
+    "P12": 1,
+    "S12": 1,
+    "H15": 14,
+    "C15": 256,
+    "W15": 14,
+    "F15": 512,
+    "K15": 3,
+    "P15": 1,
+    "S15": 2,
+    "H16": 7,
+    "C16": 512,
+    "W16": 7,
+    "F16": 512,
+    "K16": 3,
+    "P16": 1,
+    "S16": 1,
+    "H19": 7,
+    "C19": 512,
+    "W19": 7,
+    "K19": 7,
+    "P19": 0,
+    "S19": 1,
+    "T20": 1,
+    "C20": 512,
+    "OC20": 1000,
+    "BHCW": 150528,
+    "conv1_data": 147,
+    "maxpool2_dout": 157,
+    "conv3_data": 196,
+    "conv4_data": 232,
+    "conv4_dout": 171,
+    "conv7_data": 196,
+    "conv8_data": 268,
+    "conv8_dout": 412,
+    "conv9_data": 98,
+    "conv10_data": 242,
+    "conv10_dout": 386,
+    "conv11_data": 98,
+    "conv12_data": 386,
+    "conv12_dout": 962,
+    "conv13_data": 49,
+    "conv14_data": 625,
+    "conv14_dout": 1201,
+    "conv15_data": 49,
+    "conv16_data": 1201,
+    "conv16_dout": 3505,
+    "conv17_data": 25,
+    "conv18_data": 2329,
+    "conv18_dout": 4633,
+    "matmul20_data": 25,
+    "matmul20_dout": 537,
+    "merge_conv1_in": 20000,
+    "conv1_dout": 20000
+  },
+  "pipeline": 3,
+  "source": [
+    {
+      "dest": 0,
+      "size": "BHCW"
+    },
+    {
+      "dest": 1,
+      "size": "BHCW"
+    }
+  ],
+  "chips": [
+    {
+      "chip_id": 0,
+      "GridX": 4,
+      "GridY": 4,
+      "cores": [
+        {
+          "id": 0,
+          "prim_refill": true,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [],
+              "prims": [
+                {
+                  "type": "Conv_f",
+                  "B": "B",
+                  "W": "W1",
+                  "H": "H1",
+                  "C": "C1",
+                  "pX": "P1",
+                  "pY": "P1",
+                  "sX": "S1",
+                  "sY": "S1",
+                  "kX": "K1",
+                  "kY": "K1",
+                  "F": "F1/2",
+                  "sram_address": {
+                    "indata": "dram_label conv1_in",
+                    "outdata": "conv1_out"
+                  },
+                  "dram_address": {
+                    "input": 0,
+                    "data": "conv1_data"
+                  }
+                }
+              ]
+            },
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": -1
+                }
+              ],
+              "prims": [
+                {
+                  "type": "Merge_matmul",
+                  "B": "C2/2",
+                  "T": "W2",
+                  "C": "H2",
+                  "dim": 2,
+                  "slice": 2,
+                  "sram_address": {
+                    "indata": "dram_label merge_conv1_in conv1_out",
+                    "outdata": "merge_conv1_out"
+                  },
+                  "dram_address": {
+                    "input": "merge_conv1_in"
+                  }
+                },
+                {
+                  "type": "Max_pool",
+                  "B": "B",
+                  "W": "W2",
+                  "H": "H2",
+                  "C": "C2",
+                  "pX": "P2",
+                  "pY": "P2",
+                  "sX": "S2",
+                  "sY": "S2",
+                  "kX": "K2",
+                  "kY": "K2",
+                  "sram_address": {
+                    "indata": "merge_conv1_out",
+                    "outdata": "maxpool2_out"
+                  },
+                  "dram_address": {
+                    "data": -1,
+                    "out": "maxpool2_dout"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": 1,
+          "prim_refill": true,
+          "worklist": [
+            {
+              "recv_cnt": 1,
+              "cast": [
+                {
+                  "dest": 0,
+                  "addr": 20000
+                }
+              ],
+              "prims": [
+                {
+                  "type": "Conv_f",
+                  "B": "B",
+                  "W": "W1",
+                  "H": "H1",
+                  "C": "C1",
+                  "pX": "P1",
+                  "pY": "P1",
+                  "sX": "S1",
+                  "sY": "S1",
+                  "kX": "K1",
+                  "kY": "K1",
+                  "F": "F1/2",
+                  "sram_address": {
+                    "indata": "dram_label conv1_in",
+                    "outdata": "conv1_out"
+                  },
+                  "dram_address": {
+                    "input": 0,
+                    "data": "conv1_data",
+                    "outp": "conv1_dout"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

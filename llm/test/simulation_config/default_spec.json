@@ -1,0 +1,11 @@
+{
+    "use_beha_noc": true,
+    "use_beha_sram": true,
+    "use_beha_dram": true,
+    "use_perf_gemm": true,
+    "kvcache_spill": false,
+    "load_static_as_tile": true,
+    "ttf_file": "../font/NotoSansDisplay-Bold.ttf",
+    "use_dramsys": true,
+    "fast_warmup": true
+}

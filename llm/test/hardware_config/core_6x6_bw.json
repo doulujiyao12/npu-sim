@@ -1,0 +1,13 @@
+{
+    "x": 6,
+    "cores": [
+        {
+            "id": 0,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
+            "sram_bitwidth": 128,
+            "dram_config": "../DRAMSys/configs/ddr4-example-df.json"
+        }
+    ]
+}

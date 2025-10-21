@@ -1,0 +1,132 @@
+{
+  "vars": {
+    "B": 4,
+    "H": 4,
+    "C": 4,
+    "W": 4,
+    "F": 4,
+    "K": 3,
+    "P": 1,
+    "S": 1,
+    "BHCW": 256,
+    "conv1_data": 512,
+    "conv1_out": 532,
+    "bn1_data": 788,
+    "bn1_out": 796,
+    "relu1_out": 1052,
+    "conv2_data": 1308,
+    "conv2_out": 1328,
+    "bn2_data": 1484,
+    "bn2_out": 256,
+    "residual_out": 1740,
+    "relu2_out": 1996
+  },
+  "source": [
+    {
+      "dest": 0,
+      "size": "BHCW"
+    }
+  ],
+  "cores": [
+    {
+      "id": 0,
+      "cast": [
+        {
+          "dest": -1
+        }
+      ],
+      "recv_cnt": 1,
+      "prims": [
+        {
+          "type": "Conv_f",
+          "B": "B",
+          "W": "W",
+          "H": "H",
+          "C": "C",
+          "pX": "P",
+          "pY": "P",
+          "sX": "S",
+          "sY": "S",
+          "kX": "K",
+          "kY": "K",
+          "F": "F",
+          "address": {
+            "input": 0,
+            "data": "conv1_data",
+            "out": "conv1_out"
+          }
+        },
+        {
+          "type": "Batchnorm_f",
+          "B": "B",
+          "W": "W",
+          "H": "H",
+          "C": "C",
+          "address": {
+            "input": "conv1_out",
+            "data": "bn1_data",
+            "out": "bn1_out"
+          }
+        },
+        {
+          "type": "Relu_f",
+          "N": "BHCW",
+          "address": {
+            "input": "bn1_out",
+            "data": -1,
+            "out": "relu1_out"
+          }
+        },
+        {
+          "type": "Conv_f",
+          "B": "B",
+          "W": "W",
+          "H": "H",
+          "C": "C",
+          "pX": "P",
+          "pY": "P",
+          "sX": "S",
+          "sY": "S",
+          "kX": "K",
+          "kY": "K",
+          "F": "F",
+          "address": {
+            "input": "relu1_out",
+            "data": "conv2_data",
+            "out": "conv2_out"
+          }
+        },
+        {
+          "type": "Batchnorm_f",
+          "B": "B",
+          "W": "W",
+          "H": "H",
+          "C": "C",
+          "address": {
+            "input": "conv2_out",
+            "data": "bn2_data",
+            "out": "bn2_out"
+          }
+        },
+        {
+          "type": "Residual_f",
+          "N": "BHCW",
+          "address": {
+            "input": 0,
+            "data": -1,
+            "out": "residual_out"
+          }
+        },
+        {
+          "type": "Relu_f",
+          "N": "BHCW",
+          "address": {
+            "input": 0,
+            "data": -1,
+            "out": "relu2_out"
+          }
+        }
+      ]
+    }
+  ]
+}

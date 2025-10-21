@@ -1,0 +1,17 @@
+{
+    "x": 8,
+    "sram_size": 33554432,
+    "core_credit": 5,
+    "pd_ratio": 4,
+    "dram_bitwidth": 32,
+    "noc_payload_per_cycle": 1,
+    "cores": [
+        {
+            "id": 0,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
+            "sram_bitwidth": 128
+        }
+    ]
+}

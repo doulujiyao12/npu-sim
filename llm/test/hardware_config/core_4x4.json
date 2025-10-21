@@ -1,0 +1,117 @@
+{
+    "x": 4,
+    "cores": [
+        {
+            "id": 0,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
+            "sram_bitwidth": 128
+        },
+        {
+            "id": 1,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
+            "sram_bitwidth": 128
+        },
+        {
+            "id": 2,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
+            "sram_bitwidth": 128
+        },
+        {
+            "id": 3,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
+            "sram_bitwidth": 128
+        },
+        {
+            "id": 4,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
+            "sram_bitwidth": 128
+        },
+        {
+            "id": 5,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
+            "sram_bitwidth": 128
+        },
+        {
+            "id": 6,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
+            "sram_bitwidth": 128
+        },
+        {
+            "id": 7,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
+            "sram_bitwidth": 128
+        },
+        {
+            "id": 8,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
+            "sram_bitwidth": 128
+        },
+        {
+            "id": 9,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
+            "sram_bitwidth": 128
+        },
+        {
+            "id": 10,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
+            "sram_bitwidth": 128
+        },
+        {
+            "id": 11,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
+            "sram_bitwidth": 128
+        },
+        {
+            "id": 12,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
+            "sram_bitwidth": 128
+        },
+        {
+            "id": 13,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
+            "sram_bitwidth": 128
+        },
+        {
+            "id": 14,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
+            "sram_bitwidth": 128
+        },
+        {
+            "id": 15,
+            "exu_x": 128,
+            "exu_y": 128,
+            "sfu_x": 2048,
+            "sram_bitwidth": 128
+        }
+    ]
+}
