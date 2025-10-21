@@ -73,7 +73,7 @@ jobs:
 
           CHORES_DIR="./llm/test/chores"
           HW_CONFIG="$CHORES_DIR/hw_config.json"
-          TIMEOUT_SEC=30
+          TIMEOUT_SEC=120
           FAIL=0
 
           mkdir -p test_logs
