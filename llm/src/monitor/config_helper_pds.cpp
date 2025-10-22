@@ -7,8 +7,8 @@
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
-config_helper_pds::config_helper_pds(string filename,
-                                     sc_event *ev_sig, int config_chip_id) {
+config_helper_pds::config_helper_pds(string filename, sc_event *ev_sig,
+                                     int config_chip_id) {
     cout << "Loading config file " << filename << endl;
     json j;
     ifstream jfile(filename);
@@ -519,9 +519,13 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
         // 每个核生成一个set_batch
         // 如果本迭代没有工作，且不为tp组的第一个核，则作为最后一个原语
         PrimBase *set_batch = new Set_batch(status.batchInfo);
-        temp_config.push_back(Msg(!status.batchInfo.size() && core_id % tp_size,
-                                  MSG_TYPE::CONFIG, ++prim_seq, core_id,
-                                  set_batch->serialize()[0]));
+        auto segments = set_batch->serialize();
+        for (int seg = 0; seg < segments.size(); seg++)
+            temp_config.push_back(
+                Msg(!status.batchInfo.size() && core_id % tp_size &&
+                        seg == segments.size() - 1,
+                    MSG_TYPE::CONFIG, ++prim_seq, core_id,
+                    seg == segments.size() - 1, segments[seg]));
 
         if (status.batchInfo.size()) {
             for (int w = 0; w < template_cores[core_id - i].worklist.size();

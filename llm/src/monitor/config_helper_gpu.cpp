@@ -4,8 +4,7 @@
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
-config_helper_gpu::config_helper_gpu(string filename,
-                                     int config_chip_id) {
+config_helper_gpu::config_helper_gpu(string filename, int config_chip_id) {
     cout << "Loading config file " << filename << endl;
     json j;
     // plot_dataflow(filename);
@@ -92,17 +91,19 @@ void config_helper_gpu::fill_queue_config(queue<Msg> *q) {
             batchInfo.push_back(Stage(i + 1, PREFILL, GetDefinedParam("T")));
 
         PrimBase *set_batch = new Set_batch(batchInfo, true);
-        single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, single_rep.size() + 1,
-                                 config.id, set_batch->serialize()[0]));
+        auto segments = set_batch->serialize();
+        for (int seg = 0; seg < segments.size(); seg++)
+            single_rep.push_back(
+                Msg(false, MSG_TYPE::CONFIG, single_rep.size() + 1, config.id,
+                    seg == segments.size() - 1, segments[seg]));
 
         for (auto work : config.worklist) {
             for (auto prim : work.prims_last_loop) {
                 auto segments = prim->serialize();
                 for (int seg = 0; seg < segments.size(); seg++)
-                    single_rep.push_back(Msg(false, MSG_TYPE::CONFIG,
-                                             single_rep.size() + 1, config.id,
-                                             seg == segments.size() - 1,
-                                             segments[seg]));
+                    single_rep.push_back(Msg(
+                        false, MSG_TYPE::CONFIG, single_rep.size() + 1,
+                        config.id, seg == segments.size() - 1, segments[seg]));
             }
         }
 
@@ -304,7 +305,8 @@ void config_helper_gpu::parse_done_msg(Event_engine *event_engine,
                 if (outfile.is_open()) {
                     outfile << "[CATCH TEST] " << sc_time_stamp()
                             << "L1CACHESIZE " << L1CACHESIZE << " L2CACHESIZE "
-                            << L2CACHESIZE << " BANDWIDTH " << GPU_DRAM_BANDWIDTH << endl;
+                            << L2CACHESIZE << " BANDWIDTH "
+                            << GPU_DRAM_BANDWIDTH << endl;
                     outfile.close();
                 } else {
                     cout << "Error: Unable to open file for writing timestamp."

@@ -7,8 +7,8 @@
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
-config_helper_pd::config_helper_pd(string filename,
-                                   sc_event *ev_sig, int config_chip_id) {
+config_helper_pd::config_helper_pd(string filename, sc_event *ev_sig,
+                                   int config_chip_id) {
     cout << "Loading config file " << filename << endl;
 
     json j;
@@ -405,9 +405,13 @@ void config_helper_pd::generate_prims(int i) {
 
         // 每个核生成一个set_batch
         PrimBase *set_batch = new Set_batch(status.batchInfo);
-        temp_config.push_back(Msg(!status.batchInfo.size() && core_id % tp_size,
-                                  MSG_TYPE::CONFIG, ++prim_seq, core_id,
-                                  set_batch->serialize()[0]));
+        auto segments = set_batch->serialize();
+        for (int seg = 0; seg < segments.size(); seg++)
+            temp_config.push_back(
+                Msg(!status.batchInfo.size() && core_id % tp_size &&
+                        seg == segments.size() - 1,
+                    MSG_TYPE::CONFIG, ++prim_seq, core_id,
+                    seg == segments.size() - 1, segments[seg]));
 
         if (status.batchInfo.size()) {
             for (int w = 0; w < template_cores[core_id - i].worklist.size();
@@ -641,7 +645,8 @@ void config_helper_pd::printResults() {
     ofstream outfile("simulation_result_df_pd.txt", ios::app);
     if (outfile.is_open()) {
         outfile << "[CATCH TEST] " << sc_time_stamp() << "HW_SRAM_SIZE "
-                << HW_SRAM_SIZE << " BANDWIDTH " << HW_DRAM_DEFAULT_BITWIDTH << endl;
+                << HW_SRAM_SIZE << " BANDWIDTH " << HW_DRAM_DEFAULT_BITWIDTH
+                << endl;
         outfile.close();
     } else
         ARGUS_EXIT("Failed to open file simulation_result_df_pd.txt.\n");

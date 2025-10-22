@@ -93,7 +93,7 @@ jobs:
             if ! timeout $TIMEOUT_SEC ./npusim \
               --workload-config "../$CONFIG" \
               --hardware-config "../$HW_CONFIG" \
-              --simulation-config "../$SIM_CONFIG"
+              --simulation-config "../$SIM_CONFIG" \ 
               &> "$LOGFILE"; then
               echo "Crash or timeout for $CONFIG"
               FAIL=1

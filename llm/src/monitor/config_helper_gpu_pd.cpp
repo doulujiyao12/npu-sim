@@ -5,8 +5,7 @@
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
-config_helper_gpu_pd::config_helper_gpu_pd(string filename,
-                                           sc_event *ev_sig,
+config_helper_gpu_pd::config_helper_gpu_pd(string filename, sc_event *ev_sig,
                                            int config_chip_id) {
     cout << "Loading config file: " << filename << endl;
     json j;
@@ -132,7 +131,8 @@ void config_helper_gpu_pd::iter_done(vector<Msg> done_msg) {
                             outfile << "[CATCH TEST] " << sc_time_stamp()
                                     << "L1CACHESIZE " << L1CACHESIZE
                                     << " L2CACHESIZE " << L2CACHESIZE
-                                    << " BANDWIDTH " << GPU_DRAM_BANDWIDTH << endl;
+                                    << " BANDWIDTH " << GPU_DRAM_BANDWIDTH
+                                    << endl;
                             outfile.close();
                         } else {
                             cout << "Error: Unable to open file for writing "
@@ -305,8 +305,11 @@ void config_helper_gpu_pd::generate_prims(int i) {
                                   recv_data_1->serialize()[0]));
 
         PrimBase *set_batch = new Set_batch(iter_status.batchInfo, false);
-        temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, c,
-                                  set_batch->serialize()[0]));
+        auto segments = set_batch->serialize();
+        for (int seg = 0; seg < segments.size(); seg++)
+            temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, c,
+                                      seg == segments.size() - 1,
+                                      segments[seg]));
 
         // 只需要看单个原语重复次数
         int repeat = sms / GRID_SIZE + (sms % GRID_SIZE > c);
@@ -334,8 +337,8 @@ void config_helper_gpu_pd::generate_prims(int i) {
 
         // 发送DONE信号
         PrimBase *send_done = new Send_prim(SEND_TYPE::SEND_DONE);
-        Msg m =
-            Msg(true, MSG_TYPE::CONFIG, ++prim_seq, c, send_done->serialize()[0]);
+        Msg m = Msg(true, MSG_TYPE::CONFIG, ++prim_seq, c,
+                    send_done->serialize()[0]);
         m.refill_ = false;
         temp_config.push_back(m);
     }

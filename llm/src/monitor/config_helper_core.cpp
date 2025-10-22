@@ -146,8 +146,7 @@ void config_helper_core::random_core() {
     plot_dataflow(cores, source_ids);
 }
 
-config_helper_core::config_helper_core(string filename,
-                                       int config_chip_id) {
+config_helper_core::config_helper_core(string filename, int config_chip_id) {
     cout << "Loading config file " << filename << endl;
     plot_dataflow(filename);
     ifstream jfile(filename);
@@ -307,15 +306,21 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
             // 如果 默认的 loop = 1 其实 in_loop 和 next_loop 都不会执行
             // 这里的loop 不为 1 就是 decoding 的数量
             for (int i = 0; i < config.loop - 1; i++) {
-                push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
-                             set_batch->serialize()[0]));
+                auto segments = set_batch->serialize();
+                for (int seg = 0; seg < segments.size(); seg++)
+                    push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
+                                 seg == segments.size() - 1, segments[seg]));
+
                 auto &reps = (i == 0) ? in_loop : next_loop;
                 for (auto m : reps)
                     push_msg(m);
             }
             // 默认执行最后一个循环
-            push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
-                         set_batch->serialize()[0]));
+            auto segments = set_batch->serialize();
+            for (int seg = 0; seg < segments.size(); seg++)
+                push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
+                             seg == segments.size() - 1, segments[seg]));
+                             
             for (size_t k = 0; k < last_loop.size(); k++) {
                 Msg m = last_loop[k];
                 // 最后一个原语， 然后循环重填
