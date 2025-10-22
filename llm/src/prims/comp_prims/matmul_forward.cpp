@@ -55,7 +55,7 @@ void Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
             weight_tile_y;
 
         uint64_t performance_comp =
-            performance_cycle * exu->y_dims * exu->x_dims * comp_util;
+            performance_cycle * exu->y_dims * exu->x_dims * HW_COMP_UTIL;
         LOG_VERBOSE(1, context.cid,
                     "Prim name:" << name << " performance_cycle "
                                  << performance_cycle);

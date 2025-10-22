@@ -23,8 +23,6 @@ Define_string_opt("--hardware-config", g_flag_hardware_config,
                   "../llm/test/hardware_config/core_4x4.json", "core config file");
 Define_bool_opt("--use-dramsys", g_flag_dramsys, true,
                 "whether to use DRAMSys");
-Define_float_opt("--comp_util", g_flag_comp_util, 0.7,
-                 "computation and memory overlap");
 Define_int64_opt("--MAC_SIZE", g_flag_mac_size, 128, "MAC size");
 
 int sc_main(int argc, char *argv[]) {
@@ -57,8 +55,6 @@ int sc_main(int argc, char *argv[]) {
     if (g_flag_node) {
         use_node = true;
     }
-
-    comp_util = g_flag_comp_util;
 
     InitGrid(g_flag_workload_config.c_str(), g_flag_hardware_config.c_str());
     InitGlobalMembers();

@@ -118,9 +118,9 @@ public:
     u_int64_t cache_tag(u_int64_t addr) {
         u_int64_t word_index = (u_int64_t)addr >> 2; // 4bytes in a word
         // dataset_words_per_tile per tile dram size in words
-        data_footprint_in_words = dataset_words_per_tile;
+        g_data_footprint_in_words = dataset_words_per_tile;
         // GRID_SIZE * dataset_words_per_tile; // global variable
-        word_index = word_index % data_footprint_in_words;
+        word_index = word_index % g_data_footprint_in_words;
         // 在全局darray中的索引
         return word_index >> dcache_words_in_line_log2;
     }

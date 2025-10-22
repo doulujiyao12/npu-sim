@@ -18,6 +18,16 @@ void SystemCleanup();
 
 void DeleteCoreLogFiles();
 void DeleteMemoryLogFiles();
+void CloseLogFiles();
+const char *GetCoreColor(int core_id);
+
+void InitializeMemorySpec();
+bool modifyNbrOfDevices(const std::string &inputPath,
+                        const std::string &outputPath, int x);
+void generateAddressMapping(int n, const std::string &outputFilename);
+void generateDFAddressMapping(int n, const std::string &outputFilename);
+bool generateGPUCacheJsonFile(int numDevices,
+                              const std::string &filename = "output.json");
 
 // void initialize_cache_structures();
 // void init_dram_areas();

@@ -235,7 +235,7 @@ void sram_first_write_generic(TaskCoreContext &context, int data_size_in_byte,
                 wait(ram_e);
         } else {
             auto require_byte = dma_read_count * cache_count * cache_lines / 8;
-            float need_NS = (float)require_byte / beha_dram_util /
+            float need_NS = (float)require_byte / HW_BEHA_DRAM_UTIL /
                             (15.0 * GetCoreHWConfig(context.cid)->dram_bw / 8);
             int need_cycles = need_NS;
             wait(need_cycles, SC_NS);
@@ -543,7 +543,7 @@ void sram_spill_back_generic(TaskCoreContext &context, int data_size_in_byte,
         wait(*e_nbdram);
     } else {
         auto require_byte = dma_read_count * cache_count * cache_lines / 8;
-        float need_NS = (float)require_byte / beha_dram_util /
+        float need_NS = (float)require_byte / HW_BEHA_DRAM_UTIL /
                         (15.0 * GetCoreHWConfig(context.cid)->dram_bw / 8);
         int need_cycles = need_NS;
         wait(need_cycles, SC_NS);
@@ -1132,7 +1132,7 @@ void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
         temp_sram_addr = temp_sram_addr + SRAM_BANKS;
     }
 
-    if (SPEC_USE_BEHA_SRAM)
+    if (SPEC_USE_BEHA_SRAM) 
         wait(sram_time, SC_NS);
 
     sc_bv<SRAM_BITWIDTH> data_tmp2;
@@ -1217,9 +1217,9 @@ void sram_write_back_temp(TaskCoreContext &context, int data_size_in_byte,
 //     u_int64_t word_index = (u_int64_t)addr >> 2; // 4bytes in a word
 //     // 全局的darray加起来，所有的tile
 //     // dataset_words_per_tile dram 大小在一个tile中
-//     data_footprint_in_words =
+//     g_data_footprint_in_words =
 //         GRID_SIZE * dataset_words_per_tile; // global variable
-//     word_index = word_index % data_footprint_in_words;
+//     word_index = word_index % g_data_footprint_in_words;
 //     // 在全局darray中的索引
 //     return word_index >> dcache_words_in_line_log2;
 // }
@@ -1399,11 +1399,11 @@ void gpu_read_generic(TaskCoreContext &context, uint64_t global_addr,
                       int data_size_in_byte, int &mem_time, bool cache_read) {
 
     uint64_t inp_global_addr =
-        (global_addr / dram_aligned) *
-        dram_aligned; // 向下取整到dram 取址的整数倍，这里是32
+        (global_addr / GPU_DRAM_ALIGNED) *
+        GPU_DRAM_ALIGNED; // 向下取整到dram 取址的整数倍，这里是32
     uint64_t end_addr = global_addr + data_size_in_byte;
-    uint64_t end_global_addr = ((end_addr + dram_aligned - 1) / dram_aligned) *
-                               dram_aligned; // 尾地址向上取整
+    uint64_t end_global_addr = ((end_addr + GPU_DRAM_ALIGNED - 1) / GPU_DRAM_ALIGNED) *
+                               GPU_DRAM_ALIGNED; // 尾地址向上取整
 
     uint64_t aligned_data_size_in_byte = end_global_addr - inp_global_addr;
 #if GPU_CACHE_DEBUG == 1
@@ -1451,7 +1451,7 @@ void gpu_read_generic(TaskCoreContext &context, uint64_t global_addr,
 
         auto require_byte = cache_count * cache_lines / 8;
         float need_NS =
-            (float)require_byte / beha_dram_util / (gpu_bw)*GRID_SIZE;
+            (float)require_byte / HW_BEHA_DRAM_UTIL / (GPU_DRAM_BANDWIDTH)*GRID_SIZE;
         int need_cycles = need_NS;
         if (cache_read == true) {
             wait(need_cycles / 5, SC_NS);
@@ -1493,11 +1493,11 @@ void gpu_write_generic(TaskCoreContext &context, uint64_t global_addr,
                        int data_size_in_byte, int &mem_time, bool cache_write) {
 
     uint64_t inp_global_addr =
-        (global_addr / dram_aligned) *
-        dram_aligned; // 向下取整到dram 取址的整数倍，这里是32
+        (global_addr / GPU_DRAM_ALIGNED) *
+        GPU_DRAM_ALIGNED; // 向下取整到dram 取址的整数倍，这里是32
     uint64_t end_addr = global_addr + data_size_in_byte;
-    uint64_t end_global_addr = ((end_addr + dram_aligned - 1) / dram_aligned) *
-                               dram_aligned; // 尾地址向上取整
+    uint64_t end_global_addr = ((end_addr + GPU_DRAM_ALIGNED - 1) / GPU_DRAM_ALIGNED) *
+                               GPU_DRAM_ALIGNED; // 尾地址向上取整
 
     uint64_t aligned_data_size_in_byte = end_global_addr - inp_global_addr;
 
@@ -1534,7 +1534,7 @@ void gpu_write_generic(TaskCoreContext &context, uint64_t global_addr,
 
         auto require_byte = cache_count * cache_lines / 8;
         float need_NS =
-            (float)require_byte / beha_dram_util / (gpu_bw)*GRID_SIZE;
+            (float)require_byte / HW_BEHA_DRAM_UTIL / (GPU_DRAM_BANDWIDTH)*GRID_SIZE;
         int need_cycles = need_NS;
         if (cache_write == true) {
             wait(0, SC_NS);

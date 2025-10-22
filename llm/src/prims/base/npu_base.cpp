@@ -655,12 +655,12 @@ void NpuBase::writeOutputData(TaskCoreContext &context, uint64_t exu_flops,
     SfuConfig *sfu = hardware_config->sfu;
 
     cout << "exu_flops: " << exu_flops << " sfu_flops: " << sfu_flops << endl;
-    cout << exu->x_dims << " " << exu->y_dims << " " << comp_util << endl;
+    cout << exu->x_dims << " " << exu->y_dims << " " << HW_COMP_UTIL << endl;
     cout << sfu->x_dims << endl;
 
     if (exu->type == MAC_Array)
         cycle +=
-            exu_flops / (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+            exu_flops / (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
     else
         assert(false && "Unsupported tile type");
 

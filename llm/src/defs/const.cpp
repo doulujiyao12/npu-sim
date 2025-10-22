@@ -36,44 +36,10 @@ u_int32_t hbm_read_latency =
     ceil_macro(noc_to_pu_ratio * average_die_to_edge_distance *
                on_die_hop_latency);
 
-// ---------------------------------------------------------
-
-const int T_CLOCK_CYClE = 2; // NS
-
-// global
-const int MEM_PORT_WIDTH = 256; // bits
-
-// architecture
-const int DRAM_DEPTH_PER_CORE = 786432;
-const int GLOBAL_BUFFER_DEPTH_PER_CORE = 8192;
-const int PRIM_BUFFER_DEPTH_PER_CORE = 1024;
-
-// memory
 int RAM_READ_LATENCY = sram_read_latency;  // NS
 int RAM_WRITE_LATENCY = sram_read_latency; // NS
-const double RAM_STATIC_POWER = 0.001;
 const double RAM_READ_ENERGY = 0.1;
 const double RAM_WRITE_ENERGY = 0.2;
-
-const int DRAM_READ_LATENCY = 50;       // NS
-const int DRAM_WRITE_LATENCY = 50;      // NS
-const int DRAM_BURST_WRITE_LATENCY = 3; // NS
-const int DRAM_BURST_READ_LATENCY = 3;  // NS
-const double DRAM_REFRESH_POWER = 0.1;
-const int DRAM_READ_ENERGY = 10;
-const int DRAM_WRITE_ENERGY = 20;
-const int DRAM_TRANSFER_ENERGY = 50;
-const int DRAM_LINE = 10;
-const double DRAM_ENERGY_FACTOR = 0.9;
-
-// control unit
-const int ROM_START_PC = 0;
-
-// NoC
-const int DATA_WIDTH = 8; // Byte
-
-// PE unit
-const int I_BYTE = 32;
 
 // Visual
 const int Men_usage_thre = 2;

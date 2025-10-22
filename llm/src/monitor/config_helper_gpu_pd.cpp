@@ -132,7 +132,7 @@ void config_helper_gpu_pd::iter_done(vector<Msg> done_msg) {
                             outfile << "[CATCH TEST] " << sc_time_stamp()
                                     << "L1CACHESIZE " << L1CACHESIZE
                                     << " L2CACHESIZE " << L2CACHESIZE
-                                    << " BANDWIDTH " << gpu_bw << endl;
+                                    << " BANDWIDTH " << GPU_DRAM_BANDWIDTH << endl;
                             outfile.close();
                         } else {
                             cout << "Error: Unable to open file for writing "

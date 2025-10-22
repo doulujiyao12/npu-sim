@@ -112,7 +112,7 @@ void Monitor::init() {
 
     cacheSystem =
         new L1L2CacheSystem("l1l2-cache_system", GRID_SIZE, l1caches,
-                            processors, gpu_dram_config, "../DRAMSys/configs");
+                            processors, GPU_DRAM_CONFIG_FILE, "../DRAMSys/configs");
 
     if (SYSTEM_MODE == SIM_GPU) {
         gpu_pos_locator = new GpuPosLocator();

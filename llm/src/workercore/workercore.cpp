@@ -60,8 +60,8 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
         dcache->dramSysWrapper->dramsys->getMemSpec().memorySizeBytes;
     executor->defaultDataLength =
         dcache->dramSysWrapper->dramsys->getMemSpec().defaultBytesPerBurst;
-    if (use_gpu == false) {
-        dram_aligned = executor->defaultDataLength;
+    if (SYSTEM_MODE != SIM_GPU && SYSTEM_MODE != SIM_GPU_PD) {
+        GPU_DRAM_ALIGNED = executor->defaultDataLength;
     }
     assert(dataset_words_per_tile <
            dcache->dramSysWrapper->dramsys->getMemSpec().memorySizeBytes);
@@ -212,51 +212,51 @@ void WorkerCoreExecutor::worker_core_execute() {
 
         if (typeid(*p) == typeid(Send_prim)) {
             // 触发 send_logic
-#if SR_PARA == 0
-            ev_send.notify(CYCLE, SC_NS);
-            event_engine->add_event(
-                "Core " + ToHexString(cid), "Send_prim", "B",
-                Trace_event_util(
-                    "Send_prim" +
-                    GetEnumSendType(dynamic_cast<Send_prim *>(p)->type)));
-            wait(prim_block.negedge_event());
-            event_engine->add_event(
-                "Core " + ToHexString(cid), "Send_prim", "E",
-                Trace_event_util(
-                    "Send_prim" +
-                    GetEnumSendType(dynamic_cast<Send_prim *>(p)->type)));
-#else
-            while (!send_done) {
-                wait(CYCLE, SC_NS);
-            }
-
-            // send 模块处理的四条指令
-            while ((typeid(*p) == typeid(Recv_prim) &&
-                    ((Recv_prim *)p)->type == RECV_ACK) ||
-                   (typeid(*p) == typeid(Send_prim) &&
-                    ((Send_prim *)p)->type == SEND_DATA) ||
-                   (typeid(*p) == typeid(Send_prim) &&
-                    ((Send_prim *)p)->type == SEND_REQ) ||
-                   (typeid(*p) == typeid(Send_prim) &&
-                    ((Send_prim *)p)->type == SEND_DONE)) {
-                prim_queue.pop_front();
-                send_para_queue.push(p);
-                if (prim_refill) {
-                    prim_queue.emplace_back(p);
+            if (!SPEC_SEND_RECV_PARALLEL) {
+                ev_send.notify(CYCLE, SC_NS);
+                event_engine->add_event(
+                    "Core " + ToHexString(cid), "Send_prim", "B",
+                    Trace_event_util(
+                        "Send_prim" +
+                        GetEnumSendType(dynamic_cast<Send_prim *>(p)->type)));
+                wait(prim_block.negedge_event());
+                event_engine->add_event(
+                    "Core " + ToHexString(cid), "Send_prim", "E",
+                    Trace_event_util(
+                        "Send_prim" +
+                        GetEnumSendType(dynamic_cast<Send_prim *>(p)->type)));
+            } else {
+                while (!send_done) {
+                    wait(CYCLE, SC_NS);
                 }
-                if (!prim_queue.size())
-                    break;
-                // 这里会pop出来RECV_ACK
-                p = prim_queue.front();
-                cout << "Core " << cid << " push!!!!\n";
+
+                // send 模块处理的四条指令
+                while ((typeid(*p) == typeid(Recv_prim) &&
+                        ((Recv_prim *)p)->type == RECV_ACK) ||
+                       (typeid(*p) == typeid(Send_prim) &&
+                        ((Send_prim *)p)->type == SEND_DATA) ||
+                       (typeid(*p) == typeid(Send_prim) &&
+                        ((Send_prim *)p)->type == SEND_REQ) ||
+                       (typeid(*p) == typeid(Send_prim) &&
+                        ((Send_prim *)p)->type == SEND_DONE)) {
+                    prim_queue.pop_front();
+                    send_para_queue.push(p);
+                    if (prim_refill) {
+                        prim_queue.emplace_back(p);
+                    }
+                    if (!prim_queue.size())
+                        break;
+                    // 这里会pop出来RECV_ACK
+                    p = prim_queue.front();
+                    cout << "Core " << cid << " push!!!!\n";
+                }
+
+                send_done = false;
+
+                // 触发 send_logic
+                ev_para_send.notify(CYCLE, SC_NS);
+                continue;
             }
-
-            send_done = false;
-
-            // 触发 send_logic
-            ev_para_send.notify(CYCLE, SC_NS);
-            continue;
-#endif
         } else if (typeid(*p) == typeid(Recv_prim)) {
             ev_recv.notify(CYCLE, SC_NS);
             event_engine->add_event(
@@ -469,11 +469,10 @@ bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status,
 // data_sent_o is true 是否拉低不重要，只要 data_sent_o 是高就能发送
 void WorkerCoreExecutor::send_helper() {
     while (true) {
-#if ROUTER_PIPE == 1
-        if (send_helper_write >= 1) {
-#else
-        if (send_helper_write >= 2) {
-#endif
+        bool flag = SPEC_ROUTER_PIPE ? (send_helper_write >= 1)
+                                     : (send_helper_write >= 2);
+
+        if (flag) {
             auto ser = SerializeMsg(send_buffer);
             channel_o.write(ser);
             data_sent_o.write(true);

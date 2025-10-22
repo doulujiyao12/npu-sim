@@ -1,11 +1,25 @@
 {
-    "use_beha_noc": true,
-    "use_beha_sram": true,
-    "use_beha_dram": true,
-    "use_perf_gemm": true,
-    "kvcache_spill": false,
-    "load_static_as_tile": true,
     "ttf_file": "../font/NotoSansDisplay-Bold.ttf",
-    "use_dramsys": true,
-    "fast_warmup": true
+    "log_level": 1,
+    "operand": {
+        "use_perf_gemm": true,
+        "load_static_as_tile": true
+    },
+    "memory": {
+        "use_beha_sram": true,
+        "use_beha_dram": true,
+        "kvcache_spill": false,
+        "use_dramsys": true
+    },
+    "noc": {
+        "use_beha_noc": true,
+        "router_pipe": false,
+        "fast_warmup": true,
+        "send_recv_parallel": false
+    },
+    "gpu": {
+        "use_inner_mm": true,
+        "cache_log": false,
+        "dram_config_file": "../DRAMSys/configs/hbm3-example.json"
+    }
 }

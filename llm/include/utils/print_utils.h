@@ -13,8 +13,9 @@ void PrintRow(const std::string &label, int value);
 std::string GetEnumSendType(SEND_TYPE type);
 std::string GetEnumRecvType(RECV_TYPE type);
 
-template<typename... Args>
-std::string make_string(Args&&... args) {
+void LogVerboseImpl(int level, int core_id, const std::string &message);
+
+template <typename... Args> std::string make_string(Args &&...args) {
     std::ostringstream oss;
     // 使用 fold expression 来展开参数
     (oss << ... << args);
@@ -32,4 +33,13 @@ std::string make_string(Args&&... args) {
     do {                                                                       \
         std::cout << "[ERROR]: " << make_string(__VA_ARGS__) << std::endl;     \
         sc_stop();                                                             \
+    } while (0)
+
+#define LOG_VERBOSE(level, core_id, message)                                   \
+    do {                                                                       \
+        if (LOG_LEVEL >= (level)) {                                            \
+            std::ostringstream __oss;                                          \
+            __oss << message;                                                  \
+            LogVerboseImpl(level, core_id, __oss.str());                     \
+        }                                                                      \
     } while (0)

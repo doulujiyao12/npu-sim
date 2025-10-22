@@ -20,7 +20,6 @@ void Residual_f_gpu::initialize() {
 
 int Residual_f_gpu::taskCoreDefault(TaskCoreContext &context) {
     auto &p = param_value;
-    p["N"] *= gpu_B;
 
     int mem_time = 0;
     int input_mem_offset[MAX_SPLIT_NUM];
@@ -75,7 +74,7 @@ int Residual_f_gpu::taskCoreDefault(TaskCoreContext &context) {
 
     if (exu->type == MAC_Array)
         cycle += p["N"] / (p["slice_x"] * p["slice_y"]) /
-                 (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+                 (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
     else
         assert(false && "Unsupported tile type");
 
@@ -100,8 +99,6 @@ int Residual_f_gpu::taskCoreDefault(TaskCoreContext &context) {
 #endif
 
     cout << "[Residual_f_gpu] after write: " << overlap_time << endl;
-
-    p["N"] /= gpu_B;
 
     return overlap_time;
 }

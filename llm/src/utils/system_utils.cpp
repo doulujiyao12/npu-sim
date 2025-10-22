@@ -76,6 +76,7 @@ void InitGrid(string workload_config_path, string hardware_config_path,
         ARGUS_EXIT("Failed to open file ", simulation_config_path, ".\n");
 
     jfile3 >> j3;
+    ParseSimulationConfig(j3);
 }
 
 void SystemCleanup() {
@@ -153,23 +154,305 @@ void DeleteMemoryLogFiles() {
     delete_mem("sram_util", "sram_manager_cid_\\d+\\.log");
 }
 
+
+void CloseLogFiles() {
+    for (auto& pair : g_log_streams) {
+        if (pair.second && pair.second->is_open()) {
+            pair.second->close();
+            delete pair.second;
+        }
+    }
+    g_log_streams.clear();
+}
+
+
+const char* GetCoreColor(int core_id) {
+    static const char* colors[] = {
+        "\033[31m", // 红色
+        "\033[32m", // 绿色
+        "\033[33m", // 黄色
+        "\033[34m", // 蓝色
+        "\033[35m", // 品红
+        "\033[36m", // 青色
+        "\033[91m", // 亮红
+        "\033[92m", // 亮绿
+    };
+    return colors[core_id % (sizeof(colors)/sizeof(colors[0]))];
+}
+
+
+void InitializeMemorySpec() {
+    modifyNbrOfDevices(
+        "../DRAMSys/configs/memspec/JEDEC_4Gb_DDR4-1866_8bit_A.json",
+        "../DRAMSys/configs/memspec/JEDEC_4Gb_DDR4-1866_8bit_DF.json",
+        HW_DRAM_DEFAULT_BITWIDTH);
+    int bytecount_df = static_cast<int>(log2(HW_DRAM_DEFAULT_BITWIDTH));
+    generateDFAddressMapping(
+        bytecount_df,
+        "../DRAMSys/configs/addressmapping/am_ddr4_8x4Gbx8_df.json");
+
+    if (GPU_DRAM_BANDWIDTH == 512 || GPU_DRAM_BANDWIDTH == 1024 || GPU_DRAM_BANDWIDTH == 256 ||
+        GPU_DRAM_BANDWIDTH == 128 || GPU_DRAM_BANDWIDTH == 64) {
+        int numDevices = 32 * GPU_DRAM_BANDWIDTH / 512; // 每个设备 32 个通道
+        int bytecount = static_cast<int>(log2(GPU_DRAM_BANDWIDTH)) - 1;
+
+        cout << "GPU BW: " << DRAM_BURST_BYTE << " GB/s" << endl;
+        generateGPUCacheJsonFile(numDevices,
+                                 "../DRAMSys/configs/memspec/HBM2_GPU.json");
+        generateAddressMapping(
+            bytecount, "../DRAMSys/configs/addressmapping/am_hbm2_gpu.json");
+        GPU_DRAM_CONFIG_FILE = "../DRAMSys/configs/gpu_hbm2.json";
+    } else if (!SPEC_USE_BEHA_DRAM) {
+        assert(false && "gpu bandwidth must be 512 1024 256");
+    }
+}
+
+
+/**
+ * 修改JSON文件中的nbrOfDevices值
+ * @param inputPath 原JSON文件路径
+ * @param outputPath 新JSON文件路径
+ * @param x 要设置的nbrOfDevices值
+ * @return 成功返回true，失败返回false
+ */
+bool modifyNbrOfDevices(const std::string &inputPath,
+                        const std::string &outputPath, int x) {
+    // 读取原始 JSON 文件
+    std::ifstream infile(inputPath);
+    if (!infile.is_open()) {
+        std::cerr << "无法打开输入文件: " << inputPath << std::endl;
+        return false;
+    }
+
+    json j;
+    try {
+        infile >> j;
+    } catch (json::parse_error &e) {
+        std::cerr << "JSON 解析错误: " << e.what() << std::endl;
+        return false;
+    }
+    infile.close();
+
+    // 修改 nbrOfDevices 的值
+    j["memspec"]["memarchitecturespec"]["nbrOfDevices"] = x;
+
+    // 写入新文件
+    std::ofstream outfile(outputPath);
+    if (!outfile.is_open()) {
+        std::cerr << "无法创建输出文件: " << outputPath << std::endl;
+        return false;
+    }
+
+    try {
+        outfile << j.dump(4); // 格式化输出，缩进4个空格
+    } catch (const std::exception &e) {
+        std::cerr << "写入文件时发生错误: " << e.what() << std::endl;
+        return false;
+    }
+
+    outfile.close();
+    return true;
+}
+
+
+void generateAddressMapping(int n, const std::string &outputFilename) {
+    // ROW_BIT 占 15 位，从 n+12 开始，最高位是 n+26，必须 <= 34
+    json addressmapping;
+
+    int byte_start = 0;
+    int column_start = n;
+    int bank_start = n + 22;
+    int bankgroup_start = n + 24;
+    int pseudo_start = n + 26;
+    int row_start = n + 7;
+
+    // BYTE_BIT
+    std::vector<int> byte_bits;
+    for (int i = 0; i < n; ++i)
+        byte_bits.push_back(i);
+    addressmapping["BYTE_BIT"] = byte_bits;
+
+    // COLUMN_BIT (7 bits)
+    std::vector<int> column_bits;
+    for (int i = 0; i < 7; ++i)
+        column_bits.push_back(column_start + i);
+    addressmapping["COLUMN_BIT"] = column_bits;
+
+    // BANK_BIT (2 bits)
+    std::vector<int> bank_bits = {bank_start, bank_start + 1};
+    addressmapping["BANK_BIT"] = bank_bits;
+
+    // BANKGROUP_BIT (2 bits)
+    std::vector<int> bankgroup_bits = {bankgroup_start, bankgroup_start + 1};
+    addressmapping["BANKGROUP_BIT"] = bankgroup_bits;
+
+    // PSEUDOCHANNEL_BIT (1 bit)
+    addressmapping["PSEUDOCHANNEL_BIT"] = std::vector<int>{pseudo_start};
+
+    // ROW_BIT (15 bits)
+    std::vector<int> row_bits;
+    for (int i = 0; i < 15; ++i) {
+        int bit = row_start + i;
+        row_bits.push_back(bit);
+    }
+    addressmapping["ROW_BIT"] = row_bits;
+
+    // 写入文件
+    json root;
+    root["addressmapping"] = addressmapping;
+
+    std::ofstream outFile(outputFilename);
+    if (!outFile.is_open()) {
+        std::cerr << "Error: Cannot write to file " << outputFilename
+                  << std::endl;
+        return;
+    }
+    outFile << std::setw(4) << root << std::endl;
+    outFile.close();
+
+    std::cout << "Address mapping with n=" << n << " saved to "
+              << outputFilename << std::endl;
+}
+
+
+void generateDFAddressMapping(int n, const std::string &outputFilename) {
+    // ROW_BIT 占 15 位，从 n+12 开始，最高位是 n+26，必须 <= 34
+    json addressmapping;
+
+    int byte_start = 0;
+    int column_start = n;
+    int bank_start = n + 27;
+    int bankgroup_start = n + 25;
+    int row_start = n + 10;
+
+    // BYTE_BIT
+    std::vector<int> byte_bits;
+    for (int i = 0; i < n; ++i)
+        byte_bits.push_back(i);
+    addressmapping["BYTE_BIT"] = byte_bits;
+
+    // COLUMN_BIT (10 bits)
+    std::vector<int> column_bits;
+    for (int i = 0; i < 10; ++i)
+        column_bits.push_back(column_start + i);
+    addressmapping["COLUMN_BIT"] = column_bits;
+
+    // BANK_BIT (2 bits)
+    std::vector<int> bank_bits = {bank_start, bank_start + 1};
+    addressmapping["BANK_BIT"] = bank_bits;
+
+    // BANKGROUP_BIT (2 bits)
+    std::vector<int> bankgroup_bits = {bankgroup_start, bankgroup_start + 1};
+    addressmapping["BANKGROUP_BIT"] = bankgroup_bits;
+
+    // ROW_BIT (15 bits)
+    std::vector<int> row_bits;
+    for (int i = 0; i < 15; ++i) {
+        int bit = row_start + i;
+        row_bits.push_back(bit);
+    }
+    addressmapping["ROW_BIT"] = row_bits;
+
+    // 写入文件
+    json root;
+    root["addressmapping"] = addressmapping;
+
+    std::ofstream outFile(outputFilename);
+    if (!outFile.is_open()) {
+        std::cerr << "Error: Cannot write to file " << outputFilename
+                  << std::endl;
+        return;
+    }
+    outFile << std::setw(4) << root << std::endl;
+    outFile.close();
+
+    std::cout << "Address mapping with n=" << n << " saved to "
+              << outputFilename << std::endl;
+}
+
+
+/**
+ * @brief 根据给定的 nbrOfDevices 值生成一个 JSON 文件。
+ *
+ * @param A 要写入 nbrOfDevices 字段的整数值。
+ * @param filename 要生成的 JSON 文件的名称（可选，默认为 "output.json"）。
+ * @return bool 如果文件成功生成则返回 true，否则返回 false。
+ */
+bool generateGPUCacheJsonFile(int numDevices, const std::string &filename) {
+    try {
+        // 1. 创建 JSON 对象结构并填充初始数据
+        json j = {
+            {"memspec",
+             {{"memarchitecturespec",
+               {{"burstLength", 4},
+                {"dataRate", 2},
+                {"nbrOfBankGroups", 4},
+                {"nbrOfBanks", 16},
+                {"nbrOfColumns", 128},
+                {"nbrOfPseudoChannels", 2},
+                {"nbrOfRows", 32768},
+                {"width", 64},
+                // 注意：这里初始化为 32，但会被参数 A 覆盖
+                {"nbrOfDevices", 32},
+                {"nbrOfChannels", 1}
+
+               }},
+              {"memoryId", "https://www.computerbase.de/2019-05/"
+                           "amd-memory-tweak-vram-oc/#bilder"},
+              {"memoryType", "HBM2"},
+              {"memtimingspec", {{"CCDL", 3},  {"CCDS", 2},    {"CKE", 8},
+                                 {"DQSCK", 1}, {"FAW", 16},    {"PL", 0},
+                                 {"RAS", 28},  {"RC", 42},     {"RCDRD", 12},
+                                 {"RCDWR", 6}, {"REFI", 3900}, {"REFISB", 244},
+                                 {"RFC", 220}, {"RFCSB", 96},  {"RL", 17},
+                                 {"RP", 14},   {"RRDL", 6},    {"RRDS", 4},
+                                 {"RREFD", 8}, {"RTP", 5},     {"RTW", 18},
+                                 {"WL", 7},    {"WR", 14},     {"WTRL", 9},
+                                 {"WTRS", 4},  {"XP", 8},      {"XS", 216},
+                                 {"tCK", 1000}}}}}};
+
+        // 2. 使用传入的参数 A 替换 nbrOfDevices 的值
+        j["memspec"]["memarchitecturespec"]["nbrOfDevices"] = numDevices;
+
+        // 3. 打开文件流用于写入
+        std::ofstream outFile(filename);
+        if (!outFile.is_open()) {
+            std::cerr << "错误：无法打开文件 " << filename << " 进行写入。"
+                      << std::endl;
+            return false;
+        }
+
+        // 4. 将 JSON 对象序列化为格式化的字符串并写入文件
+        // setw(4) 用于美化输出，使其具有缩进
+        outFile << j.dump(4);
+        outFile.close();
+
+        std::cout << "JSON 文件已成功生成: " << filename << std::endl;
+        return true;
+
+    } catch (const std::exception &e) {
+        std::cerr << "生成 JSON 文件时发生异常: " << e.what() << std::endl;
+        return false;
+    }
+}
+
 // void initialize_cache_structures() {
 // #if DCACHE == 1
-//     // data_footprint_in_words = GRID_SIZE * dataset_words_per_tile;
+//     // g_data_footprint_in_words = GRID_SIZE * dataset_words_per_tile;
 //     //global
 //     // variable 全局的darray的大小 所有的tile
 
-//     data_footprint_in_words =
+//     g_data_footprint_in_words =
 //         GRID_SIZE * dataset_words_per_tile; // global variable
 //     printf("GRID_SIZE%d, ss%ld\n", GRID_SIZE, dataset_words_per_tile);
-//     assert(data_footprint_in_words > 0);
+//     assert(g_data_footprint_in_words > 0);
 
 //     // u_int64_t total_lines =
-//     //     data_footprint_in_words >> dcache_words_in_line_log2;
+//     //     g_data_footprint_in_words >> dcache_words_in_line_log2;
 //     u_int64_t total_lines = dataset_words_per_tile >>
 //     dcache_words_in_line_log2; printf("dataset_words_per_tile %ld \n",
-//     dataset_words_per_tile); printf("data_footprint_in_words %ld \n",
-//     data_footprint_in_words); printf("total_lines %ld \n", total_lines);
+//     dataset_words_per_tile); printf("g_data_footprint_in_words %ld \n",
+//     g_data_footprint_in_words); printf("total_lines %ld \n", total_lines);
 //     // dcache_freq = (u_int16_t *)calloc(total_lines, sizeof(u_int16_t));
 //     // dcache_dirty = (bool *)calloc(total_lines, sizeof(bool));
 //     dcache_dirty =

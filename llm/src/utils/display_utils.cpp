@@ -4,6 +4,7 @@
 
 #include "common/display.h"
 #include "defs/global.h"
+#include "defs/spec.h"
 #include "macros/macros.h"
 #include "utils/display_utils.h"
 

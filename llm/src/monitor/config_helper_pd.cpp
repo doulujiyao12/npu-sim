@@ -641,7 +641,7 @@ void config_helper_pd::printResults() {
     ofstream outfile("simulation_result_df_pd.txt", ios::app);
     if (outfile.is_open()) {
         outfile << "[CATCH TEST] " << sc_time_stamp() << "HW_SRAM_SIZE "
-                << HW_SRAM_SIZE << " BANDWIDTH " << g_default_dram_bw << endl;
+                << HW_SRAM_SIZE << " BANDWIDTH " << HW_DRAM_DEFAULT_BITWIDTH << endl;
         outfile.close();
     } else
         ARGUS_EXIT("Failed to open file simulation_result_df_pd.txt.\n");

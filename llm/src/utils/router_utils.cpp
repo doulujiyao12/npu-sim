@@ -1,5 +1,6 @@
 #include "utils/router_utils.h"
 #include "defs/global.h"
+#include "defs/spec.h"
 #include "macros/macros.h"
 #include <queue>
 #include <fstream>

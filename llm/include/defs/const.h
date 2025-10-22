@@ -39,45 +39,11 @@ extern u_int32_t on_die_hop_latency; // in cycles of noc clk
 
 extern u_int32_t hbm_read_latency;
 
-// ---------------------------------------------------------
-
-// 以下是mem_config相关
-extern const int T_CLOCK_CYClE; // NS
-
-// global
-extern const int MEM_PORT_WIDTH; // bits
-
-// architecture
-extern const int DRAM_DEPTH_PER_CORE;
-extern const int GLOBAL_BUFFER_DEPTH_PER_CORE;
-extern const int PRIM_BUFFER_DEPTH_PER_CORE;
-
 // memory
 extern int RAM_READ_LATENCY;  // NS
 extern int RAM_WRITE_LATENCY; // NS
-extern const double RAM_STATIC_POWER;
 extern const double RAM_READ_ENERGY;
 extern const double RAM_WRITE_ENERGY;
-
-extern const int DRAM_READ_LATENCY;        // NS
-extern const int DRAM_WRITE_LATENCY;       // NS
-extern const int DRAM_BURST_WRITE_LATENCY; // NS
-extern const int DRAM_BURST_READ_LATENCY;  // NS
-extern const double DRAM_REFRESH_POWER;
-extern const int DRAM_READ_ENERGY;
-extern const int DRAM_WRITE_ENERGY;
-extern const int DRAM_TRANSFER_ENERGY;
-extern const int DRAM_LINE;
-extern const double DRAM_ENERGY_FACTOR;
-
-// control unit
-extern const int ROM_START_PC;
-
-// NoC
-extern const int DATA_WIDTH; // Byte
-
-// PE unit
-extern const int I_BYTE;
 
 // Visual
 extern const int Men_usage_thre;

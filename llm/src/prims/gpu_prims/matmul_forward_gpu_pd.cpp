@@ -21,7 +21,6 @@ void matmul_forward_gpu_pd::initialize() {
 
 int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
     auto &p = param_value;
-    p["B"] *= gpu_B;
 
     int mem_time = 0;
     auto input_mem_offset = 0;
@@ -63,7 +62,7 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
     AddrPosKey out_key;
 
 #if USE_L1L2_CACHE == 1
-    if (gpu_inner == true) {
+    if (GPU_USE_INNER_MM) {
         // 通过fetch_index计算位置
         int row_index = fetch_index / p["slice_x"];
         int col_index = fetch_index % p["slice_x"];
@@ -153,7 +152,7 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
         if (exu->type == MAC_Array)
             cycle += (p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
                       (p["slice_x"] * p["slice_y"])) /
-                     (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+                     (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
         else
             assert(false && "Unsupported tile type");
 
@@ -275,7 +274,7 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
         if (exu->type == MAC_Array)
             cycle += (p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
                       (p["slice_x"] * p["slice_y"])) /
-                     (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+                     (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
         else
             assert(false && "Unsupported tile type");
 
@@ -310,8 +309,6 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
     cout << prim_context->cid
          << " [matmul_forward_gpu_pd] after write: " << mem_time << " at addr "
          << out_key.pos << endl;
-
-    p["B"] /= gpu_B;
 
     return overlap_time;
 }

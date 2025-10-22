@@ -24,7 +24,6 @@ void attention_forward_gpu_pd::initialize() {
 
 int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
     auto &p = param_value;
-    p["B"] *= gpu_B;
 
     int mem_time = 0;
     auto input_mem_offset = 0;
@@ -146,7 +145,7 @@ int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
     if (exu->type == MAC_Array)
         cycle += p["B"] * p["NH"] * p["T"] * (p["T"] - 1) / 2 *
                  (4 * p["C"] / p["NH"] + 5) / (p["slice_x"] * p["slice_y"]) /
-                 (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+                 (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
     else
         assert(false && "Unsupported tile type");
 
@@ -172,8 +171,6 @@ int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
 
     cout << cid << " [attention_forward_gpu_pd] after write: " << overlap_time
          << endl;
-
-    p["B"] /= gpu_B;
 
     return overlap_time;
 }

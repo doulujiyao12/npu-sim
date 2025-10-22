@@ -42,10 +42,6 @@
 #define USE_L1L2_CACHE 1
 #endif
 
-#ifndef SR_PARA
-#define SR_PARA 0
-#endif
-
 #ifndef GPU_CACHE_DEBUG
 #define GPU_CACHE_DEBUG 0
 #endif
@@ -93,12 +89,6 @@
 #ifndef USE_GLOBAL_DRAM
 #define USE_GLOBAL_DRAM 0
 #endif
-#ifndef ROUTER_PIPE
-#define ROUTER_PIPE 0
-#endif
-#ifndef ROUTER_LOOP
-#define ROUTER_LOOP 0
-#endif
 
 #ifndef MSHRHIT
 #define MSHRHIT 2
@@ -119,7 +109,6 @@
 #define M_D_DATA 128
 
 // 路由消息负载相关
-#define MAX_PACKET_ID 5
 #define MAX_BUFFER_PACKET_SIZE 3
 
 // 绘图相关
@@ -140,11 +129,6 @@
 #define SIMU_READ_PORT 2
 #define SIMU_WRITE_PORT 1
 #define ADDRESS_MAX (SRAM_BANKS * BANK_DEPTH)
-#define VERBOSE_PRINT 1
-
-
-// mem_access_unit相关
-#define wait_time 10
 
 // sram pos相关
 #define UNSET_LABEL "unset_label"
@@ -152,21 +136,16 @@
 #define ETERNAL_PREFIX "eternal_"
 #define KVCACHE_PREFIX "kvcache_"
 #define INPUT_LABEL "input_label"
+
 // 最大输入input数量
 #define MAX_SPLIT_NUM 6
 
-// PD中的分块策略
-#define MAX_PREFILL_WORKLOAD 384
-// P 占据资源 ： D 占据资源
+#define RESET "\x1B[0m"    // 重置颜色
+#define RED "\x1B[1;31m"   // 红色
+#define GREEN "\x1B[1;32m" // 绿色
 
 // 函数宏
 #define ceil_macro(x) ((x) - (int)(x) > 0.1 ? (int)(x) + 1 : (int)(x))
-
-// GPT2模型大小
-#define NUM_PARAMETER_TENSORS 16
-
-// obsolete
-#define KVCACHE_MAX_SIZE 10240
 
 // Grid >= Board >= PACK_H > Die
 // Grid 表示在x维度上所有的tile数量，最大

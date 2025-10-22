@@ -21,7 +21,6 @@ void Layernorm_f_gpu::initialize() {
 
 int Layernorm_f_gpu::taskCoreDefault(TaskCoreContext &context) {
     auto &p = param_value;
-    p["B"] *= gpu_B;
 
     int mem_time = 0;
     auto input_mem_offset = 0;
@@ -98,7 +97,7 @@ cout << "3\n";
     SfuConfig *sfu = hardware_config->sfu;
 
     if (exu->type == MAC_Array)
-        cycle += 0 / (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+        cycle += 0 / (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
     else
         assert(false && "Unsupported tile type");
 
@@ -129,8 +128,6 @@ cout << "3\n";
 #endif
 
     cout << "[Layernorm_f_gpu] after write: " << overlap_time << endl;
-
-    p["B"] /= gpu_B;
 
     return overlap_time;
 }

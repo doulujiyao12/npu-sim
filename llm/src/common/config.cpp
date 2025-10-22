@@ -179,5 +179,5 @@ void from_json(const json &j, CoreHWConfig &c) {
     SetParamFromJson<int>(j, "sram_bitwidth", &(c.sram_bitwidth), 128);
     SetParamFromJson<string>(j, "dram_config", &(c.dram_config),
                              DEFAULT_DRAM_CONFIG_PATH);
-    SetParamFromJson<int>(j, "dram_bw", &(c.dram_bw), g_default_dram_bw);
+    SetParamFromJson<int>(j, "dram_bw", &(c.dram_bw), HW_DRAM_DEFAULT_BITWIDTH);
 }
