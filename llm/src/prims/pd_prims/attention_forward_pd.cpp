@@ -28,7 +28,6 @@ void attention_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         sprintf(format_label_k, "%s%sk#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
                 batch);
         string label_decode_k = format_label_k;
-        // cout << "decode_k: " << label_decode_k << endl;
 
 
         int flag =

@@ -114,8 +114,9 @@ void DeleteCoreLogFiles() {
                 entry.path().filename().string().find("core_") == 0 &&
                 entry.path().extension() == ".log") {
                 std::filesystem::remove(entry.path());
-                std::cout << "Deleted log file: "
-                          << entry.path().filename().string() << std::endl;
+
+                LOG_INFO(SYSTEM)
+                    << "Deleted log file: " << entry.path().filename().string();
             }
         }
     } catch (const std::filesystem::filesystem_error &e) {
@@ -156,7 +157,7 @@ void DeleteMemoryLogFiles() {
 
 
 void CloseLogFiles() {
-    for (auto& pair : g_log_streams) {
+    for (auto &pair : g_log_streams) {
         if (pair.second && pair.second->is_open()) {
             pair.second->close();
             delete pair.second;
@@ -166,8 +167,8 @@ void CloseLogFiles() {
 }
 
 
-const char* GetCoreColor(int core_id) {
-    static const char* colors[] = {
+const char *GetCoreColor(int core_id) {
+    static const char *colors[] = {
         "\033[31m", // 红色
         "\033[32m", // 绿色
         "\033[33m", // 黄色
@@ -177,7 +178,7 @@ const char* GetCoreColor(int core_id) {
         "\033[91m", // 亮红
         "\033[92m", // 亮绿
     };
-    return colors[core_id % (sizeof(colors)/sizeof(colors[0]))];
+    return colors[core_id % (sizeof(colors) / sizeof(colors[0]))];
 }
 
 
@@ -191,12 +192,12 @@ void InitializeMemorySpec() {
         bytecount_df,
         "../DRAMSys/configs/addressmapping/am_ddr4_8x4Gbx8_df.json");
 
-    if (GPU_DRAM_BANDWIDTH == 512 || GPU_DRAM_BANDWIDTH == 1024 || GPU_DRAM_BANDWIDTH == 256 ||
-        GPU_DRAM_BANDWIDTH == 128 || GPU_DRAM_BANDWIDTH == 64) {
+    if (GPU_DRAM_BANDWIDTH == 512 || GPU_DRAM_BANDWIDTH == 1024 ||
+        GPU_DRAM_BANDWIDTH == 256 || GPU_DRAM_BANDWIDTH == 128 ||
+        GPU_DRAM_BANDWIDTH == 64) {
         int numDevices = 32 * GPU_DRAM_BANDWIDTH / 512; // 每个设备 32 个通道
         int bytecount = static_cast<int>(log2(GPU_DRAM_BANDWIDTH)) - 1;
 
-        cout << "GPU BW: " << DRAM_BURST_BYTE << " GB/s" << endl;
         generateGPUCacheJsonFile(numDevices,
                                  "../DRAMSys/configs/memspec/HBM2_GPU.json");
         generateAddressMapping(
@@ -220,7 +221,7 @@ bool modifyNbrOfDevices(const std::string &inputPath,
     // 读取原始 JSON 文件
     std::ifstream infile(inputPath);
     if (!infile.is_open()) {
-        std::cerr << "无法打开输入文件: " << inputPath << std::endl;
+        LOG_ERROR(SYSTEM) << "Failed to open JSON file " << inputPath;
         return false;
     }
 
@@ -228,7 +229,7 @@ bool modifyNbrOfDevices(const std::string &inputPath,
     try {
         infile >> j;
     } catch (json::parse_error &e) {
-        std::cerr << "JSON 解析错误: " << e.what() << std::endl;
+        LOG_ERROR(SYSTEM) << "JSON parse error: " << e.what();
         return false;
     }
     infile.close();
@@ -239,14 +240,15 @@ bool modifyNbrOfDevices(const std::string &inputPath,
     // 写入新文件
     std::ofstream outfile(outputPath);
     if (!outfile.is_open()) {
-        std::cerr << "无法创建输出文件: " << outputPath << std::endl;
+        LOG_ERROR(SYSTEM) << "Failed to create output file " << outputPath;
         return false;
     }
 
     try {
         outfile << j.dump(4); // 格式化输出，缩进4个空格
     } catch (const std::exception &e) {
-        std::cerr << "写入文件时发生错误: " << e.what() << std::endl;
+        LOG_ERROR(SYSTEM) << "Error occurred while writing to file: "
+                          << e.what();
         return false;
     }
 
@@ -303,15 +305,15 @@ void generateAddressMapping(int n, const std::string &outputFilename) {
 
     std::ofstream outFile(outputFilename);
     if (!outFile.is_open()) {
-        std::cerr << "Error: Cannot write to file " << outputFilename
-                  << std::endl;
+        LOG_ERROR(system_utils.cpp)
+            << "Cannot write to file " << outputFilename;
         return;
     }
     outFile << std::setw(4) << root << std::endl;
     outFile.close();
 
-    std::cout << "Address mapping with n=" << n << " saved to "
-              << outputFilename << std::endl;
+    LOG_INFO(SYSTEM) << "Address mapping with n=" << n << " saved to "
+                     << outputFilename;
 }
 
 
@@ -359,15 +361,15 @@ void generateDFAddressMapping(int n, const std::string &outputFilename) {
 
     std::ofstream outFile(outputFilename);
     if (!outFile.is_open()) {
-        std::cerr << "Error: Cannot write to file " << outputFilename
-                  << std::endl;
+        LOG_ERROR(system_utils.cpp)
+            << "Cannot write to file " << outputFilename;
         return;
     }
     outFile << std::setw(4) << root << std::endl;
     outFile.close();
 
-    std::cout << "Address mapping with n=" << n << " saved to "
-              << outputFilename << std::endl;
+    LOG_INFO(SYSTEM) << "Address mapping with n=" << n << " saved to "
+                     << outputFilename;
 }
 
 
@@ -417,8 +419,7 @@ bool generateGPUCacheJsonFile(int numDevices, const std::string &filename) {
         // 3. 打开文件流用于写入
         std::ofstream outFile(filename);
         if (!outFile.is_open()) {
-            std::cerr << "错误：无法打开文件 " << filename << " 进行写入。"
-                      << std::endl;
+            LOG_ERROR(system_utils.cpp) << "Cannot write to file " << filename;
             return false;
         }
 
@@ -427,11 +428,11 @@ bool generateGPUCacheJsonFile(int numDevices, const std::string &filename) {
         outFile << j.dump(4);
         outFile.close();
 
-        std::cout << "JSON 文件已成功生成: " << filename << std::endl;
         return true;
-
     } catch (const std::exception &e) {
-        std::cerr << "生成 JSON 文件时发生异常: " << e.what() << std::endl;
+        LOG_ERROR(system_utils.cpp)
+            << "Error occurred while generating GPU cache JSON file: "
+            << e.what();
         return false;
     }
 }

@@ -33,7 +33,9 @@ void ParseSimulationType(json j) {
     } else
         SYSTEM_MODE = SIM_DATAFLOW;
 
-    cout << "Simulation mode: " << SYSTEM_MODE << "\n";
+    LOG_INFO(SYSTEM) << 
+        "System running in simulation mode "
+        << GetEnumSimulationMode(SYSTEM_MODE);
 
     if (SYSTEM_MODE == SIM_GPU) {
         if (j.contains("chips"))

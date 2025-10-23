@@ -7,6 +7,7 @@
 #include "defs/spec.h"
 #include "macros/macros.h"
 #include "utils/display_utils.h"
+#include "utils/print_utils.h"
 
 #include "nlohmann/json.hpp"
 #include <cairo/cairo.h>
@@ -17,8 +18,8 @@ using json = nlohmann::json;
 json parse_config(const string &filename) {
     ifstream workload_config(filename);
     if (!workload_config.is_open()) {
-        cerr << "无法打开文件 " << filename << endl;
-        exit(1);
+        LOG_ERROR(display_utils.cpp)
+            << "Cannot open workload config file " << filename;
     }
     json config;
     workload_config >> config;
@@ -323,7 +324,6 @@ void visualize_data_flow(sf::RenderTexture &renderTexture,
                             reverse = true;
                             swap(end_x, start_x);
                             swap(end_y, start_y);
-                            cout << end_y << " " << start_y << endl;
                         }
 
                         dx = end_x - start_x;
@@ -388,10 +388,11 @@ void plot_dataflow(string filename) {
         cerr << "保存文件失败！" << endl;
     }
 
-    cout << "图像已保存为 'core_data_flow.png'" << endl;
+    LOG_INFO(SYSTEM) << "Image saved as 'core_data_flow.png'";
 }
 
-void plot_dataflow(unordered_map<int, Display::Core> cores, set<int> source_ids) {
+void plot_dataflow(unordered_map<int, Display::Core> cores,
+                   set<int> source_ids) {
     // sf::Context::Settings settings;
     // settings.attributeFlags = sf::Context::ATTRIBUTE_DEFAULT |
     // sf::Context::ATTRIBUTE_NON_CLIENT; sf::Context context(settings); 创建
@@ -412,7 +413,7 @@ void plot_dataflow(unordered_map<int, Display::Core> cores, set<int> source_ids)
         cerr << "保存文件失败！" << endl;
     }
 
-    cout << "图像已保存为 'core_data_flow.png'" << endl;
+    LOG_INFO(SYSTEM) << "Image saved as 'core_data_flow.png'";
 }
 
 #endif
@@ -730,10 +731,11 @@ void plot_dataflow(string filename) {
     cairo_destroy(cr);
     cairo_surface_destroy(surface);
 
-    cout << "图像已保存为 'core_data_flow.png'" << endl;
+    LOG_INFO(SYSTEM) << "Image saved as 'core_data_flow.png'";
 }
 
-void plot_dataflow(unordered_map<int, Display::Core> cores, set<int> source_ids) {
+void plot_dataflow(unordered_map<int, Display::Core> cores,
+                   set<int> source_ids) {
     // 创建 Cairo 渲染表面
     int width = 800 * 2;
     int height = 600 * 2;
@@ -755,6 +757,6 @@ void plot_dataflow(unordered_map<int, Display::Core> cores, set<int> source_ids)
     cairo_destroy(cr);
     cairo_surface_destroy(surface);
 
-    cout << "图像已保存为 'core_data_flow.png'" << endl;
+    LOG_INFO(SYSTEM) << "Image saved as 'core_data_flow.png'";
 }
 #endif

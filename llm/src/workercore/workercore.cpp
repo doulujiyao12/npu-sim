@@ -35,10 +35,13 @@ WorkerCore::WorkerCore(const sc_module_name &n, int s_cid,
     dcache = new DCache(sc_gen_unique_name("dcache"), cid, (int)cid / GRID_X,
                         (int)cid % GRID_X, this->event_engine, dram_config_name,
                         "../DRAMSys/configs");
-    cout << "Workercore " << cid << " initialize: dram_string "
-         << dram_config_name << endl;
-    cout << " MaxAddr "
-         << dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
+
+    LOG_DEBUG(SYSTEM) << "Core " << cid << " dram config path "
+                      << dram_config_name;
+    LOG_DEBUG(SYSTEM)
+        << " max address "
+        << dcache->dramSysWrapper->dramsys->getAddressDecoder().maxAddress();
+
     auto sram_bitw = GetCoreHWConfig(cid)->sram_bitwidth;
     ram_array = new DynamicBandwidthRamRow<sc_bv<SRAM_BITWIDTH>, SRAM_BANKS>(
         sc_gen_unique_name("ram_array"), 0,
@@ -248,7 +251,6 @@ void WorkerCoreExecutor::worker_core_execute() {
                         break;
                     // 这里会pop出来RECV_ACK
                     p = prim_queue.front();
-                    cout << "Core " << cid << " push!!!!\n";
                 }
 
                 send_done = false;

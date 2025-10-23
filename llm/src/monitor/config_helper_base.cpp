@@ -61,8 +61,6 @@ void config_helper_base::fill_queue_data(queue<Msg> *q) {
                                   ? pkg_num / HW_NOC_PAYLOAD_PER_CYCLE + 1
                                   : pkg_num / HW_NOC_PAYLOAD_PER_CYCLE;
 
-                    cout << "pkg_num: " << pkg_num << endl;
-
                     if (SPEC_USE_BEHA_NOC) {
                         sc_bv<M_D_DATA> d(0x1);
                         int length = M_D_DATA;
@@ -94,8 +92,6 @@ void config_helper_base::fill_queue_data(queue<Msg> *q) {
                     }
                 }
             }
-            cout << "core " << config.id << " send " << core_prim_cnt
-                 << " prims.\n";
         }
 
         // HOST DATA END 包
@@ -111,8 +107,5 @@ void config_helper_base::fill_queue_data(queue<Msg> *q) {
         m.source_ = GRID_SIZE;
         m.roofline_packets_ = 1;
         q[index].push(m);
-
-        cout << "core " << config.id << " send " << pkg_index + 1
-             << " data packages.\n";
     }
 }

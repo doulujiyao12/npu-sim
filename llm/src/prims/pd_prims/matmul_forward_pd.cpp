@@ -45,7 +45,6 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
     checkStaticData(context, dram_time, data_chunk_addr["bias"],
                     GetFromPairedVector(data_chunk, "bias") / chunk_ratio,
                     label_bias);
-    ARGUS_PRINT(dram_time);
 
     // 写入kvcache，根据batchInfo确定
     for (auto stage : prim_context->batch_info_) {
@@ -88,7 +87,6 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         sram_write_append_generic(context, size, dram_time);
         prim_context->sram_pos_locator_->updatePair(label_k, size, context,
                                                     dram_time);
-        ARGUS_PRINT(dram_time);
 #endif
         cout << "[Matmul_pd_f] Core " << prim_context->cid
              << " Ready to add label: " << label_v << ", size: " << size
@@ -101,7 +99,6 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         sram_write_append_generic(context, size, dram_time);
         prim_context->sram_pos_locator_->updatePair(label_v, size, context,
                                                     dram_time);
-        ARGUS_PRINT(dram_time);
 #endif
     }
 
@@ -148,7 +145,6 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         }
 
         exu_ops = performance_comp;
-        ARGUS_PRINT(dram_time);
     } else {
         exu_ops = (u_int64_t)p["B"] * p["T"] * p["C"] * p["OC"] * 2;
     }

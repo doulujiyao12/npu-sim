@@ -9,7 +9,7 @@
 
 config_helper_pd::config_helper_pd(string filename, sc_event *ev_sig,
                                    int config_chip_id) {
-    cout << "Loading config file " << filename << endl;
+    LOG_INFO(CONFIG) << "Loading config file " << filename;
 
     json j;
     ifstream jfile(filename);
@@ -97,6 +97,8 @@ void config_helper_pd::fill_queue_config(queue<Msg> *q) {
 }
 
 void config_helper_pd::fill_queue_start(queue<Msg> *q) {
+    LOG_INFO(NETWORK) << "Config helper start START data distribution";
+
     // 所有tp组的初始核需要发送start_data
     for (auto status : coreStatus) {
         int index = status.id / GRID_X;
@@ -115,8 +117,6 @@ void config_helper_pd::fill_queue_start(queue<Msg> *q) {
                 pkg_num = pkg_num % HW_NOC_PAYLOAD_PER_CYCLE
                               ? pkg_num / HW_NOC_PAYLOAD_PER_CYCLE + 1
                               : pkg_num / HW_NOC_PAYLOAD_PER_CYCLE;
-
-                cout << "pkg_num: " << pkg_num << endl;
 
                 if (SPEC_USE_BEHA_NOC) {
                     sc_bv<M_D_DATA> d(0x1);
@@ -147,8 +147,7 @@ void config_helper_pd::fill_queue_start(queue<Msg> *q) {
         q[index].push(Msg(true, MSG_TYPE::S_DATA, ++total_pkg, status.id, 0,
                           status.id, 1, d));
 
-        cout << "Send start data: " << total_pkg << " pkgs to core "
-             << status.id << endl;
+        LOG_DEBUG(NETWORK) << "Config helper -> START data -> " << status.id;
     }
 }
 
@@ -244,8 +243,8 @@ void config_helper_pd::iter_start() {
             bool new_reqs = true;
             queue<int> &decode_waiting_list = idle_decode[id / model_stage];
             queue<int> &prefill_waiting_list = unfinished_prefill[id];
-            cout << "[PD SCHEDULE] Core " << id * tp_size
-                 << " credit: " << credit << endl;
+            LOG_DEBUG(SCHEDULE) << "Schedule for core " << id * tp_size
+                                << ", current credit: " << credit;
 
             while (credit < HW_CORE_CREDIT) {
                 // PREFILL new iter > UNTOUCHED
@@ -256,8 +255,6 @@ void config_helper_pd::iter_start() {
                     decode_waiting_list.pop();
                     credit += 1;
                     new_stage_1.push_back(Stage(req_id, DECODE, 1));
-                    cout << "[PD SCHEDULE] Core " << id * tp_size
-                         << " push in new request DECODE " << req_id << endl;
                 }
 
                 else if (HW_CORE_CREDIT - credit >= HW_PD_RATIO &&
@@ -293,9 +290,6 @@ void config_helper_pd::iter_start() {
 
                             if (++req.prefill_distribute < req.prefill_iters)
                                 prefill_waiting_list.push(req.id);
-                            cout << "[PD SCHEDULE] Core " << id * tp_size
-                                 << " push in new request PREFILL " << req.id
-                                 << endl;
                             new_reqs = true;
                             break;
                         }
@@ -311,23 +305,23 @@ void config_helper_pd::iter_start() {
     // 统一更新所有的batchInfo，生成原语
     bool complete_idle = true;
 
-    cout << "<<<<<<SCHEDULE ITER>>>>>>\n";
-    cout << sc_time_stamp() << endl;
+    LOG_DEBUG(SCHEDULE) << "Schedule for this iteration";
     for (int s = 0; s < coreStatus.size(); s++) {
         auto &status = coreStatus[s];
         status.batchInfo = temp_stage[s];
 
-        cout << "[SCHEDULE] Core " << status.id << endl;
+        LOG_DEBUG(SCHEDULE) << "  Core " << status.id;
         for (auto stage : status.batchInfo) {
             complete_idle = false;
 
-            cout << "REQ: " << stage.req_id << ", TYPE: " << stage.type
-                 << ", finished iter: "
-                 << ((requestRecords[stage.req_id].phase == PREFILL)
-                         ? requestRecords[stage.req_id].prefill_counter
-                         : requestRecords[stage.req_id].decode_counter)
-                 << ", iter count "
-                 << requestRecords[stage.req_id].prefill_iters << endl;
+            LOG_DEBUG(SCHEDULE)
+                << "    REQ: " << stage.req_id << ", TYPE: " << stage.type
+                << ", finished iter: "
+                << ((requestRecords[stage.req_id].phase == PREFILL)
+                        ? requestRecords[stage.req_id].prefill_counter
+                        : requestRecords[stage.req_id].decode_counter)
+                << ", iter count "
+                << requestRecords[stage.req_id].prefill_iters;
         }
 
         generate_prims(status.id);
@@ -337,26 +331,19 @@ void config_helper_pd::iter_start() {
         // 如果当前iter没有任何core有工作，则不发放config
         temp_config.clear();
         busy = false;
-        cout << "[SCHEDULE] Complete idle.\n";
+        LOG_DEBUG(SCHEDULE) << "Complete idle";
     } else
         busy = true;
 }
 
-void config_helper_pd::printSelf() {
-    cout << "[PD Config]" << endl;
-    cout << "Heads: " << heads << endl;
-    cout << "EOF Chance: " << eof_chance << endl;
-    cout << "Request Records: " << requestRecords.size() << endl;
-}
+void config_helper_pd::printSelf() {}
 
 void config_helper_pd::generate_prims(int i) {
-    cout << "Generate prims: Core " << i << endl;
     auto status = coreStatus[i / tp_size];
 
     // 计算input token大小
     int B = 1, NH = heads, T = 0, C = heads * head_size;
     for (auto stage : status.batchInfo) {
-        cout << "Stage " << stage.type << " req " << stage.req_id << endl;
         auto record = requestRecords[stage.req_id];
         switch (stage.type) {
         case PREFILL:
@@ -559,10 +546,10 @@ void config_helper_pd::parse_ack_msg(Event_engine *event_engine, int flow_id,
 
     for (auto m : g_temp_ack_msg) {
         int cid = m.source_;
-        cout << sc_time_stamp()
-             << ": Config helper PD: received ack packet from " << cid
-             << ". total " << g_recv_ack_cnt + 1 << "/"
-             << coreStatus.size() * tp_size << ".\n";
+
+        LOG_DEBUG(NETWORK) << "Config helper <- ACK <- " << cid << ", total "
+                           << g_recv_ack_cnt + 1 << "/"
+                           << coreStatus.size() * tp_size;
 
         g_recv_ack_cnt++;
     }
@@ -584,10 +571,9 @@ void config_helper_pd::parse_done_msg(Event_engine *event_engine,
 
     for (auto m : g_temp_done_msg) {
         int cid = m.source_;
-        cout << sc_time_stamp()
-             << ": Config helper PD: received done packet from " << cid
-             << ". total " << g_recv_done_cnt + 1 << "/" << coreStatus.size()
-             << endl;
+
+        LOG_DEBUG(NETWORK) << "Config helper <- DONE <- " << cid << ", total "
+                           << g_recv_done_cnt + 1 << "/" << coreStatus.size();
 
         g_recv_done_cnt++;
         g_done_msg.push_back(m);
@@ -633,8 +619,9 @@ void config_helper_pd::set_global_vars(int T) {
 }
 
 void config_helper_pd::printResults() {
-    cout << "All reqs done.\n";
-    cout << "[CATCH TEST] " << sc_time_stamp() << endl;
+    LOG_INFO(SYSTEM) << "All requests finished";
+    LOG_INFO(CATCH_TEST) << "Catch test finished";
+
     ofstream outfile("simulation_result_df_pd.txt", ios::app);
     if (outfile.is_open()) {
         outfile << "[CATCH TEST] " << sc_time_stamp() << "HW_SRAM_SIZE "

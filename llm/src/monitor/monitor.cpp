@@ -6,11 +6,9 @@
 
 Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine,
                  const char *config_name)
-    : sc_module(n),
-      event_engine(event_engine),
-      config_name(config_name) {
-    memInterface = new MemInterface("mem-interface", this->event_engine,
-                                    config_name);
+    : sc_module(n), event_engine(event_engine), config_name(config_name) {
+    memInterface =
+        new MemInterface("mem-interface", this->event_engine, config_name);
     globalMemInterface = new GlobalMemInterface(
         "global-mem-interface", this->event_engine, config_name);
 
@@ -19,9 +17,7 @@ Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine,
 
 Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine,
                  config_helper_base *input_config)
-    : sc_module(n),
-      event_engine(event_engine),
-      config_name(nullptr) {
+    : sc_module(n), event_engine(event_engine), config_name(nullptr) {
     memInterface =
         new MemInterface("mem-interface", this->event_engine, input_config);
 
@@ -32,7 +28,7 @@ Monitor::Monitor(const sc_module_name &n, Event_engine *event_engine,
 }
 
 Monitor::~Monitor() {
-    cout << "Monitor delete\n";
+    LOG_INFO(SYSTEM) << "Cleanup monitor components";
     delete[] core_busy;
     delete[] rc_channel;
     delete[] rc_data_sent;
@@ -86,7 +82,7 @@ void Monitor::init() {
            "only allow one global mem");
     if (memInterface->has_global_mem.size() == 1) {
         for (auto i : memInterface->has_global_mem) {
-            std::cout << "[Global Mem]: global link inited " << i << std::endl;
+            LOG_INFO(GLOBAL_MEMORY) << "Global link initialized " << i;
             // instantiate the NB_GlobalMemIF for this executor
             workerCores[i]->executor->init_global_mem();
             // bind the NB_GlobalMemIF initiator socket to the ChipGlobalMemory
@@ -95,7 +91,7 @@ void Monitor::init() {
                 globalMemInterface->chipGlobalMemory->socket);
         }
     } else { // 如果谁都没有连接，直接绑定到第0个Core上
-        std::cout << "[Global Mem]: global link not inited " << std::endl;
+        LOG_INFO(GLOBAL_MEMORY) << "Global link not initialized";
         workerCores[0]->executor->init_global_mem();
         workerCores[0]->executor->nb_global_mem_socket->socket.bind(
             globalMemInterface->chipGlobalMemory->socket);
@@ -110,9 +106,9 @@ void Monitor::init() {
         processors.push_back(workerCores[i]->executor->gpunb_dcache_if);
     }
 
-    cacheSystem =
-        new L1L2CacheSystem("l1l2-cache_system", GRID_SIZE, l1caches,
-                            processors, GPU_DRAM_CONFIG_FILE, "../DRAMSys/configs");
+    cacheSystem = new L1L2CacheSystem("l1l2-cache_system", GRID_SIZE, l1caches,
+                                      processors, GPU_DRAM_CONFIG_FILE,
+                                      "../DRAMSys/configs");
 
     if (SYSTEM_MODE == SIM_GPU) {
         gpu_pos_locator = new GpuPosLocator();
@@ -214,7 +210,7 @@ void Monitor::init() {
         }
     }
 
-    cout << "Components initialize complete, prepare to start.\n";
+    LOG_INFO(SYSTEM) << "Components initialize complete, prepare to start.";
 
     SC_THREAD(start_simu);
 }

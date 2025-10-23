@@ -9,7 +9,8 @@
 
 config_helper_pds::config_helper_pds(string filename, sc_event *ev_sig,
                                      int config_chip_id) {
-    cout << "Loading config file " << filename << endl;
+    LOG_INFO(CONFIG) << "Loading config file " << filename;
+
     json j;
     ifstream jfile(filename);
     jfile >> j;
@@ -72,8 +73,7 @@ config_helper_pds::config_helper_pds(string filename, sc_event *ev_sig,
     // 检查batch_size参数的合理性，同时依此修改arrive时间
     // 能放的下 prefill
     if (batch_size * HW_PD_RATIO > HW_CORE_CREDIT) {
-        cout << "[ERROR] In config helper pd: batch size too large.\n";
-        sc_stop();
+        LOG_ERROR(config_helper_pds.cpp) << "Batch size too large";
     } else {
         for (int i = 0; i < req_cnt; i++) {
             int target = min((i / batch_size + 1) * batch_size - 1, req_cnt);
@@ -107,7 +107,7 @@ config_helper_pds::config_helper_pds(string filename, sc_event *ev_sig,
 
 void config_helper_pds::fill_queue_config(queue<Msg> *q) {
     // 将temp中的所有内容搬运到q中，并清空temp
-    cout << "Prepare to send config!\n";
+    LOG_INFO(NETWORK) << "Config helper start CONFIG distribution";
     for (auto msg : temp_config) {
         auto des = msg.des_;
         int index = des / GRID_X;
@@ -120,12 +120,11 @@ void config_helper_pds::fill_queue_config(queue<Msg> *q) {
 void config_helper_pds::fill_queue_start(queue<Msg> *q) {
     // 只有在stage 1的core进行prefill的时候，才需要发送start data
     // 在调用这个函数的时候，已经完成对core的config发放
-    cout << "Prepare to send start data!\n";
+    LOG_INFO(NETWORK) << "Config helper start START data distribution";
     if (!wait_send_start_prefill && !wait_send_start_decode)
         return;
-    // 为什么这里start 都需要发
+
     for (auto status : coreStatus) {
-        cout << "status " << status.id << endl;
         int index = status.id / GRID_X;
         int total_pkg = 0;
         // 是 prefill 的核 但是prefill已经结束了
@@ -176,8 +175,7 @@ void config_helper_pds::fill_queue_start(queue<Msg> *q) {
         q[index].push(Msg(true, MSG_TYPE::S_DATA, ++total_pkg, status.id, 0,
                           status.id, 1, d));
 
-        cout << "Send start data: " << total_pkg << " pkgs to core "
-             << status.id << endl;
+        LOG_DEBUG(NETWORK) << "Config helper -> START data -> " << status.id;
     }
 
     wait_send_start_prefill = wait_send_start_decode = false;
@@ -225,11 +223,12 @@ void config_helper_pds::iter_done(PD_JOB type) {
                     stage.type = record.phase = PD_DONE;
 
                     if (++decode_done == requestRecords.size()) {
-                        cout << "All reqs done.\n";
-                        ofstream file("token_records.txt", ios::app);
+                        LOG_INFO(SYSTEM) << "All requests finished";
 
+                        ofstream file("token_records.txt", ios::app);
                         if (!file.is_open()) {
-                            cerr << "Error: Cannot open file " << endl;
+                            LOG_ERROR(config_helper_pds.cpp)
+                                << "Failed to open token_records.txt";
                             return;
                         }
 
@@ -249,7 +248,7 @@ void config_helper_pds::iter_done(PD_JOB type) {
 
                         file << "\n\n";
                         file.close();
-                        cout << "[CATCH TEST] " << sc_time_stamp() << endl;
+                        LOG_INFO(CATCH_TEST) << "Catch test finished";
                         sc_stop();
                     }
                 }
@@ -269,8 +268,6 @@ void config_helper_pds::iter_done(PD_JOB type) {
 void config_helper_pds::iter_start(PD_JOB type) {
     if (type == JOB_PREFILL && busy_p || type == JOB_DECODE && busy_d)
         return;
-
-    cout << "Iter Start, type " << type << endl;
 
     // 为每一个核进行schedule，如果这个核不是第一个stage，则复制前一个stage上一个iter的任务
     vector<pair<int, vector<Stage>>> temp_stage;
@@ -313,10 +310,6 @@ void config_helper_pds::iter_start(PD_JOB type) {
                                 Stage(req.id, PREFILL,
                                       req.seq_len / req.prefill_iters));
 
-                            cout << "[PD SCHEDULE] Core " << id
-                                 << " push in old request PREFILL " << req.id
-                                 << endl;
-
                             if (++done == batch_size)
                                 break;
                         } else if (req.phase == UNTOUCHED &&
@@ -326,9 +319,6 @@ void config_helper_pds::iter_start(PD_JOB type) {
                                       req.seq_len / req.prefill_iters));
                             req.phase = PREFILL;
                             req.prefill_distribute++;
-                            cout << "[PD SCHEDULE] Core " << id * tp_size
-                                 << " push in new request PREFILL " << req.id
-                                 << endl;
 
                             if (++done == batch_size)
                                 break;
@@ -379,8 +369,6 @@ void config_helper_pds::iter_start(PD_JOB type) {
                     waiting_list.pop();
                     credit += 1;
                     new_stage_1.push_back(Stage(req_id, DECODE, 1));
-                    cout << "[PD SCHEDULE] Core " << id
-                         << " push in new request DECODE " << req_id << endl;
                 }
 
                 // 最后检查是否有新转为decode的请求
@@ -389,8 +377,6 @@ void config_helper_pds::iter_start(PD_JOB type) {
                     req_decode.pop();
                     credit += 1;
                     new_stage_1.push_back(Stage(req_id, DECODE, 1));
-                    cout << "[PD SCHEDULE] Core " << id
-                         << " push in new request DECODE " << req_id << endl;
                 }
 
                 temp_stage.push_back(make_pair(id, new_stage_1));
@@ -404,23 +390,21 @@ void config_helper_pds::iter_start(PD_JOB type) {
     bool complete_idle = true;
     vector<Msg> temp_buffer;
 
-    cout << "<<<<<<SCHEDULE ITER>>>>>>\n";
-    cout << sc_time_stamp() << endl;
+    LOG_DEBUG(SCHEDULE) << "Schedule for this iteration";
     for (auto pair : temp_stage) {
         auto &status = coreStatus[pair.first];
         status.batchInfo = pair.second;
 
-        cout << "[SCHEDULE] Core " << status.id << endl;
+        LOG_DEBUG(SCHEDULE) << "  Core " << status.id;
         for (auto stage : status.batchInfo) {
             complete_idle = false;
 
-            cout << "REQ: " << stage.req_id << ", TYPE: " << stage.type
-                 << ", finished iter: "
-                 << ((requestRecords[stage.req_id].phase == PREFILL)
-                         ? requestRecords[stage.req_id].prefill_counter
-                         : requestRecords[stage.req_id].decode_counter)
-                 << ", iter count "
-                 << requestRecords[stage.req_id].prefill_iters << endl;
+            LOG_DEBUG(SCHEDULE)
+                << "    Request id: " << stage.req_id
+                << ", type: " << stage.type << ", finished iters: "
+                << ((requestRecords[stage.req_id].phase == PREFILL)
+                        ? requestRecords[stage.req_id].prefill_counter
+                        : requestRecords[stage.req_id].decode_counter);
         }
 
         generate_prims(status.id, temp_buffer);
@@ -436,7 +420,7 @@ void config_helper_pds::iter_start(PD_JOB type) {
             wait_schedule_d = true;
         }
 
-        cout << "[SCHEDULE] Complete idle.\n";
+        LOG_DEBUG(SCHEDULE) << "Complete idle";
         temp_config.clear();
     } else {
         for (auto msg : temp_buffer)
@@ -454,7 +438,6 @@ void config_helper_pds::printSelf() {}
 void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
     // 一个iter中有stage个core参与执行，id 1要流向id end，id end要传回id 1
     // core中原语为单个corejob，需要配置收发规则
-    cout << "Generate prims: Core " << i << endl;
     auto status = coreStatus[i / tp_size];
 
     int B = 1, NH = heads, T = 0, C = heads * head_size;
@@ -474,7 +457,6 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
 
     // TODO: 其他decoder模型适配？
     set_global_vars(T);
-    cout << "T: " << T << endl;
 
     // lambda函数
     auto add_recv = [&](int &prim_seq, bool start, int recv_tag, int recv_cnt,
@@ -577,8 +559,8 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
                     Send_prim *send_req =
                         new Send_prim(SEND_TYPE::SEND_REQ, next_id, ca.tag + i);
                     Recv_prim *recv_ack = new Recv_prim(RECV_TYPE::RECV_ACK);
-                    Send_prim *send_data =
-                        new Send_prim(SEND_TYPE::SEND_DATA, next_id, ca.tag + i);
+                    Send_prim *send_data = new Send_prim(SEND_TYPE::SEND_DATA,
+                                                         next_id, ca.tag + i);
 
                     CalculatePacketNum(
                         last_comp->out_size, ca.weight, last_comp->data_byte,
@@ -709,17 +691,17 @@ void config_helper_pds::parse_ack_msg(Event_engine *event_engine, int flow_id,
 
     for (auto m : g_temp_ack_msg) {
         int cid = m.source_;
-        cout << sc_time_stamp()
-             << ": Config helper PDS: received ack packet from " << cid
-             << ", type: " << coreStatus[cid / tp_size].job_type;
+        LOG_DEBUG(NETWORK) << "Config helper <- ACK <- " << cid << ", type "
+                           << coreStatus[cid / tp_size].job_type;
 
         if (coreStatus[cid / tp_size].job_type == JOB_PREFILL) {
             g_recv_ack_cnt_p++;
-            cout << ", total " << g_recv_ack_cnt_p << "/"
-                 << prefill_core * tp_size << endl;
+            LOG_DEBUG(NETWORK) << "Total " << g_recv_ack_cnt_p << "/"
+                               << prefill_core * tp_size;
         } else if (coreStatus[cid / tp_size].job_type == JOB_DECODE) {
             g_recv_ack_cnt_d++;
-            cout << ", total " << g_recv_ack_cnt_d << endl;
+            LOG_DEBUG(NETWORK)
+                << "Total " << g_recv_ack_cnt_d << "/" << decode_core;
         }
     }
 
@@ -748,17 +730,18 @@ void config_helper_pds::parse_done_msg(Event_engine *event_engine,
 
     for (auto m : g_temp_done_msg) {
         int cid = m.source_;
-        cout << sc_time_stamp()
-             << ": Config helper PD: received done packet from " << cid
-             << ", type: " << coreStatus[cid / tp_size].job_type;
+        LOG_DEBUG(NETWORK) << "Config helper <- DONE <- " << cid
+                           << ", type: " << coreStatus[cid / tp_size].job_type;
 
         if (coreStatus[cid / tp_size].job_type == JOB_PREFILL) {
             g_recv_done_cnt_p++;
-            cout << ", total " << g_recv_done_cnt_p << endl;
+            LOG_DEBUG(NETWORK) << "  Total " << g_recv_done_cnt_p << "/"
+                               << prefill_core * tp_size;
             g_done_msg_p.push_back(m);
         } else if (coreStatus[cid / tp_size].job_type == JOB_DECODE) {
             g_recv_done_cnt_d++;
-            cout << ", total " << g_recv_done_cnt_d << endl;
+            LOG_DEBUG(NETWORK) << "  Total " << g_recv_done_cnt_d << "/"
+                               << decode_core;
             g_done_msg_d.push_back(m);
         }
     }

@@ -5,7 +5,7 @@
 #include "utils/system_utils.h"
 
 vector<sc_bv<128>> GpuBase::serialize() {
-    cout << "Start serialize " << name << endl;
+    LOG_DEBUG(CONFIG) << "Start serialize " << name;
 
     vector<sc_bv<128>> segments;
 
@@ -29,8 +29,6 @@ vector<sc_bv<128>> GpuBase::serialize() {
         int pos = 8;
         for (int i = 0; i < 4 && it != vec.end(); i++, it++, pos += 30) {
             d.range(pos + 29, pos) = sc_bv<30>(it->second);
-            cout << "Pos " << pos << ": " << it->first << ": " << it->second
-                 << endl;
         }
 
         segments.push_back(d);
@@ -40,7 +38,7 @@ vector<sc_bv<128>> GpuBase::serialize() {
 }
 
 void GpuBase::deserialize(vector<sc_bv<128>> segments) {
-    cout << "Start deserialize " << name << endl;
+    LOG_DEBUG(CONFIG) << "Start deserialize " << name;
 
     // 解析metadata
     auto buffer = segments[0];
@@ -65,16 +63,13 @@ void GpuBase::deserialize(vector<sc_bv<128>> segments) {
                 break;
             param_value[vec[index]] =
                 buffer.range(29 + j * 30, j * 30 + 8).to_uint64();
-
-            cout << "Parameter " << vec[index] << ": "
-                 << param_value[vec[index]] << endl;
         }
     }
 
     initialize();
     initializeDefault();
 
-    cout << "Finish deserialize " << name << endl;
+    LOG_DEBUG(CONFIG) << "Finish deserialize " << name;
 }
 
 void GpuBase::parseCompose(json j) {
@@ -136,7 +131,6 @@ void GpuBase::initializeDefault() {
 
     out_size = -1;
     for (const auto &chunk : data_chunk) {
-        cout << "Chunk " << chunk.first << ": " << chunk.second << endl;
         if (chunk.first == "output") {
             out_size = chunk.second;
             break;
@@ -147,12 +141,4 @@ void GpuBase::initializeDefault() {
         ARGUS_EXIT("No output chunk found.\n");
 }
 
-void GpuBase::printSelf() {
-    cout << "<" + name + ">\n";
-
-    for (auto &pair : param_value)
-        cout << "\t" << pair.first << ": " << pair.second << endl;
-
-    for (auto &pair : data_chunk)
-        cout << "\t" << pair.first << ": " << pair.second << endl;
-}
+void GpuBase::printSelf() {}

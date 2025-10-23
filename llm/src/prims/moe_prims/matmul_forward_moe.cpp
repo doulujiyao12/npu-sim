@@ -128,9 +128,6 @@ void matmul_forward_moe::taskCore(TaskCoreContext &context, string prim_name,
         checked[e] = true;
     }
 
-    ARGUS_PRINT(dram_time);
-
-
     if (p["is_merge"])
         exu_ops = (u_int64_t)p["B"] * p["T"] * p["C"] * p["OC"] * p["K"] * 2 +
                   (u_int64_t)p["B"] * p["T"] * p["OC"] * p["K"];

@@ -25,19 +25,20 @@ void Matmul_f::initialize() {
 void Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
                         u_int64_t &dram_time, u_int64_t &exu_ops,
                         u_int64_t &sfu_ops) {
-    cout << "Core " << prim_context->cid << " Matmul_f\n";
-    ARGUS_PRINT(dram_time);
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                    << " read weight";
 
     auto label_weight = ETERNAL_PREFIX + prim_name + "_w";
     checkStaticData(context, dram_time, data_chunk_addr["weight"],
                     GetFromPairedVector(data_chunk, "weight"), label_weight,
                     false);
 
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                    << " read bias";
+
     auto label_bias = ETERNAL_PREFIX + prim_name + "_b";
     checkStaticData(context, dram_time, data_chunk_addr["bias"],
                     GetFromPairedVector(data_chunk, "bias"), label_bias, false);
-    cout << "Core " << prim_context->cid << " Matmul_f\n";
-    ARGUS_PRINT(dram_time);
 
     auto &p = param_value;
 
@@ -56,9 +57,10 @@ void Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
 
         uint64_t performance_comp =
             performance_cycle * exu->y_dims * exu->x_dims * HW_COMP_UTIL;
-        LOG_VERBOSE(1, context.cid,
-                    "Prim name:" << name << " performance_cycle "
-                                 << performance_cycle);
+
+        LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                        << " performance_cycle " << performance_cycle
+                        << " performance_comp " << performance_comp;
 
         int loop_input_count =
             weight_tile_y - 1; // read loop_input_count Repetitive input
@@ -67,10 +69,6 @@ void Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
             for (int p = 0; p < data_size_input.size(); p++) {
                 if (prim_context->datapass_label_->indata[p].find(DRAM_LABEL) ==
                     0) {
-                    cout << "[MATMUL] Core " << prim_context->cid
-                         << ": Checking input "
-                         << prim_context->datapass_label_->indata[p] << "..."
-                         << endl;
                     prefReadData(context, dram_time, data_size_input[p],
                                  prim_context->datapass_label_->indata[p]);
                 }
@@ -81,7 +79,6 @@ void Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
         sfu_ops = 0;
     } else {
         // 计算overlap并写回output数据
-        // cout << "matmul output data size: " << data_size_out << endl;
         exu_ops = (uint64_t)p["B"] * p["OC"] * p["T"] * p["C"] * 2;
         sfu_ops = 0;
     }

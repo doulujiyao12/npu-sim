@@ -16,22 +16,16 @@
 MemInterface::MemInterface(const sc_module_name &n, Event_engine *event_engine,
                            const char *config_name)
     : event_engine(event_engine) {
-
-    cout << "SIMULATION MODE: " << SYSTEM_MODE << endl;
-
     if (SYSTEM_MODE == SIM_DATAFLOW)
         config_helper = new config_helper_core(config_name);
     else if (SYSTEM_MODE == SIM_GPU)
         config_helper = new config_helper_gpu(config_name);
     else if (SYSTEM_MODE == SIM_PD)
-        config_helper = 
-            new config_helper_pd(config_name, &ev_req_handler);
+        config_helper = new config_helper_pd(config_name, &ev_req_handler);
     else if (SYSTEM_MODE == SIM_PDS)
-        config_helper =
-            new config_helper_pds(config_name, &ev_req_handler);
+        config_helper = new config_helper_pds(config_name, &ev_req_handler);
     else if (SYSTEM_MODE == SIM_GPU_PD)
-        config_helper =
-            new config_helper_gpu_pd(config_name, &ev_req_handler);
+        config_helper = new config_helper_gpu_pd(config_name, &ev_req_handler);
 
     init();
 }
@@ -119,7 +113,7 @@ void MemInterface::init() {
 };
 
 MemInterface::~MemInterface() {
-    cout << "Mem Interface delete\n";
+    LOG_INFO(SYSTEM) << "Cleanup memory interface components";
     delete[] host_data_sent_i;
     delete[] host_data_sent_o;
     delete[] host_channel_avail_i;
@@ -133,7 +127,7 @@ MemInterface::~MemInterface() {
 
 
 /*
-SIM_DATAFLOW 
+SIM_DATAFLOW
 [PRO_CONF]
    │
    ▼ (start_i.pos() 或 ev_dis_config)
@@ -151,8 +145,8 @@ SIM_DATAFLOW
    ▼ (ev_dis_start)
 发送 input data → 等待 write_done
    │
-   ▼ (收到 ACK → ev_switch_phase，但 phase 已是 PRO_START，所以再次触发 ev_dis_start)
-循环发送 input data（持续）
+   ▼ (收到 ACK → ev_switch_phase，但 phase 已是 PRO_START，所以再次触发
+ev_dis_start) 循环发送 input data（持续）
 
 
 */
@@ -221,7 +215,7 @@ void MemInterface::distribute_config() {
         if (writable) {
             ev_write.notify(CYCLE, SC_NS);
             wait(write_done.posedge_event());
-            cout << sc_time_stamp() << ": Mem Interface: config sent done.\n";
+            LOG_INFO(MEM_INTF) << "End config distribution";
             event_engine->add_event(this->name(), "Sending Config", "E",
                                     Trace_event_util());
 
@@ -256,7 +250,7 @@ void MemInterface::distribute_data() {
                                 Trace_event_util(flow_name), sc_time(0, SC_NS),
                                 100);
 
-        cout << "Mem Interface: data sent done.\n";
+        LOG_INFO(MEM_INTF) << "End data distribution";
         wait();
     }
 }
@@ -273,7 +267,7 @@ void MemInterface::distribute_start_data() {
         event_engine->add_event(this->name(), "Send Input Data", "E",
                                 Trace_event_util());
 
-        cout << "Mem Interface: start data sent done.\n";
+        LOG_INFO(MEM_INTF) << "End start data distribution";
         wait();
     }
 }
@@ -286,13 +280,15 @@ void MemInterface::recv_helper() {
                 Msg m = DeserializeMsg(d);
 
                 if (m.msg_type_ == ACK) {
-                    cout << "ACK from " << m.source_ << endl;
+                    LOG_DEBUG(MEM_INTF)
+                        << "Memory interface <- ACK <- " << m.source_;
                     config_helper->g_temp_ack_msg.push_back(m);
                     ev_recv_ack.notify(0, SC_NS);
                 }
 
                 else if (m.msg_type_ == DONE) {
-                    cout << "DONE from " << m.source_ << endl;
+                    LOG_DEBUG(MEM_INTF)
+                        << "Memory interface <- DONE <- " << m.source_;
                     config_helper->g_temp_done_msg.push_back(m);
                     ev_recv_done.notify(0, SC_NS);
                 }
@@ -346,16 +342,17 @@ void MemInterface::recv_done() {
         }
 
         config_helper->parse_done_msg(event_engine, notify_event);
-        cout << "Mem Interface: done recv done.\n";
+        LOG_INFO(MEM_INTF) << "End DONE reception";
         wait();
     }
 }
 
-// 从write_buffer里面取出数据，发送到 对应的 Core 中，包括 Config Weight Data 和 Start Data
+// 从write_buffer里面取出数据，发送到 对应的 Core 中，包括 Config Weight Data 和
+// Start Data
 void MemInterface::write_helper() {
     while (true) {
         write_done.write(false);
-        cout << "Mem Interface: start to write\n";
+        LOG_INFO(MEM_INTF) << "Start write operation";
 
         // 立刻将buffer中的内容复制到本地，并清空全局buffer
         queue<Msg> temp_buffer[GRID_X];
@@ -386,8 +383,6 @@ void MemInterface::write_helper() {
                 temp_buffer[i].pop();
                 host_channel_o[i].write(SerializeMsg(t));
                 host_data_sent_o[i].write(true);
-                // cout << "SEND DATA to: " << t.des_ << ",seq: " << t.seq_id_
-                //      << ", end ?: " << t.is_end_ << endl;
             }
 
             if (stop_flag)
@@ -400,7 +395,7 @@ void MemInterface::write_helper() {
             }
         }
 
-        cout << "Mem Interface: write done\n";
+        LOG_INFO(MEM_INTF) << "End write operation";
         write_done.write(true);
 
         wait();
@@ -411,9 +406,8 @@ void MemInterface::req_handler() {
     while (true) {
         if (SYSTEM_MODE != SIM_PD && SYSTEM_MODE != SIM_PDS &&
             SYSTEM_MODE != SIM_GPU_PD) {
-            cout << "[ERROR] Request handler can only be used in PD mode or "
-                    "PDS mode.\n";
-            sc_stop();
+            LOG_ERROR(mem_interface.cpp) << "Request handler can only be "
+                                            "used in PD mode or PDS mode";
         }
 
         if (SYSTEM_MODE == SIM_PD) {
@@ -421,8 +415,8 @@ void MemInterface::req_handler() {
             for (int i = 0; i < pd->arrival_time.size(); i++) {
                 sc_time next_time(pd->arrival_time[i], SC_NS);
                 if (next_time < sc_time_stamp()) {
-                    cout << "[ERROR] Be sure all reqs come in sequentially.\n";
-                    sc_stop();
+                    LOG_ERROR(mem_interface.cpp)
+                        << "All requests should be input in order";
                 }
 
                 wait(next_time - sc_time_stamp());
@@ -433,12 +427,12 @@ void MemInterface::req_handler() {
             for (int i = 0; i < pd->arrival_time.size(); i++) {
                 sc_time next_time(pd->arrival_time[i], SC_NS);
                 if (next_time < sc_time_stamp()) {
-                    cout << "[ERROR] Be sure all reqs come in sequentially.\n";
-                    sc_stop();
+                    LOG_ERROR(mem_interface.cpp)
+                        << "All requests should be input in order";
                 }
 
                 wait(next_time - sc_time_stamp());
-                cout << "Mem Interface: start to dispatch req " << i << endl;
+                LOG_INFO(MEM_INTF) << "Start to dispatch request " << i;
                 ev_dis_config.notify(0, SC_NS);
             }
         } else if (SYSTEM_MODE == SIM_GPU_PD) {
@@ -446,8 +440,8 @@ void MemInterface::req_handler() {
             for (int i = 0; i < pd->arrival_time.size(); i++) {
                 sc_time next_time(pd->arrival_time[i], SC_NS);
                 if (next_time < sc_time_stamp()) {
-                    cout << "[ERROR] Be sure all reqs come in sequentially.\n";
-                    sc_stop();
+                    LOG_ERROR(mem_interface.cpp)
+                        << "All requests should be input in order";
                 }
 
                 wait(next_time - sc_time_stamp());
@@ -479,14 +473,14 @@ void MemInterface::switch_phase() {
     while (true) {
         if (phase == PRO_CONF) {
             phase = PRO_DATA;
-            cout << sc_time_stamp() << ": Mem Interface: switch to P_DATA.\n";
+            LOG_DEBUG(MEM_INTF) << "Switch to PRO_DATA";
             ev_dis_data.notify(0, SC_NS);
         } else if (phase == PRO_DATA) {
             phase = PRO_START;
-            cout << sc_time_stamp() << ": Mem Interface: switch to P_START.\n";
+            LOG_DEBUG(MEM_INTF) << "Switch to PRO_START";
             ev_dis_start.notify(0, SC_NS);
         } else if (phase == PRO_START) {
-            cout << sc_time_stamp() << ": Mem Interface: continue P_START.\n";
+            LOG_DEBUG(MEM_INTF) << "Continue to PRO_START";
             ev_dis_start.notify(0, SC_NS);
         }
         wait();
