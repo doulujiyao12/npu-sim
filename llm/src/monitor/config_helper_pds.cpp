@@ -531,12 +531,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
             for (int w = 0; w < template_cores[core_id - i].worklist.size();
                  w++) {
                 auto &work = template_cores[core_id - i].worklist[w];
-                add_recv(prim_seq, (w == 0 && core_id == i),
-                         (w == 0 && core_id == i)
-                             ? core_id
-                             : (core_id * tp_size + (core_id == i
-                                                         ? core_id + tp_size - 1
-                                                         : core_id - 1)),
+                add_recv(prim_seq, (w == 0 && core_id == i), work.recv_tag + i,
                          work.recv_cnt, core_id);
 
                 // work的所有计算原语
@@ -576,16 +571,14 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
                 if (tp_size == 1)
                     continue;
 
-                // 发送原语，遵循work中的cast，编号和tag需要自定义
+                // 发送原语，遵循work中的cast
                 for (auto ca : work.cast) {
-                    int next_id = core_id == i + tp_size - 1 ? i : core_id + 1;
+                    int next_id = ca.dest + i;
                     Send_prim *send_req =
-                        new Send_prim(SEND_TYPE::SEND_REQ, next_id,
-                                      core_id + next_id * tp_size);
+                        new Send_prim(SEND_TYPE::SEND_REQ, next_id, ca.tag + i);
                     Recv_prim *recv_ack = new Recv_prim(RECV_TYPE::RECV_ACK);
                     Send_prim *send_data =
-                        new Send_prim(SEND_TYPE::SEND_DATA, next_id,
-                                      core_id + next_id * tp_size);
+                        new Send_prim(SEND_TYPE::SEND_DATA, next_id, ca.tag + i);
 
                     CalculatePacketNum(
                         last_comp->out_size, ca.weight, last_comp->data_byte,
