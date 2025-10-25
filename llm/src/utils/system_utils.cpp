@@ -27,7 +27,8 @@ int GetFromPairedVector(vector<pair<string, int>> &vector, string key) {
             return pair.second;
     }
 
-    ARGUS_EXIT("Key ", key, " does not exist in vector.\n");
+    LOG_ERROR(system_utils.cpp)
+        << "Key " << key << " does not exist in vector.";
     return -1;
 }
 
@@ -37,13 +38,14 @@ CoreHWConfig *GetCoreHWConfig(int id) {
             return pair.second;
     }
 
-    ARGUS_EXIT("Core HW config for id ", id, " does not exist.\n");
+    LOG_ERROR(system_utils.cpp)
+        << "Core HW config for id " << id << " does not exist.";
     return new CoreHWConfig();
 }
 
 int CeilingDivision(int a, int b) {
     if (b == 0) {
-        ARGUS_EXIT("Division by zero.\n");
+        LOG_ERROR(system_utils.cpp) << "Division by zero.";
     }
 
     return (a + b - 1) / b;
@@ -55,7 +57,8 @@ void InitGrid(string workload_config_path, string hardware_config_path,
     ifstream jfile1(workload_config_path);
 
     if (!jfile1.is_open())
-        ARGUS_EXIT("Failed to open file ", workload_config_path, ".\n");
+        LOG_ERROR(system_utils.cpp)
+            << "Failed to open file " << workload_config_path << ".";
 
     jfile1 >> j1;
     ParseSimulationType(j1);
@@ -64,7 +67,8 @@ void InitGrid(string workload_config_path, string hardware_config_path,
     ifstream jfile2(hardware_config_path);
 
     if (!jfile2.is_open())
-        ARGUS_EXIT("Failed to open file ", hardware_config_path, ".\n");
+        LOG_ERROR(system_utils.cpp)
+            << "Failed to open file " << hardware_config_path;
 
     jfile2 >> j2;
     ParseHardwareConfig(j2);
@@ -73,7 +77,7 @@ void InitGrid(string workload_config_path, string hardware_config_path,
     ifstream jfile3(simulation_config_path);
 
     if (!jfile3.is_open())
-        ARGUS_EXIT("Failed to open file ", simulation_config_path, ".\n");
+        LOG_ERROR(system_utils.cpp) << "Failed to parse simulation config file";
 
     jfile3 >> j3;
     ParseSimulationConfig(j3);
@@ -120,7 +124,8 @@ void DeleteCoreLogFiles() {
             }
         }
     } catch (const std::filesystem::filesystem_error &e) {
-        ARGUS_EXIT("Fail to delete core log files, ", e.what());
+        LOG_ERROR(system_utils.cpp)
+            << "Failed to delete core log files, " << e.what();
     }
 }
 
@@ -147,7 +152,8 @@ void DeleteMemoryLogFiles() {
                 }
             }
         } catch (const std::filesystem::filesystem_error &e) {
-            ARGUS_EXIT("Fail to delete memory log files, ", e.what());
+            LOG_ERROR(system_utils.cpp)
+                << "Failed to delete memory log files, " << e.what();
         }
     };
 

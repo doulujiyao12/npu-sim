@@ -1,12 +1,12 @@
 #pragma once
 #include "defs/enums.h"
+#include "systemc.h"
 #include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <mutex>
 #include <sstream>
 #include <string>
-#include "systemc.h"
 
 std::string ToHexString(int value);
 
@@ -20,39 +20,14 @@ std::string GetEnumRecvType(RECV_TYPE type);
 std::string GetEnumSimulationMode(SIM_MODE mode);
 std::string GetEnumDirectionType(Directions type);
 
-void LogVerboseImpl(int level, int core_id, const std::string &message);
-
-template <typename... Args> std::string make_string(Args &&...args) {
-    std::ostringstream oss;
-    // 使用 fold expression 来展开参数
-    (oss << ... << args);
-    return oss.str();
-}
-
-// 输出工具
-#define ARGUS_EXIT(...)                                                        \
-    do {                                                                       \
-        std::cout << "[ERROR]: " << make_string(__VA_ARGS__) << std::endl;     \
-        sc_stop();                                                             \
-    } while (0)
-
-#define LOG_VERBOSE(level, core_id, message)                                   \
-    do {                                                                       \
-        if (LOG_LEVEL >= (level)) {                                            \
-            std::ostringstream __oss;                                          \
-            __oss << message;                                                  \
-            LogVerboseImpl(level, core_id, __oss.str());                       \
-        }                                                                      \
-    } while (0)
-
-
 enum class LogLevel { LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR };
 
 struct LogConfig {
-    static inline LogLevel level = LogLevel::LOG_DEBUG;
+    static inline LogLevel CONFIG_LOG_LEVEL = LogLevel::LOG_DEBUG;
+    static inline bool CONFIG_VERBOSE_DEBUG = false;
     static inline int align_width = 150; // 左右分界宽度
     static inline int prefix_width = 40; // 前缀宽度
-    static inline bool color = false;
+    static inline bool color = true;
 };
 
 // ------------------------------------------------------------
@@ -65,6 +40,9 @@ public:
 
     ~Logger() {
         if (!shouldPrint(level))
+            return;
+
+        if (module.find("DEBUG") != std::string::npos && !LogConfig::CONFIG_VERBOSE_DEBUG)
             return;
 
         std::ostringstream left;
@@ -113,7 +91,8 @@ private:
     int line;
 
     bool shouldPrint(LogLevel lvl) {
-        return static_cast<int>(lvl) >= static_cast<int>(LogConfig::level);
+        return static_cast<int>(lvl) >=
+               static_cast<int>(LogConfig::CONFIG_LOG_LEVEL);
     }
 
     const char *levelToString(LogLevel lvl) {

@@ -12,8 +12,8 @@ void rope_forward_pd::initialize() {
 }
 
 void rope_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
-                              u_int64_t &dram_time, u_int64_t &exu_ops,
-                              u_int64_t &sfu_ops) {
+                               u_int64_t &dram_time, u_int64_t &exu_ops,
+                               u_int64_t &sfu_ops) {
     // 此时默认已经分好注意力头了。对于每一个注意力头，对应的sincos数据大小均为B
     // * T * (C / NH) (最后一个维度已扩展)
     // 读出需要用到的sincos数据
@@ -25,6 +25,8 @@ void rope_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         max_token_num = 1;
 
     // 读入sincos数据
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                    << " read degree data";
     auto label_sincos = ETERNAL_PREFIX + prim_name + "_sc";
     checkStaticData(context, dram_time, data_chunk_addr["sincos"],
                     GetFromPairedVector(data_chunk, "sincos") * max_token_num,
@@ -60,10 +62,8 @@ void rope_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         string label_v = format_label_v;
 
         // 如果没有对应的kvcache，则创建一个标签；如果已经有了，则直接更新大小
-        cout << "[rope_f] Core " << prim_context->cid
-             << " Ready to add label: " << label_k << ", size: " << size
-             << endl;
-
+        LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                        << " write K cache";
 #if USE_SRAM_MANAGER == 1
         sram_update_cache(context, label_k, prim_context->sram_pos_locator_,
                           size, dram_time, prim_context->cid);
@@ -72,10 +72,9 @@ void rope_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         prim_context->sram_pos_locator_->updatePair(label_k, size, context,
                                                     dram_time);
 #endif
-        cout << "[rope_f] Core " << prim_context->cid
-             << " Ready to add label: " << label_v << ", size: " << size
-             << endl;
 
+        LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                        << " write V cache";
 #if USE_SRAM_MANAGER == 1
         sram_update_cache(context, label_v, prim_context->sram_pos_locator_,
                           size, dram_time, prim_context->cid);

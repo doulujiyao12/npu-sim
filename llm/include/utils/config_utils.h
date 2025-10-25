@@ -30,9 +30,9 @@ template <typename T> void SetParamFromJson(json j, string field, T *target) {
             }
         }
 
-        ARGUS_EXIT("Undefined variable ", value, ".\n");
+        LOG_ERROR(config_utils.h) << "Undefined variable " << value;
     } else
-        ARGUS_EXIT("Undefined field ", field, " in json.\n");
+        LOG_ERROR(config_utils.h) << "Undefined field " << field << " in json";
 }
 
 template <typename T>

@@ -11,11 +11,11 @@
 REGISTER_PRIM(Recv_global_memory);
 
 void Recv_global_memory::initialize() {
-    ARGUS_EXIT("Recv_global_memory not implemented.\n");
+    LOG_ERROR(PRIM) << "Recv_global_memory::initialize() not implemented";
 }
 
 void Recv_global_memory::taskCore(TaskCoreContext &context, string prim_name,
                                  u_int64_t &dram_time, u_int64_t &exu_ops,
                                  u_int64_t &sfu_ops) {
-    ARGUS_EXIT("Recv_global_memory not implemented.\n");
+    LOG_ERROR(PRIM) << "Recv_global_memory not implemented";
 }

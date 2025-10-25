@@ -34,17 +34,16 @@ int Residual_f_gpu::taskCoreDefault(TaskCoreContext &context) {
         if (!prim_context->gpu_pos_locator_->findPair(
                 prim_context->datapass_label_->indata[i],
                 input_mem_offset[i])) {
-            printf("[ERROR] Residual_f_gpu: prim_context->gpu_pos_locator_ "
-                   "cannot find the "
-                   "label: "
-                   "%s\n",
-                   prim_context->datapass_label_->indata[i].c_str());
-            sc_stop();
+            LOG_ERROR(residual_forward_gpu.cpp)
+                << name << " of Core " << context.cid << " cannot find "
+                << prim_context->datapass_label_->indata[i];
         }
     }
 
     int overlap_time = 0;
 #if USE_L1L2_CACHE == 1
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                    << " read input";
     for (int i = 0; i < 2; i++) {
         gpu_read_generic(
             context,
@@ -61,6 +60,8 @@ int Residual_f_gpu::taskCoreDefault(TaskCoreContext &context) {
     prim_context->gpu_pos_locator_->findPair(
         prim_context->datapass_label_->outdata, out_key);
 
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                    << " write output";
     gpu_write_generic(context,
                       out_key.pos + GetFromPairedVector(data_chunk, "output") *
                                         fetch_index,
@@ -87,19 +88,14 @@ int Residual_f_gpu::taskCoreDefault(TaskCoreContext &context) {
     if (mem_time > cycle) {
         // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
         overlap_time = 0;
-        LOG_VERBOSE(1, prim_context->cid,
-                    "Prim name:" << name << RED << " cycle: " << cycle
-                                 << ", dram_time: " << mem_time << RESET);
+        LOG_INFO(PRIM) << name << " of Core " << context.cid << ": dram_time "
+                       << mem_time << ", compute cycle " << cycle;
     } else {
         overlap_time = cycle - mem_time;
-        LOG_VERBOSE(1, prim_context->cid,
-                    "Prim name:" << name << GREEN << " cycle: " << cycle
-                                 << ", dram_time: " << mem_time << RESET);
+        LOG_INFO(PRIM) << name << " of Core " << context.cid << ": dram_time "
+                       << mem_time << ", compute cycle " << cycle;
     }
 #endif
-
-    cout << "[Residual_f_gpu] after write: " << overlap_time << endl;
-
     return overlap_time;
 }
 

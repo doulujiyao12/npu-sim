@@ -32,8 +32,8 @@ void matmul_forward_moe::taskCore(TaskCoreContext &context, string prim_name,
         if (selected_experts.size() != p["K"])
             selected_experts.clear();
 
-        cout << "[MOE] Core " << prim_context->cid << ": Selecting experts..."
-             << endl;
+        LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                        << " Selecting experts...";
 
         bool exp_flag[p["E_N"]];
         for (auto &b : exp_flag)
@@ -70,9 +70,9 @@ void matmul_forward_moe::taskCore(TaskCoreContext &context, string prim_name,
 
     } else {
         if (selected_experts.size() != p["K"]) {
-            cout << "[ERROR] selected_experts size mismatch: "
-                 << selected_experts.size() << " != " << p["K"] << endl;
-            sc_stop();
+            LOG_ERROR(matmul_forward_moe.cpp)
+                << "selected_experts size mismatch: " << selected_experts.size()
+                << " != " << p["K"];
             return;
         }
     }
@@ -150,9 +150,9 @@ void matmul_forward_moe::taskCore(TaskCoreContext &context, string prim_name,
 
         uint64_t performance_comp =
             performance_cycle * exu->y_dims * exu->x_dims * HW_COMP_UTIL;
-        LOG_VERBOSE(1, context.cid,
-                    "Prim name:" << name << " performance_cycle "
-                                 << performance_cycle);
+
+        LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                        << " performance_cycle " << performance_cycle;
 
         int loop_input_count =
             weight_tile_y - 1; // read loop_input_count Repetitive input

@@ -51,9 +51,9 @@ void GpuBase::deserialize(vector<sc_bv<128>> segments) {
 
     // 依次解析参数，每一个segment存储4个参数
     if (segments.size() - 1 != (vec.size() + 3) / 4)
-        ARGUS_EXIT("In deserialize ", name,
-                   ": the number of segments does not match the number of "
-                   "parameters.\n");
+        LOG_ERROR(gpu_base.cpp) << "In deserialize " << name
+                                << ": the number of segments does not match "
+                                   "the number of parameters";
 
     for (int i = 1; i < segments.size(); i++) {
         auto buffer = segments[i];
@@ -137,8 +137,9 @@ void GpuBase::initializeDefault() {
         }
     }
 
-    if (out_size < 0)
-        ARGUS_EXIT("No output chunk found.\n");
+    if (out_size < 0) {
+        LOG_ERROR(gpu_base.cpp) << "No output chunk found";
+    }
 }
 
 void GpuBase::printSelf() {}

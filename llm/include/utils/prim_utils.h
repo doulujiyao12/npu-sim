@@ -23,7 +23,6 @@ public:
         type_to_id_[type] = next_id_;
         id_to_type_[next_id_] = type;
 
-        cout << "Registered primitive: " << type << " -> " << next_id_ << endl;
         next_id_++;
     }
 
@@ -38,7 +37,7 @@ public:
             return prim;
         }
 
-        ARGUS_EXIT("Unregistered primitive type ", type);
+        LOG_ERROR(prim_utils.h) << "Unregistered primitive type " << type;
         return nullptr;
     }
 
@@ -48,7 +47,7 @@ public:
             return createPrim(it->second, need_init);
         }
 
-        ARGUS_EXIT("Unregistered primitive ID ", id);
+        LOG_ERROR(prim_utils.h) << "Unregistered primitive ID " << id;
         return nullptr;
     }
 

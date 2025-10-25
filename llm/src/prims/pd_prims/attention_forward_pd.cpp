@@ -33,15 +33,11 @@ void attention_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         int flag =
             prim_context->sram_pos_locator_->findPair(label_decode_k, kcache);
         if (flag == -1) {
-            printf("[ERROR] attention_forward_pd: failed to find label %s, "
-                   "exit.\n",
-                   label_decode_k.c_str());
-            sc_stop();
+            LOG_ERROR(attention_forward_pd.cpp)
+                << name << " of Core " << context.cid << " cannot find "
+                << label_decode_k;
         } else if (flag > 0) {
 #if USE_SRAM_MANAGER == 1
-            std::cout << "[INFO] CompBase: sram_pos_locator find the "
-                         "label: "
-                      << label_decode_k << " with flag: " << flag << std::endl;
             sram_first_write_generic(context, flag, kcache.dram_addr, dram_time,
                                      nullptr, label_decode_k, true,
                                      prim_context->sram_pos_locator_);
@@ -62,20 +58,15 @@ void attention_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         sprintf(format_label_v, "%s%sv#%d", ETERNAL_PREFIX, KVCACHE_PREFIX,
                 batch);
         string label_decode_v = format_label_v;
-        // cout << "decode_v: " << label_decode_v << endl;
 
         flag =
             prim_context->sram_pos_locator_->findPair(label_decode_v, vcache);
         if (flag == -1) {
-            printf("[ERROR] attention_forward_pd: failed to find label %s, "
-                   "exit.\n",
-                   label_decode_v.c_str());
-            sc_stop();
+            LOG_ERROR(attention_forward_pd.cpp)
+                << name << " of Core " << context.cid << " cannot find "
+                << label_decode_v;
         } else if (flag > 0) {
 #if USE_SRAM_MANAGER == 1
-            std::cout << "[INFO] CompBase: sram_pos_locator find the "
-                         "label: "
-                      << label_decode_v << " with flag: " << flag << std::endl;
             sram_first_write_generic(context, flag, vcache.dram_addr, dram_time,
                                      nullptr, label_decode_v, true,
                                      prim_context->sram_pos_locator_);
@@ -95,10 +86,6 @@ void attention_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         int sram_offset = 0;
 #if USE_SRAM_MANAGER == 1
         prim_context->sram_pos_locator_->printAllKeysWithAllocId();
-        // Print allocation IDs for debugging
-        std::cout << label_decode_k << " " << label_decode_v
-                  << " Key Allocation ID: " << kcache.alloc_id << " "
-                  << vcache.alloc_id << std::endl;
 
         sram_read_generic(context, kcache.size, sram_offset, dram_time,
                           kcache.alloc_id, true,
@@ -108,6 +95,8 @@ void attention_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
                           prim_context->sram_pos_locator_);
 #else
         // 读出k,v
+        LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                        << " read KV";
         sram_read_generic(context, kcache.size, kcache.pos, dram_time);
         sram_read_generic(context, vcache.size, vcache.pos, dram_time);
 #endif
@@ -119,24 +108,25 @@ void attention_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
     int temp_sram_addr = 0;
     int temp_sram_addr_prior = 0;
     temp_sram_addr_prior = temp_sram_addr;
-    std::cout << "attention_forward sram_write_back_temp: temp_sram_addr: "
-              << temp_sram_addr << std::endl;
+
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                    << " write preatt";
     sram_write_back_temp(context, data_byte * data_chunk_addr["preatt"],
                          temp_sram_addr, dram_time);
-    std::cout << "attention_forward sram_read_generic_temp: temp_sram_addr: "
-              << temp_sram_addr << std::endl;
 
     // 读出preatt，计算自然指数，写入att
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                    << " read preatt";
     sram_read_generic_temp(context, data_byte * data_chunk_addr["preatt"],
                            temp_sram_addr_prior, dram_time);
     temp_sram_addr_prior = temp_sram_addr;
-    std::cout << "attention_forward sram_write_back_temp: temp_sram_addr: "
-              << temp_sram_addr << std::endl;
+
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid << " write att";
     sram_write_back_temp(context, data_byte * data_chunk_addr["att"],
                          temp_sram_addr, dram_time);
+
     // 读出att
-    std::cout << "attention_forward sram_read_generic_temp: temp_sram_addr: "
-              << temp_sram_addr << std::endl;
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid << " read att";
     sram_read_generic_temp(context, data_byte * data_chunk_addr["att"],
                            temp_sram_addr_prior, dram_time);
 

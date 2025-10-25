@@ -90,11 +90,12 @@ void NpuBase::deserialize(vector<sc_bv<128>> segments) {
 
     // 依次解析参数，每一个segment存储4个参数
     if (segments.size() - 1 != (vec.size() + 3) / 4)
-        ARGUS_EXIT("In deserialize ", name, ": the number of segments ",
-                   segments.size(),
-                   " does not match the number of "
-                   "parameters ",
-                   vec.size(), "\n");
+        LOG_ERROR(npu_base.cpp)
+            << "In deserialize " << name << ": the number of segments "
+            << segments.size()
+            << " does not match the number of "
+               "parameters "
+            << vec.size();
 
     for (int i = 1; i < segments.size(); i++) {
         auto buffer = segments[i];
@@ -159,7 +160,7 @@ void NpuBase::initializeDefault() {
         }
     }
     if (out_size < 0) {
-        ARGUS_EXIT("No output chunk found for ", name, ".\n");
+        LOG_ERROR(npu_base.cpp) << "No output chunk found for " << name;
         return;
     }
 
@@ -284,9 +285,10 @@ void NpuBase::checkInputData(TaskCoreContext &context, uint64_t &dram_time,
 #endif
         } else {
             AddrPosKey inp_key;
-            LOG_DEBUG(PRIM) << name << " of Core " << context.cid << " read label "
-                            << prim_context->datapass_label_->indata[p].c_str()
-                            << " from SRAM";
+            LOG_DEBUG(PRIM)
+                << name << " of Core " << context.cid << " read label "
+                << prim_context->datapass_label_->indata[p].c_str()
+                << " from SRAM";
 
             int flag = prim_context->sram_pos_locator_->findPair(
                 prim_context->datapass_label_->indata[p], inp_key);
@@ -625,14 +627,14 @@ void NpuBase::writeOutputData(TaskCoreContext &context, uint64_t exu_flops,
         // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
         overlap_time = 0;
         LOG_INFO(PRIM) << name << " of Core " << context.cid << ": dram_time "
-                       << RED << dram_time << RESET << ", compute cycle " << RED
-                       << cycle << RESET;
+                        << dram_time  << ", compute cycle " 
+                       << cycle ;
 
     } else {
         overlap_time = cycle - dram_time;
         LOG_INFO(PRIM) << name << " of Core " << context.cid << ": dram_time "
-                       << GREEN << dram_time << RESET << ", compute cycle "
-                       << GREEN << cycle << RESET;
+                        << dram_time  << ", compute cycle "
+                        << cycle ;
     }
 
     // 写入out

@@ -6,14 +6,12 @@
 #include <tlm_utils/simple_initiator_socket.h>
 #include <tlm_utils/simple_target_socket.h>
 
+#include "defs/global.h"
 #include "macros/macros.h"
 #include "memory/MemoryManager_v2.h"
 #include "memory/dram/utils.h"
 #include "trace/Event_engine.h"
-#include "defs/global.h"
-
-
-
+#include "utils/print_utils.h"
 
 // DMA Producer SystemC Module
 class NB_DcacheIF : public sc_core::sc_module {
@@ -43,8 +41,9 @@ public:
 
 
     // Constructor
-    NB_DcacheIF(int c_id, sc_core::sc_module_name name, sc_event *start_nb_dram_event,
-                sc_event *end_nb_dram_event, Event_engine *event_engine)
+    NB_DcacheIF(int c_id, sc_core::sc_module_name name,
+                sc_event *start_nb_dram_event, sc_event *end_nb_dram_event,
+                Event_engine *event_engine)
         : c_id(c_id),
           sc_module(name),
           start_nb_dram_event(start_nb_dram_event),
@@ -70,13 +69,14 @@ public:
         base_address = base_addr;
         total_requests = dma_read_cnt * cache_cnt;
         // cache_lines = line_size;
-        data_length = line_size / 8;         // 假设每行按8字节分块
-#if NB_CACHE_DEBUG == 1
-        LOG_VERBOSE(1, c_id,"total_requests: " << total_requests << " line_size: " << line_size);
-#endif
-        
-#if DRAM_BURST_BYTE > 0 
-        total_requests = (total_requests * data_length + DRAM_BURST_BYTE - 1) / DRAM_BURST_BYTE;
+        data_length = line_size / 8; // 假设每行按8字节分块
+
+        LOG_DEBUG(MEMORY_DEBUG) << "Core " << c_id << " total_requests "
+                                << total_requests << " line_size " << line_size;
+
+#if DRAM_BURST_BYTE > 0
+        total_requests = (total_requests * data_length + DRAM_BURST_BYTE - 1) /
+                         DRAM_BURST_BYTE;
         data_length = DRAM_BURST_BYTE;
 #endif
         current_request = 0;                 // Reset request counter
@@ -125,8 +125,9 @@ private:
         // 打印phase类型
         // 打印当前时间戳
 #if NB_CACHE_DEBUG == 1
-        std::cout << "Current time: " << sc_core::sc_time_stamp() <<
-        std::endl; std::cout << "Phase: "; if (phase == tlm::BEGIN_REQ) {
+        std::cout << "Current time: " << sc_core::sc_time_stamp() << std::endl;
+        std::cout << "Phase: ";
+        if (phase == tlm::BEGIN_REQ) {
             std::cout << "BEGIN_REQ" << std::endl;
         } else if (phase == tlm::END_REQ) {
             std::cout << "END_REQ" << std::endl;
@@ -169,19 +170,22 @@ private:
                 next_dram_event->notify();
                 transactionPostponed = false;
             }
-#if NB_CACHE_DEBUG == 1
-            LOG_VERBOSE(1, c_id,"BEGIN_RESP transactionsSent: " << transactionsSent << " transactionsReceived: " << transactionsReceived << " finish" << finished);
 
-#endif
+            LOG_DEBUG(MEMORY_DEBUG)
+                << "Core " << c_id
+                << " BEGIN RESP transaction sent: " << transactionsSent
+                << " received: " << transactionsReceived << " finish"
+                << finished;
+
             // If all answers were received:
             if (finished && transactionsSent == transactionsReceived) {
                 finished = false;
                 transactionsSent = 0;
                 transactionsReceived = 0;
-#if NB_CACHE_DEBUG == 1
-                LOG_VERBOSE(1, c_id,"BEGIN RESP DRAM EVENT");
-                
-#endif
+
+                LOG_DEBUG(MEMORY_DEBUG)
+                    << "Core " << c_id << " Begin resp dram event";
+
                 end_nb_dram_event->notify();
             }
         } else if (phase == tlm::END_RESP) {
@@ -206,18 +210,20 @@ private:
             }
 
             // If all answers were received:
-#if NB_CACHE_DEBUG == 1
-            LOG_VERBOSE(1, c_id,"END_RESP transactionsSent: " << transactionsSent << " transactionsReceived: " << transactionsReceived << " finish" << finished);
+            LOG_DEBUG(MEMORY_DEBUG)
+                << "Core " << c_id
+                << " End resp transaction sent: " << transactionsSent
+                << " received: " << transactionsReceived << " finish"
+                << finished;
 
-#endif
             if (finished && transactionsSent == transactionsReceived) {
                 finished = false;
                 transactionsSent = 0;
                 transactionsReceived = 0;
-#if NB_CACHE_DEBUG == 1
-                LOG_VERBOSE(1, c_id,"END RESP DRAM EVENT");
 
-#endif
+                LOG_DEBUG(MEMORY_DEBUG)
+                    << "Core " << c_id << " End resp dram event";
+
                 end_nb_dram_event->notify();
             }
         } else {
@@ -233,12 +239,10 @@ private:
             cout << "Core " << c_id << "start generateRequests " << std::endl;
 #endif
             wait(*start_nb_dram_event);
-#if NB_CACHE_DEBUG == 1
-            std::cout << "Event: start_nb_dram_event notified at time "
-                      << sc_core::sc_time_stamp() << " total request " << total_requests << std::endl;
-            LOG_VERBOSE(1, c_id,"total_requests  " << total_requests);
 
-#endif
+            LOG_DEBUG(MEMORY_DEBUG)
+                << "Core " << c_id << " total_requests " << total_requests;
+
             if (total_requests > 0) {
                 transactionsSent = total_requests;
                 while (current_request < total_requests) {
@@ -251,12 +255,13 @@ private:
                     // 打印当前请求信息
                     // std::cout << "Request " << current_request + 1 << " of "
                     //           << total_requests << ": address=0x" << std::hex
-                    //           << (base_address + current_request * data_length)
+                    //           << (base_address + current_request *
+                    //           data_length)
                     //           << ", length=" << std::dec << data_length
                     //           << ", command=Read" << std::endl;
                     // std::cout << "Event: Before notified at time "
                     //           << sc_core::sc_time_stamp() << std::endl;
-                              
+
                     Request request;
                     request.address =
                         base_address + current_request * data_length;
@@ -278,11 +283,11 @@ private:
                         pendingWriteRequests++;
 
                     // transactionsSent++;
-#if NB_CACHE_DEBUG == 1
-                    // 打印事件通知信息
-                    LOG_VERBOSE(1, c_id,"Event: next_dram_event notified at time " << sc_core::sc_time_stamp());
+                    LOG_DEBUG(MEMORY_DEBUG)
+                        << "Core " << c_id
+                        << " next_dram_event notified at time "
+                        << sc_core::sc_time_stamp();
 
-#endif
                     finished = true;
                     wait(*next_dram_event);
 

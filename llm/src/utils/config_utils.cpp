@@ -11,7 +11,7 @@ int GetDefinedParam(string var) {
             return v.second;
     }
 
-    ARGUS_EXIT("Undefined variable ", var, ".\n");
+    LOG_ERROR(config_utils.cpp) << "Undefined variable " << var;
     return 1;
 }
 
@@ -29,19 +29,20 @@ void ParseSimulationType(json j) {
         if (sim_mode_map.find(mode) != sim_mode_map.end())
             SYSTEM_MODE = sim_mode_map[mode];
         else
-            ARGUS_EXIT("Unsupported simulation mode ", mode);
+            LOG_ERROR(config_utils.cpp)
+                << "Unsupported simulation mode " << mode;
     } else
         SYSTEM_MODE = SIM_DATAFLOW;
 
-    LOG_INFO(SYSTEM) << 
-        "System running in simulation mode "
-        << GetEnumSimulationMode(SYSTEM_MODE);
+    LOG_INFO(SYSTEM) << "System running in simulation mode "
+                     << GetEnumSimulationMode(SYSTEM_MODE);
 
     if (SYSTEM_MODE == SIM_GPU) {
         if (j.contains("chips"))
             CORE_PER_SM = j["chips"][0]["core_per_sm"];
         if (USE_L1L2_CACHE != 1)
-            ARGUS_EXIT("L1L2 cache unavailable for GPU simulation.\n");
+            LOG_ERROR(config_utils.cpp)
+                << "L1L2 cache unavailable for GPU simulation.";
     }
 }
 

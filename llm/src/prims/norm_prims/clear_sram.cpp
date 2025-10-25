@@ -9,10 +9,9 @@
 
 REGISTER_PRIM(Clear_sram);
 
-void Clear_sram::printSelf() { cout << "<clear_sram>\n"; }
+void Clear_sram::printSelf() {}
 
 void Clear_sram::deserialize(vector<sc_bv<128>> segments) {
-        cout << "Start deserialize " << name << endl;
     auto buffer = segments[0];
 }
 
@@ -27,14 +26,12 @@ vector<sc_bv<128>> Clear_sram::serialize() {
 }
 
 int Clear_sram::taskCoreDefault(TaskCoreContext &context) {
-    cout << "[INFO] before clear_sram: sram_addr=" << *(context.sram_addr)
-         << endl;
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                    << " SRAM top address: " << *(context.sram_addr);
 #if USE_SRAM_MANAGER == 0
     vector<pair<string, AddrPosKey>> temp_list;
-    // sram_pos_locator->printAllKeys();
-    for (auto record : prim_context->sram_pos_locator_->data_map) {
-        cout << "\tReading label <" << record.first << ">\n";
 
+    for (auto record : prim_context->sram_pos_locator_->data_map) {
         if (!record.second.valid)
             continue;
 
@@ -50,7 +47,6 @@ int Clear_sram::taskCoreDefault(TaskCoreContext &context) {
         }
 
         if (flag) {
-            cout << "\t\tRetain.\n";
             temp_list.push_back(record);
         }
     }
@@ -73,16 +69,14 @@ int Clear_sram::taskCoreDefault(TaskCoreContext &context) {
         u_int64_t temp_addr = 0;
         prim_context->sram_pos_locator_->addPair(record.first, temp_key,
                                                  context, temp_addr);
-        cout << "\tAdd label <" << record.first << "> at offset " << pos
-             << endl;
 
         pos += dma_read_count * SRAM_BANKS + single_read_count;
     }
 
     *(context.sram_addr) = pos;
-    cout << "[INFO] after clear_sram: sram_addr=" << pos << endl;
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                    << " SRAM top address: " << pos;
 #endif
 
-    // CTODO: GC time count
     return 0;
 }

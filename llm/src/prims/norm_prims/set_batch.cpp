@@ -9,11 +9,9 @@ int Set_batch::taskCoreDefault(TaskCoreContext &context) {
 
     prim_context->batch_info_.clear();
     for (auto stage : batch_info) {
-        cout << prim_context->cid << ": ###auto_pd: " << auto_pd
-             << ", loop_cnt: " << prim_context->loop_cnt << endl;
         if (auto_pd && prim_context->loop_cnt > auto_pd) {
-            LOG_VERBOSE(1, prim_context->cid,
-                        "Auto PD: " << prim_context->loop_cnt);
+            LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                            << " auto pd enabled, overriding stage info.";
             prim_context->batch_info_.push_back(
                 Stage(prim_context->loop_cnt % auto_pd, PD_PHASE(DECODE), 1));
         } else if (auto_pd)
@@ -23,19 +21,13 @@ int Set_batch::taskCoreDefault(TaskCoreContext &context) {
             prim_context->batch_info_.push_back(stage);
     }
 
-    for (auto stage : prim_context->batch_info_) {
-        cout << prim_context->cid << ": " << stage.req_id << ": type "
-             << stage.type << ": token " << stage.token_num << endl;
-    }
-
     return 0;
 }
 
-void Set_batch::printSelf() { cout << "<Set_batch>\n"; }
+void Set_batch::printSelf() {  }
 
 void Set_batch::deserialize(vector<sc_bv<128>> segments) {
     // 解析metadata
-    cout << "Start deserialize " << name << endl;
     auto buffer = segments[0];
     int batch_size = buffer.range(23, 8).to_uint64();
     auto_pd = buffer.range(39, 24).to_uint64();
@@ -51,11 +43,6 @@ void Set_batch::deserialize(vector<sc_bv<128>> segments) {
                       buffer.range(pos + 21, pos + 10).to_uint64());
             batch_info.push_back(s);
         }
-    }
-
-    for (auto stage : batch_info) {
-        cout << stage.req_id << ": type " << stage.type << ": token "
-             << stage.token_num << endl;
     }
 }
 

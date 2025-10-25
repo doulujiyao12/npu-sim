@@ -29,11 +29,9 @@ int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
     auto input_mem_offset = 0;
     if (!prim_context->gpu_pos_locator_->findPair(
             prim_context->datapass_label_->indata[0], input_mem_offset)) {
-        printf("[ERROR] attention_forward_gpu_pd:gpu_pos_locator cannot find "
-               "the label: "
-               "%s\n",
-               prim_context->datapass_label_->indata[0].c_str());
-        sc_stop();
+        LOG_ERROR(attention_forward_gpu_pd.cpp)
+            << name << " of Core " << context.cid << " cannot find "
+            << prim_context->datapass_label_->indata[0];
     }
 
     // 获取前缀label
@@ -52,10 +50,6 @@ int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
     auto label_att = prefix + "_att";
     AddrPosKey a_key = AddrPosKey(0, GetFromPairedVector(data_chunk, "att"));
     prim_context->gpu_pos_locator_->fetchPair(label_att, a_key);
-
-    cout << prim_context->cid
-         << " [attention_forward_gpu_pd] before read1: " << mem_time
-         << " at addr " << input_mem_offset << endl;
 
     int overlap_time = 0;
 #if USE_L1L2_CACHE == 1
@@ -80,8 +74,6 @@ int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
         AddrPosKey k_key, v_key;
         prim_context->gpu_pos_locator_->findPair(label_k, k_key);
         prim_context->gpu_pos_locator_->findPair(label_v, v_key);
-        // LOG_VERBOSE(1, context.cid," atten kv prefix " << prefix << " key
-        // size" << k_key.size<< " " << label_k);
 
         gpu_read_generic(
             context,
@@ -98,21 +90,29 @@ int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
     auto data_size_preatt = GetFromPairedVector(data_chunk, "preatt");
     auto data_size_att = GetFromPairedVector(data_chunk, "att");
 
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                    << " write preatt";
     gpu_write_generic(
         context,
         p_key.pos +
             data_size_preatt / (p["slice_x"] * p["slice_y"]) * fetch_index,
         data_size_preatt / (p["slice_x"] * p["slice_y"]), mem_time);
+
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                    << " read preatt";
     gpu_read_generic(
         context,
         p_key.pos +
             data_size_preatt / (p["slice_x"] * p["slice_y"]) * fetch_index,
         data_size_preatt / (p["slice_x"] * p["slice_y"]), mem_time);
 
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid << " write att";
     gpu_write_generic(
         context,
         a_key.pos + data_size_att / (p["slice_x"] * p["slice_y"]) * fetch_index,
         data_size_att / (p["slice_x"] * p["slice_y"]), mem_time);
+
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid << " write att";
     gpu_read_generic(context,
                      a_key.pos + data_size_att / (p["slice_x"] * p["slice_y"]) *
                                      fetch_index,
@@ -158,19 +158,16 @@ int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
     if (mem_time > cycle) {
         // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
         overlap_time = 0;
-        LOG_VERBOSE(1, context.cid,
-                    "Prim name:" << name << RED << " cycle: " << cycle
-                                 << ", dram_time: " << mem_time << RESET);
+        LOG_INFO(PRIM) << name << " of Core " << context.cid << ": dram_time "
+                        << mem_time  << ", compute cycle " 
+                       << cycle ;
     } else {
         overlap_time = cycle - mem_time;
-        LOG_VERBOSE(1, context.cid,
-                    "Prim name:" << name << GREEN << " cycle: " << cycle
-                                 << ", dram_time: " << mem_time << RESET);
+        LOG_INFO(PRIM) << name << " of Core " << context.cid << ": dram_time "
+                        << mem_time  << ", compute cycle "
+                        << cycle ;
     }
 #endif
-
-    cout << cid << " [attention_forward_gpu_pd] after write: " << overlap_time
-         << endl;
 
     return overlap_time;
 }

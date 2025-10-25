@@ -36,7 +36,7 @@ void from_json(const json &j, CoreJob &c) {
             c.cast.push_back(temp);
         }
     } else if (SYSTEM_MODE != SIM_DATAFLOW)
-        ARGUS_EXIT("Undefined \'cast\' field in json.\n");
+        LOG_ERROR(config.cpp) << "Undefined \'cast\' field in json";
 
     SetParamFromJson<int>(j, "recv_cnt", &(c.recv_cnt));
     SetParamFromJson<int>(j, "recv_tag", &(c.recv_tag), 0);
@@ -59,7 +59,7 @@ void from_json(const json &j, CoreConfig &c) {
     SetParamFromJson<int>(j, "id", &(c.id));
 
     if (c.id >= GRID_SIZE) {
-        ARGUS_EXIT("Core id ", c.id, " out of range");
+        LOG_ERROR(config.cpp) << "Core id " << c.id << " out of range";
         return;
     }
 

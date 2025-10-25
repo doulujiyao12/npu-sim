@@ -32,10 +32,6 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
     }
 
     int chunk_ratio = need_multiply ? 1 : p["chunk"];
-
-#if NB_CACHE_DEBUG == 1
-    LOG_VERBOSE(1, context.cid, " data_size_weight " << data_size_weight);
-#endif
     auto label_weight = ETERNAL_PREFIX + prim_name + "_w";
     checkStaticData(context, dram_time, data_chunk_addr["weight"],
                     GetFromPairedVector(data_chunk, "weight") / chunk_ratio,
@@ -48,10 +44,6 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
 
     // 写入kvcache，根据batchInfo确定
     for (auto stage : prim_context->batch_info_) {
-        cout << "[Matmul_pd] Core" << prim_context->cid
-             << " stage_type: " << stage.type
-             << " token_num: " << stage.token_num << " req_id: " << stage.req_id
-             << endl;
         int size = 0;
         switch (p["job_type"]) {
         case JOB_PREFILL:
@@ -76,10 +68,6 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         string label_v = format_label_v;
 
         // 如果没有对应的kvcache，则创建一个标签；如果已经有了，则直接更新大小
-        cout << "[Matmul_pd_f] Core " << prim_context->cid
-             << " Ready to add label: " << label_k << ", size: " << size
-             << endl;
-
 #if USE_SRAM_MANAGER == 1
         sram_update_cache(context, label_k, prim_context->sram_pos_locator_,
                           size, dram_time, prim_context->cid);
@@ -88,9 +76,6 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         prim_context->sram_pos_locator_->updatePair(label_k, size, context,
                                                     dram_time);
 #endif
-        cout << "[Matmul_pd_f] Core " << prim_context->cid
-             << " Ready to add label: " << label_v << ", size: " << size
-             << endl;
 
 #if USE_SRAM_MANAGER == 1
         sram_update_cache(context, label_v, prim_context->sram_pos_locator_,
@@ -126,9 +111,8 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
 
         uint64_t performance_comp =
             performance_cycle * exu->y_dims * exu->x_dims * HW_COMP_UTIL;
-        LOG_VERBOSE(1, context.cid,
-                    "Prim name:" << name << " performance_cycle "
-                                 << performance_cycle);
+        LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                        << " performance_cycle " << performance_cycle;
 
         int loop_input_count =
             weight_tile_y - 1; // read loop_input_count Repetitive input

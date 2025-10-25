@@ -1413,8 +1413,6 @@ void gpu_read_generic(TaskCoreContext &context, uint64_t global_addr,
         } else {
             wait(need_cycles, SC_NS);
         }
-        // LOG_VERBOSE(1, context.cid," beha gpu: " << "require_byte " <<
-        // require_byte << gpunb_dcache_if->id);
     }
 
     context.event_engine->add_event("Core " + ToHexString(context.cid),

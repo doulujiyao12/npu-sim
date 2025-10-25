@@ -629,12 +629,12 @@ void config_helper_pd::printResults() {
                 << endl;
         outfile.close();
     } else
-        ARGUS_EXIT("Failed to open file simulation_result_df_pd.txt.\n");
+        LOG_ERROR(config_helper_pd.cpp) << "Failed to open file simulation_result_df_pd.txt";
 
     ofstream file("token_records.txt", ios::app);
 
     if (!file.is_open())
-        ARGUS_EXIT("Failed to open file token_records.txt.\n");
+        LOG_ERROR(config_helper_pd.cpp) << "Failed to open file token_records.txt";
 
     // 设置输出格式，避免科学计数法
     file << fixed << setprecision(6); // 设置小数点后6位精度，可根据需要调整

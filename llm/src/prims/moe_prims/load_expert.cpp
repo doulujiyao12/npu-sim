@@ -1,7 +1,7 @@
 #include "prims/moe_prims.h"
 #include "utils/memory_utils.h"
-#include "utils/system_utils.h"
 #include "utils/prim_utils.h"
+#include "utils/system_utils.h"
 
 REGISTER_PRIM(load_expert);
 
@@ -21,13 +21,14 @@ void load_expert::initialize() {
 }
 
 void load_expert::taskCore(TaskCoreContext &context, string prim_name,
-                          u_int64_t &dram_time, u_int64_t &exu_ops,
-                          u_int64_t &sfu_ops) {
+                           u_int64_t &dram_time, u_int64_t &exu_ops,
+                           u_int64_t &sfu_ops) {
     auto &p = param_value;
     int exp_1;
 
     if (p["strategy"] == MOE_LOAD_STRATEGY_NONE) {
-        cout << "[Load expert]: No load expert\n";
+        LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                        << " no expert to load";
         return;
     }
 
@@ -68,7 +69,8 @@ void load_expert::taskCore(TaskCoreContext &context, string prim_name,
                 to_string(exp_1));
     }
 
-    cout << "[load_expert] Prefetch expert: " << exp_1 << endl;
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                    << " Prefetch expert: " << exp_1;
 
     exu_ops = 0;
     sfu_ops = 0;

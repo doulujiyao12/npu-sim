@@ -154,27 +154,27 @@ ev_dis_start) 循环发送 input data（持续）
 void MemInterface::end_of_simulation() {
 
     // 美观的打印输出
-    PrintBar(40);
-    std::cout << "| " << std::left << std::setw(20) << "CoreConfig"
-              << "| " << std::right << std::setw(15) << "Util.   (Byte) |\n";
-    PrintBar(40);
-    for (int i = 0; i < config_helper->coreconfigs.size(); i++) {
-        CoreConfig *c = &config_helper->coreconfigs[i];
-        int total_utilization = 0;
-        for (auto work : c->worklist) {
-            for (auto prim : work.prims_in_loop) {
-                if (prim &&
-                    prim->prim_type & PRIM_TYPE::NPU_PRIM) { // 确保指针非空
-                    total_utilization +=
-                        ((NpuBase *)prim)
-                            ->sramUtilization(prim->datatype, c->id);
-                }
-            }
-        }
-        // 打印当前CoreConfig的总SRAM利用率
-        PrintRow("CoreConfig " + std::to_string(i), total_utilization);
-    }
-    PrintBar(40);
+    // PrintBar(40);
+    // std::cout << "| " << std::left << std::setw(20) << "CoreConfig"
+    //           << "| " << std::right << std::setw(15) << "Util.   (Byte) |\n";
+    // PrintBar(40);
+    // for (int i = 0; i < config_helper->coreconfigs.size(); i++) {
+    //     CoreConfig *c = &config_helper->coreconfigs[i];
+    //     int total_utilization = 0;
+    //     for (auto work : c->worklist) {
+    //         for (auto prim : work.prims_in_loop) {
+    //             if (prim &&
+    //                 prim->prim_type & PRIM_TYPE::NPU_PRIM) { // 确保指针非空
+    //                 total_utilization +=
+    //                     ((NpuBase *)prim)
+    //                         ->sramUtilization(prim->datatype, c->id);
+    //             }
+    //         }
+    //     }
+    //     // 打印当前CoreConfig的总SRAM利用率
+    //     PrintRow("CoreConfig " + std::to_string(i), total_utilization);
+    // }
+    // PrintBar(40);
 }
 
 void MemInterface::end_of_elaboration() {

@@ -25,15 +25,15 @@ int Gelu_f_gpu::taskCoreDefault(TaskCoreContext &context) {
     auto input_mem_offset = 0;
     if (!prim_context->gpu_pos_locator_->findPair(
             prim_context->datapass_label_->indata[0], input_mem_offset)) {
-        printf("[ERROR] Gelu_f_gpu: prim_context->gpu_pos_locator_ cannot find "
-               "the label: "
-               "%s\n",
-               prim_context->datapass_label_->indata[0].c_str());
-        sc_stop();
+        LOG_ERROR(gelu_forward_gpu.cpp)
+            << name << " of Core " << context.cid << " cannot find "
+            << prim_context->datapass_label_->indata[0];
     }
 
     int overlap_time = 0;
 #if USE_L1L2_CACHE == 1
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                    << " read input";
     gpu_read_generic(context,
                      input_mem_offset + input_size /
                                             (p["slice_x"] * p["slice_y"]) *
@@ -48,6 +48,8 @@ int Gelu_f_gpu::taskCoreDefault(TaskCoreContext &context) {
     prim_context->gpu_pos_locator_->findPair(
         prim_context->datapass_label_->outdata, out_key);
 
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                    << " write output";
     gpu_write_generic(context,
                       out_key.pos + GetFromPairedVector(data_chunk, "output") *
                                         fetch_index,
@@ -74,24 +76,15 @@ int Gelu_f_gpu::taskCoreDefault(TaskCoreContext &context) {
     if (mem_time > cycle) {
         // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
         overlap_time = 0;
-        LOG_VERBOSE(1, context.cid,
-                    "Prim name:" << name << RED << " cycle: " << cycle
-                                 << ", dram_time: " << mem_time << RESET);
-
-        // std::cout << RED << "cycle: " << cycle << ", dram_time: " <<
-        // dram_time
-        //           << RESET << std::endl;
+        LOG_INFO(PRIM) << name << " of Core " << context.cid << ": dram_time "
+                       << mem_time << ", compute cycle " << cycle;
 
     } else {
         overlap_time = cycle - mem_time;
-        LOG_VERBOSE(1, context.cid,
-                    "Prim name:" << name << GREEN << " cycle: " << cycle
-                                 << ", dram_time: " << mem_time << RESET);
+        LOG_INFO(PRIM) << name << " of Core " << context.cid << ": dram_time "
+                       << mem_time << ", compute cycle " << cycle;
     }
 #endif
-
-    cout << "[Gelu_f_gpu] after write: " << overlap_time << endl;
-
     return overlap_time;
 }
 

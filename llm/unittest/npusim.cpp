@@ -48,7 +48,7 @@ int sc_main(int argc, char *argv[]) {
         }
         content.resize(content.size() - 2); // remove last ', '
         content.append(".");
-        cout << "unknown option(s): " << content.c_str() << endl;
+        LOG_ERROR(CONFIG) << "Unknown option(s): " << content;
         return -1;
     }
 
@@ -89,14 +89,15 @@ int sc_main(int argc, char *argv[]) {
     CloseLogFiles();
 
     clock_t end = clock();
-    cout << "花费了" << (double)(end - start) / CLOCKS_PER_SEC << "秒" << endl;
+    LOG_INFO(SYSTEM) << "Total Real-time Cost: "
+                     << (double)(end - start) / CLOCKS_PER_SEC << "s";
     ofstream outfile("simulation_result_df_pd.txt", ios::app);
     if (outfile.is_open()) {
-        outfile << "花费了" << (double)(end - start) / CLOCKS_PER_SEC << "秒"
-                << endl;
+        outfile << "Total Real-time Cost: "
+                << (double)(end - start) / CLOCKS_PER_SEC << "s" << endl;
         outfile.close();
     } else {
-        cout << "Error: Unable to open file for writing timestamp." << endl;
+        LOG_ERROR(SYSTEM) << "Unable to open file for writing timestamp";
     }
     delete event_engine;
     return 0;

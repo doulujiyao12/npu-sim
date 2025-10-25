@@ -21,7 +21,7 @@ CoreConfig *config_helper_core::get_core(int id) {
             return &(coreconfigs[i]);
     }
 
-    ARGUS_EXIT("Core ", id, " not found.\n");
+    LOG_ERROR(config_helper_core.cpp) << "Core " << id << " not found";
     return nullptr;
 }
 
