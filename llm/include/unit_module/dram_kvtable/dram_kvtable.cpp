@@ -13,9 +13,9 @@ DramKVTable::DramKVTable(uint64_t maxadddr, uint64_t kvcache_size, int n_entry)
             free_values.push_back(maxadddr - i * kvcache_size);
         }
 
-        for (auto &value : free_values) {
-            std::cout << "Free value: " << value << std::endl;
-        }
+        // for (auto &value : free_values) {
+        //     std::cout << "Free value: " << value << std::endl;
+        // }
 
      }
 

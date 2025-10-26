@@ -58,7 +58,7 @@ void InitGrid(string workload_config_path, string hardware_config_path,
 
     if (!jfile1.is_open())
         LOG_ERROR(system_utils.cpp)
-            << "Failed to open file " << workload_config_path << ".";
+            << "Failed to open file " << workload_config_path;
 
     jfile1 >> j1;
     ParseSimulationType(j1);

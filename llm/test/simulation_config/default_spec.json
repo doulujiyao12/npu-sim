@@ -1,9 +1,8 @@
 {
     "ttf_file": "../font/NotoSansDisplay-Bold.ttf",
-    "log_level": 1,
     "operand": {
         "use_perf_gemm": true,
-        "load_static_as_tile": true
+        "load_static_as_tile": false
     },
     "memory": {
         "use_beha_sram": true,
@@ -21,5 +20,10 @@
         "use_inner_mm": true,
         "cache_log": false,
         "dram_config_file": "../DRAMSys/configs/hbm3-example.json"
+    },
+    "log": {
+        "log_level": 0,
+        "verbose_debug": false,
+        "colored": true
     }
 }

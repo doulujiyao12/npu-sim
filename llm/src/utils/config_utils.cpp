@@ -132,8 +132,6 @@ void ParseSimulationConfig(json j) {
     // 设置仿真相关参数
     if (j.contains("ttf_file"))
         SPEC_TTF_FILE = j["ttf_file"];
-    if (j.contains("log_level"))
-        LOG_LEVEL = j["log_level"];
 
     if (j.contains("operand")) {
         auto conf_operand = j["operand"];
@@ -175,5 +173,15 @@ void ParseSimulationConfig(json j) {
             GPU_CACHE_LOG = conf_gpu["cache_log"];
         if (conf_gpu.contains("dram_config_file"))
             GPU_DRAM_CONFIG_FILE = conf_gpu["dram_config_file"];
+    }
+
+    if (j.contains("log")) {
+        auto conf_log = j["log"];
+        if (conf_log.contains("log_level"))
+            LogConfig::CONFIG_LOG_LEVEL = LogLevel(conf_log["log_level"]);
+        if (conf_log.contains("verbose_debug"))
+            LogConfig::CONFIG_VERBOSE_DEBUG = conf_log["verbose_debug"];
+        if (conf_log.contains("colored"))
+            LogConfig::CONFIG_LOG_COLORED = conf_log["colored"];
     }
 }

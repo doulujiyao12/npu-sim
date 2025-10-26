@@ -98,6 +98,8 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
             used += pair.second.size - pair.second.spill_size;
     }
 
+    LOG_DEBUG(MEMORY) << "Core " << cid << " has SRAM usage " << used;
+
     // 放得下
     if (used <= max_sram_size) {
         LOG_DEBUG(MEMORY) << "Core " << cid << " has SRAM usage " << used;

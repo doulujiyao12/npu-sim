@@ -27,8 +27,12 @@ public:
         write_shadow = true;
 
         uint64_t start_address_of_bank = start_address;
-        ram_bank_ =
-            new Ram<T>(this->name(), start_address_, end_address_, e_engine_);
+
+        std::string modified_name = this->name();
+        std::replace(modified_name.begin(), modified_name.end(), '.', '_');
+
+        ram_bank_ = new Ram<T>(sc_core::sc_module_name(modified_name.c_str()),
+                               start_address_, end_address_, e_engine_);
         write_semaphore_ = new sc_semaphore(write_port_per_bank_);
         read_semaphore_ = new sc_semaphore(read_port_per_bank_);
 
@@ -94,7 +98,8 @@ template <class T> inline void ArbiterRamBank<T>::write_in_parallel() {
                                               write_semaphore_->get_value()));
 #endif
         // 执行写操作，确保地址在范围内
-        assert(ram_bank_->write(address_temp, data_temp,write_shadow) == TRANSFER_OK);
+        assert(ram_bank_->write(address_temp, data_temp, write_shadow) ==
+               TRANSFER_OK);
 
         write_semaphore_->post(); // 释放信号量
 #if VERBOSE_TRACE == 1

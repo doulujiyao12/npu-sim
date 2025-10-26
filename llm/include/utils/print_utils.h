@@ -27,7 +27,7 @@ struct LogConfig {
     static inline bool CONFIG_VERBOSE_DEBUG = false;
     static inline int align_width = 150; // 左右分界宽度
     static inline int prefix_width = 40; // 前缀宽度
-    static inline bool color = true;
+    static inline bool CONFIG_LOG_COLORED = true;
 };
 
 // ------------------------------------------------------------
@@ -110,7 +110,7 @@ private:
     }
 
     const char *colorPrefix(LogLevel lvl) {
-        if (!LogConfig::color)
+        if (!LogConfig::CONFIG_LOG_COLORED)
             return "";
         switch (lvl) {
         case LogLevel::LOG_DEBUG:

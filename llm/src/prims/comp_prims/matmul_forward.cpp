@@ -29,12 +29,22 @@ void Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
                     << " read weight";
 
     auto label_weight = ETERNAL_PREFIX + prim_name + "_w";
-    checkStaticData(context, dram_time, data_chunk_addr["weight"],
-                    GetFromPairedVector(data_chunk, "weight"), label_weight,
-                    false);
+    if (!SPEC_LOAD_STATIC_AS_TILE) {
+        checkStaticData(context, dram_time, data_chunk_addr["weight"],
+                        GetFromPairedVector(data_chunk, "weight"), label_weight,
+                        false);
+    } else {
+        int mac_size = g_core_hw_config[prim_context->cid].second->exu->x_dims *
+                       g_core_hw_config[prim_context->cid].second->exu->y_dims;
+        LOG_DEBUG(MEMORY) << "mac_size " << mac_size;
+        for (int tile = 0; tile < data_size_input[0] / mac_size; tile++) {
+            checkStaticDataTile(context, dram_time, data_chunk_addr["weight"],
+                                GetFromPairedVector(data_chunk, "weight"),
+                                label_weight, false);
+        }
+    }
 
-    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
-                    << " read bias";
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid << " read bias";
 
     auto label_bias = ETERNAL_PREFIX + prim_name + "_b";
     checkStaticData(context, dram_time, data_chunk_addr["bias"],
