@@ -230,7 +230,7 @@ void config_helper_gpu::parse_done_msg(Event_engine *event_engine,
     for (auto m : g_temp_done_msg) {
         int cid = m.source_;
         LOG_DEBUG(NETWORK) << "Config helper <- DONE <- " << cid << ", total "
-                           << g_recv_done_cnt + 1 << "/" << coreconfigs.size();
+                           << g_recv_done_cnt + 1 << " / " << coreconfigs.size();
 
         g_recv_done_cnt++;
         // g_done_msg.push_back(m);

@@ -529,7 +529,7 @@ void config_helper_core::parse_done_msg(Event_engine *event_engine,
         int cid = m.source_;
         LOG_DEBUG(NETWORK) << "Config helper <- DONE <- " << cid << ", total "
                            << g_recv_done_cnt + 1 << " / "
-                           << coreconfigs.size();
+                           << end_cores * pipeline * max(1, end_count_sources);
 
         g_recv_done_cnt++;
         // g_done_msg.push_back(m);

@@ -735,12 +735,12 @@ void config_helper_pds::parse_done_msg(Event_engine *event_engine,
 
         if (coreStatus[cid / tp_size].job_type == JOB_PREFILL) {
             g_recv_done_cnt_p++;
-            LOG_DEBUG(NETWORK) << "  Total " << g_recv_done_cnt_p << "/"
+            LOG_DEBUG(NETWORK) << "  Total " << g_recv_done_cnt_p << " / "
                                << prefill_core * tp_size;
             g_done_msg_p.push_back(m);
         } else if (coreStatus[cid / tp_size].job_type == JOB_DECODE) {
             g_recv_done_cnt_d++;
-            LOG_DEBUG(NETWORK) << "  Total " << g_recv_done_cnt_d << "/"
+            LOG_DEBUG(NETWORK) << "  Total " << g_recv_done_cnt_d << " / "
                                << decode_core;
             g_done_msg_d.push_back(m);
         }

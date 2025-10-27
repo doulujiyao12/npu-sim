@@ -443,10 +443,10 @@ void config_helper_pd::generate_prims(int i) {
                 for (auto ca : work.cast) {
                     int next_id = ca.dest + i;
                     Send_prim *send_req =
-                        new Send_prim(SEND_TYPE::SEND_REQ, next_id, ca.tag);
+                        new Send_prim(SEND_TYPE::SEND_REQ, next_id, ca.tag + i);
                     Recv_prim *recv_ack = new Recv_prim(RECV_TYPE::RECV_ACK);
                     Send_prim *send_data =
-                        new Send_prim(SEND_TYPE::SEND_DATA, next_id, ca.tag);
+                        new Send_prim(SEND_TYPE::SEND_DATA, next_id, ca.tag + i);
 
                     CalculatePacketNum(
                         last_comp->out_size, ca.weight, last_comp->data_byte,
@@ -573,7 +573,7 @@ void config_helper_pd::parse_done_msg(Event_engine *event_engine,
         int cid = m.source_;
 
         LOG_DEBUG(NETWORK) << "Config helper <- DONE <- " << cid << ", total "
-                           << g_recv_done_cnt + 1 << "/" << coreStatus.size();
+                           << g_recv_done_cnt + 1 << " / " << coreStatus.size();
 
         g_recv_done_cnt++;
         g_done_msg.push_back(m);
