@@ -811,19 +811,19 @@ void Controller::end_of_simulation()
         // HBM specific, one or two pseudo channels per channel
         * memSpec.pseudoChannelsPerChannel);
 
-    std::cout << name() << std::string("  Total Time:     ") << sc_core::sc_time_stamp().to_string()
-              << std::endl;
-    std::cout << name() << std::string("  AVG BW:         ") << std::fixed << std::setprecision(2)
-              << std::setw(6) << (bandwidth * maxBandwidth) << " Gb/s | " << std::setw(6)
-              << (bandwidth * maxBandwidth / 8) << " GB/s | " << std::setw(6) << (bandwidth * 100)
-              << " %" << std::endl;
-    std::cout << name() << std::string("  AVG BW\\IDLE:    ") << std::fixed << std::setprecision(2)
-              << std::setw(6) << (bandwidthWoIdle * maxBandwidth) << " Gb/s | " << std::setw(6)
-              << (bandwidthWoIdle * maxBandwidth / 8) << " GB/s | " << std::setw(6)
-              << (bandwidthWoIdle * 100) << " %" << std::endl;
-    std::cout << name() << std::string("  MAX BW:         ") << std::fixed << std::setprecision(2)
-              << std::setw(6) << maxBandwidth << " Gb/s | " << std::setw(6) << maxBandwidth / 8
-              << " GB/s | " << std::setw(6) << 100.0 << " %" << std::endl;
+    // std::cout << name() << std::string("  Total Time:     ") << sc_core::sc_time_stamp().to_string()
+    //           << std::endl;
+    // std::cout << name() << std::string("  AVG BW:         ") << std::fixed << std::setprecision(2)
+    //           << std::setw(6) << (bandwidth * maxBandwidth) << " Gb/s | " << std::setw(6)
+    //           << (bandwidth * maxBandwidth / 8) << " GB/s | " << std::setw(6) << (bandwidth * 100)
+    //           << " %" << std::endl;
+    // std::cout << name() << std::string("  AVG BW\\IDLE:    ") << std::fixed << std::setprecision(2)
+    //           << std::setw(6) << (bandwidthWoIdle * maxBandwidth) << " Gb/s | " << std::setw(6)
+    //           << (bandwidthWoIdle * maxBandwidth / 8) << " GB/s | " << std::setw(6)
+    //           << (bandwidthWoIdle * 100) << " %" << std::endl;
+    // std::cout << name() << std::string("  MAX BW:         ") << std::fixed << std::setprecision(2)
+    //           << std::setw(6) << maxBandwidth << " Gb/s | " << std::setw(6) << maxBandwidth / 8
+    //           << " GB/s | " << std::setw(6) << 100.0 << " %" << std::endl;
 }
 
 } // namespace DRAMSys

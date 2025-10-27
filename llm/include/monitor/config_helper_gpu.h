@@ -8,7 +8,7 @@ public:
     int done_loop; // 已经完成多少loop了，针对loop字段
     GpuPosLocator *gpu_pos_locator;
 
-    config_helper_gpu(string filename, string font_ttf, int config_chip_id = 0);
+    config_helper_gpu(string filename, int config_chip_id = 0);
     config_helper_gpu *clone() const override {
         return new config_helper_gpu(*this);
     }

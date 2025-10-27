@@ -14,7 +14,7 @@ font_text_options = {'family':'sans-serif',
 
 def parse_file(filepath):
     pattern = re.compile(
-        r'\[CATCH TEST\]\s+(\d+)\s+nsMAX_SRAM_SIZE\s+(\d+)\s+BANDWIDTH\s+(\d+)\s+CASE\s+(\d+)'
+        r'\[CATCH TEST\]\s+(\d+)\s+nsHW_SRAM_SIZE\s+(\d+)\s+BANDWIDTH\s+(\d+)\s+CASE\s+(\d+)'
     )
     time_pattern = re.compile(r'花费了([\d.]+)秒')
 

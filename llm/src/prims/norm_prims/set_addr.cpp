@@ -10,8 +10,6 @@
 REGISTER_PRIM(Set_addr);
 
 void Set_addr::printSelf() {
-    cout << "<Set_addr>\n";
-    cout << "\tSram_addr: " << sram_addr << endl;
 }
 
 void Set_addr::deserialize(vector<sc_bv<128>> segments) {

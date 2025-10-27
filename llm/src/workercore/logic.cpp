@@ -7,6 +7,7 @@
 
 #include "defs/const.h"
 #include "defs/global.h"
+#include "defs/spec.h"
 #include "link/nb_global_memif_v2.h"
 #include "memory/dram/GPUNB_DcacheIF.h"
 #include "memory/gpu/GPU_L1L2_Cache.h"
@@ -19,7 +20,6 @@
 #include "trace/Event_engine.h"
 #include "utils/memory_utils.h"
 #include "utils/msg_utils.h"
-#include "utils/pe_utils.h"
 #include "utils/prim_utils.h"
 #include "utils/print_utils.h"
 #include "utils/system_utils.h"
@@ -33,10 +33,10 @@ void WorkerCoreExecutor::send_logic() {
         prim->data_packet_id = 0;
         bool job_done = false; // 结束内圈循环的标志
 
-        cout << "[SEND START] Core " << cid << ": running send "
-             << GetEnumSendType(prim->type) << ", destination " << prim->des_id
-             << ", tag " << prim->tag_id << ", max packet " << prim->max_packet
-             << " at " << sc_time_stamp() << endl;
+        LOG_INFO(PRIM) << "Core " << cid << " start send primitive "
+                       << GetEnumSendType(prim->type);
+        LOG_DEBUG(PRIM) << "destination " << prim->des_id << ", tag "
+                        << prim->tag_id << ", max packet " << prim->max_packet;
 
         while (true) {
             bool need_long_wait = false;
@@ -47,9 +47,7 @@ void WorkerCoreExecutor::send_logic() {
 
             // SEND_DATA, SEND_ACK, SEND_REQ
             if (prim->type == SEND_DATA) {
-#if ROUTER_PIPE == 1
                 while (job_done != true) {
-#endif
                     // [发送方] 正常发送数据
                     prim->data_packet_id++;
 
@@ -57,10 +55,10 @@ void WorkerCoreExecutor::send_logic() {
                         prim->data_packet_id == prim->max_packet;
                     int length = is_end_packet ? prim->end_length : M_D_DATA;
 
-#if USE_BEHA_NOC == 1
-                    is_end_packet = true;
-                    roofline_packets = prim->max_packet;
-#endif
+                    if (SPEC_USE_BEHA_NOC) {
+                        is_end_packet = true;
+                        roofline_packets = prim->max_packet;
+                    }
 
                     int delay = 0;
                     TaskCoreContext context = generate_context(this);
@@ -82,22 +80,20 @@ void WorkerCoreExecutor::send_logic() {
                     atomic_helper_lock(sc_time_stamp(), 3);
                     ev_send_helper.notify(0, SC_NS);
 
-                    cout << "Core " << cid << ": send " << send_buffer.seq_id_
-                         << " to " << send_buffer.des_ << " at "
-                         << sc_time_stamp() << endl;
-
                     if (is_end_packet) {
-                        cout << "Core " << cid
-                             << " max_packet: " << prim->max_packet << " "
-                             << send_buffer.is_end_ << endl;
+                        LOG_DEBUG(NETWORK)
+                            << "Core " << cid << " -> DATA -> " << prim->des_id;
+                        LOG_DEBUG(NETWORK) << "max_packet " << prim->max_packet;
 
                         job_done = true;
                     }
 
                     need_long_wait = true;
-#if ROUTER_PIPE == 1
+
+                    if (SPEC_ROUTER_PIPE)
+                        continue;
+                    break;
                 }
-#endif
             }
 
             else if (prim->type == SEND_REQ) {
@@ -111,8 +107,8 @@ void WorkerCoreExecutor::send_logic() {
                 send_helper_write = 3;
                 ev_send_helper.notify(0, SC_NS);
 
-                cout << sc_time_stamp() << ": Worker " << cid << ": REQ to "
-                     << prim->des_id << " sent.\n";
+                LOG_DEBUG(NETWORK)
+                    << "Core " << cid << " -> REQ -> " << prim->des_id;
 
                 job_done = true;
             }
@@ -136,26 +132,22 @@ void WorkerCoreExecutor::send_logic() {
                 send_helper_write = 3;
                 ev_send_helper.notify(0, SC_NS);
 
-                cout << sc_time_stamp() << ": Worker " << cid
-                     << ": DONE sent.\n";
+                LOG_DEBUG(NETWORK) << "Core " << cid << " -> DONE -> Host";
 
                 job_done = true;
             }
 
             else {
                 // unimplemented
-                cout << sc_time_stamp() << ": Worker " << cid
-                     << ": unimplemented SEND_PRIM.\n";
-
-                sc_stop();
+                LOG_ERROR(logic.cpp)
+                    << "Unimplemented SEND_PRIM type " << prim->type;
             }
 
             wait(roofline_packets * CYCLE, SC_NS);
 
             if (job_done) {
-                cout << "[SEND DONE] Core " << cid << ": running send "
-                     << GetEnumSendType(prim->type) << " done at "
-                     << sc_time_stamp() << "\n";
+                LOG_INFO(PRIM) << "Core " << cid << " end send primitive "
+                               << GetEnumSendType(prim->type);
                 break;
             }
         }
@@ -173,36 +165,42 @@ void WorkerCoreExecutor::send_para_logic() {
 
             if (typeid(*prim) == typeid(Send_prim)) {
                 ((Send_prim *)prim)->data_packet_id = 0;
-                cout << "Core " << cid << " going para send\n";
+                auto prim_type =
+                    GetEnumSendType(dynamic_cast<Send_prim *>(prim)->type);
+
+                LOG_INFO(PRIM)
+                    << "Core " << cid << " start parallel send primitive "
+                    << prim_type;
+
                 event_engine->add_event(
                     "Core " + ToHexString(cid), "Send_prim", "B",
-                    Trace_event_util(
-                        "Send_prim" +
-                        GetEnumSendType(
-                            dynamic_cast<Send_prim *>(prim)->type)));
+                    Trace_event_util("Send_prim" + prim_type));
             } else if (typeid(*prim) == typeid(Recv_prim)) {
-                cout << "Core " << cid << " going para recv\n";
+                auto prim_type =
+                    GetEnumRecvType(dynamic_cast<Recv_prim *>(prim)->type);
+
+                LOG_INFO(PRIM)
+                    << "Core " << cid << " start parallel recv primitive "
+                    << prim_type;
+
                 event_engine->add_event(
                     "Core " + ToHexString(cid), "Recv_prim", "B",
-                    Trace_event_util(
-                        "Recv_prim" +
-                        GetEnumRecvType(
-                            dynamic_cast<Recv_prim *>(prim)->type)));
+                    Trace_event_util("Recv_prim" + prim_type));
             }
 
             bool job_done = false; // 结束内圈循环的标志
 
             while (true) {
-#if ROUTER_PIPE == 0
-                if (atomic_helper_lock(sc_time_stamp(), 0))
-                    ev_send_helper.notify(0, SC_NS);
-#else
-                while (atomic_helper_lock(sc_time_stamp(), 0) == false) {
-                    wait(CYCLE, SC_NS);
-                }
+                if (!SPEC_ROUTER_PIPE) {
+                    if (atomic_helper_lock(sc_time_stamp(), 0))
+                        ev_send_helper.notify(0, SC_NS);
+                } else {
+                    while (atomic_helper_lock(sc_time_stamp(), 0) == false) {
+                        wait(CYCLE, SC_NS);
+                    }
 
-                ev_send_helper.notify(0, SC_NS);
-#endif
+                    ev_send_helper.notify(0, SC_NS);
+                }
 
                 if (job_done)
                     break;
@@ -214,14 +212,66 @@ void WorkerCoreExecutor::send_para_logic() {
                     Send_prim *s_prim = (Send_prim *)prim;
 
                     // atomic_helper_lock 其实是为了表示上锁
-#if ROUTER_PIPE == 1
-                    while (job_done == false) {
+                    if (SPEC_ROUTER_PIPE) {
+                        while (job_done == false) {
+                            if (channel_avail_i.read() &&
+                                atomic_helper_lock(sc_time_stamp(), 1)) {
+                                ev_send_helper.notify(0, SC_NS);
+
+                                s_prim->data_packet_id++;
+
+                                bool is_end_packet = s_prim->data_packet_id ==
+                                                     s_prim->max_packet;
+                                int length = M_D_DATA;
+                                if (is_end_packet) {
+                                    length = s_prim->end_length;
+                                    while (!send_last_packet) {
+                                        atomic_helper_lock(sc_time_stamp(), 0,
+                                                           true);
+                                        wait(ev_send_last_packet);
+                                        while (
+                                            atomic_helper_lock(sc_time_stamp(),
+                                                               0) == false) {
+                                            wait(CYCLE, SC_NS);
+                                        }
+                                    }
+                                    send_last_packet = false;
+                                }
+                                send_buffer =
+                                    Msg(s_prim->data_packet_id ==
+                                            s_prim->max_packet,
+                                        MSG_TYPE::DATA, s_prim->data_packet_id,
+                                        s_prim->des_id, 0, s_prim->tag_id,
+                                        length, sc_bv<128>(0x1));
+                                int delay = 0;
+                                TaskCoreContext context =
+                                    generate_context(this);
+                                delay = prim->taskCoreDefault(context);
+                                atomic_helper_lock(sc_time_stamp(), 0, true);
+                                ev_send_helper.notify(0, SC_NS);
+
+                                if (s_prim->data_packet_id ==
+                                    s_prim->max_packet) {
+                                    job_done = true;
+
+                                    LOG_DEBUG(NETWORK)
+                                        << "Core " << cid << " -> DATA -> "
+                                        << s_prim->des_id;
+                                    LOG_DEBUG(NETWORK)
+                                        << "max_packet " << s_prim->max_packet;
+                                }
+                            } else {
+                                if (send_helper_write == 1) {
+                                    send_helper_write = 0;
+                                }
+
+                                wait(CYCLE, SC_NS);
+                                atomic_helper_lock(sc_time_stamp(), 0);
+                            }
+                        }
+                    } else {
                         if (channel_avail_i.read() &&
                             atomic_helper_lock(sc_time_stamp(), 1)) {
-#else
-                    if (channel_avail_i.read() &&
-                        atomic_helper_lock(sc_time_stamp(), 1)) {
-#endif
                             ev_send_helper.notify(0, SC_NS);
 
                             s_prim->data_packet_id++;
@@ -231,68 +281,32 @@ void WorkerCoreExecutor::send_para_logic() {
                             int length = M_D_DATA;
                             if (is_end_packet) {
                                 length = s_prim->end_length;
-#if ROUTER_PIPE == 0
                                 while (!send_last_packet)
                                     wait(ev_send_last_packet);
-
-#else
-                            while (!send_last_packet) {
-                                atomic_helper_lock(sc_time_stamp(), 0, true);
-                                wait(ev_send_last_packet);
-                                while (atomic_helper_lock(sc_time_stamp(), 0) ==
-                                       false) {
-                                    wait(CYCLE, SC_NS);
-                                }
-                            }
-#endif
                                 send_last_packet = false;
                             }
-#if ROUTER_PIPE == 1
                             send_buffer = Msg(
                                 s_prim->data_packet_id == s_prim->max_packet,
                                 MSG_TYPE::DATA, s_prim->data_packet_id,
                                 s_prim->des_id, 0, s_prim->tag_id, length,
                                 sc_bv<128>(0x1));
-#else
-                        send_buffer =
-                            Msg(s_prim->data_packet_id == s_prim->max_packet,
-                                MSG_TYPE::DATA, s_prim->data_packet_id,
-                                s_prim->des_id, 0, s_prim->tag_id, length,
-                                sc_bv<128>(0x1));
-#endif
                             int delay = 0;
                             TaskCoreContext context = generate_context(this);
                             delay = prim->taskCoreDefault(context);
-#if ROUTER_PIPE == 1
-                            atomic_helper_lock(sc_time_stamp(), 0, true);
-#else
-                        atomic_helper_lock(sc_time_stamp(), 2);
-#endif
+                            atomic_helper_lock(sc_time_stamp(), 2);
                             ev_send_helper.notify(0, SC_NS);
 
                             if (s_prim->data_packet_id == s_prim->max_packet) {
                                 job_done = true;
-                                cout << "Core " << cid
-                                     << " max_packet: " << s_prim->max_packet
-                                     << " " << send_buffer.is_end_ << endl;
-                            }
-                        }
-#if ROUTER_PIPE == 1
-                        else {
-                            cout << "Core " << cid << " "
-                                 << channel_avail_i.read() << endl;
 
-                            if (send_helper_write == 1) {
-                                send_helper_write = 0;
+                                LOG_DEBUG(NETWORK)
+                                    << "Core " << cid << " -> DATA -> "
+                                    << s_prim->des_id;
+                                LOG_DEBUG(NETWORK)
+                                    << "max_packet " << s_prim->max_packet;
                             }
-
-                            wait(CYCLE, SC_NS);
-                            atomic_helper_lock(sc_time_stamp(), 0);
-                            // cout << "Core " << channel_avail_i.read() <<
-                            // endl;
                         }
                     }
-#endif
                 }
 
                 else if (typeid(*prim) == typeid(Send_prim) &&
@@ -308,8 +322,8 @@ void WorkerCoreExecutor::send_para_logic() {
 
                         ev_send_helper.notify(0, SC_NS);
 
-                        cout << sc_time_stamp() << ": Worker " << cid
-                             << ": REQ to " << s_prim->des_id << " sent.\n";
+                        LOG_DEBUG(NETWORK) << "Core " << cid << " -> REQ -> "
+                                           << s_prim->des_id;
 
                         job_done = true;
                     }
@@ -327,8 +341,8 @@ void WorkerCoreExecutor::send_para_logic() {
 
                         ev_send_helper.notify(0, SC_NS);
 
-                        cout << sc_time_stamp() << ": Worker " << cid
-                             << ": DONE sent.\n";
+                        LOG_DEBUG(NETWORK)
+                            << "Core " << cid << " -> DONE -> Host";
 
                         job_done = true;
                     }
@@ -336,7 +350,8 @@ void WorkerCoreExecutor::send_para_logic() {
 
                 else if (typeid(*prim) == typeid(Recv_prim) &&
                          ((Recv_prim *)prim)->type == RECV_ACK) {
-                    // [发送方] 接收来自接收方的ack包，收到之后结束此原语，进入
+                    // [发送方]
+                    // 接收来自接收方的ack包，收到之后结束此原语，进入
                     // SEND_DATA 或 SEND_SRAM
                     if (msg_buffer_[MSG_TYPE::ACK].size()) {
                         // 接收到数据包
@@ -346,18 +361,15 @@ void WorkerCoreExecutor::send_para_logic() {
                         if (m.msg_type_ == ACK) {
                             job_done = true;
 
-                            cout << sc_time_stamp() << ": Worker " << cid
-                                 << ": received ACK packet.\n";
+                            LOG_DEBUG(NETWORK) << "Core " << cid << " <- ACK";
                         }
                     }
                 }
 
                 else {
                     // unimplemented
-                    cout << sc_time_stamp() << ": Worker " << cid
-                         << ": unimplemented SEND_PRIM.\n";
-
-                    sc_stop();
+                    LOG_ERROR(logic.cpp)
+                        << "Unimplemented SEND_PRIM or RECV_PRIM type";
                 }
 
                 // 等待下一个时钟周期
@@ -399,9 +411,10 @@ void WorkerCoreExecutor::recv_logic() {
         bool job_done = false;
         vector<sc_bv<128>> segments; // 单个原语配置的所有数据包
 
-        cout << "[RECV] Core " << cid << ": running recv "
-             << GetEnumRecvType(prim->type) << ", recv_cnt " << prim->recv_cnt
-             << ", recv_tag " << prim->tag_id << endl;
+        LOG_INFO(PRIM) << "Core " << cid << " start receive primitive "
+                       << GetEnumRecvType(prim->type);
+        LOG_DEBUG(PRIM) << "  recv_cnt " << prim->recv_cnt << ", recv_tag "
+                        << prim->tag_id;
 
         while (true) {
             bool need_long_wait = false;
@@ -423,8 +436,7 @@ void WorkerCoreExecutor::recv_logic() {
                 if (m.msg_type_ == ACK) {
                     job_done = true;
 
-                    cout << sc_time_stamp() << ": Worker " << cid
-                         << ": received ACK packet.\n";
+                    LOG_DEBUG(NETWORK) << "Core " << cid << " <- ACK";
                 }
             }
 
@@ -454,19 +466,14 @@ void WorkerCoreExecutor::recv_logic() {
                         wait(CYCLE, SC_NS);
                     }
 
-                    // 这里是针对host data 和 start 包
-                    cout << sc_time_stamp() << ": Worker " << cid
-                         << ": received all prepare data.\n";
-
                     // 向host发送一个ack包
                     send_buffer =
                         Msg(MSG_TYPE::ACK, GRID_SIZE, prim->tag_id, cid);
                     ev_send_helper.notify(0, SC_NS);
 
-                    cout << sc_time_stamp() << ": Worker " << cid
-                         << " receive end packet: end_cnt " << end_cnt
-                         << ", recv_cnt " << recv_cnt << ", max_recv "
-                         << max_recv << endl;
+                    LOG_DEBUG(NETWORK) << "Core " << cid << " <- PREPARE data";
+                    LOG_DEBUG(NETWORK) << "end_cnt " << end_cnt << ", recv_cnt "
+                                       << recv_cnt << ", max_recv " << max_recv;
 
                     job_done = true;
                 }
@@ -483,7 +490,6 @@ void WorkerCoreExecutor::recv_logic() {
                     // data buffer，再查看recv buffer
                     // 如果tag不等同于id，则不允许查看start data buffer
                     ev_prim_recv_notice.notify(0, SC_NS);
-                    // cout << "Core " << cid << ": in RECV_START/RECV_DATA.\n";
 
                     Msg temp;
                     // 表示 当前周期该核有需要处理的msg 的recv包
@@ -499,11 +505,12 @@ void WorkerCoreExecutor::recv_logic() {
                         temp = msg_buffer_[MSG_TYPE::S_DATA].front();
                     }
 
-                    if (prim->tag_id != cid && temp.tag_id_ != prim->tag_id)
-                        ARGUS_EXIT("Core ", cid,
-                                   " gets incompatible tag id: prim tag ",
-                                   prim->tag_id, " with buffer top msg tag ",
-                                   temp.tag_id_);
+                    if (prim->tag_id != cid && temp.tag_id_ != prim->tag_id) {
+                        LOG_ERROR(logic.cpp)
+                            << "Incompatible tag id at Core " << cid
+                            << ": prim tag " << prim->tag_id
+                            << ", with received tag " << temp.tag_id_;
+                    }
 
                     if (prim->type == RECV_DATA)
                         msg_buffer_[MSG_TYPE::DATA].pop();
@@ -529,24 +536,21 @@ void WorkerCoreExecutor::recv_logic() {
                     TaskCoreContext context = generate_context(this);
                     delay = prim->taskCoreDefault(context);
 
-                    // cout << sc_time_stamp() << ": Worker " << cid
-                    //      << ": received packet: " << temp.seq_id_ << endl;
-
                     // 如果是end包，则将recv_index归零，表示开始接收下一个core传来的数据（如果有的话）
                     if (temp.is_end_) {
                         end_cnt++;
                         max_recv += temp.seq_id_;
 
-                        cout << sc_time_stamp() << ": Worker " << cid
-                             << " receive end packet: end_cnt " << end_cnt
-                             << ", recv_cnt " << recv_cnt << ", max_recv "
-                             << max_recv
-                             << ", roofline: " << temp.roofline_packets_
-                             << endl;
+                        LOG_DEBUG(NETWORK) << "Core " << cid << " <- DATA";
+                        LOG_DEBUG(NETWORK)
+                            << "  end_cnt: " << end_cnt
+                            << ", recv_cnt: " << recv_cnt
+                            << ", max_recv: " << max_recv
+                            << ", roofline: " << temp.roofline_packets_;
 
-                        // prim->recv_cnt 记录的是 receive 原语 需要接受的
-                        // end 包的数量 多发一的实现 max_recv 表示当前 DATA
-                        // 包 发送了多少个 package 数量
+                        // prim->recv_cnt 记录的是 receive 原语
+                        // 需要接受的 end 包的数量 多发一的实现 max_recv
+                        // 表示当前 DATA 包 发送了多少个 package 数量
                         if (end_cnt == prim->recv_cnt && recv_cnt >= max_recv) {
                             // 收到了所有的数据，可以结束此原语，进入comp原语
                             // 无需更新pos_locator中的kv的size，由原语自己指定输入大小
@@ -555,9 +559,8 @@ void WorkerCoreExecutor::recv_logic() {
                     }
 
                     need_long_wait = true;
-#if USE_BEHA_NOC == 1
-                    roofline_packets = temp.roofline_packets_;
-#endif
+                    if (SPEC_USE_BEHA_NOC)
+                        roofline_packets = temp.roofline_packets_;
                 }
             }
 
@@ -575,7 +578,7 @@ void WorkerCoreExecutor::recv_logic() {
                         Msg(MSG_TYPE::ACK, GRID_SIZE, prim->tag_id, cid);
                     ev_send_helper.notify(0, SC_NS);
 
-                    cout << "[RECV] Core " << cid << ": received all CONFIG.\n";
+                    LOG_DEBUG(NETWORK) << "Core " << cid << " <- CONFIG";
 
                     job_done = true;
                 } else {
@@ -604,18 +607,19 @@ void WorkerCoreExecutor::recv_logic() {
 
             else {
                 // unimplemented
-                cout << sc_time_stamp() << ": Worker " << cid
-                     << ": unimplemented RECV_PRIM.\n";
-
-                sc_stop();
+                LOG_ERROR(logic.cpp)
+                    << "Unimplemented RECV_PRIM type " << prim->type;
             }
 
             // 等待下一个时钟周期
             wait(roofline_packets * CYCLE, SC_NS);
 
             ev_msg_process_end.notify();
-            if (job_done)
+            if (job_done) {
+                LOG_INFO(PRIM) << "Core " << cid << " end recv primitive "
+                               << GetEnumRecvType(prim->type);
                 break;
+            }
         }
 
         ev_block.notify(CYCLE, SC_NS);
@@ -630,13 +634,14 @@ void WorkerCoreExecutor::task_logic() {
         int delay = 0;
         TaskCoreContext context = generate_context(this);
 
-        cout << "[PRIM] Core <\033[38;5;214m" << cid
-             << "\033[0m>: PRIM NAME -----------------------: " << p->name
-             << endl;
+        LOG_INFO(PRIM) << "Core " << cid << " start compute primitive "
+                       << p->name;
+
         delay = p->taskCoreDefault(context);
         wait(sc_time(delay, SC_NS));
 
-        cout << "Core " << cid << ": task " << p->name << " done.\n";
+        LOG_INFO(PRIM) << "Core " << cid << " end compute primitive "
+                       << p->name;
 
         ev_block.notify(CYCLE, SC_NS);
         wait();
@@ -683,7 +688,8 @@ void WorkerCoreExecutor::req_logic() {
                     send_buffer = Msg(MSG_TYPE::ACK, des, des, cid);
                     ev_send_helper.notify(0, SC_NS);
 
-                    cout << "Core " << cid << " sent ACK to " << des << endl;
+                    LOG_DEBUG(NETWORK)
+                        << "Core " << cid << " -> ACK -> " << des;
                 }
             }
         }

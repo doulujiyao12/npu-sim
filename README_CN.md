@@ -94,5 +94,5 @@ make -j8
 ```
 
 ```bash
-./train_gpt2 --config-file /path/to/NPU-SIM/src/llm/test/config_gpt2_small_tp_24_new.json --use-dramsys true
+./train_gpt2 --workload-config /path/to/NPU-SIM/src/llm/test/workload_config/config_gpt2_small_tp_24_new.json --use-dramsys true
 ```

@@ -6,9 +6,9 @@
 
 REGISTER_PRIM(Store_prim);
 
-void Store_prim::printSelf() { cout << "<store_prim>\n"; }
+void Store_prim::printSelf() {  }
+
 void Store_prim::deserialize(vector<sc_bv<128>> segments) {
-    cout << "Start deserialize " << name << endl;
     auto buffer = segments[0];
 
     dram_addr = buffer.range(23, 8).to_uint64();

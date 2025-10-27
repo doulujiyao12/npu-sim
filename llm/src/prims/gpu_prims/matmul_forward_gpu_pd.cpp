@@ -21,23 +21,17 @@ void matmul_forward_gpu_pd::initialize() {
 
 int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
     auto &p = param_value;
-    p["B"] *= gpu_B;
 
     int mem_time = 0;
     auto input_mem_offset = 0;
     if (!prim_context->gpu_pos_locator_->findPair(
             prim_context->datapass_label_->indata[0], input_mem_offset)) {
-        printf("[ERROR] matmul_forward_gpu_pd: prim_context->gpu_pos_locator_ "
-               "cannot find the "
-               "label: "
-               "%s\n",
-               prim_context->datapass_label_->indata[0].c_str());
-        sc_stop();
+        LOG_ERROR(attention_forward_gpu_pd.cpp)
+            << name << " of Core " << context.cid << " cannot find "
+            << prim_context->datapass_label_->indata[0];
     }
 
     // 获取前缀label
-    cout << "[GPU MATMUL PDS]: output label: "
-         << prim_context->datapass_label_->outdata << endl;
     std::size_t pos = prim_context->datapass_label_->outdata.find_last_of('_');
     std::string prefix;
     if (pos != std::string::npos) {
@@ -45,7 +39,6 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
     } else {
         prefix = prim_context->datapass_label_->outdata;
     }
-    cout << "[GPU MATMUL PDS]: prefix: " << prefix << endl;
 
     auto label_weight = prefix + "_w";
     AddrPosKey w_key = AddrPosKey(0, GetFromPairedVector(data_chunk, "weight"));
@@ -55,35 +48,32 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
     AddrPosKey b_key = AddrPosKey(0, GetFromPairedVector(data_chunk, "bias"));
     prim_context->gpu_pos_locator_->fetchPair(label_bias, b_key);
 
-    cout << prim_context->cid
-         << " [matmul_forward_gpu_pd] before read1: " << mem_time << " at addr "
-         << input_mem_offset << endl;
-
     int overlap_time = 0;
     AddrPosKey out_key;
 
 #if USE_L1L2_CACHE == 1
-    if (gpu_inner == true) {
+    if (GPU_USE_INNER_MM) {
         // 通过fetch_index计算位置
         int row_index = fetch_index / p["slice_x"];
         int col_index = fetch_index % p["slice_x"];
 
         // input 读入
+        LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                        << " read input";
         gpu_read_generic(
             context, input_mem_offset + input_size / p["slice_y"] * row_index,
             input_size / p["slice_y"], mem_time);
-#if GPU_CACHE_DEBUG == 1
 
-        cout << " data_size_weight / p[" slice_x "] "
-             << data_size_weight / p["slice_x"] << endl;
-
-#endif
         // weight 读入
-
+        LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                        << " read weight";
         gpu_read_generic(
             context, w_key.pos + w_key.size / p["slice_x"] * col_index,
             GetFromPairedVector(data_chunk, "weight") / p["slice_x"], mem_time);
+
         // bias 读入
+        LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                        << " read bias";
         gpu_read_generic(
             context, b_key.pos + b_key.size / p["slice_x"] * col_index,
             GetFromPairedVector(data_chunk, "bias") / p["slice_x"], mem_time);
@@ -103,8 +93,6 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
             default:
                 assert(false && "Unsupported job type");
             }
-
-            cout << "[GPU MATMUL PD]: size: " << size << endl;
 
             char format_label_k[100];
             sprintf(format_label_k, "%s%s%sk#%d", prefix.c_str(),
@@ -136,9 +124,8 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
         prim_context->gpu_pos_locator_->findPair(
             prim_context->datapass_label_->outdata, out_key);
 
-        cout << prim_context->cid
-             << " [matmul_forward_gpu_pd] before write: " << mem_time
-             << " at addr " << out_key.pos << endl;
+        LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                        << " write output";
         gpu_write_generic(context,
                           out_key.pos +
                               GetFromPairedVector(data_chunk, "output") *
@@ -146,14 +133,14 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
                           GetFromPairedVector(data_chunk, "output"), mem_time);
         int cycle = 0;
 
-        CoreHWConfig *core_config = GetCoreHWConfig(prim_context->cid);
-        ExuConfig *exu = core_config->exu;
-        SfuConfig *sfu = core_config->sfu;
+        CoreHWConfig *hardware_config = GetCoreHWConfig(prim_context->cid);
+        ExuConfig *exu = hardware_config->exu;
+        SfuConfig *sfu = hardware_config->sfu;
 
         if (exu->type == MAC_Array)
             cycle += (p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
                       (p["slice_x"] * p["slice_y"])) /
-                     (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+                     (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
         else
             assert(false && "Unsupported tile type");
 
@@ -166,43 +153,36 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
         if (mem_time > cycle) {
             // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
             overlap_time = 0;
-            LOG_VERBOSE(1, prim_context->cid,
-                        "Prim name:" << name << RED << " cycle: " << cycle
-                                     << ", dram_time: " << mem_time << RESET);
-
-            // std::cout << RED << "cycle: " << cycle << ", dram_time: " <<
-            // dram_time
-            //           << RESET << std::endl;
+            LOG_INFO(PRIM) << name << " of Core " << context.cid
+                           << ": dram_time " << mem_time << ", compute cycle "
+                           << cycle;
 
         } else {
             overlap_time = cycle - mem_time;
-            LOG_VERBOSE(1, prim_context->cid,
-                        "Prim name:" << name << GREEN << " cycle: " << cycle
-                                     << ", dram_time: " << mem_time << RESET);
+            LOG_INFO(PRIM) << name << " of Core " << context.cid
+                           << ": dram_time " << mem_time << ", compute cycle "
+                           << cycle;
         }
     } else {
         int slice_total = p["slice_x"] * p["slice_y"];
+
         // input 读入
+        LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                        << " read input";
         gpu_read_generic(
             context, input_mem_offset + input_size / slice_total * fetch_index,
             input_size / slice_total, mem_time);
-#if GPU_CACHE_DEBUG == 1
 
-        LOG_VERBOSE(1, context.prim_context->cid,
-                    " data_size_weight / p[" slice_x "] "
-                        << data_size_weight / p["slice_x"]);
-
-
-#endif
         // weight 读入
-        // LOG_VERBOSE(1, context.prim_context->cid," data_size_weight /
-        // p["slice_x"] " << data_size_weight / p["slice_x"]);
-
+        LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                        << " read weight";
         gpu_read_generic(
             context, w_key.pos + w_key.size / slice_total * fetch_index,
             GetFromPairedVector(data_chunk, "weight") / slice_total, mem_time);
-        // assert(false && "Unsupported job type");
+
         // bias 读入
+        LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                        << " read bias";
         gpu_read_generic(
             context, b_key.pos + b_key.size / slice_total * fetch_index,
             GetFromPairedVector(data_chunk, "bias") / slice_total, mem_time);
@@ -240,10 +220,6 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
             prim_context->gpu_pos_locator_->findPair(label_k, key_k);
             prim_context->gpu_pos_locator_->findPair(label_v, key_v);
 
-            // LOG_VERBOSE(1, context.prim_context->cid," matmul kv " << "
-            // prefix "<< prefix
-            // << " " << size << " key size " << key_k.size << " " << label_k);
-
             gpu_write_generic(context, key_k.pos + (key_k.size - size), size,
                               mem_time, false);
             gpu_write_generic(context, key_v.pos + (key_v.size - size), size,
@@ -257,9 +233,8 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
         prim_context->gpu_pos_locator_->findPair(
             prim_context->datapass_label_->outdata, out_key);
 
-        cout << prim_context->cid
-             << " [matmul_forward_gpu_pd] before write: " << mem_time
-             << " at addr " << out_key.pos << endl;
+        LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                        << " write output";
         gpu_write_generic(context,
                           out_key.pos +
                               GetFromPairedVector(data_chunk, "output") *
@@ -268,14 +243,14 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
 
         int cycle = 0;
 
-        CoreHWConfig *core_config = GetCoreHWConfig(prim_context->cid);
-        ExuConfig *exu = core_config->exu;
-        SfuConfig *sfu = core_config->sfu;
+        CoreHWConfig *hardware_config = GetCoreHWConfig(prim_context->cid);
+        ExuConfig *exu = hardware_config->exu;
+        SfuConfig *sfu = hardware_config->sfu;
 
         if (exu->type == MAC_Array)
             cycle += (p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
                       (p["slice_x"] * p["slice_y"])) /
-                     (exu->x_dims * exu->y_dims * 2 * comp_util) * CYCLE;
+                     (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
         else
             assert(false && "Unsupported tile type");
 
@@ -288,31 +263,17 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
         if (mem_time > cycle) {
             // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
             overlap_time = 0;
-            LOG_VERBOSE(1, prim_context->cid,
-                        "Prim name:" << name << RED << " cycle: " << cycle
-                                     << ", dram_time: " << mem_time << RESET);
-
-            // std::cout << RED << "cycle: " << cycle << ", dram_time: " <<
-            // dram_time
-            //           << RESET << std::endl;
-
+            LOG_INFO(PRIM) << name << " of Core " << context.cid
+                           << ": dram_time " << mem_time << ", compute cycle "
+                           << cycle;
         } else {
             overlap_time = cycle - mem_time;
-            LOG_VERBOSE(1, prim_context->cid,
-                        "Prim name:" << name << GREEN << " cycle: " << cycle
-                                     << ", dram_time: " << mem_time << RESET);
+            LOG_INFO(PRIM) << name << " of Core " << context.cid
+                           << ": dram_time " << mem_time << ", compute cycle "
+                           << cycle;
         }
-        // cout << "B: " << B << ", T: " << T << ", C: " << C << ", OC: " << OC
-        // << endl; assert(false);
     }
 #endif
-
-    cout << prim_context->cid
-         << " [matmul_forward_gpu_pd] after write: " << mem_time << " at addr "
-         << out_key.pos << endl;
-
-    p["B"] /= gpu_B;
-
     return overlap_time;
 }
 

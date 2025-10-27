@@ -4,11 +4,11 @@
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
 
-config_helper_gpu::config_helper_gpu(string filename, string font_ttf,
-                                     int config_chip_id) {
-    cout << "Loading config file " << filename << endl;
+config_helper_gpu::config_helper_gpu(string filename, int config_chip_id) {
+    LOG_INFO(CONFIG) << "Loading config file " << filename;
+
     json j;
-    // plot_dataflow(filename, font_ttf);
+    // plot_dataflow(filename);
     ifstream jfile(filename);
     jfile >> j;
 
@@ -20,8 +20,7 @@ config_helper_gpu::config_helper_gpu(string filename, string font_ttf,
 
     auto config_streams = j["chips"][0]["streams"];
     if (config_streams.size() != 1) {
-        cout << "[ERROR] more than 1 stream is not supported." << endl;
-        sc_stop();
+        LOG_ERROR(SYSTEM) << "More than 1 stream is not supported";
     }
 
     for (int i = 0; i < config_streams.size(); i++) {
@@ -92,17 +91,19 @@ void config_helper_gpu::fill_queue_config(queue<Msg> *q) {
             batchInfo.push_back(Stage(i + 1, PREFILL, GetDefinedParam("T")));
 
         PrimBase *set_batch = new Set_batch(batchInfo, true);
-        single_rep.push_back(Msg(false, MSG_TYPE::CONFIG, single_rep.size() + 1,
-                                 config.id, set_batch->serialize()[0]));
+        auto segments = set_batch->serialize();
+        for (int seg = 0; seg < segments.size(); seg++)
+            single_rep.push_back(
+                Msg(false, MSG_TYPE::CONFIG, single_rep.size() + 1, config.id,
+                    seg == segments.size() - 1, segments[seg]));
 
         for (auto work : config.worklist) {
             for (auto prim : work.prims_last_loop) {
                 auto segments = prim->serialize();
                 for (int seg = 0; seg < segments.size(); seg++)
-                    single_rep.push_back(Msg(false, MSG_TYPE::CONFIG,
-                                             single_rep.size() + 1, config.id,
-                                             seg == segments.size() - 1,
-                                             segments[seg]));
+                    single_rep.push_back(Msg(
+                        false, MSG_TYPE::CONFIG, single_rep.size() + 1,
+                        config.id, seg == segments.size() - 1, segments[seg]));
             }
         }
 
@@ -161,9 +162,10 @@ void config_helper_gpu::generate_prims(int i) {
 }
 
 void config_helper_gpu::fill_queue_start(queue<Msg> *q) {
-    cout << "GPU fill start queue, phase " << gpu_index << "\n";
-    int sms = ((GpuBase *)(streams[0].prims[gpu_index]))->req_sm;
+    LOG_INFO(NETWORK) << "Config helper start START data distribution, phase "
+                      << gpu_index;
 
+    int sms = ((GpuBase *)(streams[0].prims[gpu_index]))->req_sm;
     for (auto stream : streams) {
         for (auto source : stream.sources) {
             AddrPosKey source_key = AddrPosKey(0, source.second);
@@ -187,44 +189,7 @@ void config_helper_gpu::fill_queue_start(queue<Msg> *q) {
     gpu_index++;
 }
 
-void config_helper_gpu::printSelf() {
-    for (auto core : coreconfigs) {
-        cout << "[Core " << core.id << "]\n";
-
-        cout << "\tCore prims: \n";
-        for (auto work : core.worklist) {
-            for (auto prim : work.prims_in_loop) {
-                prim->printSelf();
-            }
-            for (auto prim : work.prims) {
-                prim->printSelf();
-            }
-            for (auto prim : work.prims_last_loop) {
-                prim->printSelf();
-            }
-        }
-    }
-
-    cout << "\n\n------------------------------------------------------------"
-            "\n\n";
-
-    for (auto core : coreconfigs) {
-        cout << "[Core " << core.id << "]\n";
-
-        cout << "\tCore cast: \n";
-        for (auto work : core.worklist) {
-            for (auto cast : work.cast) {
-                cout << "\t-> " << cast.dest << ", weight = " << cast.weight
-                     << (cast.loopout == FALSE
-                             ? (" (loopout: FALSE)")
-                             : (cast.loopout == TRUE ? (" (loopout: TRUE)")
-                                                     : (" (loopout: BOTH)")))
-                     << endl;
-            }
-            cout << "Work recv_cnt: " << work.recv_cnt << endl;
-        }
-    }
-}
+void config_helper_gpu::printSelf() {}
 
 void config_helper_gpu::parse_ack_msg(Event_engine *event_engine, int flow_id,
                                       sc_event *notify_event) {
@@ -233,10 +198,8 @@ void config_helper_gpu::parse_ack_msg(Event_engine *event_engine, int flow_id,
 
     for (auto m : g_temp_ack_msg) {
         int cid = m.source_;
-        cout << sc_time_stamp()
-             << ": Config helper GPU: received ack packet from " << cid
-             << ". total " << g_recv_ack_cnt + 1 << "/" << coreconfigs.size()
-             << ".\n";
+        LOG_DEBUG(NETWORK) << "Config helper <- ACK <- " << cid << ", total "
+                           << g_recv_ack_cnt + 1 << "/" << coreconfigs.size();
 
         g_recv_ack_cnt++;
     }
@@ -253,7 +216,7 @@ void config_helper_gpu::parse_ack_msg(Event_engine *event_engine, int flow_id,
         event_engine->add_event(this->name(), "Waiting Recv Ack", "f",
                                 Trace_event_util(flow_name), sc_time(0, SC_NS),
                                 100, "e");
-        cout << "Config helper GPU: received all ack packets.\n";
+        LOG_INFO(NETWORK) << "Config helper received all ACK";
 
         g_recv_ack_cnt = 0;
     }
@@ -266,9 +229,8 @@ void config_helper_gpu::parse_done_msg(Event_engine *event_engine,
 
     for (auto m : g_temp_done_msg) {
         int cid = m.source_;
-        cout << sc_time_stamp()
-             << ": Config helper GPU: received done packet from " << cid
-             << ", total " << g_recv_done_cnt + 1 << ".\n";
+        LOG_DEBUG(NETWORK) << "Config helper <- DONE <- " << cid << ", total "
+                           << g_recv_done_cnt + 1 << " / " << coreconfigs.size();
 
         g_recv_done_cnt++;
         // g_done_msg.push_back(m);
@@ -283,14 +245,14 @@ void config_helper_gpu::parse_done_msg(Event_engine *event_engine,
     if (core_inv >= GRID_SIZE)
         core_inv = GRID_SIZE;
     if (g_recv_done_cnt >= core_inv) {
-        cout << "Config helper GPU: one work done. " << gpu_index << " of "
-             << streams[0].prims.size() << endl;
+        LOG_INFO(SYSTEM) << "Work done " << gpu_index << " of "
+                         << streams[0].prims.size();
 
         if (gpu_index == streams[0].prims.size()) {
             gpu_index = 0;
             done_loop++;
-            cout << "Config helper GPU: one loop done. " << done_loop << " of "
-                 << streams[0].loop << endl;
+            LOG_INFO(SYSTEM)
+                << "Loop done " << done_loop << " of " << streams[0].loop;
 
             for (auto &pair : vtable) {
                 if (pair.first == "T")
@@ -298,17 +260,19 @@ void config_helper_gpu::parse_done_msg(Event_engine *event_engine,
             }
 
             if (done_loop == streams[0].loop) {
-                cout << "Config helper GPU: all work done.\n";
-                cout << "[CATCH TEST] " << sc_time_stamp() << endl;
+                LOG_INFO(SYSTEM) << "All requests finished";
+                LOG_INFO(CATCH_TEST) << "Catch test finished";
+
                 ofstream outfile("simulation_result_gpu.txt", ios::app);
                 if (outfile.is_open()) {
                     outfile << "[CATCH TEST] " << sc_time_stamp()
                             << "L1CACHESIZE " << L1CACHESIZE << " L2CACHESIZE "
-                            << L2CACHESIZE << " BANDWIDTH " << gpu_bw << endl;
+                            << L2CACHESIZE << " BANDWIDTH "
+                            << GPU_DRAM_BANDWIDTH << endl;
                     outfile.close();
                 } else {
-                    cout << "Error: Unable to open file for writing timestamp."
-                         << endl;
+                    LOG_ERROR(config_helper_gpu.cpp)
+                        << "Failed to open simulation_result_gpu.txt";
                 }
                 sc_stop();
             }

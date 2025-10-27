@@ -26,8 +26,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 class SimulationRequest(BaseModel):
-    config_file: str = "../llm/test/gpt2_small/original.json"
-    core_config_file: str = "../llm/test/core_configs/core_4x4.json"
+    workload_config: str = "../llm/test/workload_config/gpt2_small/original.json"
+    hardware_config: str = "../llm/test/hardware_config/core_4x4.json"
 
 
 @app.on_event("startup")
@@ -217,8 +217,8 @@ async def run_simulation(request: SimulationRequest):
 
         cmd = [
             npusim_path,
-            "--config-file", request.config_file,
-            "--core-config-file", request.core_config_file
+            "--workload-config", request.workload_config,
+            "--hardware-config", request.hardware_config
         ]
 
         # 启动子进程，捕获 stdout/stderr

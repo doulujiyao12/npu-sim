@@ -38,7 +38,7 @@ SramManager::SramManager(int sram_start_address, int cid, int total_sram_size, i
         std::iota(free_block_indices_.begin(), free_block_indices_.end(), 0); // Fill with 0, 1, 2...
     }
     assert(num_blocks_ >= 0 && "num_blocks_ must not be negative");
-    std::cout << "num_blocks_: " << num_blocks_ << std::endl;
+    // std::cout << "num_blocks_: " << num_blocks_ << std::endl;
     // If num_blocks_ is 0, vectors/lists remain empty.
 }
 

@@ -25,63 +25,71 @@ void Matmul_f::initialize() {
 void Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
                         u_int64_t &dram_time, u_int64_t &exu_ops,
                         u_int64_t &sfu_ops) {
-    cout << "Core " << prim_context->cid << " Matmul_f\n";
-    ARGUS_PRINT(dram_time);
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                    << " read weight";
 
     auto label_weight = ETERNAL_PREFIX + prim_name + "_w";
-    checkStaticData(context, dram_time, data_chunk_addr["weight"],
-                    GetFromPairedVector(data_chunk, "weight"), label_weight,
-                    false);
+    if (!SPEC_LOAD_STATIC_AS_TILE) {
+        checkStaticData(context, dram_time, data_chunk_addr["weight"],
+                        GetFromPairedVector(data_chunk, "weight"), label_weight,
+                        false);
+    } else {
+        int mac_size = g_core_hw_config[prim_context->cid].second->exu->x_dims *
+                       g_core_hw_config[prim_context->cid].second->exu->y_dims;
+        LOG_DEBUG(MEMORY) << "mac_size " << mac_size;
+        for (int tile = 0; tile < data_size_input[0] / mac_size; tile++) {
+            checkStaticDataTile(context, dram_time, data_chunk_addr["weight"],
+                                GetFromPairedVector(data_chunk, "weight"),
+                                label_weight, false);
+        }
+    }
+
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid << " read bias";
 
     auto label_bias = ETERNAL_PREFIX + prim_name + "_b";
     checkStaticData(context, dram_time, data_chunk_addr["bias"],
                     GetFromPairedVector(data_chunk, "bias"), label_bias, false);
-    cout << "Core " << prim_context->cid << " Matmul_f\n";
-    ARGUS_PRINT(dram_time);
 
     auto &p = param_value;
-#if PERFORMANCE_MODE == 1
 
-    ExuConfig *exu = GetCoreHWConfig(context.cid)->exu;
+    if (SPEC_USE_PERF_GEMM) {
+        ExuConfig *exu = GetCoreHWConfig(context.cid)->exu;
 
-    uint64_t weight_tile_x = (p["C"] + exu->x_dims - 1) / exu->x_dims;
-    uint64_t weight_tile_y = (p["OC"] + exu->y_dims - 1) / exu->y_dims;
+        uint64_t weight_tile_x = (p["C"] + exu->x_dims - 1) / exu->x_dims;
+        uint64_t weight_tile_y = (p["OC"] + exu->y_dims - 1) / exu->y_dims;
 
-    uint64_t padding_input_x =
-        (p["T"] * p["B"]) > exu->x_dims ? p["T"] * p["B"] : exu->x_dims;
+        uint64_t padding_input_x =
+            (p["T"] * p["B"]) > exu->x_dims ? p["T"] * p["B"] : exu->x_dims;
 
-    uint64_t performance_cycle = (exu->x_dims + exu->x_dims + padding_input_x) *
-                                 weight_tile_x * weight_tile_y;
+        uint64_t performance_cycle =
+            (exu->x_dims + exu->x_dims + padding_input_x) * weight_tile_x *
+            weight_tile_y;
 
-    uint64_t performance_comp =
-        performance_cycle * exu->y_dims * exu->x_dims * comp_util;
-    LOG_VERBOSE(1, context.cid,
-                "Prim name:" << name << " performance_cycle "
-                             << performance_cycle);
+        uint64_t performance_comp =
+            performance_cycle * exu->y_dims * exu->x_dims * HW_COMP_UTIL;
 
-    int loop_input_count =
-        weight_tile_y - 1; // read loop_input_count Repetitive input
+        LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                        << " performance_cycle " << performance_cycle
+                        << " performance_comp " << performance_comp;
 
-    for (int loop = 0; loop < loop_input_count; loop++) {
-        for (int p = 0; p < data_size_input.size(); p++) {
-            if (prim_context->datapass_label_->indata[p].find(DRAM_LABEL) ==
-                0) {
-                cout << "[MATMUL] Core " << prim_context->cid
-                     << ": Checking input "
-                     << prim_context->datapass_label_->indata[p] << "..."
-                     << endl;
-                prefReadData(context, dram_time, data_size_input[p],
-                             prim_context->datapass_label_->indata[p]);
+        int loop_input_count =
+            weight_tile_y - 1; // read loop_input_count Repetitive input
+
+        for (int loop = 0; loop < loop_input_count; loop++) {
+            for (int p = 0; p < data_size_input.size(); p++) {
+                if (prim_context->datapass_label_->indata[p].find(DRAM_LABEL) ==
+                    0) {
+                    prefReadData(context, dram_time, data_size_input[p],
+                                 prim_context->datapass_label_->indata[p]);
+                }
             }
         }
-    }
 
-    exu_ops = performance_cycle;
-    sfu_ops = 0;
-#else
-    // 计算overlap并写回output数据
-    // cout << "matmul output data size: " << data_size_out << endl;
-    exu_ops = (uint64_t)p["B"] * p["OC"] * p["T"] * p["C"] * 2;
-    sfu_ops = 0;
-#endif
+        exu_ops = performance_cycle;
+        sfu_ops = 0;
+    } else {
+        // 计算overlap并写回output数据
+        exu_ops = (uint64_t)p["B"] * p["OC"] * p["T"] * p["C"] * 2;
+        sfu_ops = 0;
+    }
 }

@@ -7,12 +7,12 @@
 # 4. 完成
 
 # 配置文件列表
-# config_files=(
+# workload_configs=(
 #     "pd_serving_gpt2_small12.json"
 #     "pd_serving_gpt2_small13.json"
 #     "pd_serving_gpt2_small14.json"
 # )
-config_files=(
+workload_configs=(
     "pd_serving_gpt2_small12.json"
 )
 
@@ -20,7 +20,7 @@ config_files=(
 dram_bws=(256 512 1024)
 
 # 公共参数
-core_config="../llm/test/core_configs/core_6x6.json"
+hardware_config="../llm/test/hardware_config/core_6x6.json"
 gpu_inner="true"
 use_gpu="true"
 
@@ -32,17 +32,17 @@ source_dir=".."  # npusim 源码根目录
 run_tests() {
     echo "🚀 开始运行 npusim 测试..."
 
-    for config in "${config_files[@]}"; do
-        config_path="../llm/test/gpu/$config"
+    for config in "${workload_configs[@]}"; do
+        config_path="../llm/test/workload_config/gpu/$config"
         
         echo "=== 开始运行配置文件: $config ==="
         
         for bw in "${dram_bws[@]}"; do
-            echo "⏳ 运行: ./npusim --config-file $config --gpu_dram_bw $bw"
+            echo "⏳ 运行: ./npusim --workload-config $config --gpu_dram_bw $bw"
             
             ./npusim \
-                --config-file "$config_path" \
-                --core-config-file "$core_config" \
+                --workload-config "$config_path" \
+                --hardware-config "$hardware_config" \
                 --gpu_inner "$gpu_inner" \
                 --gpu_dram_bw "$bw" \
                 --use_gpu "$use_gpu"

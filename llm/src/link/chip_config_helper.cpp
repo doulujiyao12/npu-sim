@@ -3,7 +3,7 @@
 #include "link/instr/recv_global_mem.h"
 #include "link/instr/print_msg.h"
 #include "link/instr/chip_prim_utils.h"
-chip_config_helper::chip_config_helper(string filename, string font_ttf, int cid){
+chip_config_helper::chip_config_helper(string filename, int cid){
     this->cid = cid;
 
     cout << "Loading chip config " << filename << endl;

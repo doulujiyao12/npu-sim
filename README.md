@@ -15,15 +15,17 @@ Furthermore, NPU-SIM extends its capabilities to the modeling of next-generation
 
 ![](doc/images/arch.png)
 
-### GUI Visualization
+## GUI Visualization
 
 NPU-SIM provides an interactive GUI for real-time visualization of the simulation process:
 
-🎬 **Demo Video:** [Click to watch GUI demo](https://github.com/doulujiyao12/npu-sim/blob/refactor/doc/images/gui_video.mp4)
+ **[🎬 Demo Video:](./doc/images/gui_video.mp4)**
+ 
+https://github.com/user-attachments/assets/16d4f604-30a7-43bc-a2e8-a6a776718708
 
-<!-- *Alternatively, you can view the video [here](./doc/images/gui_video.mp4)* -->
+## **Documentation:**  
 
-For more details, please access the [NPU-SIM](https://npu-sim.readthedocs.io/zh-cn/latest/) documentation.
+📘 **Documentation:**  [Click here to access the NPU-SIM documentation.](https://npu-sim.readthedocs.io/zh-cn/latest/)
 
 
 ## Using NPU-SIM
@@ -103,5 +105,5 @@ make -j8
 ```
 
 ```bash
-./train_gpt2 --config-file /path/to/NPU-SIM/src/llm/test/config_gpt2_small_tp_24_new.json --use-dramsys true
+./train_gpt2 --workload-config /path/to/NPU-SIM/src/llm/test/workload_config/config_gpt2_small_tp_24_new.json --use-dramsys true
 ```

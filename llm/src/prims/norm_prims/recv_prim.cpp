@@ -10,13 +10,9 @@
 REGISTER_PRIM(Recv_prim);
 
 void Recv_prim::printSelf() {
-    cout << "<recv_prim>\n";
-    cout << "type: " << type << " tag_id: " << tag_id
-         << " recv_cnt: " << recv_cnt << endl;
 }
 
 void Recv_prim::deserialize(vector<sc_bv<128>> segments) {
-        cout << "Start deserialize " << name << endl;
     auto buffer = segments[0];
     
     type = RECV_TYPE(buffer.range(11, 8).to_uint64());

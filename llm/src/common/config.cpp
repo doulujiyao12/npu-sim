@@ -5,34 +5,9 @@
 #include "utils/print_utils.h"
 #include "utils/system_utils.h"
 
-void CoreJob::printSelf() {
-    for (auto cast : cast) {
-        cout << "{\n";
-        cout << "\tdest: " << cast.dest << endl;
-        cout << "\ttag: " << cast.tag << endl;
-        cout << "\tweight: " << cast.weight << endl;
-        cout << "\taddr: " << cast.addr << endl;
-        cout << "}\n";
-    }
+void CoreJob::printSelf() {}
 
-    cout << "recv_cnt: " << recv_cnt << endl;
-    cout << "recv_tag: " << recv_tag << endl;
-}
-
-void CoreConfig::printSelf() {
-    cout << "<CoreConfig>\n";
-    cout << "Core id: " << id << endl;
-    cout << "\tprim_copy: " << prim_copy << endl;
-    cout << "\tsend_global_mem: " << send_global_mem << endl;
-    cout << "\tloop: " << " " << loop << endl;
-
-    for (auto work : worklist) {
-        cout << "\t<Worklist>\n";
-        work.printSelf();
-        cout << "\t</Worklist>\n";
-    }
-    cout << "</CoreConfig>\n";
-}
+void CoreConfig::printSelf() {}
 
 void from_json(const json &j, Cast &c) {
     SetParamFromJson<int>(j, "dest", &(c.dest));
@@ -61,7 +36,7 @@ void from_json(const json &j, CoreJob &c) {
             c.cast.push_back(temp);
         }
     } else if (SYSTEM_MODE != SIM_DATAFLOW)
-        ARGUS_EXIT("Undefined \'cast\' field in json.\n");
+        LOG_ERROR(config.cpp) << "Undefined \'cast\' field in json";
 
     SetParamFromJson<int>(j, "recv_cnt", &(c.recv_cnt));
     SetParamFromJson<int>(j, "recv_tag", &(c.recv_tag), 0);
@@ -71,7 +46,6 @@ void from_json(const json &j, CoreJob &c) {
         for (auto prim : prims) {
             CompBase *p = nullptr;
             string type = prim.at("type");
-            // cout << "Parsing " << type << endl;
 
             p = (CompBase *)(PrimFactory::getInstance().createPrim(type));
             p->parseJson(prim);
@@ -85,13 +59,14 @@ void from_json(const json &j, CoreConfig &c) {
     SetParamFromJson<int>(j, "id", &(c.id));
 
     if (c.id >= GRID_SIZE) {
-        ARGUS_EXIT("Core id ", c.id, " out of range");
+        LOG_ERROR(config.cpp) << "Core id " << c.id << " out of range";
         return;
     }
 
     SetParamFromJson<int>(j, "prim_copy", &(c.prim_copy), -1);
     SetParamFromJson<int>(j, "send_global_mem", &(c.send_global_mem), -1);
     SetParamFromJson<int>(j, "loop", &(c.loop), 1);
+
 
     if (j.contains("worklist")) {
         for (int i = 0; i < j["worklist"].size(); i++) {
@@ -145,11 +120,11 @@ void from_json(const json &j, StreamConfig &c) {
         auto prims = j["prims"];
         for (auto prim : prims) {
             string type = prim.at("type");
-            cout << "Parsing " << type << endl;
+            LOG_DEBUG(CONFIG) << "Start parsing prim " << type;
             GpuBase *p =
                 (GpuBase *)(PrimFactory::getInstance().createPrim(type));
             p->parseJson(prim);
-            cout << "Parsing done\n";
+            LOG_DEBUG(CONFIG) << "Parsing done for prim " << type;
 
             c.prims.push_back((PrimBase *)p);
         }
@@ -179,5 +154,5 @@ void from_json(const json &j, CoreHWConfig &c) {
     SetParamFromJson<int>(j, "sram_bitwidth", &(c.sram_bitwidth), 128);
     SetParamFromJson<string>(j, "dram_config", &(c.dram_config),
                              DEFAULT_DRAM_CONFIG_PATH);
-    SetParamFromJson<int>(j, "dram_bw", &(c.dram_bw), g_default_dram_bw);
+    SetParamFromJson<int>(j, "dram_bw", &(c.dram_bw), HW_DRAM_DEFAULT_BITWIDTH);
 }

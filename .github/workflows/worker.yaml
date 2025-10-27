@@ -73,7 +73,8 @@ jobs:
 
           CHORES_DIR="./llm/test/chores"
           HW_CONFIG="$CHORES_DIR/hw_config.json"
-          TIMEOUT_SEC=30
+          SIM_CONFIG="./llm/test/simulation_config/default_spec.json"
+          TIMEOUT_SEC=120
           FAIL=0
 
           mkdir -p test_logs
@@ -87,13 +88,12 @@ jobs:
 
             echo "========================================"
             echo "Testing $CONFIG, writing into $LOGFILE"
-            echo "----------------------------------------"
 
             cd build
-            echo "Go into build directory..."
             if ! timeout $TIMEOUT_SEC ./npusim \
-              --config-file "../$CONFIG" \
-              --core-config-file "../$HW_CONFIG" \
+              --workload-config "../$CONFIG" \
+              --hardware-config "../$HW_CONFIG" \
+              --simulation-config "../$SIM_CONFIG" \
               &> "$LOGFILE"; then
               echo "Crash or timeout for $CONFIG"
               FAIL=1
@@ -105,10 +105,10 @@ jobs:
             if grep -q "\[ERROR\]" "$LOGFILE"; then
               echo "Found [ERROR] in $CONFIG"
               FAIL=1
-            elif grep -q "\[CATCH TEST\]" "$LOGFILE"; then
+            elif grep -q "\[CATCH_TEST\]" "$LOGFILE"; then
               echo "PASS: $CONFIG"
             else
-              echo "No [CATCH TEST] found in $CONFIG"
+              echo "No [CATCH_TEST] found in $CONFIG"
               FAIL=1
             fi
           done

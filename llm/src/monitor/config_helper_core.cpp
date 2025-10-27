@@ -4,6 +4,7 @@
 #include <sstream>
 
 #include "common/system.h"
+#include "defs/spec.h"
 #include "monitor/config_helper_core.h"
 #include "prims/base.h"
 #include "utils/config_utils.h"
@@ -20,49 +21,13 @@ CoreConfig *config_helper_core::get_core(int id) {
             return &(coreconfigs[i]);
     }
 
-    ARGUS_EXIT("Core ", id, " not found.\n");
+    LOG_ERROR(config_helper_core.cpp) << "Core " << id << " not found";
     return nullptr;
 }
 
-void config_helper_core::printSelf() {
-    for (auto core : coreconfigs) {
-        cout << "[Core " << core.id << "]\n";
+void config_helper_core::printSelf() {}
 
-        cout << "\tCore prims: \n";
-        for (auto work : core.worklist) {
-            cout << "IN LOOP\n";
-            for (auto prim : work.prims_in_loop) {
-                prim->printSelf();
-            }
-            cout << "LAST LOOP\n";
-            for (auto prim : work.prims_last_loop) {
-                prim->printSelf();
-            }
-        }
-    }
-
-    cout << "\n\n------------------------------------------------------------"
-            "\n\n";
-
-    for (auto core : coreconfigs) {
-        cout << "[Core " << core.id << "]\n";
-
-        cout << "\tCore cast: \n";
-        for (auto work : core.worklist) {
-            for (auto cast : work.cast) {
-                cout << "\t-> " << cast.dest << ", weight = " << cast.weight
-                     << (cast.loopout == FALSE
-                             ? (" (loopout: FALSE)")
-                             : (cast.loopout == TRUE ? (" (loopout: TRUE)")
-                                                     : (" (loopout: BOTH)")))
-                     << endl;
-            }
-            cout << "Work recv_cnt: " << work.recv_cnt << endl;
-        }
-    }
-}
-
-void config_helper_core::random_core(string font_ttf) {
+void config_helper_core::random_core() {
     int o2r[GRID_SIZE];
     int r2o[GRID_SIZE];
     for (int i = 0; i < GRID_SIZE; i++) {
@@ -78,7 +43,6 @@ void config_helper_core::random_core(string font_ttf) {
         } while (r2o[rand] != -1);
         o2r[id] = rand;
         r2o[rand] = id;
-        cout << "id " << id << " -> rand " << rand << endl;
     }
 
     // 改写
@@ -142,17 +106,16 @@ void config_helper_core::random_core(string font_ttf) {
         core_id++;
     }
 
-    plot_dataflow(cores, source_ids, font_ttf);
+    plot_dataflow(cores, source_ids);
 }
 
-config_helper_core::config_helper_core(string filename, string font_ttf,
-                                       int config_chip_id) {
-    cout << "Loading config file " << filename << endl;
-    plot_dataflow(filename, font_ttf);
+config_helper_core::config_helper_core(string filename, int config_chip_id) {
+    LOG_INFO(CONFIG) << "Loading config file " << filename;
+
+    plot_dataflow(filename);
     ifstream jfile(filename);
     if (!jfile.is_open()) {
-        cout << "[ERROR] Cannot open config file " << filename << endl;
-        sc_stop();
+        LOG_ERROR(CONFIG) << "Could not open config file " << filename;
     }
 
     json j;
@@ -177,7 +140,7 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
         int source_loop = 0;
         bool is_end = false;
         SetParamFromJson(source, "loop", &source_loop, 1);
-        SetParamFromJson(source, "is_end", &is_end);
+        SetParamFromJson(source, "is_end", &is_end, false);
 
         if (is_end)
             end_count_sources += source_loop;
@@ -195,7 +158,7 @@ config_helper_core::config_helper_core(string filename, string font_ttf,
     }
 
     if (j.contains("random") && j["random"]) {
-        random_core(font_ttf);
+        random_core();
     }
 
     SetParamFromJson(j, "pipeline", &pipeline, 1);
@@ -270,8 +233,11 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
         // 三类循环消息
         vector<Msg> in_loop, next_loop, last_loop;
         for (auto &work : config.worklist) {
+            // 第一个循环接受 start 数据包
             auto tmp_in = build_msgs(work.prims_in_loop);
+            // 中间的循环 原本接受start数据包的接受data数据包
             auto tmp_next = build_msgs(work.prims_in_loop, true);
+            // 最后一个循环，如果只有一个循环就是最后一个循环
             auto tmp_last = build_msgs(work.prims_last_loop);
 
             in_loop.insert(in_loop.end(), tmp_in.begin(), tmp_in.end());
@@ -300,18 +266,27 @@ void config_helper_core::fill_queue_config(queue<Msg> *q) {
 
         // 主循环，将pipeline视为一种循环
         for (int j = 0; j < pipeline; j++) {
+            // 如果 默认的 loop = 1 其实 in_loop 和 next_loop 都不会执行
+            // 这里的loop 不为 1 就是 decoding 的数量
             for (int i = 0; i < config.loop - 1; i++) {
-                push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
-                             set_batch->serialize()[0]));
+                auto segments = set_batch->serialize();
+                for (int seg = 0; seg < segments.size(); seg++)
+                    push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
+                                 seg == segments.size() - 1, segments[seg]));
+
                 auto &reps = (i == 0) ? in_loop : next_loop;
                 for (auto m : reps)
                     push_msg(m);
             }
+            // 默认执行最后一个循环
+            auto segments = set_batch->serialize();
+            for (int seg = 0; seg < segments.size(); seg++)
+                push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
+                             seg == segments.size() - 1, segments[seg]));
 
-            push_msg(Msg(false, MSG_TYPE::CONFIG, 0, config.id,
-                         set_batch->serialize()[0]));
             for (size_t k = 0; k < last_loop.size(); k++) {
                 Msg m = last_loop[k];
+                // 最后一个原语， 然后循环重填
                 m.refill_ = m.is_end_ =
                     (k + 1 == last_loop.size() && j == pipeline - 1);
                 push_msg(m);
@@ -351,6 +326,7 @@ void config_helper_core::generate_prims(int i) {
     auto add_sends = [&](vector<PrimBase *> &prims, const vector<Cast> &casts,
                          bool loopout) {
         for (auto &ca : casts) {
+            // loopout pipeline的最后一个核是发给 0 核还是发给host
             if ((loopout && ca.loopout == FALSE) ||
                 (!loopout && ca.loopout == TRUE))
                 continue;
@@ -369,6 +345,7 @@ void config_helper_core::generate_prims(int i) {
             end_cores++;
 
         // 非最后循环
+        // loop = 1 的 时候只有last_loop 循环
         add_recv(work.prims_in_loop, (is_source && w == 0), work.recv_tag,
                  work.recv_cnt);
         add_comps(work.prims_in_loop, work.prims);
@@ -385,6 +362,8 @@ void config_helper_core::generate_prims(int i) {
                 PrimFactory::getInstance().createPrim("Clear_sram"));
             continue;
         }
+
+        // 现在不会有不是is_end 的核心有 loopout
 
         add_sends(work.prims_last_loop, work.cast, true);
 
@@ -414,12 +393,10 @@ void config_helper_core::calculate_address(bool do_loop) {
             if (!do_loop && judge_is_end_work(work))
                 continue; // 汇节点
 
-            cout << "1\n";
-
             // 拿到这个corejob的output size
             for (int j = v->size() - 1; j >= 0; j--) {
                 auto p = (*v)[j];
-                cout << p->prim_type << endl;
+
                 if (p->prim_type & PRIM_TYPE::COMP_PRIM) {
                     CompBase *cp = (CompBase *)p;
                     output_size = cp->out_size;
@@ -432,8 +409,6 @@ void config_helper_core::calculate_address(bool do_loop) {
             vector<string> output_label_split;
             stringstream ss(output_label);
             string word;
-
-            cout << "Output: corejob: " << output_label << endl;
 
             while (ss >> word)
                 output_label_split.push_back(word);
@@ -459,10 +434,14 @@ void config_helper_core::calculate_address(bool do_loop) {
 }
 
 void config_helper_core::fill_queue_start(queue<Msg> *q) {
+    LOG_INFO(NETWORK) << "Config helper start START data distribution";
+
     for (int pipe = 0; pipe < pipeline; pipe++) {
         for (auto source : source_info) {
+            // 从这里看pipeline 和 source_loop 的功能是一样的
+            // start 数据包一次性都下发完成 但是可以分阶段使用
+            // source loop 的循环是靠prim refill 实现的
             int i = source.first;
-            cout << "Sending source to " << i << endl;
             int size = source.second;
 
             int index = i / GRID_X;
@@ -477,35 +456,34 @@ void config_helper_core::fill_queue_start(queue<Msg> *q) {
             int pkg_num = (send_size_in_bit % M_D_DATA)
                               ? (send_size_in_bit / M_D_DATA + 1)
                               : (send_size_in_bit / M_D_DATA);
-            pkg_num = pkg_num % CORE_COMM_PAYLOAD
-                          ? pkg_num / CORE_COMM_PAYLOAD + 1
-                          : pkg_num / CORE_COMM_PAYLOAD;
+            pkg_num = pkg_num % HW_NOC_PAYLOAD_PER_CYCLE
+                          ? pkg_num / HW_NOC_PAYLOAD_PER_CYCLE + 1
+                          : pkg_num / HW_NOC_PAYLOAD_PER_CYCLE;
 
-            cout << "pkg_num: " << pkg_num << endl;
-
-#if USE_BEHA_NOC == 1
-            sc_bv<M_D_DATA> d(0x1);
-            int length = M_D_DATA;
-            Msg m =
-                Msg(true, MSG_TYPE::S_DATA, 1, i, send_offset, i, length, d);
-            m.source_ = GRID_SIZE;
-            m.roofline_packets_ = pkg_num;
-            q[index].push(m);
-#else
-            for (int j = 1; j <= pkg_num; j++) {
+            if (SPEC_USE_BEHA_NOC) {
                 sc_bv<M_D_DATA> d(0x1);
                 int length = M_D_DATA;
-                bool is_end_packet = j == pkg_num;
-                if (is_end_packet)
-                    length = size * sizeof(float) - M_D_DATA * (pkg_num - 1);
-
-                Msg m = Msg(j == pkg_num, MSG_TYPE::S_DATA, j, i,
-                            send_offset + M_D_DATA * (j - 1), i, length, d);
+                Msg m = Msg(true, MSG_TYPE::S_DATA, 1, i, send_offset, i,
+                            length, d);
                 m.source_ = GRID_SIZE;
-                m.roofline_packets_ = 1;
+                m.roofline_packets_ = pkg_num;
                 q[index].push(m);
+            } else {
+                for (int j = 1; j <= pkg_num; j++) {
+                    sc_bv<M_D_DATA> d(0x1);
+                    int length = M_D_DATA;
+                    bool is_end_packet = j == pkg_num;
+                    if (is_end_packet)
+                        length =
+                            size * sizeof(float) - M_D_DATA * (pkg_num - 1);
+
+                    Msg m = Msg(j == pkg_num, MSG_TYPE::S_DATA, j, i,
+                                send_offset + M_D_DATA * (j - 1), i, length, d);
+                    m.source_ = GRID_SIZE;
+                    m.roofline_packets_ = 1;
+                    q[index].push(m);
+                }
             }
-#endif
         }
     }
 }
@@ -517,10 +495,8 @@ void config_helper_core::parse_ack_msg(Event_engine *event_engine, int flow_id,
 
     for (auto m : g_temp_ack_msg) {
         int cid = m.source_;
-        cout << sc_time_stamp()
-             << ": Config helper DATAFLOW: received ack packet from " << cid
-             << ". total " << g_recv_ack_cnt + 1 << "/" << coreconfigs.size()
-             << ".\n";
+        LOG_DEBUG(NETWORK) << "Config helper <- ACK <- " << cid << ", total "
+                           << g_recv_ack_cnt + 1 << "/" << coreconfigs.size();
 
         g_recv_ack_cnt++;
     }
@@ -539,7 +515,7 @@ void config_helper_core::parse_ack_msg(Event_engine *event_engine, int flow_id,
         event_engine->add_event(this->name(), "Waiting Recv Ack", "f",
                                 Trace_event_util(flow_name), sc_time(0, SC_NS),
                                 100, "e");
-        cout << "Config helper DATAFLOW: received all ack packets.\n";
+        LOG_INFO(NETWORK) << "Config helper received all ACK";
     }
 }
 
@@ -551,9 +527,9 @@ void config_helper_core::parse_done_msg(Event_engine *event_engine,
 
     for (auto m : g_temp_done_msg) {
         int cid = m.source_;
-        cout << sc_time_stamp()
-             << ": Config helper DATAFLOW: received done packet from " << cid
-             << ", total " << g_recv_done_cnt + 1 << ".\n";
+        LOG_DEBUG(NETWORK) << "Config helper <- DONE <- " << cid << ", total "
+                           << g_recv_done_cnt + 1 << " / "
+                           << end_cores * pipeline * max(1, end_count_sources);
 
         g_recv_done_cnt++;
         // g_done_msg.push_back(m);
@@ -562,18 +538,14 @@ void config_helper_core::parse_done_msg(Event_engine *event_engine,
     event_engine->add_event(this->name(), "Waiting Core busy", "E",
                             Trace_event_util());
 
-    cout << "g_recv_done_cnt: " << g_recv_done_cnt
-         << ", end_cores: " << end_cores << ", total pipe: " << pipeline
-         << ", end_count_sources: " << end_count_sources << endl;
-
     if (g_recv_done_cnt >= end_cores * pipeline * max(1, end_count_sources)) {
-        cout << "Config helper DATAFLOW: all work done, g_recv_done_cnt: "
-             << g_recv_done_cnt << ", end_cores: " << end_cores
-             << ", total pipe: " << pipeline
-             << ", end_count_sources: " << end_count_sources << endl;
+        LOG_INFO(SYSTEM) << "All requests finished";
+        LOG_INFO(SYSTEM) << "  end_cores: " << end_cores
+                         << ", total pipe: " << pipeline
+                         << ", end_count_sources: " << end_count_sources;
 
         g_recv_done_cnt = 0;
-        cout << "[CATCH TEST] " << sc_time_stamp() << endl;
+        LOG_INFO(CATCH_TEST) << "Catch test finished";
         sc_stop();
     }
 }

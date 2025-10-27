@@ -31,7 +31,7 @@ def parse_data_file(file_path):
         line = line.strip()
         if line.startswith('*') and line.endswith('*'):
             # 提取配置名称和唯一标记
-            # 格式: *../llm/test/gpt2_small/pd_split/pd_split_49_14_100_100.json*
+            # 格式: *../llm/test/workload_config/gpt2_small/pd_split/pd_split_49_14_100_100.json*
             config_match = re.search(r'pd_split_(\d+)_(\d+)_(\d+_\d+)', line)
             if not config_match:
                 # 尝试其他可能的格式

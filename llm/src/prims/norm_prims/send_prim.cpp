@@ -8,22 +8,11 @@
 
 REGISTER_PRIM(Send_prim);
 
-void Send_prim::printSelf() {
-    cout << "<send_prim>\n";
-
-
-    cout << "\t[" << GetEnumSendType(type) << "] > send to " << des_id << endl;
-    cout << "\tmax_packet: " << max_packet << ", tag_id: " << tag_id
-         << ", end_length: " << end_length << endl;
-
-    if (type == SEND_DATA)
-        cout << "\tout_label: " << output_label << endl;
-}
+void Send_prim::printSelf() {}
 
 void Send_prim::deserialize(vector<sc_bv<128>> segments) {
-        cout << "Start deserialize " << name << endl;
     auto buffer = segments[0];
-    
+
     des_id = buffer.range(23, 8).to_uint64();
 
     if (type == SEND_DATA)
@@ -46,9 +35,10 @@ vector<sc_bv<128>> Send_prim::serialize() {
 
     if (type == SEND_DATA) {
         if (output_label == UNSET_LABEL) {
-            cout << "[ERROR] SEND_DATA must have a set output_label\n";
-            sc_stop();
+            LOG_ERROR(send_prim.cpp)
+                << "SEND_DATA must have a set output_label";
         }
+        
         d.range(35, 24) = sc_bv<12>(g_addr_label_table.addRecord(output_label));
     }
 

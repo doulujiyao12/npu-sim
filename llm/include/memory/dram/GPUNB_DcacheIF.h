@@ -6,11 +6,12 @@
 #include <tlm_utils/simple_initiator_socket.h>
 #include <tlm_utils/simple_target_socket.h>
 
+#include "defs/global.h"
 #include "macros/macros.h"
 #include "memory/MemoryManager_v2.h"
 #include "memory/dram/utils.h"
 #include "trace/Event_engine.h"
-#include "defs/global.h"
+#include "utils/print_utils.h"
 
 
 // 定义 Request 结构体
@@ -70,16 +71,17 @@ public:
         // variables
         base_address = base_addr;
         total_requests = cache_cnt;
-        data_length = line_size / 8;     // 假设每行按8字节分块
-#if DRAM_BURST_BYTE > 0 
-        total_requests = (total_requests * data_length + DRAM_BURST_BYTE - 1) / DRAM_BURST_BYTE;
+        data_length = line_size / 8; // 假设每行按8字节分块
+#if DRAM_BURST_BYTE > 0
+        total_requests = (total_requests * data_length + DRAM_BURST_BYTE - 1) /
+                         DRAM_BURST_BYTE;
         data_length = DRAM_BURST_BYTE;
         assert(data_length > 0);
 #endif
-        current_request = 0;             // Reset request counter
-        config_updated = true;           // Notify the main process
-        this->read_or_write = read_or_write;   // 读写标志位 0 是 读 1 是 写
-        (*start_nb_dram_event).notify(); // Trigger reconfiguration
+        current_request = 0;                 // Reset request counter
+        config_updated = true;               // Notify the main process
+        this->read_or_write = read_or_write; // 读写标志位 0 是 读 1 是 写
+        (*start_nb_dram_event).notify();     // Trigger reconfiguration
     }
 
 private:
@@ -149,20 +151,20 @@ private:
                 next_dram_event->notify();
                 transactionPostponed = false;
             }
-#if GPU_CACHE_DEBUG == 1
-            LOG_VERBOSE(1, id,"End resp finished=" << finished
-                 << " sent=" << transactionsSent
-                 << " received=" << transactionsReceived);
-#endif
+
+            LOG_DEBUG(MEMORY_DEBUG)
+                << "End resp finished=" << finished << " sent "
+                << transactionsSent << " received " << transactionsReceived;
+
             // If all answers were received:
             if (finished && transactionsSent == transactionsReceived) {
                 finished = false;
                 transactionsSent = 0;
                 transactionsReceived = 0;
-#if GPU_CACHE_DEBUG == 1
 
-                LOG_VERBOSE(1, id,"end event notify begin resp");
-#endif
+                LOG_DEBUG(MEMORY_DEBUG)
+                    << "Core " << id << " end event notify begin resp";
+
                 end_nb_dram_event->notify();
             }
         } else if (phase == tlm::END_RESP) {
@@ -186,20 +188,19 @@ private:
                 transactionPostponed = true;
             }
             // 打印完成状态和事务计数信息
-#if GPU_CACHE_DEBUG == 1
-            LOG_VERBOSE(1, id,"End resp finished=" << finished
-                 << " sent=" << transactionsSent
-                 << " received=" << transactionsReceived);
-#endif
+            LOG_DEBUG(MEMORY_DEBUG)
+                << "End resp finished " << finished << " sent "
+                << transactionsSent << " received " << transactionsReceived;
+
             // If all answers were received:
             if (finished && transactionsSent == transactionsReceived) {
                 finished = false;
                 transactionsSent = 0;
                 transactionsReceived = 0;
-#if GPU_CACHE_DEBUG == 1
-                LOG_VERBOSE(1, id,"end event notify end resp");
 
-#endif
+                LOG_DEBUG(MEMORY_DEBUG)
+                    << "Core " << id << " end event notify end resp";
+
                 end_nb_dram_event->notify();
             }
         } else {
@@ -212,16 +213,14 @@ private:
     void generateRequests() {
         while (true) {
             wait(*start_nb_dram_event);
-#if GPU_CACHE_DEBUG == 1
-            LOG_VERBOSE(1, id,"total_requests  " << total_requests);
-#endif
-            if (total_requests > 0) {
-                transactionsSent = total_requests; // Set transactionsSent to total_requests
-                while (current_request < total_requests) {
-                    // cout << "GPUNB_dcacheIF[" << id
-                    //      << "] Start event notify" << "current_request= " << current_request << " total_requests= " << total_requests 
-                    //      << "read_or_write " << read_or_write << endl;
 
+            LOG_DEBUG(MEMORY_DEBUG)
+                << "Core " << id << " total_requests  " << total_requests;
+
+            if (total_requests > 0) {
+                transactionsSent =
+                    total_requests; // Set transactionsSent to total_requests
+                while (current_request < total_requests) {
                     Request request;
                     request.address =
                         base_address + current_request * data_length;
@@ -244,19 +243,13 @@ private:
 
                     // transactionsSent++;
                     finished = true;
-#if GPU_CACHE_DEBUG == 1
-            LOG_VERBOSE(1, id, " Event: next_dram_event notified at time "
-                    << sc_core::sc_time_stamp() << " current_request "<< current_request);
-#endif
 
-                    // 打印事件通知信息
-                    // std::cout << "Event: next_dram_event notified at time "
-                    // << sc_core::sc_time_stamp() << std::endl;
+                    LOG_DEBUG(MEMORY_DEBUG)
+                        << "Event: next_dram_event notified at time "
+                        << sc_core::sc_time_stamp() << " current_request "
+                        << current_request;
+
                     wait(*next_dram_event);
-
-                    // Wait for some delay (if needed)
-                    // wait(sc_core::sc_time(10, sc_core::SC_NS)); // Example
-                    // delay
                 }
 
                 // finished = true;
