@@ -46,8 +46,8 @@ Configuration from_path(std::string_view path, std::string_view resourceDirector
 {
     char buffer[256];
     getcwd(buffer, sizeof(buffer));
-    std::cout << "Current working directory: " << buffer << std::endl;
-    std::cout << path << std::endl;
+    // std::cout << "Current working directory: " << buffer << std::endl;
+    // std::cout << path << std::endl;
 
     std::ifstream file(path.data());
     // 检查文件是否成功打开
@@ -57,12 +57,9 @@ Configuration from_path(std::string_view path, std::string_view resourceDirector
         std::cerr << "Failed to open file: " << path << std::endl;
     }
     // SC_REPORT_FATAL("Configuration3", "Unsupported DRAM type");
-    std::cout << "File opened successfully!" << std::endl;
+    // std::cout << "File opened successfully!" << std::endl;
     // 获取当前文件夹路径
     std::filesystem::path currentPath = std::filesystem::current_path();
-
-    // 打印路径
-    std::cout << "Current working directory: " << currentPath << std::endl;
 
     enum class SubConfig
     {

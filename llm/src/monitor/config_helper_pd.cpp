@@ -404,7 +404,7 @@ void config_helper_pd::generate_prims(int i) {
             for (int w = 0; w < template_cores[core_id - i].worklist.size();
                  w++) {
                 auto &work = template_cores[core_id - i].worklist[w];
-                add_recv(prim_seq, (w == 0 && core_id == i), work.recv_tag,
+                add_recv(prim_seq, (w == 0 && core_id == i), work.recv_tag + i,
                          work.recv_cnt, core_id);
 
                 // work的所有计算原语
