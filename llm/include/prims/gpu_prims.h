@@ -80,7 +80,7 @@ public:
     matmul_forward_gpu_pd() {
         name = "matmul_forward_gpu_pd";
         param_name.insert(param_name.end(),
-                          {"B", "T", "C", "NH", "DH", "R", "job_type"});
+                          {"B", "T", "C", "NH", "DH", "R", "OC", "job_type"});
     }
 };
 

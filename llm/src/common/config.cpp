@@ -120,11 +120,11 @@ void from_json(const json &j, StreamConfig &c) {
         auto prims = j["prims"];
         for (auto prim : prims) {
             string type = prim.at("type");
-            LOG_DEBUG(CONFIG) << "Start parsing prim " << type;
+            LOG_DEBUG(CONFIG_DEBUG) << "Start parsing prim " << type;
             GpuBase *p =
                 (GpuBase *)(PrimFactory::getInstance().createPrim(type));
             p->parseJson(prim);
-            LOG_DEBUG(CONFIG) << "Parsing done for prim " << type;
+            LOG_DEBUG(CONFIG_DEBUG) << "Parsing done for prim " << type;
 
             c.prims.push_back((PrimBase *)p);
         }

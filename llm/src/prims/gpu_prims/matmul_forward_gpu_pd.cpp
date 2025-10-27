@@ -15,7 +15,7 @@ void matmul_forward_gpu_pd::initialize() {
     input_size = {data_byte * p["B"] * p["T"] * p["C"]};
     data_chunk = {{"weight", data_byte * p["C"] * p["OC"]},
                   {"bias", data_byte * p["C"]},
-                  {"output", data_byte * p["B"] * p["T"] * p["oC"] /
+                  {"output", data_byte * p["B"] * p["T"] * p["OC"] /
                                  (3 * p["slice_x"] * p["slice_y"])}};
 }
 
@@ -91,7 +91,9 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
                        (p["slice_y"] * p["slice_x"]) / 3;
                 break;
             default:
-                assert(false && "Unsupported job type");
+                LOG_ERROR(matmul_forward_gpu_pd.cpp)
+                    << name << " of Core " << prim_context->cid << ", job "
+                    << p["job_type"] << " is not supported";
             }
 
             char format_label_k[100];
