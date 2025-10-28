@@ -1,9 +1,10 @@
-.. _installation:
+.. _install_npu_sim:
 
-安装指南
+安装NPU-SIM
 ============
 
-NPU-SIM 是一个用SystemC库写的轻量级众核仿真器，可灵活适配多种众核模式（包括SIMD以及DataFlow）。
+NPU-SIM 是一个用SystemC库写的轻量级众核仿真器，可灵活适配多种众核模式（包括SIMD以及DataFlow），支持LLM Serving等场景的仿真。
+
 
 环境要求
 ------------
@@ -14,14 +15,36 @@ NPU-SIM 是一个用SystemC库写的轻量级众核仿真器，可灵活适配�
 * G++: 9.4.0
 
 
+.. _build_from_dockerfile:
+
+方法一：通过Dockerfile安装（推荐）
+--------
+
+使用Dockerfile构建镜像，耗时约3分钟
+~~~~~~~~
+
+.. code-block:: console
+
+    docker build -t npu-sim:latest .
+
+运行容器
+~~~~~~~~
+
+.. code-block:: console
+
+    docker run -it npu-sim:latest
+
+进入容器，即可在当前目录下找到可执行文件npusim。
+
+
 .. _build_from_source:
 
-使用源码安装
-----------------
+方法二：通过源代码安装
+--------
 
-你也可以使用源码安装NPU-SIM：
+通过以下步骤，从源码安装NPU-SIM：
 
-安装SytemC
+安装SystemC
 ~~~~~~~~~~~~~
 .. code-block:: console
 
@@ -94,5 +117,5 @@ NPU-SIM 是一个用SystemC库写的轻量级众核仿真器，可灵活适配�
 
 .. note::
 
-    SytemC 仅测试了2.3.3版本，其他版本可能会出现不兼容的情况。
+    SystemC 仅测试了2.3.3版本，其他版本可能会出现不兼容的情况。
 

@@ -67,7 +67,6 @@ void from_json(const json &j, CoreConfig &c) {
     SetParamFromJson<int>(j, "send_global_mem", &(c.send_global_mem), -1);
     SetParamFromJson<int>(j, "loop", &(c.loop), 1);
 
-
     if (j.contains("worklist")) {
         for (int i = 0; i < j["worklist"].size(); i++) {
             CoreJob cjob = j["worklist"][i];

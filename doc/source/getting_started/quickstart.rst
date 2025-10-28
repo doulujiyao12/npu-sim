@@ -1,6 +1,6 @@
 .. _quickstart:
 
-快速开始
+运行NPU-SIM
 ==========
 
 使用NPU-SIM十分简单：

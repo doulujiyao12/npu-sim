@@ -38,8 +38,8 @@
    :maxdepth: 1
    :caption: 快速入门
 
-   安装指南 <getting_started/installation>
-   快速开始 <getting_started/quickstart>
+   安装指南 <getting_started/install_npu_sim>
+   快速开始 <getting_started/run_npu_sim>
 
 
 
