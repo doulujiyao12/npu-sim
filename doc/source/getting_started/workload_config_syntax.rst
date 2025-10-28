@@ -1,0 +1,375 @@
+.. _workload_config_syntax:
+
+配置字段与书写规范
+===================
+
+完整的工作负载配置以JSON字典的形式呈现，以下对各个字段的含义与书写规范进行说明。
+
+仿真模式
+~~~~~~~~~
+
+mode : string
+^^^^^^^^^^^^^^
+
+**支持的值：["dataflow", "pd", "pds", "gpu", "gpu_pd"]**
+
+指定当前配置文件的仿真模式。对于不同的仿真模式，配置文件的书写方法略有不同。
+
+    - **dataflow**: 众核数据流模式。
+    - **pd**: LLM Serving模式，且采用 **PD-aggregation** 。
+    - **pds**: LLM Serving模式，且采用 **PD-split** 。
+    - **gpu**: GPU模式。
+    - **gpu_pd**: GPU模式，且采用 **PD-aggregation** 。
+
+.. note::
+    - 一个配置文件仅支持一种仿真模式。
+    - 在本页面其余字段的说明下方，会标记出该字段所适用的仿真模式。
+
+模型参数与架构设置
+~~~~~~~~~~~~~~~~~~~~
+
+vars : dict
+^^^^^^^^^^^^
+
+**适用模式：dataflow, gpu**
+
+定义在配置文件中所使用到的变量键值对。键代表变量名，值代表变量值。在配置文件中，若使用字符串作为任意字段的值，优先为其赋予vars中该变量名所对应的值。
+
+.. admonition:: 示例
+    :class: tip
+
+    在配置文件中，vars定义如下：
+
+    .. code-block:: json
+
+        {
+            "vars": {
+                "foo": 123.456,
+                "bar": 7000
+            }
+        }
+
+    随后在配置文件的其他位置，使用如下写法，将some_random_field的值设置为123.456：
+
+    .. code-block:: json
+
+        {
+            "some_random_field": "foo"
+        }
+
+.. note::
+    - 变量值仅支持整型与浮点型。
+    - 不能对同一变量名重复定义，且不能在配置文件中使用未定义的变量。
+    - 使用变量时，不支持对变量名进行运算。例如"foo+1"、"foo / bar"、"2foo"等，在仅定义了"foo"变量的情况下，均是错误写法。
+
+pipeline : number, optional
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**适用模式：dataflow**
+
+在简单数据流模式下，表示 **总请求个数** 。该模式无法指定请求到达时间分布，因此所有请求视为在仿真开始时刻（0s）同时到达。
+
+requests : dict
+^^^^^^^^^^^^^^^^
+
+**适用模式：pd, pds**
+
+描述所有请求的元数据。包括总请求个数、请求到达时刻、请求token长度（input token）。
+
+    **count : number**
+
+    所有请求的总个数。
+
+    **seq_len : number**
+
+    所有请求的平均token数，代表模型推理的平均input token长度。
+
+    **arrival : number[]**
+
+    所有请求的到达时刻分布。数组中的每一个元素代表请求到达的时间戳（单位：ns）。  
+    若数组长度小于总请求个数，则剩余请求的到达时刻统一为数组中的最后一个元素。
+
+    .. note::
+        - 请求的到达时刻分布必须为非递减序列。
+        - 数组长度至少为1。
+
+.. admonition:: 示例
+    :class: tip
+
+    定义一次LLM Serving流程，共10个请求。所有请求的平均input token长度为64。前三个请求的到达时刻分别为1、10、100ns，从第4个请求开始，所有请求的到达时刻均为1000ns。
+
+    .. code-block:: json
+
+        {
+            "requests": {
+                "count": 10,
+                "seq_len": 64,
+                "arrival": [1, 10, 100, 1000]
+            }
+        }
+
+
+model : dict
+^^^^^^^^^^^^^
+
+**适用模式：pd, pds**
+
+在LLM Serving仿真模式下，定义有关模型与仿真流程的元信息。
+
+    **heads : number**
+
+    模型注意力头个数。
+
+    **eof_chance : double**
+
+    所有请求所生成的平均token数，代表模型推理的平均output token长度。实际数值等同于 ``2 / eof_chance`` 。
+
+    **stage : number**
+
+    模型进行流水线并行（PP）的维度。
+
+    **kv_heads : number**
+
+    模型KV头个数，用于包含GQA算子的模型。
+
+    **head_size : number**
+
+    模型注意力头维度。
+
+    **prefill_iters : number**
+
+    使用Chunked Prefill优化，将Prefill工作拆分为均等chunk的个数。如果希望关闭Chunked Prefill，则设置为1。
+
+.. admonition:: 示例
+    :class: tip
+
+    模型的注意力头数为24，KV头数为6，模型头维度为128，流水线并行大小为12（每一拍流水线执行的模型层数等于 ``模型总层数 / PP大小`` ）。模型的平均output token长度为 ``2 / 0.01 = 200``，且不使用Chunked Prefill。
+
+    .. code-block:: json
+
+        {
+            "model": {
+                "heads": 24,
+                "eof_chance": 0.01,
+                "stage": 12,
+                "kv_heads": 6,
+                "head_size": 128,
+                "prefill_iters": 1
+            }
+        }
+
+工作核负载
+~~~~~~~~~~
+
+工作核的负载由原语按顺序排列而成，记录在 ``cores`` 字段中。为了仿真平台的可扩展性，我们要求在书写 ``cores`` 字段时，必须将其包含在 ``chips`` 字段中，具体写法如下：
+
+.. code-block:: json
+
+    {
+        "chips": [
+            {
+                "chip_id": 0,
+                "cores": [
+                    { "contents": "..." }
+                ]
+            }
+        ]
+    }
+
+.. note::
+    除了 ``cores`` 字段以外，其余内容为固定结构，不允许修改。
+
+cores : dict[]
+^^^^^^^^^^^^^^^
+
+**适用模式：dataflow, pd, pds, gpu, gpu_pd**
+
+记录每一个工作核的负载信息。
+
+    **id : number**
+
+    工作核编号。
+
+    **loop : string/number**
+
+    循环执行 ``worklist`` 中所记录原语的次数。
+
+    **prim_copy : number, optional**
+
+    为了书写便利，使用此字段复制其他工作核的所有worklist及其中的所有原语。需注意被复制的核不能是未定义的核、或是另一个指定了 ``prim_copy`` 字段的核。在主动复制原语之后，仍需填写所有 ``worklist`` 中的 ``cast`` 字段，无需填写 ``worklist`` 中的 ``prims`` 字段。
+
+    **worklist : dict[]**
+
+    按顺序执行的原语列表。每一个worklist中记录了一系列 **计算** 原语（COMP_PRIM）。NPU-SIM会自动在每一个worklist执行前加上一个 **接收** 原语（RECV_PRIM），在worklist执行结束后加上一个 **发送** 原语（SEND_PRIM），因此工作核间的通信流程由 ``worklist`` 数组对工作流程的切割隐式决定。具体原语通信范式可参阅TODO 。
+
+        **recv_cnt : number**
+
+        在执行此worklist之前，需要等待从其他工作核传来的数据份数。若为0，则表示无需等待。
+
+        **recv_tag : number, optional**
+
+        接收数据时，过滤指定的标签号。只有与发送核侧指定了相同的标签号时，才能成功接收。与 ``cast`` 中的 ``tag`` 配合使用。若未指定此字段，则默认为本核编号。
+
+        **cast : dict[]**
+
+        在此worklist执行完毕后，将数据发送至其他工作核的相关信息。
+
+            **dest : number**
+
+            目标核编号。
+
+            **tag : number, optional**
+
+            发送数据时，为数据添加的标签号。只有与接收核侧指定了相同的标签号时，才能成功发送。与 ``worklist`` 中的 ``recv_tag`` 配合使用。若未指定此字段，则默认为目标核编号。
+
+            **weight : number, optional**
+
+            发送数据占总数据的比例（ ``1 / weight`` ，均匀划分）。默认值为1。
+
+        **prims : dict[]**
+
+        此worklist的原语序列，由前至后依次执行。
+
+            **type : string**
+
+            原语类型（需填写指定字符串，见下）。
+
+            **{{var}} : string/number**
+
+            原语的参数列表。不同原语所需参数及参数名均不相同，可参考以下目录中的头文件定义（其中包含原语类型名）：
+
+            .. code-block:: console
+
+                ${NPU_SIM_ROOT}/llm/include/prims
+
+            **sram_address : dict**
+
+            指定计算原语在SRAM中的输入输出标签，具体内存读写与标签管理范式可参考 TODO。
+
+                **indata : string**
+
+                输入标签。此字段不会被NPU-SIM理解为 ``vars`` 中的变量。
+
+                **outdata : string**
+
+                输出标签。此字段不会被NPU-SIM理解为 ``vars`` 中的变量。
+
+.. admonition:: 示例1
+    :class: tip
+
+    对于一组收发核，发送方的数据标签需等同于接收方的数据标签。在示例中，需要等待核0与核1的worklist中的原语执行完毕，发送给核2，使其接收到两份数据后，方可执行核2的第一个worklist中的原语。
+
+    .. code-block:: json
+
+        {
+            "cores": [
+                {
+                    "id": 0,
+                    "worklist": [
+                        "recv_cnt": 0,
+                        "cast": [
+                            {
+                                "dest": 2,
+                                "tag": 200
+                            }
+                        ],
+                        "prims": "some_comp_prims..."
+                    ]
+                },
+                {
+                    "id": 1,
+                    "worklist": [
+                        "recv_cnt": 0,
+                        "cast": [
+                            {
+                                "dest": 2,
+                                "tag": 200
+                            }
+                        ],
+                        "prims": "some_comp_prims..."
+                    ]
+                },
+                {
+                    "id": 2,
+                    "worklist": [
+                        "recv_cnt": 2,
+                        "recv_tag": 200,
+                        "cast": []
+                        "prims": "some_comp_prims..."
+                    ]
+                }
+            ]
+        }
+
+.. admonition:: 示例2
+    :class: tip
+
+    对于使用prim_copy的原语，需要显式指定所有 ``worklist`` 及其中的 ``cast`` 字段。
+
+    .. code-block:: json
+
+        {
+            {
+                "id": 0,
+                "worklist": [
+                    "recv_cnt": 0,
+                    "cast": [
+                        {
+                            "dest": 1
+                        },
+                        {
+                            "dest": 2,
+                            "tag": 300
+                        }
+                    ],
+                    "prims": "some_comp_prims..."
+                ]
+            },
+            {
+                "id": 10,
+                "prim_copy": 0,
+                "worklist": [
+                    "recv_cnt": 0,
+                    "cast": [
+                        {
+                            "dest": 11,
+                            "tag": 500
+                        },
+                        {
+                            "dest": 12,
+                            "tag": 600
+                        }
+                    ]
+                ]
+            }
+        }
+
+.. admonition:: 示例3
+    :class: tip
+
+    需确保每一个计算原语的输入标签都曾经作为某个其他计算原语的输出标签出现过（相关内存读取与标签管理范式可参阅 TODO）。在示例中， ``layernorm1_in`` 标签就曾作为 ``parse_input`` 原语的输出标签出现过。
+
+    .. code-block:: json
+
+        {
+            "prims": [
+                {
+                    "type": "parse_input",
+                    "size": "BTC",
+                    "sram_address": {
+                        "indata": "input_label",
+                        "outdata": "layernorm1_in"
+                    }
+                },
+                {
+                    "type": "Layernorm_f",
+                    "B": "B",
+                    "T": "T",
+                    "C": "C",
+                    "sram_address": {
+                        "indata": "_layernorm1_in",
+                        "outdata": "layernorm1_out"
+                    }
+                }
+            ]
+        }
