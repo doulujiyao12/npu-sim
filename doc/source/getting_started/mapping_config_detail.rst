@@ -1,5 +1,7 @@
 .. _mapping_config_detail:
 
-MAPPING_CONFIG 映射配置
-========
+映射配置
+=========================
 
+.. warning::
+    此页面仍在施工中。TODO

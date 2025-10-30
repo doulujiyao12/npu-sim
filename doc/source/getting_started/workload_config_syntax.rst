@@ -3,7 +3,7 @@
 配置字段与书写规范
 ===================
 
-完整的工作负载配置以JSON字典的形式呈现，以下对各个字段的含义与书写规范进行说明。
+完整的工作负载配置以 **JSON** 字典的形式呈现，以下对各个字段的含义与书写规范进行说明。
 
 仿真模式
 ~~~~~~~~~
@@ -33,7 +33,7 @@ vars : dict
 
 **适用模式：dataflow, gpu**
 
-定义在配置文件中所使用到的变量键值对。键代表变量名，值代表变量值。在配置文件中，若使用字符串作为任意字段的值，优先为其赋予vars中该变量名所对应的值。
+定义在配置文件中所使用到的变量键值对。键代表变量名，值代表变量值。在配置文件中，若使用字符串作为任意字段的值，优先为其赋予 ``vars`` 中该变量名所对应的值。
 
 .. admonition:: 示例
     :class: tip
@@ -49,7 +49,7 @@ vars : dict
             }
         }
 
-    随后在配置文件的其他位置，使用如下写法，将some_random_field的值设置为123.456：
+    随后在配置文件的其他位置，使用如下写法，将 ``some_random_field`` 的值设置为123.456：
 
     .. code-block:: json
 
@@ -60,7 +60,7 @@ vars : dict
 .. note::
     - 变量值仅支持整型与浮点型。
     - 不能对同一变量名重复定义，且不能在配置文件中使用未定义的变量。
-    - 使用变量时，不支持对变量名进行运算。例如"foo+1"、"foo / bar"、"2foo"等，在仅定义了"foo"变量的情况下，均是错误写法。
+    - 使用变量时，不支持对变量名进行运算。例如"foo+1"、"foo / bar"、"2foo"等，在仅定义了 ``foo`` 变量的情况下，均是错误写法。
 
 pipeline : number, optional
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -83,6 +83,10 @@ requests : dict
     **seq_len : number**
 
     所有请求的平均token数，代表模型推理的平均input token长度。
+
+    **eof_chance : double**
+
+    所有请求所生成的平均token数，代表模型推理的平均output token长度。实际数值等同于 ``2 / eof_chance`` 。
 
     **arrival : number[]**
 
@@ -120,13 +124,35 @@ model : dict
 
     模型注意力头个数。
 
-    **eof_chance : double**
-
-    所有请求所生成的平均token数，代表模型推理的平均output token长度。实际数值等同于 ``2 / eof_chance`` 。
-
     **stage : number**
 
-    模型进行流水线并行（PP）的维度。
+    **适用模式：pd**
+
+    模型进行流水线并行（PP）的大小。
+
+    **prefill_stage : number**
+
+    **适用模式：pds**
+
+    Prefill工作核进行流水线并行（PP）的大小。
+
+    **decode_stage : number**
+
+    **适用模式：pds**
+
+    Decode工作核进行流水线并行（PP）的大小。
+
+    **prefill_cores : number**
+
+    **适用模式：pds**
+
+    进行Prefill的工作核个数，需保证为 ``prefill_stage`` 的倍数。
+
+    **decode_cores : number** 
+    
+    **适用模式：pds**
+
+    进行Decode的工作核个数，需保证为 ``decode_stage`` 的倍数。
 
     **kv_heads : number**
 
@@ -140,17 +166,18 @@ model : dict
 
     使用Chunked Prefill优化，将Prefill工作拆分为均等chunk的个数。如果希望关闭Chunked Prefill，则设置为1。
 
-.. admonition:: 示例
+.. admonition:: 示例1
     :class: tip
 
-    模型的注意力头数为24，KV头数为6，模型头维度为128，流水线并行大小为12（每一拍流水线执行的模型层数等于 ``模型总层数 / PP大小`` ）。模型的平均output token长度为 ``2 / 0.01 = 200``，且不使用Chunked Prefill。
+    在LLM Serving **PD aggregation** 模式中，模型的注意力头数为24，KV头数为6，模型头维度为128，流水线并行大小为12（每一拍流水线执行的模型层数等于 ``模型总层数 / PP大小`` ）。不使用Chunked Prefill。
+
+    此时使用的核心总数量至少为12个，实际数量由硬件配置文件决定（可参阅硬件配置文件 :doc:`hardware_config_detail` ）。
 
     .. code-block:: json
 
         {
             "model": {
                 "heads": 24,
-                "eof_chance": 0.01,
                 "stage": 12,
                 "kv_heads": 6,
                 "head_size": 128,
@@ -158,8 +185,30 @@ model : dict
             }
         }
 
+.. admonition:: 示例2
+    :class: tip
+
+    在LLM Serving **PD Split** 模式中，模型的注意力头数为24，KV头数为6，模型头维度为128。使用Chunked Prefill将每一个Prefill任务分解为均等的2个小chunk。Prefill与Decode的流水线并行大小均为7，其中进行Prefill的总核数为42，进行Decode的总核数为21。这意味着Prefill工作核的数据并行（DP）大小为 ``42 / 7 = 6`` ，Decode工作核的数据并行（DP）大小为 ``21 / 7 = 3`` 。
+
+    此时使用核心总数量为 ``42 + 21 = 63`` 个，在指定硬件配置文件时需满足这一点。
+
+    .. code-block:: json
+
+        {
+            "model": {
+                "heads": 24,
+                "prefill_stage": 7,
+                "decode_stage": 7,
+                "prefill_cores": 42,
+                "decode_cores": 21,
+                "kv_heads": 6,
+                "head_size": 128,
+                "prefill_iters": 2
+            }
+        }
+
 工作核负载
-~~~~~~~~~~
+~~~~~~~~~~~~~
 
 工作核的负载由原语按顺序排列而成，记录在 ``cores`` 字段中。为了仿真平台的可扩展性，我们要求在书写 ``cores`` 字段时，必须将其包含在 ``chips`` 字段中，具体写法如下：
 
@@ -204,7 +253,7 @@ cores : dict[]
 
         **recv_cnt : number**
 
-        在执行此worklist之前，需要等待从其他工作核传来的数据份数。若为0，则表示无需等待。
+        在执行此 ``worklist`` 之前，需要等待从其他工作核传来的数据份数。若为0，则表示无需等待。
 
         **recv_tag : number, optional**
 
@@ -254,10 +303,46 @@ cores : dict[]
 
                 输出标签。此字段不会被NPU-SIM理解为 ``vars`` 中的变量。
 
+    **prefill : dict[]**
+
+    **适用模式：pds**
+
+    标记Prefill工作核的 ``worklist`` 。使用方法见下。
+
+    **decode : dict[]**
+
+    **适用模式：pds**
+
+    标记Decode工作核的 ``worklist`` 。使用方法见下。
+
+    .. code-block:: json
+
+        {
+            "cores": {
+                "prefill": [
+                    {
+                        "id": 0,
+                        "worklist": "some_worklist..."
+                    }
+                ],
+                "decode": [
+                    {
+                        "id": 1,
+                        "worklist": "some_worklist..."
+                    }
+                ]
+            }
+        }
+
+.. note::
+    在 **pd** 与 **pds** 模式中，只需在配置文件中指定单个张量并行（TP）组中所有核心的配置即可。例如在 **pds** 模式下，Prefill任务与Decode任务的TP大小均为2，此时配置文件中 ``prefill`` 和 ``decode`` 字段中都只应包含核0与核1的配置。对于其中的收发目标和编号与数据标签号，按照该TP组内填写（例如在核0与核1组成的TP组中，核0的发送目的地即为核1）。
+
+    在 **pd** 模式下，所需求的最少核心总数量等于 ``stage * TP大小`` 。在 **pds** 模式下，核心总数量等于 ``(prefill_cores + decode_cores) * TP大小`` 。
+
 .. admonition:: 示例1
     :class: tip
 
-    对于一组收发核，发送方的数据标签需等同于接收方的数据标签。在示例中，需要等待核0与核1的worklist中的原语执行完毕，发送给核2，使其接收到两份数据后，方可执行核2的第一个worklist中的原语。
+    对于一组收发核，发送方的数据标签需等同于接收方的数据标签。在示例中，需要等待核0与核1 ``worklist`` 中的原语执行完毕，发送给核2，使其接收到两份数据后，方可执行核2的第一个 ``worklist`` 中的原语。
 
     .. code-block:: json
 
@@ -304,7 +389,7 @@ cores : dict[]
 .. admonition:: 示例2
     :class: tip
 
-    对于使用prim_copy的原语，需要显式指定所有 ``worklist`` 及其中的 ``cast`` 字段。
+    对于使用 ``prim_copy`` 的原语，需要显式指定所有 ``worklist`` 及其中的 ``cast`` 字段。
 
     .. code-block:: json
 

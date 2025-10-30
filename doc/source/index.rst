@@ -40,6 +40,7 @@
 
    安装指南 <getting_started/install_npu_sim>
    快速开始 <getting_started/run_npu_sim>
+   实现细节 <getting_started/implementation_details>
 
 
 
