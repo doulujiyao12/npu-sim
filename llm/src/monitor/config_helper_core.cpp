@@ -358,8 +358,8 @@ void config_helper_core::generate_prims(int i) {
 
         if (is_end) {
             work.prims_last_loop.push_back(new Send_prim(SEND_TYPE::SEND_DONE));
-            work.prims_last_loop.push_back(
-                PrimFactory::getInstance().createPrim("Clear_sram"));
+            // work.prims_last_loop.push_back(
+            //     PrimFactory::getInstance().createPrim("Clear_sram"));
             continue;
         }
 
@@ -367,10 +367,10 @@ void config_helper_core::generate_prims(int i) {
 
         add_sends(work.prims_last_loop, work.cast, true);
 
-        if (w == c->worklist.size() - 1) {
-            work.prims_last_loop.push_back(
-                PrimFactory::getInstance().createPrim("Clear_sram"));
-        }
+        // if (w == c->worklist.size() - 1) {
+        //     work.prims_last_loop.push_back(
+        //         PrimFactory::getInstance().createPrim("Clear_sram"));
+        // }
     }
 }
 
