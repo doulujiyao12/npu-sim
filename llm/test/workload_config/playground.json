@@ -1,7 +1,7 @@
 {
     "vars": {
         "B": 1,
-        "T": 512,
+        "T": 1024,
         "C": 768,
         "NH": 12,
         "L": 12,
@@ -24,18 +24,21 @@
         "R": 1,
         "chunk": 1,
         "DH": 64,
-        "BTC/3": 131072,
-        "T/3": 170,
-        "BTC/9": 43690,
+        "BTC/3": 262144,
+        "T/3": 341,
+        "BTC/9": 87381,
         "C/3": 256,
-        "BTC": 393216,
+        "CC/3": 196608,
+        "BTC": 786432,
         "3C": 2304,
+        "3BTC/9": 262144,
         "C/9": 85,
         "NH/9": 1,
         "2C/3": 512,
         "4C/3": 1024,
-        "4BTC/3": 524288,
-        "4BTC/9": 174762,
+        "4CC/9": 262144,
+        "4BTC/3": 1048576,
+        "4BTC/9": 349525,
         "4C": 3072
     },
     "pipeline": 1,
@@ -1834,11 +1837,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -3793,11 +3796,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -5897,11 +5900,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -8024,11 +8027,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -10006,11 +10009,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -11965,11 +11968,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -14069,11 +14072,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -16196,11 +16199,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -18178,11 +18181,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -20137,11 +20140,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -22241,11 +22244,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -24368,11 +24371,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -26350,11 +26353,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -28309,11 +28312,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -30413,11 +30416,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -32540,11 +32543,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -34522,11 +34525,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -36481,11 +36484,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -38585,11 +38588,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -40712,11 +40715,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -42694,11 +42697,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -44653,11 +44656,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -46757,11 +46760,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -48884,11 +48887,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -50866,11 +50869,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -52825,11 +52828,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -54929,11 +54932,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -57056,11 +57059,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -59038,11 +59041,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -60997,11 +61000,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -63101,11 +63104,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -65228,11 +65231,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -67210,11 +67213,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -69169,11 +69172,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -71273,11 +71276,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -73400,11 +73403,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -75382,11 +75385,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -77341,11 +77344,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -79445,11 +79448,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -81572,11 +81575,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -83554,11 +83557,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -85513,11 +85516,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -87617,11 +87620,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -89744,11 +89747,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -91726,11 +91729,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -93685,11 +93688,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -95789,11 +95792,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -97916,11 +97919,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -99898,11 +99901,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -101857,11 +101860,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -103961,11 +103964,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -106088,11 +106091,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -108070,11 +108073,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },
@@ -110029,11 +110032,11 @@
                                     "type": "Gelu_f",
                                     "N": "BTC",
                                     "sram_address": {
-                                        "indata": "merge_matmul3_out",
-                                        "outdata": "gelu1_out"
+                                        "indata": "merge_matmul7_out",
+                                        "outdata": "gelu2_out"
                                     },
                                     "dram_address": {
-                                        "data": "gelu1_data",
+                                        "data": "gelu2_data",
                                         "out": "TODO"
                                     }
                                 },

@@ -3,13 +3,13 @@
   "requests": {
     "count": 25,
     "seq_len": 128,
+    "eof_chance": 0.5,
     "arrival": [
       1
     ]
   },
   "model": {
     "heads": 20,
-    "eof_chance": 0.5,
     "stage": 8,
     "batch": 2,
     "kv_heads": 5,

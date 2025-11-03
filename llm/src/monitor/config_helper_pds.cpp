@@ -37,7 +37,7 @@ config_helper_pds::config_helper_pds(string filename, sc_event *ev_sig,
     // 总共参与prefill的核数，pp * dp 不包括 tp 的数量
     prefill_core = config_model["prefill_cores"];
     decode_core = config_model["decode_cores"];
-    batch_size = config_model["batch_size"];
+    batch_size = 1;
     // prefill_iter 表示 prefill 的 chunk 数量
     if (config_model.contains("prefill_iters"))
         prefill_iters = config_model["prefill_iters"];

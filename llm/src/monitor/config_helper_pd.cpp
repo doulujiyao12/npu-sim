@@ -26,7 +26,7 @@ config_helper_pd::config_helper_pd(string filename, sc_event *ev_sig,
     head_size = config_model["head_size"];
     eof_chance = config_reqs["eof_chance"];
     model_stage = config_model["stage"];
-    batch_size = config_model["batch"];
+    batch_size = 1;
     kv_heads = config_model["kv_heads"];
     if (config_model.contains("prefill_iters"))
         prefill_iters = config_model["prefill_iters"];
