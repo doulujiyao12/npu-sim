@@ -30,8 +30,7 @@
                 "recv_cnt": 1,
                 "cast": [
                   {
-                    "dest": 1,
-                    "tag": 10
+                    "dest": 1
                   }
                 ],
                 "prims": [
