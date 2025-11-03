@@ -157,9 +157,11 @@ config_helper_core::config_helper_core(string filename, int config_chip_id) {
         coreconfigs.push_back(core);
     }
 
-    if (j.contains("random") && j["random"]) {
-        random_core();
-    }
+    // if (j.contains("random") && j["random"]) {
+    //     random_core();
+    // }
+
+    CoreConfigRemap(source_info, coreconfigs);
 
     SetParamFromJson(j, "pipeline", &pipeline, 1);
 

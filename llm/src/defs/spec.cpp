@@ -3,10 +3,6 @@
 
 SIM_MODE SYSTEM_MODE = SIM_DATAFLOW;
 
-std::string g_workload_config;
-std::string g_hardware_config;
-std::string g_simulation_config;
-
 int GRID_X = 4;
 int GRID_Y;
 int GRID_SIZE;

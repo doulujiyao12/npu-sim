@@ -639,7 +639,7 @@ void config_helper_pd::printResults() {
     // 设置输出格式，避免科学计数法
     file << fixed << setprecision(6); // 设置小数点后6位精度，可根据需要调整
 
-    file << "*" << g_workload_config << "*\n";
+    file << "*" << "*\n";
     for (int i = 0; i < token_record.size(); i++) {
         file << "Request " << i << ": \n";
         for (int j = 0; j < token_record[i].size(); j++) {

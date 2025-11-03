@@ -30,6 +30,9 @@ Define_string_opt("--hardware-config", g_flag_hardware_config,
 Define_string_opt("--simulation-config", g_flag_simulation_config,
                   "../llm/test/simulation_config/default_spec.json",
                   "simulation config file");
+Define_string_opt("--mapping-config", g_flag_mapping_config,
+                  "../llm/test/mapping_config/default_mapping.txt",
+                  "mapping config file");
 
 Define_int64_opt("--trace-window", g_flag_trace_window, 2, "Trace window size");
 
@@ -62,10 +65,7 @@ int sc_main(int argc, char *argv[]) {
     DeleteMemoryLogFiles();
 
     // 收集所有配置文件，统一解析
-    g_workload_config = g_flag_workload_config;
-    g_hardware_config = g_flag_hardware_config;
-    g_simulation_config = g_flag_simulation_config;
-    InitGrid(g_workload_config, g_hardware_config, g_simulation_config);
+    InitGrid(g_flag_workload_config, g_flag_hardware_config, g_flag_simulation_config, g_flag_mapping_config);
     InitGlobalMembers();
     InitializeMemorySpec();
 
@@ -74,7 +74,7 @@ int sc_main(int argc, char *argv[]) {
 
     Event_engine *event_engine =
         new Event_engine("event-engine", g_flag_trace_window);
-    Monitor monitor("monitor", event_engine, g_workload_config.c_str());
+    Monitor monitor("monitor", event_engine, g_flag_workload_config.c_str());
     sc_trace_file *tf = sc_create_vcd_trace_file("Cchip_1");
     sc_clock clk("clk", CYCLE, SC_NS);
 

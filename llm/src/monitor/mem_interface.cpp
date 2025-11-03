@@ -201,6 +201,7 @@ void MemInterface::distribute_config() {
             ((config_helper_gpu_pd *)config_helper)->iter_start();
 
         config_helper->fill_queue_config(write_buffer);
+        
 
         // 检查write_buffer是否为空，如果为空则直接跳过发送阶段（PD模式）
         bool writable = false;

@@ -5,11 +5,6 @@
 // 模拟模式
 extern SIM_MODE SYSTEM_MODE;
 
-// 配置文件
-extern std::string g_workload_config;
-extern std::string g_hardware_config;
-extern std::string g_simulation_config;
-
 // 计算核心维度
 extern int GRID_X;
 extern int GRID_Y;
