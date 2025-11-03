@@ -1,18 +1,19 @@
 {
   "mode": "sched_pds",
   "requests": {
+    "eof_chance": 0.5,
     "count": 10,
     "seq_len": 64,
     "arrival": [
       1
-    ],
+    ]
+  },
+  "model": {
     "heads": 8,
-    "eof_chance": 0.5,
     "prefill_stage": 4,
     "decode_stage": 4,
     "prefill_cores": 8,
     "decode_cores": 8,
-    "batch_size": 1,
     "kv_heads": 5,
     "head_size": 64,
     "prefill_iters": 2

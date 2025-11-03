@@ -7,7 +7,6 @@
     "memory": {
         "use_beha_sram": true,
         "use_beha_dram": true,
-        "kvcache_spill": false,
         "use_dramsys": true
     },
     "noc": {

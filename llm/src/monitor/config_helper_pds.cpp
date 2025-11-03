@@ -19,6 +19,7 @@ config_helper_pds::config_helper_pds(string filename, sc_event *ev_sig,
 
     // 收集相关参数
     auto config_reqs = j["requests"];
+    auto config_model = j["model"];
     int req_cnt = config_reqs["count"];
     for (int i = 0; i < req_cnt; i++) {
         vector<double> v;
@@ -26,20 +27,20 @@ config_helper_pds::config_helper_pds(string filename, sc_event *ev_sig,
     }
 
 
-    heads = config_reqs["heads"];
-    head_size = config_reqs["head_size"];
-    kv_heads = config_reqs["kv_heads"];
+    heads = config_model["heads"];
+    head_size = config_model["head_size"];
+    kv_heads = config_model["kv_heads"];
     eof_chance = config_reqs["eof_chance"];
     // prefill 的 pp 阶数
-    prefill_stage = config_reqs["prefill_stage"];
-    decode_stage = config_reqs["decode_stage"];
+    prefill_stage = config_model["prefill_stage"];
+    decode_stage = config_model["decode_stage"];
     // 总共参与prefill的核数，pp * dp 不包括 tp 的数量
-    prefill_core = config_reqs["prefill_cores"];
-    decode_core = config_reqs["decode_cores"];
-    batch_size = config_reqs["batch_size"];
+    prefill_core = config_model["prefill_cores"];
+    decode_core = config_model["decode_cores"];
+    batch_size = config_model["batch_size"];
     // prefill_iter 表示 prefill 的 chunk 数量
-    if (config_reqs.contains("prefill_iters"))
-        prefill_iters = config_reqs["prefill_iters"];
+    if (config_model.contains("prefill_iters"))
+        prefill_iters = config_model["prefill_iters"];
     else
         prefill_iters = 4;
 

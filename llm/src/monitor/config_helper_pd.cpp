@@ -24,7 +24,7 @@ config_helper_pd::config_helper_pd(string filename, sc_event *ev_sig,
     int req_cnt = config_reqs["count"];
     heads = config_model["heads"];
     head_size = config_model["head_size"];
-    eof_chance = config_model["eof_chance"];
+    eof_chance = config_reqs["eof_chance"];
     model_stage = config_model["stage"];
     batch_size = config_model["batch"];
     kv_heads = config_model["kv_heads"];

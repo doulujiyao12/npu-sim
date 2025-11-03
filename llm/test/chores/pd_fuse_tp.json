@@ -3,15 +3,14 @@
   "requests": {
     "count": 10,
     "seq_len": 64,
+    "eof_chance": 0.5,
     "arrival": [
       1
     ]
   },
   "model": {
     "heads": 8,
-    "eof_chance": 0.5,
     "stage": 4,
-    "batch": 2,
     "kv_heads": 5,
     "head_size": 64,
     "prefill_iters": 2
