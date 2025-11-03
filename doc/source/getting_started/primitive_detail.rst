@@ -11,7 +11,7 @@
 
 工作核在执行仿真任务时，会严格执行接收数据-执行计算-发送数据的原语执行循环。在 **NPU-SIM** 根据 :doc:`workload_config_detail` 生成原语序列的过程中，会在 :doc:`workload_config_syntax` 中提及的 ``worklist`` 前后各加上对应的 ``SEND_PRIM`` 和 ``RECV_PRIM`` 。
 
-.. image:: ../images/workercore_prim.png
+.. image:: ../../images/workercore_prim.png
 
 在执行 ``worklist`` 的第一个 ``COMP_PRIM`` 之前， **NPU-SIM** 会先接收从前一个核传来的计算结果。该过程由 ``RECV_PRIM`` 完成。每当接收到一个核的数据，接收计数便增加1。当接收计数等同于该 ``worklist`` 的 ``recv_cnt`` 字段值时，便结束此次 ``RECV_PRIM`` 的执行，进入接下来的 ``COMP_PRIM`` 。
 

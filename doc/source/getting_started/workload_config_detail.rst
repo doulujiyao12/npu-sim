@@ -13,6 +13,8 @@
 
 详细的字段说明可参阅：:doc:`workload_config_syntax`
 
+进阶原语配置说明可参阅： :doc:`advanced_primitive_detail`
+
 生成配置
 --------
 
