@@ -138,7 +138,7 @@
 #define INPUT_LABEL "input_label"
 
 // 最大输入input数量
-#define MAX_SPLIT_NUM 6
+#define MAX_SPLIT_NUM 16
 
 #define RESET "\x1B[0m"    // 重置颜色
 #define RED "\x1B[1;31m"   // 红色
