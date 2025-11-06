@@ -82,17 +82,10 @@ sudo make install
 ### 1.4 Installing the Multimedia Library
 
 ```bash
-# 安装 SFML
 sudo apt-get install libsfml-dev
-
-# 安装 CAIRO
 sudo apt install libcairo2-dev
-
-# 安装 X11（服务器环境可能需要）
 sudo apt install xorg
-
-# 安装字体（源文件已包含必要的 ttf 文件）
-sudo apt install ttf-mscorefonts-installer  # 需要在弹出界面选择 OK
+sudo apt install ttf-mscorefonts-installer  
 ```
 
 ### 2. Compile and Run
@@ -105,5 +98,17 @@ make -j8
 ```
 
 ```bash
-./train_gpt2 --workload-config /path/to/NPU-SIM/src/llm/test/workload_config/config_gpt2_small_tp_24_new.json --use-dramsys true
+ ./npusim \
+    --workload-config ${WORKLOAD_CONFIG_PATH} \
+    --simulation-config ${SIMULATION_CONFIG_PATH} \
+    --hardware-config ${HARDWARE_CONFIG_PATH} \
+     --mapping-config ${MAPPING_CONFIG_PATH}
+```
+
+```bash
+ ./npusim \
+    --workload-config ../llm/test/workload_config/gpu/pd_serving.json \
+    --simulation-config ../llm/test/simulation_config/default_spec.json \
+    --hardware-config ../llm/test/hardware_config/core_4x4.json \
+    --mapping-config ../llm/test/mapping_config/default_mapping.txt
 ```
