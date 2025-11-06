@@ -22,7 +22,7 @@ void Attention_f::taskCore(TaskCoreContext &context, string prim_name,
                            u_int64_t &sfu_ops) {
     // 写入preatt中间结果
     int temp_sram_addr = 0;
-    int temp_sram_addr_prior = 0;
+    int temp_sram_addr_prior = 0;   
     temp_sram_addr_prior = temp_sram_addr;
 
     LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid

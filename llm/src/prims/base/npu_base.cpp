@@ -627,14 +627,12 @@ void NpuBase::writeOutputData(TaskCoreContext &context, uint64_t exu_flops,
         // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
         overlap_time = 0;
         LOG_INFO(PRIM) << name << " of Core " << context.cid << ": dram_time "
-                        << dram_time  << ", compute cycle " 
-                       << cycle ;
+                       << dram_time << ", compute cycle " << cycle;
 
     } else {
         overlap_time = cycle - dram_time;
         LOG_INFO(PRIM) << name << " of Core " << context.cid << ": dram_time "
-                        << dram_time  << ", compute cycle "
-                        << cycle ;
+                       << dram_time << ", compute cycle " << cycle;
     }
 
     // 写入out
