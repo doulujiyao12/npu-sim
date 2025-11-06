@@ -32,7 +32,7 @@ void Set_batch::deserialize(vector<sc_bv<128>> segments) {
     int batch_size = buffer.range(23, 8).to_uint64();
     auto_pd = buffer.range(39, 24).to_uint64();
 
-    for (int i = 1; i < segments.size(); ++i) {
+    for (int i = 1; i < segments.size(); i++) {
         auto buffer = segments[i];
 
         for (int pos = 0; pos + 21 < 128 && batch_info.size() < batch_size;
