@@ -28,7 +28,7 @@ void Set_addr::deserialize(vector<sc_bv<128>> segments) {
         }
     }
 
-    auto buffer = segments[segments.size() - 1];
+    buffer = segments[segments.size() - 1];
     datapass_label.outdata = g_addr_label_table.findRecord(
         buffer.range(31, 0).to_uint64());
 }
@@ -37,9 +37,9 @@ vector<sc_bv<128>> Set_addr::serialize() {
     vector<sc_bv<128>> segments;
 
     sc_bv<128> metadata;
-    d.range(7, 0) = sc_bv<8>(PrimFactory::getInstance().getPrimId(name));
-    d.range(31, 8) = sc_bv<24>(sram_addr);
-    d.range(33, 32) = sc_bv<2>(datatype);
+    metadata.range(7, 0) = sc_bv<8>(PrimFactory::getInstance().getPrimId(name));
+    metadata.range(31, 8) = sc_bv<24>(sram_addr);
+    metadata.range(33, 32) = sc_bv<2>(datatype);
     segments.push_back(metadata);
 
     for (int i = 0; i < MAX_SPLIT_NUM; i++) {
@@ -51,7 +51,7 @@ vector<sc_bv<128>> Set_addr::serialize() {
                 sc_bv<32>(g_addr_label_table.addRecord(
                     prim_context->datapass_label_->indata[i]));
         }
-        segmenets.push_back(d);
+        segments.push_back(d);
     }
 
     sc_bv<128> d;

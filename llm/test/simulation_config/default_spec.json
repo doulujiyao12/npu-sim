@@ -22,7 +22,7 @@
     },
     "log": {
         "log_level": 1,
-        "verbose_debug": false,
+        "verbose_debug": true,
         "colored": false
     }
 }

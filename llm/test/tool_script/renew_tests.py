@@ -1,8 +1,8 @@
 import subprocess, glob, os
 from collections import deque
 
-workloads = glob.glob("../llm/test/workload_config/paper/fig8/*.json")
-hardware = glob.glob("../llm/test/hardware_config/paper/fig8/*.json")
+workloads = glob.glob("../llm/test/workload_config/paper/fig11/*.json")
+hardware = glob.glob("../llm/test/hardware_config/default_hw.json")
 sim_cfg = "../llm/test/simulation_config/default_spec.json"
 
 output_file = "result_summary.txt"

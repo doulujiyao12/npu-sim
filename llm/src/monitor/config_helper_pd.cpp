@@ -422,10 +422,13 @@ void config_helper_pd::generate_prims(int i) {
                             prim->prim_context->datapass_label_->outdata;
                     }
 
-                    temp_config.push_back(Msg(false, MSG_TYPE::CONFIG,
-                                              ++prim_seq, core_id,
-                                              set_addr->serialize()[0]));
-                    auto segments = prim->serialize();
+                    auto segments = set_addr->serialize();
+                    for (int seg = 0; seg < segments.size(); seg++)
+                        temp_config.push_back(
+                            Msg(false, MSG_TYPE::CONFIG, ++prim_seq, core_id,
+                                seg == segments.size() - 1, segments[seg]));
+
+                    segments = prim->serialize();
                     for (int seg = 0; seg < segments.size(); seg++)
                         temp_config.push_back(
                             Msg(false, MSG_TYPE::CONFIG, ++prim_seq, core_id,

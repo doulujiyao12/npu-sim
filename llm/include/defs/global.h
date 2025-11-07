@@ -45,6 +45,8 @@ extern vector<pair<string, int>> vtable;
 
 extern u_int64_t g_data_footprint_in_words;
 
+extern bool correct_exit; // 程序是否正常退出
+
 // 模拟dram数组
 #if DUMMY == 1
 extern uint32_t *dram_array;

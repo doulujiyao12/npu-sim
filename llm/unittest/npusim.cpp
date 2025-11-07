@@ -65,7 +65,8 @@ int sc_main(int argc, char *argv[]) {
     DeleteMemoryLogFiles();
 
     // 收集所有配置文件，统一解析
-    InitGrid(g_flag_workload_config, g_flag_hardware_config, g_flag_simulation_config, g_flag_mapping_config);
+    InitGrid(g_flag_workload_config, g_flag_hardware_config,
+             g_flag_simulation_config, g_flag_mapping_config);
     InitGlobalMembers();
     InitializeMemorySpec();
 
@@ -89,8 +90,14 @@ int sc_main(int argc, char *argv[]) {
     CloseLogFiles();
 
     clock_t end = clock();
-    LOG_INFO(SYSTEM) << "Total Real-time Cost: "
-                     << (double)(end - start) / CLOCKS_PER_SEC << "s";
+
+    if (correct_exit) {
+        LOG_INFO(SYSTEM) << "Total Real-time Cost: "
+                         << (double)(end - start) / CLOCKS_PER_SEC << "s";
+    } else {
+        LOG_WARN(SYSTEM) << "Simulation terminated abnormally";
+    }
+
     ofstream outfile("simulation_result_df_pd.txt", ios::app);
     if (outfile.is_open()) {
         outfile << "Total Real-time Cost: "

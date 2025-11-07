@@ -18,6 +18,8 @@ vector<pair<string, int>> vtable;
 
 u_int64_t g_data_footprint_in_words;
 
+bool correct_exit = true;
+
 #if DUMMY == 1
 uint32_t *dram_array;
 #else
