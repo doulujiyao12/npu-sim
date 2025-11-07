@@ -1,7 +1,7 @@
 {
     "vars": {
         "B": 1,
-        "T": 512,
+        "T": 1024,
         "DH": 128,
         "NH": 32,
         "KVH": 8,
@@ -33,26 +33,27 @@
         "chunk": 1,
         "loop": 21,
         "3C-R": 6144,
-        "BTC": 2097152,
+        "BTC": 4194304,
         "mn": 2,
         "k": 2,
-        "BTP/2": 655360,
-        "T/2": 256,
-        "BTP/4": 327680,
+        "BTP/2": 1310720,
+        "T/2": 512,
+        "BTP/4": 655360,
         "P/2": 1280,
         "3C/2": 6144,
         "3PC/4": 7864320,
-        "3BTC/4": 1572864,
-        "3BTC/2": 3145728,
+        "3BTC/4": 3145728,
+        "3BTC/2": 6291456,
         "3C": 12288,
         "NH/2": 16,
         "C/4": 1024,
+        "BTC/4": 1048576,
         "C/2": 2048,
         "CP/4": 2621440,
         "J/2": 4864,
         "PJ/4": 6225920,
-        "BTJ/4": 1245184,
-        "BTJ/2": 2490368,
+        "BTJ/4": 2490368,
+        "BTJ/2": 4980736,
         "JP/4": 6225920
     },
     "pipeline": 1,
@@ -292,7 +293,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -312,7 +313,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -946,7 +947,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -954,7 +955,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -1604,7 +1605,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -1624,7 +1625,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -2282,7 +2283,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -2290,7 +2291,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -2952,7 +2953,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -2972,7 +2973,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -3606,7 +3607,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -3614,7 +3615,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -4264,7 +4265,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -4284,7 +4285,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -4942,7 +4943,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -4950,7 +4951,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -5612,7 +5613,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -5632,7 +5633,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -6266,7 +6267,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -6274,7 +6275,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -6924,7 +6925,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -6944,7 +6945,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -7602,7 +7603,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -7610,7 +7611,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -8272,7 +8273,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -8292,7 +8293,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -8926,7 +8927,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -8934,7 +8935,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -9584,7 +9585,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -9604,7 +9605,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -10262,7 +10263,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -10270,7 +10271,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -10932,7 +10933,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -10952,7 +10953,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -11586,7 +11587,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -11594,7 +11595,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -12244,7 +12245,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -12264,7 +12265,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -12922,7 +12923,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -12930,7 +12931,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -13592,7 +13593,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -13612,7 +13613,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -14246,7 +14247,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -14254,7 +14255,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -14904,7 +14905,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -14924,7 +14925,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -15582,7 +15583,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -15590,7 +15591,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -16252,7 +16253,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -16272,7 +16273,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -16906,7 +16907,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -16914,7 +16915,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -17564,7 +17565,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -17584,7 +17585,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -18242,7 +18243,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -18250,7 +18251,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -18912,7 +18913,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -18932,7 +18933,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -19566,7 +19567,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -19574,7 +19575,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -20224,7 +20225,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -20244,7 +20245,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -20902,7 +20903,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -20910,7 +20911,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -21572,7 +21573,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -21592,7 +21593,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -22226,7 +22227,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -22234,7 +22235,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -22884,7 +22885,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -22904,7 +22905,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -23562,7 +23563,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -23570,7 +23571,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -24232,7 +24233,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -24252,7 +24253,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -24886,7 +24887,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -24894,7 +24895,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -25544,7 +25545,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -25564,7 +25565,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -26222,7 +26223,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -26230,7 +26231,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -26892,7 +26893,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -26912,7 +26913,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -27546,7 +27547,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -27554,7 +27555,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -28204,7 +28205,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -28224,7 +28225,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -28882,7 +28883,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -28890,7 +28891,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -29552,7 +29553,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -29572,7 +29573,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -30206,7 +30207,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -30214,7 +30215,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -30864,7 +30865,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -30884,7 +30885,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -31542,7 +31543,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -31550,7 +31551,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -32212,7 +32213,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -32232,7 +32233,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -32866,7 +32867,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -32874,7 +32875,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -33524,7 +33525,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -33544,7 +33545,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -34202,7 +34203,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -34210,7 +34211,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -34872,7 +34873,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -34892,7 +34893,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -35526,7 +35527,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -35534,7 +35535,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -36184,7 +36185,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -36204,7 +36205,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -36862,7 +36863,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -36870,7 +36871,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -37532,7 +37533,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -37552,7 +37553,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -38186,7 +38187,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -38194,7 +38195,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -38844,7 +38845,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -38864,7 +38865,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -39522,7 +39523,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -39530,7 +39531,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -40192,7 +40193,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -40212,7 +40213,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -40581,7 +40582,7 @@
                                     "loopout": "true"
                                 },
                                 {
-                                    "dest": 0,
+                                    "dest": 56,
                                     "loopout": "false"
                                 }
                             ],
@@ -40851,7 +40852,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -40859,7 +40860,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -41257,7 +41258,7 @@
                                     "loopout": "true"
                                 },
                                 {
-                                    "dest": 1,
+                                    "dest": 57,
                                     "loopout": "false"
                                 }
                             ],
@@ -41514,7 +41515,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -41534,7 +41535,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -41929,7 +41930,7 @@
                                     "loopout": "true"
                                 },
                                 {
-                                    "dest": 2,
+                                    "dest": 58,
                                     "loopout": "false"
                                 }
                             ],
@@ -42197,7 +42198,7 @@
                             "prims": [
                                 {
                                     "type": "parse_input",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -42205,7 +42206,7 @@
                                 },
                                 {
                                     "type": "parse_output",
-                                    "size": "3BTC/4",
+                                    "size": "BTC/4",
                                     "sram_address": {
                                         "indata": "attention1_out",
                                         "outdata": "attention1_out"
@@ -42629,7 +42630,7 @@
                                     "loopout": "true"
                                 },
                                 {
-                                    "dest": 3,
+                                    "dest": 59,
                                     "loopout": "false"
                                 }
                             ],
