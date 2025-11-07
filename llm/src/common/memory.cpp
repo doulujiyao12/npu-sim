@@ -11,15 +11,16 @@ int AddrLabelTable::addRecord(const std::string &key) {
 
     for (int i = 0; i < table.size(); i++) {
         if (table[i] == key) {
-            return i;
+            return i + 1;
         }
     }
 
     table.push_back(key);
-    return table.size() - 1;
+    return table.size();
 }
 
 string AddrLabelTable::findRecord(int index) const {
+    index -= 1;
     if (index >= 0 && index < table.size()) {
         return table[index];
     }

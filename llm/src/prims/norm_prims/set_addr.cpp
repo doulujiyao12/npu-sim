@@ -42,14 +42,14 @@ vector<sc_bv<128>> Set_addr::serialize() {
     metadata.range(33, 32) = sc_bv<2>(datatype);
     segments.push_back(metadata);
 
-    for (int i = 0; i < MAX_SPLIT_NUM; i++) {
+    int label_idx = 0;
+    while (label_idx < MAX_SPLIT_NUM) {
         sc_bv<128> d;
         int pos = 0;
-
-        for (; pos + 32 < 128 && i < MAX_SPLIT_NUM; i++, pos += 32) {
+        for (; pos + 31 < 128 && label_idx < MAX_SPLIT_NUM; pos += 32, label_idx++) {
             d.range(pos + 31, pos) =
                 sc_bv<32>(g_addr_label_table.addRecord(
-                    prim_context->datapass_label_->indata[i]));
+                    prim_context->datapass_label_->indata[label_idx]));
         }
         segments.push_back(d);
     }
