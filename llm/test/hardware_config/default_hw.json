@@ -10,7 +10,7 @@
     },
     "memory": {
         "beha_dram_util": 0.7,
-        "dram_default_bitwidth": 8,
+        "dram_default_bitwidth": 32,
         "sram_size": 33554432
     },
     "gpu": {
@@ -21,10 +21,10 @@
     "cores": [
         {
             "id": 0,
-            "exu_x": 128,
-            "exu_y": 128,
-            "sfu_x": 2048,
-            "sram_bitwidth": 128
+            "exu_x": 64,
+            "exu_y": 64,
+            "sfu_x": 1024,
+            "sram_bitwidth": 64
         }
     ]
 }
