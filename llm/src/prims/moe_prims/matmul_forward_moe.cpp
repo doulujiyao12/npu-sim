@@ -29,8 +29,7 @@ void matmul_forward_moe::taskCore(TaskCoreContext &context, string prim_name,
 
     // 判断是否需要重选专家
     if (p["need_choose"]) {
-        if (selected_experts.size() != p["K"])
-            selected_experts.clear();
+        selected_experts.clear();
 
         LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
                         << " Selecting experts...";
@@ -78,7 +77,7 @@ void matmul_forward_moe::taskCore(TaskCoreContext &context, string prim_name,
     }
 
     for (auto e : selected_experts) {
-        cout << "selected expert: " << e << endl;
+        cout << "Core" << prim_context->cid <<   " selected expert: " << e << endl;
     }
 
     // 优先查看是否有被prefetch的专家
@@ -87,9 +86,9 @@ void matmul_forward_moe::taskCore(TaskCoreContext &context, string prim_name,
         checked[i] = false;
 
     for (auto e : selected_experts) {
-        if (std::find(prefetched_experts.begin(), prefetched_experts.end(),
-                      e) == prefetched_experts.end())
-            continue;
+        // if (std::find(prefetched_experts.begin(), prefetched_experts.end(),
+        //               e) == prefetched_experts.end())
+        //     continue;
 
         auto label_weight = ETERNAL_PREFIX + prim_name + "_w_" + to_string(e);
         checkStaticData(context, dram_time,
@@ -170,4 +169,6 @@ void matmul_forward_moe::taskCore(TaskCoreContext &context, string prim_name,
 
         exu_ops = performance_comp;
     }
+
+    cout << "Core" << prim_context->cid << " selected experts: " << endl;
 }
