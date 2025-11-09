@@ -40,7 +40,7 @@ void Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
         for (int tile = 0; tile < data_size_input[0] / mac_size; tile++) {
             checkStaticDataTile(context, dram_time, data_chunk_addr["weight"],
                                 GetFromPairedVector(data_chunk, "weight"),
-                                label_weight, false);
+                                label_weight, false, mac_size);
         }
     }
 

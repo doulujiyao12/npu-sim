@@ -33,9 +33,22 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
 
     int chunk_ratio = need_multiply ? 1 : p["chunk"];
     auto label_weight = ETERNAL_PREFIX + prim_name + "_w";
-    checkStaticData(context, dram_time, data_chunk_addr["weight"],
-                    GetFromPairedVector(data_chunk, "weight") / chunk_ratio,
-                    label_weight);
+
+    if (!SPEC_LOAD_STATIC_AS_TILE) {
+        checkStaticData(context, dram_time, data_chunk_addr["weight"],
+                        GetFromPairedVector(data_chunk, "weight") / chunk_ratio,
+                        label_weight);
+    } else {
+        int mac_size = g_core_hw_config[prim_context->cid].second->exu->x_dims *
+                       g_core_hw_config[prim_context->cid].second->exu->y_dims;
+        LOG_DEBUG(MEMORY) << "mac_size " << mac_size;
+        for (int tile = 0; tile < data_size_input[0] / mac_size; tile++) {
+            checkStaticDataTile(context, dram_time, data_chunk_addr["weight"],
+                                GetFromPairedVector(data_chunk, "weight") /
+                                    chunk_ratio,
+                                label_weight, false, mac_size);
+        }
+    }
 
     auto label_bias = ETERNAL_PREFIX + prim_name + "_b";
     checkStaticData(context, dram_time, data_chunk_addr["bias"],
