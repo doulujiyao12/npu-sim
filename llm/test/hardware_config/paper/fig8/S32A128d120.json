@@ -1,7 +1,7 @@
 {
     "x": 8,
     "noc": {
-        "noc_payload_per_cycle": 1
+        "noc_payload_per_cycle": 20
     },
     "operand": {
         "comp_util": 0.7,
@@ -10,7 +10,7 @@
     },
     "memory": {
         "beha_dram_util": 0.7,
-        "dram_default_bitwidth": 48,
+        "dram_default_bitwidth": 64,
         "sram_size": 33554432
     },
     "gpu": {
