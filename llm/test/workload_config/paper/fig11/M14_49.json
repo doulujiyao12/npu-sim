@@ -13,8 +13,8 @@
     "kv_heads": 5,
     "prefill_stage": 7,
     "decode_stage": 7,
-    "prefill_cores": 21,
-    "decode_cores": 42,
+    "prefill_cores": 14,
+    "decode_cores": 49,
     "batch_size": 1,
     "head_size": 64,
     "prefill_iters": 1
