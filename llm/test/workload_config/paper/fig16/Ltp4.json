@@ -11,7 +11,6 @@
         "dp": 1,
         "IS": 12288,
         "avg_output": 20,
-        "model": "gpt",
         "layernorm1_data": 0,
         "split_matmul1_out": 0,
         "matmul1_data": 0,
