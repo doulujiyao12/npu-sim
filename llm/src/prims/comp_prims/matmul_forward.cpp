@@ -90,6 +90,8 @@ void Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
     } else {
         // 计算overlap并写回output数据
         exu_ops = (uint64_t)p["B"] * p["OC"] * p["T"] * p["C"] * 2;
+        if (p["T"] <= 4)
+            exu_ops *= GetCoreHWConfig(context.cid)->exu->x_dims / 4;
         sfu_ops = 0;
     }
 }

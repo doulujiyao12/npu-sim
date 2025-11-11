@@ -11,7 +11,7 @@ int CORE_PER_SM;
 bool SPEC_USE_BEHA_NOC = true;
 bool SPEC_USE_BEHA_SRAM = true;
 bool SPEC_USE_BEHA_DRAM = true;
-bool SPEC_USE_PERF_GEMM = true;
+bool SPEC_USE_PERF_GEMM = false;
 bool SPEC_KVCACHE_SPILL = false;
 bool SPEC_LOAD_STATIC_AS_TILE = false;
 std::string SPEC_TTF_FILE = "../font/NotoSansDisplay-Bold.ttf";

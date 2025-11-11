@@ -142,7 +142,11 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         }
 
         exu_ops = performance_comp;
+        sfu_ops = 0;
     } else {
         exu_ops = (u_int64_t)p["B"] * p["T"] * p["C"] * p["OC"] * 2;
+        sfu_ops = 0;
+        if (p["T"] <= 4)
+            exu_ops *= GetCoreHWConfig(context.cid)->exu->x_dims / 4;
     }
 }
