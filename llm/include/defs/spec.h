@@ -17,7 +17,7 @@ extern bool SPEC_USE_BEHA_SRAM;       // 是否使用行为级SRAM
 extern bool SPEC_USE_BEHA_DRAM;       // 是否使用行为级DRAM
 extern bool SPEC_USE_PERF_GEMM;       // 是否使用GEMM性能模式
 extern bool SPEC_KVCACHE_SPILL;       // 在SRAM满时，是否优先溢出kvcache
-extern bool SPEC_LOAD_STATIC_AS_TILE; // 向SRAM加载数据时，是否按块加载
+extern std::string SPEC_LOAD_STATIC; // 向SRAM加载数据时，加载的策略
 extern std::string SPEC_TTF_FILE;     // 字体文件路径
 extern bool SPEC_USE_DRAMSYS;         // 是否使用DRAMSys
 extern bool SPEC_FAST_WARMUP;         // 是否跳过初始数据发送

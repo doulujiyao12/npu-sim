@@ -1,10 +1,10 @@
 import subprocess, glob, os
 from collections import deque
 
-workloads = glob.glob("../llm/test/workload_config/paper/fig10/tp4/*.json")
-hardware = glob.glob("../llm/test/hardware_config/default_hw.json")
-sim_cfg = glob.glob("../llm/test/simulation_config/default_spec.json")
-map_cfg = glob.glob("../llm/test/mapping_config/paper/fig10/tp4/*.spec")
+workloads = glob.glob("../llm/test/workload_config/paper/fig16/Stp1.json")
+hardware = glob.glob("../llm/test/hardware_config/paper/fig16/*.json")
+sim_cfg = glob.glob("../llm/test/simulation_config/paper/fig16/*.json")
+map_cfg = glob.glob("../llm/test/mapping_config/default_mapping.spec")
 
 output_file = "result_summary.txt"
 
@@ -38,4 +38,4 @@ with open(output_file, "w") as fout:
                     else:
                         useful = list(last_lines)[-1]
 
-                    fout.write(f"{os.path.basename(wl)}, {os.path.basename(hw)}, {useful}\n")
+                    fout.write(f"{os.path.basename(wl)}, {os.path.basename(hw)}, {os.path.basename(sim)}, {useful}\n")

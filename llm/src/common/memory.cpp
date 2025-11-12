@@ -46,6 +46,96 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
     }
 }
 
+void SramPosLocator::addPairByTile(std::string &key, AddrPosKey value,
+                                   TaskCoreContext &context,
+                                   u_int64_t &dram_time) {
+    visit += 1;
+    value.record = visit;
+
+    // 需要检查原先是否有这个标签
+    AddrPosKey old_key;
+    int res = findPair(key, old_key);
+    int old_size = 0;
+
+    if (res == -1) {
+        // 没找到，直接更新
+        data_map[key] = value;
+    } else {
+        // 找到了，只更新大小
+        old_size = old_key.size;
+        old_key.size = value.size;
+        old_key.record = value.record;
+        data_map[key] = old_key;
+    }
+
+    LOG_DEBUG(MEMORY) << "Key " << key << " has old_size " << old_size
+                      << " , spilled_size " << old_key.spill_size;
+
+    // 检查所有的大小是否超过能够容纳的上限
+    int used = 0;
+    for (auto pair : data_map) {
+        // valid = true 表示还没有被spill过
+        if (pair.second.valid)
+            used += pair.second.size;
+        else
+            used += pair.second.size - pair.second.spill_size;
+    }
+
+    // 放得下
+    if (used <= max_sram_size) {
+        LOG_DEBUG(MEMORY) << "Core " << cid << " has SRAM usage " << used
+                          << " / " << max_sram_size;
+        return;
+    }
+
+    LOG_INFO(MEMORY) << "Core " << cid << " need to spill SRAM";
+
+    // 如果old_size不为0，则spill自己；如果为0，则spill除了自己以外record最大的数据。
+    // 由于这里最多读取64*1024，所以固定spill 64*1024即可。
+    if (used - max_sram_size > 64 * 1024)
+        LOG_ERROR(memory.cpp)
+            << "Core " << cid << " load tile bigger than 64*1024";
+
+    int spill_limit = 64 * 1024;
+    if (old_size > 0) {
+        data_map[key].valid = false;
+        data_map[key].spill_size += spill_limit;
+        LOG_DEBUG(MEMORY) << "Core " << cid << " spill " << key << " to dram";
+        LOG_DEBUG(MEMORY) << "Key " << key << " has spill_size "
+                          << data_map[key].spill_size;
+    } else {
+        int max_record = -1;
+        string max_label = "";
+        for (auto pair : data_map) {
+            if (pair.first == key)
+                continue; // 不能spill自己
+            if (!pair.second.valid &&
+                pair.second.spill_size == pair.second.size)
+                continue; // 已经全部spill到dram中去了
+
+            if (pair.second.record > max_record) {
+                max_record = pair.second.record;
+                max_label = pair.first;
+            }
+        }
+
+        if (max_record == -1) {
+            LOG_ERROR(memory.cpp) << "SRAM have no more data to spill "
+                                  << max_sram_size << "<" << used;
+            return;
+        }
+
+        data_map[max_label].valid = false;
+        data_map[max_label].spill_size += spill_limit;
+        data_map[key].valid = true;
+
+        LOG_DEBUG(MEMORY) << "Core " << cid << " spill " << max_label
+                          << " to dram";
+    }
+
+    sram_spill_back_generic(context, spill_limit, 1024, dram_time);
+}
+
 
 bool SramPosLocator::validateTotalSize() const {
     int dataSizeSum = 0;
@@ -113,9 +203,13 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
         LOG_DEBUG(MEMORY) << "Core " << cid << " Sram check: used: " << used
                           << ", max sram size: " << max_sram_size;
 
-        int min_record = 1e9 + 3;
+        int min_record;
+        if (SPEC_LOAD_STATIC == "layer")
+            min_record = 1e9 + 3;
+        else
+            min_record = -1;
+
         string min_label = "";
-        int min_pos = 0;
         AllocationID sram_id = 0;
         for (auto pair : data_map) {
             if (pair.first == key)
@@ -124,53 +218,33 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
                 pair.second.spill_size == pair.second.size)
                 continue; // 已经全部spill到dram中去了
 
-            if (SPEC_KVCACHE_SPILL) {
-                string k_prefix =
-                    ETERNAL_PREFIX + string(KVCACHE_PREFIX) + string("k");
-                string v_prefix =
-                    ETERNAL_PREFIX + string(KVCACHE_PREFIX) + string("v");
-
-                if ((pair.first.length() >= k_prefix.length() &&
-                     pair.first.substr(0, k_prefix.length()) == k_prefix) ||
-                    (pair.first.length() >= v_prefix.length() &&
-                     pair.first.substr(0, v_prefix.length()) == v_prefix))
-                    continue; // 简单策略：不spill kvcache
-            }
-
-            if (pair.second.record < min_record) {
-                min_record = pair.second.record;
-                min_label = pair.first;
-                min_pos = pair.second.pos;
-                sram_id = pair.second.alloc_id;
-            }
-        }
-
-        if (SPEC_KVCACHE_SPILL) {
-            if (min_record == 1e9 + 3) {
-                LOG_DEBUG(MEMORY)
-                    << "Core " << cid << " need to spill KV Cache";
-
-                for (auto pair : data_map) {
-                    if (pair.first == key)
-                        continue; // 不能spill自己
-                    if (!pair.second.valid &&
-                        pair.second.spill_size == pair.second.size)
-                        continue; // 已经全部spill到dram中去了
-
-                    if (pair.second.record < min_record) {
-                        min_record = pair.second.record;
-                        min_label = pair.first;
-                        min_pos = pair.second.pos;
-                        sram_id = pair.second.alloc_id;
-                    }
+            if (SPEC_LOAD_STATIC == "layer") {
+                if (pair.second.record < min_record) {
+                    min_record = pair.second.record;
+                    min_label = pair.first;
+                    sram_id = pair.second.alloc_id;
+                }
+            } else {
+                if (pair.second.record > min_record) {
+                    min_record = pair.second.record;
+                    min_label = pair.first;
+                    sram_id = pair.second.alloc_id;
                 }
             }
         }
 
-        if (min_record == 1e9 + 3) {
-            LOG_ERROR(memory.cpp) << "SRAM have no more data to spill "
-                                  << max_sram_size << "<" << used;
-            return;
+        if (SPEC_LOAD_STATIC == "layer") {
+            if (min_record == 1e9 + 3) {
+                LOG_ERROR(memory.cpp) << "SRAM have no more data to spill "
+                                      << max_sram_size << "<" << used;
+                return;
+            }
+        } else {
+            if (min_record == -1) {
+                LOG_ERROR(memory.cpp) << "SRAM have no more data to spill "
+                                      << max_sram_size << "<" << used;
+                return;
+            }
         }
 
         // 如果已经spill一部分了，则选择剩余能spill的大小
@@ -409,6 +483,9 @@ int SramPosLocator::rearrangeAll(TaskCoreContext &context) {
 
         int temp_pos = *(context.sram_addr);
         u_int64_t temp_addr = 0;
+        LOG_DEBUG(MEMORY) << "Core " << cid << " SRAM key " << record.first
+                          << " size " << size << " spilled size " << spill_size;
+                          
         addPair(record.first, record.second, context, temp_addr);
 
         if (temp_pos != *(context.sram_addr)) {

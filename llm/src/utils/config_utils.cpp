@@ -139,7 +139,7 @@ void ParseSimulationConfig(json j) {
         if (conf_operand.contains("use_pref_gemm"))
             SPEC_USE_PERF_GEMM = conf_operand["use_perf_gemm"];
         if (conf_operand.contains("load_static_as_tile"))
-            SPEC_LOAD_STATIC_AS_TILE = conf_operand["load_static_as_tile"];
+            SPEC_LOAD_STATIC = conf_operand["load_static_as_tile"];
     }
 
     if (j.contains("memory")) {
