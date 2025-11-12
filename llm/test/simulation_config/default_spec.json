@@ -2,7 +2,7 @@
     "ttf_file": "../font/NotoSansDisplay-Bold.ttf",
     "operand": {
         "use_perf_gemm": false,
-        "load_static_as_tile": false
+        "load_static_as_tile": true
     },
     "memory": {
         "use_beha_sram": true,
