@@ -81,9 +81,9 @@ DRAMSys::DRAMSys(const sc_core::sc_module_name& name, const Config::Configuratio
     addressDecoder(std::make_unique<AddressDecoder>(config.addressmapping)),
     arbiter(createArbiter(simConfig, mcConfig, *memSpec, *addressDecoder))
 {
-    logo();
+    // logo();
     addressDecoder->plausibilityCheck(*memSpec);
-    addressDecoder->print();
+    // addressDecoder->print();
 
     // Setup the debug manager:
     setupDebugManager(simConfig.simulationName);

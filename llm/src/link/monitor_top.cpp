@@ -5,18 +5,17 @@
 
 
 TopMonitor::TopMonitor(sc_module_name name, Event_engine *event_engine,
-                       TopConfig *config, std::string font_ttf)
+                       TopConfig *config)
     : sc_module(name),
       config(config),
-      event_engine(event_engine),
-      font_ttf(font_ttf) {
+      event_engine(event_engine) {
     init();
 }
 
 TopMonitor::TopMonitor(sc_module_name name, Event_engine *event_engine,
-                       std::string config_file, std::string font_ttf)
-    : sc_module(name), event_engine(event_engine), font_ttf(font_ttf) {
-    config = new TopConfig(config_file, font_ttf);
+                       std::string workload_config)
+    : sc_module(name), event_engine(event_engine) {
+    config = new TopConfig(workload_config);
     // TopMonitor(name, config);
     init();
 }
@@ -29,9 +28,9 @@ void TopMonitor::init() {
         switch (config_ptr->getType()) {
         case BaseConfig::TYPE_CHIP:
             // BaseComponent *base_component = new ChipMonitor("chip_monitor",
-            // event_engine, config_ptr, font_ttf);
+            // event_engine, config_ptr);
             components.push_back(new ChipMonitor("chip_monitor", event_engine,
-                                                 config_ptr, font_ttf));
+                                                 config_ptr));
             break;
         default:
             assert(0 && "not implemented yet");

@@ -6,10 +6,9 @@
 
 REGISTER_PRIM(Load_prim);
 
-void Load_prim::printSelf() { cout << "<Load_prim>\n"; }
+void Load_prim::printSelf() {  }
 
 void Load_prim::deserialize(vector<sc_bv<128>> segments) {
-        cout << "Start deserialize " << name << endl;
     auto buffer = segments[0];
 }
 

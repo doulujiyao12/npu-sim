@@ -1,10 +1,10 @@
 #pragma once
-#include "systemc.h"
 #include "macros/macros.h"
+#include "systemc.h"
 
+#include "defs/global.h"
 #include "memory/dramsys_wrapper.h"
 #include "memory/gpu/GPU_L1L2_Cache.h"
-#include "defs/global.h"
 
 class L1L2CacheSystem : public sc_module {
 public:
@@ -29,10 +29,12 @@ public:
 
         dramSysWrapper = new gem5::memory::DRAMSysWrapper("DRAMSysWrapper",
                                                           testConfig, false);
-        if (use_gpu == true){
-        dram_aligned = dramSysWrapper->dramsys->getMemSpec().defaultBytesPerBurst;
+        if (SYSTEM_MODE == SIM_GPU || SYSTEM_MODE == SIM_GPU_PD) {
+            GPU_DRAM_ALIGNED =
+                dramSysWrapper->dramsys->getMemSpec().defaultBytesPerBurst;
         }
-        assert(DRAM_BURST_BYTE >= dramSysWrapper->dramsys->getMemSpec().defaultBytesPerBurst);
+        assert(DRAM_BURST_BYTE >=
+               dramSysWrapper->dramsys->getMemSpec().defaultBytesPerBurst);
         // mainMemory = new MainMemory("main_memory");
         bus = new Bus("bus", numProcessors);
 

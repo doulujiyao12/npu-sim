@@ -18,32 +18,40 @@ void Attention_f::initialize() {
 }
 
 void Attention_f::taskCore(TaskCoreContext &context, string prim_name,
-                          u_int64_t &dram_time, u_int64_t &exu_ops,
-                          u_int64_t &sfu_ops) {
+                           u_int64_t &dram_time, u_int64_t &exu_ops,
+                           u_int64_t &sfu_ops) {
     // 写入preatt中间结果
     int temp_sram_addr = 0;
-    int temp_sram_addr_prior = 0;
+    int temp_sram_addr_prior = 0;   
     temp_sram_addr_prior = temp_sram_addr;
-    std::cout << "attention_forward sram_write_back_temp: temp_sram_addr: "
-              << temp_sram_addr << std::endl;
+
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                    << " write back preatt";
+
     sram_write_back_temp(context,
                          data_byte * GetFromPairedVector(data_chunk, "preatt"),
                          temp_sram_addr, dram_time);
-    std::cout << "attention_forward sram_read_generic_temp: temp_sram_addr: "
-              << temp_sram_addr << std::endl;
+
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                    << " read preatt";
 
     // 读出preatt，计算自然指数，写入att
     sram_read_generic_temp(context, GetFromPairedVector(data_chunk, "preatt"),
                            temp_sram_addr_prior, dram_time);
     temp_sram_addr_prior = temp_sram_addr;
-    std::cout << "attention_forward sram_write_back_temp: temp_sram_addr: "
-              << temp_sram_addr << std::endl;
-    sram_write_back_temp(context, data_byte * GetFromPairedVector(data_chunk, "att"), temp_sram_addr,
-                         dram_time);
+
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                    << " write back att";
+
+    sram_write_back_temp(context,
+                         data_byte * GetFromPairedVector(data_chunk, "att"),
+                         temp_sram_addr, dram_time);
     // 读出att
-    std::cout << "attention_forward sram_read_generic_temp: temp_sram_addr: "
-              << temp_sram_addr << std::endl;
-    sram_read_generic_temp(context, data_byte * GetFromPairedVector(data_chunk, "att"),
+    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                    << " read att";
+
+    sram_read_generic_temp(context,
+                           data_byte * GetFromPairedVector(data_chunk, "att"),
                            temp_sram_addr_prior, dram_time);
 
     auto &p = param_value;

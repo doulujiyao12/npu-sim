@@ -2,11 +2,10 @@
 #include "monitor/monitor.h"
 
 ChipMonitor::ChipMonitor(const sc_module_name &name, Event_engine *event_engine,
-                         BaseConfig *config, std::string font_ttf)
+                         BaseConfig *config)
     : sc_module(name),
       config(config),
-      event_engine(event_engine),
-      font_ttf(font_ttf) {
+      event_engine(event_engine) {
     init();
 }
 

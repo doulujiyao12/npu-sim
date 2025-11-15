@@ -8,33 +8,22 @@
 
 REGISTER_PRIM(Send_prim);
 
-void Send_prim::printSelf() {
-    cout << "<send_prim>\n";
-
-
-    cout << "\t[" << GetEnumSendType(type) << "] > send to " << des_id << endl;
-    cout << "\tmax_packet: " << max_packet << ", tag_id: " << tag_id
-         << ", end_length: " << end_length << endl;
-
-    if (type == SEND_DATA)
-        cout << "\tout_label: " << output_label << endl;
-}
+void Send_prim::printSelf() {}
 
 void Send_prim::deserialize(vector<sc_bv<128>> segments) {
-        cout << "Start deserialize " << name << endl;
     auto buffer = segments[0];
-    
+
     des_id = buffer.range(23, 8).to_uint64();
 
     if (type == SEND_DATA)
         output_label =
-            g_addr_label_table.findRecord(buffer.range(39, 24).to_uint64());
+            g_addr_label_table.findRecord(buffer.range(35, 24).to_uint64());
 
     type = SEND_TYPE(buffer.range(59, 56).to_uint64());
     max_packet = buffer.range(91, 60).to_uint64();
-    tag_id = buffer.range(99, 92).to_uint64();
-    end_length = buffer.range(107, 100).to_uint64();
-    datatype = DATATYPE(buffer.range(109, 108).to_uint64());
+    tag_id = buffer.range(111, 92).to_uint64();
+    end_length = buffer.range(119, 112).to_uint64();
+    datatype = DATATYPE(buffer.range(121, 120).to_uint64());
 }
 
 vector<sc_bv<128>> Send_prim::serialize() {
@@ -46,17 +35,18 @@ vector<sc_bv<128>> Send_prim::serialize() {
 
     if (type == SEND_DATA) {
         if (output_label == UNSET_LABEL) {
-            cout << "[ERROR] SEND_DATA must have a set output_label\n";
-            sc_stop();
+            LOG_ERROR(send_prim.cpp)
+                << "SEND_DATA must have a set output_label";
         }
+        
         d.range(35, 24) = sc_bv<12>(g_addr_label_table.addRecord(output_label));
     }
 
     d.range(59, 56) = sc_bv<4>(type);
     d.range(91, 60) = sc_bv<32>(max_packet);
-    d.range(99, 92) = sc_bv<8>(tag_id);
-    d.range(107, 100) = sc_bv<8>(end_length);
-    d.range(109, 108) = sc_bv<2>(datatype);
+    d.range(111, 92) = sc_bv<20>(tag_id);
+    d.range(119, 112) = sc_bv<8>(end_length);
+    d.range(121, 120) = sc_bv<2>(datatype);
     segments.push_back(d);
 
     return segments;

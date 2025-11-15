@@ -9,6 +9,9 @@
 REGISTER_PRIM(Merge_matmul);
 
 void Merge_matmul::initialize() {
+    data_chunk.clear();
+    data_size_input.clear();
+
     auto &p = param_value;
     if (p["dim"] == 1)
         data_chunk.push_back({"output", p["B"] * p["T"] * p["C"]});

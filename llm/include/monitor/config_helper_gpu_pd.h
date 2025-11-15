@@ -32,7 +32,7 @@ public:
     vector<int> arrival_time; // 记录所有req到达的时间
     vector<Msg> g_done_msg;   // 收集
 
-    config_helper_gpu_pd(string filename, string font_ttf, sc_event *ev_sig,
+    config_helper_gpu_pd(string filename, sc_event *ev_sig,
                          int config_chip_id = 0);
 
     config_helper_gpu_pd *clone() const override {

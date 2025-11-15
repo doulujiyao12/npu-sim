@@ -16,6 +16,7 @@
 // under the License.
 
 #include "utils/simple_flags.h"
+#include "utils/print_utils.h"
 #include <assert.h>
 #include <errno.h>
 #include <iostream>
@@ -284,8 +285,7 @@ inline void parse_split_flag_boollist(flag_boollist *ptr, const char *p) {
             } else if (is_false_key(tmp.c_str())) {
                 ptr->push_back(false);
             } else {
-                std::cout << "Warning -- Flag parse: Invalid bool expression"
-                          << std::endl;
+                LOG_WARN(simple_flags.cpp) << "Invalid bool expression";
             }
             tmp.clear();
         }
@@ -354,8 +354,7 @@ inline void parse_split_flag_doublelist(flag_doublelist *ptr, const char *p) {
             errno = 0;
             value = strtod(p, &endptr);
             if (errno != 0 || endptr == p || endptr == NULL) {
-                std::cout << "Warning -- Flag parse: Invalid float expression"
-                          << std::endl;
+                LOG_WARN(simple_flags.cpp) << "Invalid float expression";
             } else {
                 ptr->push_back(value);
             }
@@ -393,8 +392,7 @@ inline void parse_split_flag_int32list(flag_int32list *ptr, const char *p) {
             errno = 0;
             value = strtol(p, &endptr, 10);
             if (errno != 0 || endptr == p) {
-                std::cout << "Warning -- Flag parse: Invalid float expression"
-                          << std::endl;
+                LOG_WARN(simple_flags.cpp) << "Invalid int32 expression";
             } else {
                 ptr->push_back(value);
             }
@@ -432,8 +430,7 @@ inline void parse_split_flag_uint32list(flag_uint32list *ptr, const char *p) {
             errno = 0;
             value = strtoul(p, &endptr, 10);
             if (errno != 0 || endptr == p || endptr == NULL) {
-                std::cout << "Warning -- Flag parse: Invalid float expression"
-                          << std::endl;
+                LOG_WARN(simple_flags.cpp) << "Invalid uint32 expression";
             } else {
                 ptr->push_back(value);
             }
@@ -471,8 +468,7 @@ inline void parse_split_flag_uint64list(flag_uint64list *ptr, const char *p) {
             errno = 0;
             value = strtoull(p, &endptr, 10);
             if (errno != 0 || endptr == p || endptr == NULL) {
-                std::cout << "Warning -- Flag parse: Invalid float expression"
-                          << std::endl;
+                LOG_WARN(simple_flags.cpp) << "Invalid uint64 expression";
             } else {
                 ptr->push_back(value);
             }
@@ -510,8 +506,7 @@ inline void parse_split_flag_int64list(flag_int64list *ptr, const char *p) {
             errno = 0;
             value = strtoll(p, &endptr, 10);
             if (errno != 0 || endptr == p || endptr == NULL) {
-                std::cout << "Warning -- Flag parse: Invalid float expression"
-                          << std::endl;
+                LOG_WARN(simple_flags.cpp) << "Invalid float expression";
             } else {
                 ptr->push_back(value);
             }

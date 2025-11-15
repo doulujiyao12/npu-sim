@@ -1,8 +1,8 @@
 #include "prims/moe_prims.h"
 #include "utils/memory_utils.h"
+#include "utils/prim_utils.h"
 #include "utils/print_utils.h"
 #include "utils/system_utils.h"
-#include "utils/prim_utils.h"
 
 REGISTER_PRIM(matmul_forward_moe);
 
@@ -20,8 +20,8 @@ void matmul_forward_moe::initialize() {
 }
 
 void matmul_forward_moe::taskCore(TaskCoreContext &context, string prim_name,
-                                 u_int64_t &dram_time, u_int64_t &exu_ops,
-                                 u_int64_t &sfu_ops) {
+                                  u_int64_t &dram_time, u_int64_t &exu_ops,
+                                  u_int64_t &sfu_ops) {
     auto &p = param_value;
     auto &selected_experts = prim_context->selected_experts_;
     auto &selected_freq = prim_context->selected_freq_;
@@ -29,11 +29,10 @@ void matmul_forward_moe::taskCore(TaskCoreContext &context, string prim_name,
 
     // 判断是否需要重选专家
     if (p["need_choose"]) {
-        if (selected_experts.size() != p["K"])
-            selected_experts.clear();
+        selected_experts.clear();
 
-        cout << "[MOE] Core " << prim_context->cid << ": Selecting experts..."
-             << endl;
+        LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                        << " Selecting experts...";
 
         bool exp_flag[p["E_N"]];
         for (auto &b : exp_flag)
@@ -70,15 +69,15 @@ void matmul_forward_moe::taskCore(TaskCoreContext &context, string prim_name,
 
     } else {
         if (selected_experts.size() != p["K"]) {
-            cout << "[ERROR] selected_experts size mismatch: "
-                 << selected_experts.size() << " != " << p["K"] << endl;
-            sc_stop();
+            LOG_ERROR(matmul_forward_moe.cpp)
+                << "selected_experts size mismatch: " << selected_experts.size()
+                << " != " << p["K"];
             return;
         }
     }
 
     for (auto e : selected_experts) {
-        cout << "selected expert: " << e << endl;
+        cout << "Core" << prim_context->cid <<   " selected expert: " << e << endl;
     }
 
     // 优先查看是否有被prefetch的专家
@@ -87,9 +86,9 @@ void matmul_forward_moe::taskCore(TaskCoreContext &context, string prim_name,
         checked[i] = false;
 
     for (auto e : selected_experts) {
-        if (std::find(prefetched_experts.begin(), prefetched_experts.end(),
-                      e) == prefetched_experts.end())
-            continue;
+        // if (std::find(prefetched_experts.begin(), prefetched_experts.end(),
+        //               e) == prefetched_experts.end())
+        //     continue;
 
         auto label_weight = ETERNAL_PREFIX + prim_name + "_w_" + to_string(e);
         checkStaticData(context, dram_time,
@@ -128,49 +127,48 @@ void matmul_forward_moe::taskCore(TaskCoreContext &context, string prim_name,
         checked[e] = true;
     }
 
-    ARGUS_PRINT(dram_time);
-
-
     if (p["is_merge"])
         exu_ops = (u_int64_t)p["B"] * p["T"] * p["C"] * p["OC"] * p["K"] * 2 +
                   (u_int64_t)p["B"] * p["T"] * p["OC"] * p["K"];
     else
         exu_ops = (uint64_t)p["B"] * p["T"] * p["C"] * p["OC"] * p["K"] * 2;
 
-#if PERFORMANCE_MODE == 1
+    if (SPEC_USE_PERF_GEMM) {
+        ExuConfig *exu = GetCoreHWConfig(context.cid)->exu;
 
-    ExuConfig *exu = GetCoreHWConfig(context.cid)->exu;
+        uint64_t weight_tile_x = (p["C"] + exu->x_dims - 1) / exu->x_dims;
+        uint64_t weight_tile_y = (p["OC"] + exu->y_dims - 1) / exu->y_dims;
 
-    uint64_t weight_tile_x = (p["C"] + exu->x_dims - 1) / exu->x_dims;
-    uint64_t weight_tile_y = (p["OC"] + exu->y_dims - 1) / exu->y_dims;
+        uint64_t padding_input_x = (p["T"] * p["B"] * p["K"]) > exu->x_dims
+                                       ? p["T"] * p["B"] * p["K"]
+                                       : exu->x_dims;
 
-    uint64_t padding_input_x = (p["T"] * p["B"] * p["K"]) > exu->x_dims
-                                   ? p["T"] * p["B"] * p["K"]
-                                   : exu->x_dims;
+        uint64_t performance_cycle =
+            (exu->x_dims + exu->x_dims + padding_input_x) * weight_tile_x *
+            weight_tile_y;
 
-    uint64_t performance_cycle = (exu->x_dims + exu->x_dims + padding_input_x) *
-                                 weight_tile_x * weight_tile_y;
+        uint64_t performance_comp =
+            performance_cycle * exu->y_dims * exu->x_dims * HW_COMP_UTIL;
 
-    uint64_t performance_comp =
-        performance_cycle * exu->y_dims * exu->x_dims * comp_util;
-    LOG_VERBOSE(1, context.cid,
-                "Prim name:" << name << " performance_cycle "
-                             << performance_cycle);
+        LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                        << " performance_cycle " << performance_cycle;
 
-    int loop_input_count =
-        weight_tile_y - 1; // read loop_input_count Repetitive input
+        int loop_input_count =
+            weight_tile_y - 1; // read loop_input_count Repetitive input
 
-    for (int loop = 0; loop < loop_input_count; loop++) {
-        for (int p = 0; p < data_size_input.size(); p++) {
-            if (prim_context->datapass_label_->indata[p].find(DRAM_LABEL) ==
-                0) {
+        for (int loop = 0; loop < loop_input_count; loop++) {
+            for (int p = 0; p < data_size_input.size(); p++) {
+                if (prim_context->datapass_label_->indata[p].find(DRAM_LABEL) ==
+                    0) {
 
-                prefReadData(context, dram_time, data_size_input[p],
-                             prim_context->datapass_label_->indata[p]);
+                    prefReadData(context, dram_time, data_size_input[p],
+                                 prim_context->datapass_label_->indata[p]);
+                }
             }
         }
+
+        exu_ops = performance_comp;
     }
 
-    exu_ops = performance_comp;
-#endif
+    cout << "Core" << prim_context->cid << " selected experts: " << endl;
 }

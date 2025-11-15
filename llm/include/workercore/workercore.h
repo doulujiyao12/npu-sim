@@ -6,7 +6,6 @@
 #include "common/pd.h"
 #include "common/system.h"
 #include "defs/const.h"
-#include "hardware/systolic/systolic.h"
 #include "link/nb_global_memif_v2.h"
 #include "macros/macros.h"
 #include "memory/dram/Dcache.h"

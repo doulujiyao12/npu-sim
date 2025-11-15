@@ -36,19 +36,15 @@ void ChipConfig::load_json(const json &j) {
     //[yicheng] TODO ：这里的初始化方式不太好，回头再看看
     if (j.contains("core_type")) {
         if (j.at("core_type") == "dataflow") {
-            chip = new config_helper_core(top_config->filename,
-                                          top_config->font_ttf, id);
+            chip = new config_helper_core(top_config->filename, id);
         } else if (j.at("core_type") == "gpu") {
-            chip = new config_helper_gpu(top_config->filename,
-                                         top_config->font_ttf, id);
+            chip = new config_helper_gpu(top_config->filename, id);
         }
     } else {
         if (SYSTEM_MODE == SIM_DATAFLOW) {
-            chip = new config_helper_core(top_config->filename,
-                                          top_config->font_ttf, id);
+            chip = new config_helper_core(top_config->filename, id);
         } else if (SYSTEM_MODE == SIM_GPU) {
-            chip = new config_helper_gpu(top_config->filename,
-                                         top_config->font_ttf, id);
+            chip = new config_helper_gpu(top_config->filename, id);
         }
     }
 }

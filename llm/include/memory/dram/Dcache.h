@@ -11,6 +11,7 @@
 
 #include "defs/const.h"
 #include "defs/global.h"
+#include "defs/spec.h"
 #include "macros/macros.h"
 #include "memory/dramsys_wrapper.h"
 #include "trace/Event_engine.h"
@@ -98,12 +99,12 @@ public:
                 line_freq = 0;
                 // one way in this set is empty. do not evict
                 set_empty_lines++;
-            } 
+            }
 
             if (line_freq < min_freq) {
                 // Best candidate for eviction
                 evict_dcache_idx = dcache_idx;
-                min_freq = line_freq; 
+                min_freq = line_freq;
             }
         }
         // // DAHU 这个==好像有问题？？
@@ -117,9 +118,9 @@ public:
     u_int64_t cache_tag(u_int64_t addr) {
         u_int64_t word_index = (u_int64_t)addr >> 2; // 4bytes in a word
         // dataset_words_per_tile per tile dram size in words
-        data_footprint_in_words = dataset_words_per_tile;
-            // GRID_SIZE * dataset_words_per_tile; // global variable
-        word_index = word_index % data_footprint_in_words;
+        g_data_footprint_in_words = dataset_words_per_tile;
+        // GRID_SIZE * dataset_words_per_tile; // global variable
+        word_index = word_index % g_data_footprint_in_words;
         // 在全局darray中的索引
         return word_index >> dcache_words_in_line_log2;
     }
@@ -193,14 +194,11 @@ public:
                 int read_latency = 0;
                 u_int16_t mc_queue_id = die_id(tX, tY) * hbm_channels +
                                         (tY * DIE_W + tX) % hbm_channels;
-                if (use_DramSys == false) {
-
-
+                if (!SPEC_USE_DRAMSYS) {
                     int hbm_lat = (int)hbm_read_latency;
                     read_latency = hbm_lat;
 
                     trans.set_response_status(tlm::TLM_OK_RESPONSE);
-                    
                 } else {
                     // Use DramSys
                     // SC_REPORT_INFO("DRAMSYS", "USE DRAMSYS");
@@ -267,8 +265,7 @@ public:
                 tags[evict_dcache_idx] = elem_tag;
                 // dcache_freq[elem_tag]++;
                 if (dcache_freq_v2.find(elem_tag) == dcache_freq_v2.end()) {
-                    dcache_freq_v2[elem_tag] =
-                        1; // 如果不存在，则初始化为 1
+                    dcache_freq_v2[elem_tag] = 1; // 如果不存在，则初始化为 1
                 } else {
                     dcache_freq_v2[elem_tag]++; // 如果存在，则自增
                 }
@@ -353,7 +350,7 @@ public:
                 if (dcache_freq_v2.find(elem_tag) != dcache_freq_v2.end() &&
                     dcache_freq_v2[elem_tag] > 0) {
                     dcache_hits++;
-                    if (use_DramSys == true) {
+                    if (SPEC_USE_DRAMSYS) {
                         tlm_phase tPhase = END_RESP;
                         sc_time tDelay = sc_time(CYCLE, SC_NS);
                         // wait(CYCLE, SC_NS);
@@ -448,7 +445,7 @@ public:
                         dcache_freq_v2[elem_tag]++; // 如果存在，则自增
                     }
 
-                    if (use_DramSys == false) {
+                    if (!SPEC_USE_DRAMSYS) {
                         delay = sc_time(pu_penalty, SC_NS); // 模拟延迟
                         assert(false &&
                                "can not use dramsys = false in ND DRAM");
@@ -458,7 +455,8 @@ public:
 #if DIRECT_MAPPED == 0
                         if (dcache_freq_v2.find(elem_tag) ==
                             dcache_freq_v2.end()) {
-                            dcache_freq_v2[elem_tag] = 1; // 如果不存在，则初始化为 1
+                            dcache_freq_v2[elem_tag] =
+                                1; // 如果不存在，则初始化为 1
                         } else {
                             dcache_freq_v2[elem_tag]++; // 如果存在，则自增
                         }

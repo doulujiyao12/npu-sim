@@ -12,7 +12,7 @@
 REGISTER_PRIM(Send_global_memory);
 
 void Send_global_memory::initialize() {
-    ARGUS_EXIT("Send_global_memory not implemented.\n");
+    LOG_ERROR(PRIM) << "Send_global_memory::initialize() not implemented";
 }
 
 void Send_global_memory::taskCore(TaskCoreContext &context, string prim_name,
@@ -47,5 +47,5 @@ void Send_global_memory::taskCore(TaskCoreContext &context, string prim_name,
     // // Return the simulated write latency in nanoseconds
     // return static_cast<int>(delay.to_seconds() * 1e9);
 
-    ARGUS_EXIT("Send_global_memory not implemented.\n");
+    LOG_ERROR(PRIM) << "Send_global_memory not implemented";
 }

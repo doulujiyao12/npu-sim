@@ -32,27 +32,36 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
     }
 
     int chunk_ratio = need_multiply ? 1 : p["chunk"];
-
-#if NB_CACHE_DEBUG == 1
-    LOG_VERBOSE(1, context.cid, " data_size_weight " << data_size_weight);
-#endif
     auto label_weight = ETERNAL_PREFIX + prim_name + "_w";
-    checkStaticData(context, dram_time, data_chunk_addr["weight"],
-                    GetFromPairedVector(data_chunk, "weight") / chunk_ratio,
-                    label_weight);
+
+    if (SPEC_LOAD_STATIC == "layer") {
+        // 直接加载一整层的权重。这里模拟为读取单个完整tensor。spill时优先排出最旧访问权重。
+        checkStaticData(context, dram_time, data_chunk_addr["weight"],
+                        GetFromPairedVector(data_chunk, "weight") / chunk_ratio,
+                        label_weight, false);
+    } else if (SPEC_LOAD_STATIC == "single") {
+        // 加载单个完整权重。这里模拟为读取单个完整tensor。spill时优先排出最新访问权重。
+        checkStaticData(context, dram_time, data_chunk_addr["weight"],
+                        GetFromPairedVector(data_chunk, "weight") / chunk_ratio,
+                        label_weight, false);
+    } else if (SPEC_LOAD_STATIC == "partial") {
+        // 加载部分权重。这里模拟为分批读取权重的一部分。spill时优先排出最新访问权重。
+        int mac_size = 64 * 1024;
+        LOG_DEBUG(MEMORY) << "mac_size " << mac_size;
+
+        checkStaticDataTile(context, dram_time, data_chunk_addr["weight"],
+                            GetFromPairedVector(data_chunk, "weight") /
+                                chunk_ratio,
+                            label_weight, false, mac_size);
+    }
 
     auto label_bias = ETERNAL_PREFIX + prim_name + "_b";
     checkStaticData(context, dram_time, data_chunk_addr["bias"],
                     GetFromPairedVector(data_chunk, "bias") / chunk_ratio,
                     label_bias);
-    ARGUS_PRINT(dram_time);
 
     // 写入kvcache，根据batchInfo确定
     for (auto stage : prim_context->batch_info_) {
-        cout << "[Matmul_pd] Core" << prim_context->cid
-             << " stage_type: " << stage.type
-             << " token_num: " << stage.token_num << " req_id: " << stage.req_id
-             << endl;
         int size = 0;
         switch (p["job_type"]) {
         case JOB_PREFILL:
@@ -77,10 +86,6 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         string label_v = format_label_v;
 
         // 如果没有对应的kvcache，则创建一个标签；如果已经有了，则直接更新大小
-        cout << "[Matmul_pd_f] Core " << prim_context->cid
-             << " Ready to add label: " << label_k << ", size: " << size
-             << endl;
-
 #if USE_SRAM_MANAGER == 1
         sram_update_cache(context, label_k, prim_context->sram_pos_locator_,
                           size, dram_time, prim_context->cid);
@@ -88,11 +93,7 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         sram_write_append_generic(context, size, dram_time);
         prim_context->sram_pos_locator_->updatePair(label_k, size, context,
                                                     dram_time);
-        ARGUS_PRINT(dram_time);
 #endif
-        cout << "[Matmul_pd_f] Core " << prim_context->cid
-             << " Ready to add label: " << label_v << ", size: " << size
-             << endl;
 
 #if USE_SRAM_MANAGER == 1
         sram_update_cache(context, label_v, prim_context->sram_pos_locator_,
@@ -101,7 +102,6 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         sram_write_append_generic(context, size, dram_time);
         prim_context->sram_pos_locator_->updatePair(label_v, size, context,
                                                     dram_time);
-        ARGUS_PRINT(dram_time);
 #endif
     }
 
@@ -114,42 +114,44 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
             prim_context->decode_done_.push_back(false);
     }
 
-#if PERFORMANCE_MODE == 1
+    if (SPEC_USE_PERF_GEMM) {
+        ExuConfig *exu = GetCoreHWConfig(context.cid)->exu;
 
-    ExuConfig *exu = GetCoreHWConfig(context.cid)->exu;
+        uint64_t weight_tile_x = (p["C"] + exu->x_dims - 1) / exu->x_dims;
+        uint64_t weight_tile_y = (p["OC"] + exu->y_dims - 1) / exu->y_dims;
 
-    uint64_t weight_tile_x = (p["C"] + exu->x_dims - 1) / exu->x_dims;
-    uint64_t weight_tile_y = (p["OC"] + exu->y_dims - 1) / exu->y_dims;
+        uint64_t padding_input_x =
+            (p["B"] * p["T"]) > exu->x_dims ? p["B"] * p["T"] : exu->x_dims;
 
-    uint64_t padding_input_x =
-        (p["B"] * p["T"]) > exu->x_dims ? p["B"] * p["T"] : exu->x_dims;
+        uint64_t performance_cycle =
+            (exu->x_dims + exu->x_dims + padding_input_x) * weight_tile_x *
+            weight_tile_y;
 
-    uint64_t performance_cycle = (exu->x_dims + exu->x_dims + padding_input_x) *
-                                 weight_tile_x * weight_tile_y;
+        uint64_t performance_comp =
+            performance_cycle * exu->y_dims * exu->x_dims * HW_COMP_UTIL;
+        LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+                        << " performance_cycle " << performance_cycle;
 
-    uint64_t performance_comp =
-        performance_cycle * exu->y_dims * exu->x_dims * comp_util;
-    LOG_VERBOSE(1, context.cid,
-                "Prim name:" << name << " performance_cycle "
-                             << performance_cycle);
+        int loop_input_count =
+            weight_tile_y - 1; // read loop_input_count Repetitive input
 
-    int loop_input_count =
-        weight_tile_y - 1; // read loop_input_count Repetitive input
+        for (int loop = 0; loop < loop_input_count; loop++) {
+            for (int p = 0; p < data_size_input.size(); p++) {
+                if (prim_context->datapass_label_->indata[p].find(DRAM_LABEL) ==
+                    0) {
 
-    for (int loop = 0; loop < loop_input_count; loop++) {
-        for (int p = 0; p < data_size_input.size(); p++) {
-            if (prim_context->datapass_label_->indata[p].find(DRAM_LABEL) ==
-                0) {
-
-                prefReadData(context, dram_time, data_size_input[p],
-                             prim_context->datapass_label_->indata[p]);
+                    prefReadData(context, dram_time, data_size_input[p],
+                                 prim_context->datapass_label_->indata[p]);
+                }
             }
         }
-    }
 
-    exu_ops = performance_comp;
-    ARGUS_PRINT(dram_time);
-#else
-    exu_ops = (u_int64_t)p["B"] * p["T"] * p["C"] * p["OC"] * 2;
-#endif
+        exu_ops = performance_comp;
+        sfu_ops = 0;
+    } else {
+        exu_ops = (u_int64_t)p["B"] * p["T"] * p["C"] * p["OC"] * 2;
+        sfu_ops = 0;
+        if (p["T"] <= 4)
+            exu_ops *= GetCoreHWConfig(context.cid)->exu->x_dims / 4;
+    }
 }

@@ -23,7 +23,7 @@ public:
     RequestRecord(int id, int seq_len, int heads, int arrival_time) : id(id), seq_len(seq_len), arrival_time(arrival_time) {
         phase = UNTOUCHED;
         decode_counter = 0;
-        prefill_iters = seq_len * heads / MAX_PREFILL_WORKLOAD;
+        prefill_iters = 1;
         prefill_counter = 0;
         prefill_distribute = 0;
     }

@@ -11,13 +11,13 @@
 #include "link/instr/print_msg.h"
 #include "link/instr/wait_event.h"
 
-GlobalMemInterface::GlobalMemInterface(const sc_module_name &n, Event_engine *event_engine,const char *config_name, const char *font_ttf) 
+GlobalMemInterface::GlobalMemInterface(const sc_module_name &n, Event_engine *event_engine,const char *config_name) 
     : sc_module(n), event_engine(event_engine) {
-    config_helper = new chip_config_helper(config_name, font_ttf, 0);
+    config_helper = new chip_config_helper(config_name, 0);
     init(); 
     
     // Load any global_interface primitives from the config
-    load_global_prims(config_name, font_ttf);
+    load_global_prims(config_name);
 }
 
 GlobalMemInterface::GlobalMemInterface(const sc_module_name &n, Event_engine *event_engine, config_helper_base *input_config){
@@ -42,7 +42,7 @@ void GlobalMemInterface::init() {
     dont_initialize();
 }
 
-void GlobalMemInterface::load_global_prims(const char *config_name, const char *font_ttf) {
+void GlobalMemInterface::load_global_prims(const char *config_name) {
     global_instrs.clear();
     global_instrs_queue.clear();
 
