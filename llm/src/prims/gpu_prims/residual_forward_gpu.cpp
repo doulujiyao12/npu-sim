@@ -19,6 +19,13 @@ void Residual_f_gpu::initialize() {
 
 
 int Residual_f_gpu::taskCoreDefault(TaskCoreContext &context) {
+    if (prim_context->auto_pd_ &&
+        prim_context->loop_cnt > prim_context->auto_pd_) {
+        param_value["T"] = 1;
+        initialize();
+        initializeDefault();
+    }
+    
     auto &p = param_value;
 
     int mem_time = 0;

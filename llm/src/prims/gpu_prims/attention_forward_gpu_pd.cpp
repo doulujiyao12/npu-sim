@@ -23,6 +23,13 @@ void attention_forward_gpu_pd::initialize() {
 }
 
 int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
+    if (prim_context->auto_pd_ &&
+        prim_context->loop_cnt > prim_context->auto_pd_) {
+        param_value["T"] = 1;
+        initialize();
+        initializeDefault();
+    }
+
     auto &p = param_value;
 
     int mem_time = 0;
@@ -135,7 +142,7 @@ int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
 
     gpu_write_generic(context, out_key.pos,
                       GetFromPairedVector(data_chunk, "output"), mem_time);
-    int cycle = 0;
+    u_int64_t cycle = 0;
     int cid = context.cid;
 
     CoreHWConfig *hardware_config = GetCoreHWConfig(cid);
@@ -143,7 +150,7 @@ int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
     SfuConfig *sfu = hardware_config->sfu;
 
     if (exu->type == MAC_Array)
-        cycle += p["B"] * p["NH"] * p["T"] * (p["T"] - 1) / 2 *
+        cycle += (u_int64_t)p["B"] * p["NH"] * p["T"] * (p["T"] - 1) / 2 *
                  (4 * p["C"] / p["NH"] + 5) / (p["slice_x"] * p["slice_y"]) /
                  (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
     else

@@ -136,6 +136,7 @@ public:
     int fetch_index; // 用于记录取权重需要偏移的offset
 
     virtual GpuBase *clone() = 0;
+    void initializeDefault();
 
     // 原语解析函数
     vector<sc_bv<128>> serialize();
@@ -153,7 +154,6 @@ public:
 private:
     void parseCompose(json j);
     void parseAddress(json j);
-    void initializeDefault();
 };
 
 

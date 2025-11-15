@@ -20,6 +20,13 @@ void Matmul_f_gpu::initialize() {
 }
 
 int Matmul_f_gpu::taskCoreDefault(TaskCoreContext &context) {
+    if (prim_context->auto_pd_ &&
+        prim_context->loop_cnt > prim_context->auto_pd_) {
+        param_value["T"] = 1;
+        initialize();
+        initializeDefault();
+    }
+    
     auto &p = param_value;
 
     int mem_time = 0;
@@ -99,11 +106,15 @@ int Matmul_f_gpu::taskCoreDefault(TaskCoreContext &context) {
         ExuConfig *exu = hardware_config->exu;
         SfuConfig *sfu = hardware_config->sfu;
 
-        if (exu->type == MAC_Array)
-            cycle += (u_int64_t)(p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
-                      (p["slice_x"] * p["slice_y"])) /
-                     (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
-        else
+        if (exu->type == MAC_Array) {
+            uint64_t ops = (uint64_t)p["B"] * p["T"] * p["C"] * p["OC"] * 2;
+            uint64_t slices = (uint64_t)p["slice_x"] * p["slice_y"];
+            uint64_t base = ops / slices;
+            uint64_t exu_div =
+                (uint64_t)exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL;
+
+            cycle += base / exu_div * CYCLE;
+        } else
             assert(false && "Unsupported tile type");
 
         if (sfu->type == Linear)
@@ -168,11 +179,15 @@ int Matmul_f_gpu::taskCoreDefault(TaskCoreContext &context) {
         ExuConfig *exu = hardware_config->exu;
         SfuConfig *sfu = hardware_config->sfu;
 
-        if (exu->type == MAC_Array)
-            cycle += (u_int64_t)(p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
-                      (p["slice_x"] * p["slice_y"])) /
-                     (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
-        else
+        if (exu->type == MAC_Array) {
+            uint64_t ops = (uint64_t)p["B"] * p["T"] * p["C"] * p["OC"] * 2;
+            uint64_t slices = (uint64_t)p["slice_x"] * p["slice_y"];
+            uint64_t base = ops / slices;
+            uint64_t exu_div =
+                (uint64_t)exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL;
+
+            cycle += base / exu_div * CYCLE;
+        } else
             assert(false && "Unsupported tile type");
 
         if (sfu->type == Linear)
@@ -185,14 +200,14 @@ int Matmul_f_gpu::taskCoreDefault(TaskCoreContext &context) {
             // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
             overlap_time = 0;
             LOG_INFO(PRIM) << name << " of Core " << context.cid
-                           << ": dram_time "  << mem_time 
-                           << ", compute cycle "  << cycle ;
+                           << ": dram_time " << mem_time << ", compute cycle "
+                           << cycle;
 
         } else {
             overlap_time = cycle - mem_time;
             LOG_INFO(PRIM) << name << " of Core " << context.cid
-                           << ": dram_time "  << mem_time 
-                           << ", compute cycle "  << cycle ;
+                           << ": dram_time " << mem_time << ", compute cycle "
+                           << cycle;
         }
     }
 #endif

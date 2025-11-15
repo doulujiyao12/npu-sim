@@ -24,7 +24,7 @@ int Set_batch::taskCoreDefault(TaskCoreContext &context) {
     return 0;
 }
 
-void Set_batch::printSelf() {  }
+void Set_batch::printSelf() {}
 
 void Set_batch::deserialize(vector<sc_bv<128>> segments) {
     // 解析metadata
