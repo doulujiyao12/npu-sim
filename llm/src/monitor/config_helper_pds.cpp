@@ -116,13 +116,15 @@ void config_helper_pds::fill_queue_config(queue<Msg> *q) {
     temp_config.clear();
 }
 
+
+// 每一拍都是config ack start done
 void config_helper_pds::fill_queue_start(queue<Msg> *q) {
     // 只有在stage 1的core进行prefill的时候，才需要发送start data
     // 在调用这个函数的时候，已经完成对core的config发放
     cout << "Prepare to send start data!\n";
     if (!wait_send_start_prefill && !wait_send_start_decode)
         return;
-    // 为什么这里start 都需要发
+    // 为什么这里 start 都需要发
     for (auto status : coreStatus) {
         cout << "status " << status.id << endl;
         int index = status.id / GRID_X;
@@ -194,6 +196,7 @@ void config_helper_pds::iter_done(PD_JOB type) {
     for (auto msg : done_msg) {
         int id = msg.source_ / tp_size;
         // 不是prefil 和 decoding 最后一个核发过来的
+        // 比如最开始几拍，可能只有前面几个stage core 会有 done 信号
         if (id < prefill_core && stage_index[id] != prefill_stage ||
             id >= prefill_core && stage_index[id] != decode_stage)
             continue;
@@ -278,7 +281,8 @@ void config_helper_pds::iter_start(PD_JOB type) {
             int id = status.id / tp_size;
             if (id >= prefill_core)
                 continue;
-
+            // prefill 和 decoding 中分别的stage id
+            // 如果都不是第一个
             if (stage_index[id] != 1)
                 temp_stage.push_back(
                     make_pair(id, coreStatus[id - 1].batchInfo));
@@ -299,7 +303,7 @@ void config_helper_pds::iter_start(PD_JOB type) {
 
                 // 最后一个阶段的prefill是否完成，于第一阶段的prefill核没有关系，直接跳过
 
-                // 如果此时还没有被分配任务，则需要分配一个prefill。优先寻找已经在做prefill但是没有完全分发完毕的请求
+                // 如果还能放进来新的 prefill， 说明上一个stage已经有prefill 的 req都被放完了
                 if (done < batch_size) {
                     for (auto &req : requestRecords) {
                         sc_core::sc_time arv_time(req.arrival_time,
@@ -409,6 +413,7 @@ void config_helper_pds::iter_start(PD_JOB type) {
         status.batchInfo = pair.second;
 
         cout << "[SCHEDULE] Core " << status.id << endl;
+        // 如果所有req都跑完所有的核 batchInfo是空的
         for (auto stage : status.batchInfo) {
             complete_idle = false;
 
@@ -704,7 +709,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
 
 void config_helper_pds::parse_ack_msg(Event_engine *event_engine, int flow_id,
                                       sc_event *notify_event) {
-    event_engine->add_event(this->name(), "Waiting Recv Ack", "B",
+    event_engine->add_event(this->name(), "Waiting_Recv_Ack", "B",
                             Trace_event_util());
 
     for (auto m : g_temp_ack_msg) {
@@ -725,7 +730,7 @@ void config_helper_pds::parse_ack_msg(Event_engine *event_engine, int flow_id,
 
     g_temp_ack_msg.clear();
     // wait(sc_core::sc_time(10, sc_core::SC_NS));
-    event_engine->add_event(this->name(), "Waiting Recv Ack", "E", 
+    event_engine->add_event(this->name(), "Waiting_Recv_Ack", "E", 
                             Trace_event_util(), sc_time(2, SC_NS));
 
     if (g_recv_ack_cnt_p >= prefill_core * tp_size) {
@@ -743,7 +748,7 @@ void config_helper_pds::parse_ack_msg(Event_engine *event_engine, int flow_id,
 
 void config_helper_pds::parse_done_msg(Event_engine *event_engine,
                                        sc_event *notify_event) {
-    event_engine->add_event(this->name(), "Waiting Core busy", "B",
+    event_engine->add_event(this->name(), "Waiting_Core_busy", "B",
                             Trace_event_util());
 
     for (auto m : g_temp_done_msg) {
@@ -763,7 +768,7 @@ void config_helper_pds::parse_done_msg(Event_engine *event_engine,
         }
     }
     g_temp_done_msg.clear();
-    event_engine->add_event(this->name(), "Waiting Core busy", "E",
+    event_engine->add_event(this->name(), "Waiting_Core_busy", "E",
                             Trace_event_util(), sc_time(2, SC_NS));
 
     if (g_recv_done_cnt_p >= prefill_core) {
