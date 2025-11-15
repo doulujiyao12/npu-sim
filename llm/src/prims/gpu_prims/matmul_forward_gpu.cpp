@@ -48,7 +48,7 @@ int Matmul_f_gpu::taskCoreDefault(TaskCoreContext &context) {
     AddrPosKey b_key = AddrPosKey(0, GetFromPairedVector(data_chunk, "bias"));
     prim_context->gpu_pos_locator_->fetchPair(label_bias, b_key);
 
-    int overlap_time = 0;
+    u_int64_t overlap_time = 0;
 #if USE_L1L2_CACHE == 1
     if (GPU_USE_INNER_MM) {
         // 通过fetch_index计算位置
@@ -93,14 +93,14 @@ int Matmul_f_gpu::taskCoreDefault(TaskCoreContext &context) {
                                   fetch_index,
                           GetFromPairedVector(data_chunk, "output"), mem_time);
 
-        int cycle = 0;
+        u_int64_t cycle = 0;
 
         CoreHWConfig *hardware_config = GetCoreHWConfig(prim_context->cid);
         ExuConfig *exu = hardware_config->exu;
         SfuConfig *sfu = hardware_config->sfu;
 
         if (exu->type == MAC_Array)
-            cycle += (p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
+            cycle += (u_int64_t)(p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
                       (p["slice_x"] * p["slice_y"])) /
                      (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
         else
@@ -162,14 +162,14 @@ int Matmul_f_gpu::taskCoreDefault(TaskCoreContext &context) {
             context, out_key.pos,
             GetFromPairedVector(data_chunk, "output") * slice_total, mem_time);
 
-        int cycle = 0;
+        u_int64_t cycle = 0;
 
         CoreHWConfig *hardware_config = GetCoreHWConfig(prim_context->cid);
         ExuConfig *exu = hardware_config->exu;
         SfuConfig *sfu = hardware_config->sfu;
 
         if (exu->type == MAC_Array)
-            cycle += (p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
+            cycle += (u_int64_t)(p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
                       (p["slice_x"] * p["slice_y"])) /
                      (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
         else

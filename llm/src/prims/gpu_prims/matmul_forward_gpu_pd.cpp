@@ -48,7 +48,7 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
     AddrPosKey b_key = AddrPosKey(0, GetFromPairedVector(data_chunk, "bias"));
     prim_context->gpu_pos_locator_->fetchPair(label_bias, b_key);
 
-    int overlap_time = 0;
+    u_int64_t overlap_time = 0;
     AddrPosKey out_key;
 
 #if USE_L1L2_CACHE == 1
@@ -83,11 +83,11 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
             switch (p["job_type"]) {
             case JOB_PREFILL:
             case JOB_BOTH:
-                size = data_byte * p["B"] * p["OC"] * stage.token_num /
+                size = data_byte * p["OC"] * stage.token_num /
                        (p["slice_y"] * p["slice_x"]) / 3;
                 break;
             case JOB_DECODE:
-                size = data_byte * p["B"] * p["OC"] * 1 /
+                size = data_byte * p["OC"] * 1 /
                        (p["slice_y"] * p["slice_x"]) / 3;
                 break;
             default:
@@ -133,14 +133,14 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
                               GetFromPairedVector(data_chunk, "output") *
                                   fetch_index,
                           GetFromPairedVector(data_chunk, "output"), mem_time);
-        int cycle = 0;
+        u_int64_t cycle = 0;
 
         CoreHWConfig *hardware_config = GetCoreHWConfig(prim_context->cid);
         ExuConfig *exu = hardware_config->exu;
         SfuConfig *sfu = hardware_config->sfu;
 
         if (exu->type == MAC_Array)
-            cycle += (p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
+            cycle += (u_int64_t)(p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
                       (p["slice_x"] * p["slice_y"])) /
                      (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
         else
@@ -194,11 +194,11 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
             switch (p["job_type"]) {
             case JOB_PREFILL:
             case JOB_BOTH:
-                size = data_byte * p["B"] * p["OC"] * stage.token_num /
+                size = data_byte * p["OC"] * stage.token_num /
                        (p["slice_y"] * p["slice_x"]) / 3;
                 break;
             case JOB_DECODE:
-                size = data_byte * p["B"] * p["OC"] * 1 /
+                size = data_byte * p["OC"] * 1 /
                        (p["slice_y"] * p["slice_x"]) / 3;
                 break;
             default:
@@ -243,14 +243,14 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
                                   fetch_index,
                           GetFromPairedVector(data_chunk, "output"), mem_time);
 
-        int cycle = 0;
+        u_int64_t cycle = 0;
 
         CoreHWConfig *hardware_config = GetCoreHWConfig(prim_context->cid);
         ExuConfig *exu = hardware_config->exu;
         SfuConfig *sfu = hardware_config->sfu;
 
         if (exu->type == MAC_Array)
-            cycle += (p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
+            cycle += (u_int64_t)(p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
                       (p["slice_x"] * p["slice_y"])) /
                      (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
         else

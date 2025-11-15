@@ -90,33 +90,33 @@ int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
     auto data_size_preatt = GetFromPairedVector(data_chunk, "preatt");
     auto data_size_att = GetFromPairedVector(data_chunk, "att");
 
-    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
-                    << " write preatt";
-    gpu_write_generic(
-        context,
-        p_key.pos +
-            data_size_preatt / (p["slice_x"] * p["slice_y"]) * fetch_index,
-        data_size_preatt / (p["slice_x"] * p["slice_y"]), mem_time);
+    // LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+    //                 << " write preatt";
+    // gpu_write_generic(
+    //     context,
+    //     p_key.pos +
+    //         data_size_preatt / (p["slice_x"] * p["slice_y"]) * fetch_index,
+    //     data_size_preatt / (p["slice_x"] * p["slice_y"]), mem_time);
 
-    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
-                    << " read preatt";
-    gpu_read_generic(
-        context,
-        p_key.pos +
-            data_size_preatt / (p["slice_x"] * p["slice_y"]) * fetch_index,
-        data_size_preatt / (p["slice_x"] * p["slice_y"]), mem_time);
+    // LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+    //                 << " read preatt";
+    // gpu_read_generic(
+    //     context,
+    //     p_key.pos +
+    //         data_size_preatt / (p["slice_x"] * p["slice_y"]) * fetch_index,
+    //     data_size_preatt / (p["slice_x"] * p["slice_y"]), mem_time);
 
-    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid << " write att";
-    gpu_write_generic(
-        context,
-        a_key.pos + data_size_att / (p["slice_x"] * p["slice_y"]) * fetch_index,
-        data_size_att / (p["slice_x"] * p["slice_y"]), mem_time);
+    // LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid << " write att";
+    // gpu_write_generic(
+    //     context,
+    //     a_key.pos + data_size_att / (p["slice_x"] * p["slice_y"]) * fetch_index,
+    //     data_size_att / (p["slice_x"] * p["slice_y"]), mem_time);
 
-    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid << " write att";
-    gpu_read_generic(context,
-                     a_key.pos + data_size_att / (p["slice_x"] * p["slice_y"]) *
-                                     fetch_index,
-                     data_size_att / (p["slice_x"] * p["slice_y"]), mem_time);
+    // LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid << " write att";
+    // gpu_read_generic(context,
+    //                  a_key.pos + data_size_att / (p["slice_x"] * p["slice_y"]) *
+    //                                  fetch_index,
+    //                  data_size_att / (p["slice_x"] * p["slice_y"]), mem_time);
 
     // Q
     gpu_read_generic(context,
