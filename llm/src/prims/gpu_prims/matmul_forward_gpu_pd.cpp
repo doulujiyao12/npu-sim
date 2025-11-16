@@ -220,6 +220,7 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
             sprintf(format_label_k, "%s%s%sk#%d", prefix.c_str(),
                     ETERNAL_PREFIX, KVCACHE_PREFIX, stage.req_id);
             string label_k = format_label_k;
+            // cout << "a label_k: " << label_k << endl;
 
             char format_label_v[1000];
             sprintf(format_label_v, "%s%s%sv#%d", prefix.c_str(),

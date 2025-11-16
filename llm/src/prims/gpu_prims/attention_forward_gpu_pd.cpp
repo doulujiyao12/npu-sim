@@ -72,6 +72,7 @@ int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
         sprintf(format_label_k, "%s%s%sk#%d", result.c_str(), ETERNAL_PREFIX,
                 KVCACHE_PREFIX, stage.req_id);
         string label_k = format_label_k;
+        // cout << "b label_k: " << label_k << endl;
 
         char format_label_v[1000];
         sprintf(format_label_v, "%s%s%sv#%d", result.c_str(), ETERNAL_PREFIX,
@@ -92,6 +93,7 @@ int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
             v_key.pos +
                 v_key.size / (p["slice_x"] * p["slice_y"]) * fetch_index,
             v_key.size / (p["slice_x"] * p["slice_y"]), mem_time, true);
+        break;
     }
 
     auto data_size_preatt = GetFromPairedVector(data_chunk, "preatt");
