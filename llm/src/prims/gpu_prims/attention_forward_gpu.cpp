@@ -13,11 +13,11 @@ void Attention_f_gpu::initialize() {
         data_byte = 2;
 
     auto &p = param_value;
-    input_size = {data_byte * p["B"] * p["T"] * p["C"]};
-    data_chunk = {{"preatt", data_byte * p["B"] * p["NH"] * p["T"] * p["T"]},
-                  {"att", data_byte * p["B"] * p["NH"] * p["T"] * p["T"]},
-                  {"output", data_byte * p["B"] * p["NH"] * p["T"] * p["C"] /
-                                 (3 * p["slice_x"] * p["slice_y"])}};
+    input_size = {(int)(data_byte * (u_int64_t)p["B"] * p["T"] * p["C"])};
+    data_chunk = {{"preatt", (int)(data_byte * (u_int64_t)p["B"] * p["NH"] * p["T"] * p["T"])},
+                  {"att", (int)(data_byte * (u_int64_t)p["B"] * p["NH"] * p["T"] * p["T"])},
+                  {"output", (int)(data_byte * (u_int64_t)p["B"] * p["NH"] * p["T"] * p["C"] /
+                                 (3 * p["slice_x"] * p["slice_y"]))}};
 }
 
 int Attention_f_gpu::taskCoreDefault(TaskCoreContext &context) {
