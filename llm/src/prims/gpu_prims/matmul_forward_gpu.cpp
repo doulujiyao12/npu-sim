@@ -12,11 +12,11 @@ void Matmul_f_gpu::initialize() {
         data_byte = 2;
 
     auto &p = param_value;
-    input_size = {data_byte * p["B"] * p["T"] * p["C"]};
-    data_chunk = {{"weight", data_byte * p["C"] * p["OC"]},
-                  {"bias", data_byte * p["C"]},
-                  {"output", data_byte * p["B"] * p["T"] * p["OC"] /
-                                 (p["slice_x"] * p["slice_y"])}};
+    input_size = {(int)(data_byte * (u_int64_t)p["B"] * p["T"] * p["C"])};
+    data_chunk = {{"weight", (int)(data_byte * (u_int64_t)p["C"] * p["OC"])},
+                  {"bias", (int)(data_byte * (u_int64_t)p["C"])},
+                  {"output", (int)(data_byte * (u_int64_t)p["B"] * p["T"] * p["OC"] /
+                                 (p["slice_x"] * p["slice_y"]))}};
 }
 
 int Matmul_f_gpu::taskCoreDefault(TaskCoreContext &context) {

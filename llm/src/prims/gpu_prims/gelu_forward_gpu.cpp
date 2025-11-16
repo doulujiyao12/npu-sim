@@ -12,9 +12,9 @@ void Gelu_f_gpu::initialize() {
         data_byte = 2;
 
     auto &p = param_value;
-    input_size = {data_byte * p["N"]};
+    input_size = {(int)(data_byte * (u_int64_t)p["N"])};
     data_chunk = {
-        {"output", data_byte * p["N"] / (p["slice_x"] * p["slice_y"])}};
+        {"output", (int)(data_byte * (u_int64_t)p["N"] / (p["slice_x"] * p["slice_y"]))}};
 }
 
 

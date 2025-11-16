@@ -15,11 +15,11 @@ void attention_forward_gpu_pd::initialize() {
         data_byte = 2;
 
     auto &p = param_value;
-    data_size_input = {data_byte * p["B"] * p["T"] * p["C"]};
-    data_chunk = {{"preatt", data_byte * p["B"] * p["NH"] * p["T"] * p["T"]},
-                  {"att", data_byte * p["B"] * p["NH"] * p["T"] * p["T"]},
-                  {"output", data_byte * p["B"] * p["NH"] * p["T"] * p["C"] /
-                                 (p["slice_x"] * p["slice_y"])}};
+    data_size_input = {(int)(data_byte * (u_int64_t)p["B"] * p["T"] * p["C"])};
+    data_chunk = {{"preatt", (int)(data_byte * (u_int64_t)p["B"] * p["NH"] * p["T"] * p["T"])},
+                  {"att", (int)(data_byte * (u_int64_t)p["B"] * p["NH"] * p["T"] * p["T"])},
+                  {"output", (int)(data_byte * (u_int64_t)p["B"] * p["NH"] * p["T"] * p["C"] /
+                                 (p["slice_x"] * p["slice_y"]))}};
 }
 
 int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
