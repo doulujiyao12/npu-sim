@@ -3,18 +3,18 @@
   "requests": {
     "count": 300,
     "seq_len": 2000,
+    "eof_chance": 0.01,
     "arrival": [
       1
     ]
   },
   "model": {
     "heads": 20,
-    "eof_chance": 0.01,
     "stage": 7,
     "batch": 1,
     "kv_heads": 5,
     "head_size": 64,
-    "prefill_iters": 1
+    "prefill_iters": 10
   },
   "chips": [
     {
@@ -25,6 +25,7 @@
           "worklist": [
             {
               "recv_cnt": 1,
+              "cast": [],
               "prims": [
                 {
                   "type": "Layernorm_f",
@@ -40,7 +41,9 @@
                   }
                 },
                 {
-                  "type": "Matmul_f_pd",
+                  "type": "matmul_forward_pd",
+                  "job_type": 2,
+                  "R": "R",
                   "use_hw": false,
                   "B": "B",
                   "T": "T",
@@ -57,6 +60,7 @@
                 },
                 {
                   "type": "Attention_f_pd",
+                  "job_type": 2,
                   "B": "B",
                   "T": "T",
                   "C": "3C",
@@ -178,7 +182,9 @@
                   }
                 },
                 {
-                  "type": "Matmul_f_pd",
+                  "type": "matmul_forward_pd",
+                  "job_type": 2,
+                  "R": "R",
                   "use_hw": false,
                   "B": "B",
                   "T": "T",
@@ -195,6 +201,7 @@
                 },
                 {
                   "type": "Attention_f_pd",
+                  "job_type": 2,
                   "B": "B",
                   "T": "T",
                   "C": "3C",
@@ -316,7 +323,9 @@
                   }
                 },
                 {
-                  "type": "Matmul_f_pd",
+                  "type": "matmul_forward_pd",
+                  "job_type": 2,
+                  "R": "R",
                   "use_hw": false,
                   "B": "B",
                   "T": "T",
@@ -333,6 +342,7 @@
                 },
                 {
                   "type": "Attention_f_pd",
+                  "job_type": 2,
                   "B": "B",
                   "T": "T",
                   "C": "3C",
@@ -454,7 +464,9 @@
                   }
                 },
                 {
-                  "type": "Matmul_f_pd",
+                  "type": "matmul_forward_pd",
+                  "job_type": 2,
+                  "R": "R",
                   "use_hw": false,
                   "B": "B",
                   "T": "T",
@@ -471,6 +483,7 @@
                 },
                 {
                   "type": "Attention_f_pd",
+                  "job_type": 2,
                   "B": "B",
                   "T": "T",
                   "C": "3C",
