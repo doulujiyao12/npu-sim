@@ -9,7 +9,7 @@
         "pd_ratio": 4
     },
     "memory": {
-        "beha_dram_util": 0.36,
+        "beha_dram_util": 0.62,
         "dram_default_bitwidth": 32,
         "sram_size": 8388608
     },
