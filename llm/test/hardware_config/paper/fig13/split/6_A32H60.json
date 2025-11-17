@@ -1,7 +1,7 @@
 {
     "x": 8,
     "noc": {
-        "noc_payload_per_cycle": 20
+        "noc_payload_per_cycle": 1
     },
     "operand": {
         "comp_util": 0.7,
