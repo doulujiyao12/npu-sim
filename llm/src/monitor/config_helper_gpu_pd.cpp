@@ -317,11 +317,14 @@ void config_helper_gpu_pd::generate_prims(int i) {
             }
             label->outdata = prim->prim_context->datapass_label_->outdata;
 
-            temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, c,
-                                      set_addr->serialize()[0]));
+            auto segments = set_addr->serialize();
+            for (int seg = 0; seg < segments.size(); seg++)
+                temp_config.push_back(
+                    Msg(false, MSG_TYPE::CONFIG, ++prim_seq, c,
+                        seg == segments.size() - 1, segments[seg]));
 
             prim->fetch_index = c + r * GRID_SIZE;
-            auto segments = prim->serialize();
+            segments = prim->serialize();
             for (int seg = 0; seg < segments.size(); seg++)
                 temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
                                           c, seg == segments.size() - 1,

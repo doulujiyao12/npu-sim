@@ -25,6 +25,9 @@ void Set_addr::deserialize(vector<sc_bv<128>> segments) {
         for (int pos = 0; pos + 31 < 128 && read_label_cnt < MAX_SPLIT_NUM; pos += 32, read_label_cnt++) {
             datapass_label.indata[read_label_cnt] =
                 g_addr_label_table.findRecord(buffer.range(pos + 31, pos).to_uint64());
+
+                LOG_INFO(QQQ) << name << " deserialize of Core " << prim_context->cid << ": "
+                          << "indata[" << read_label_cnt << "]: " << datapass_label.indata[read_label_cnt];
         }
     }
 
@@ -50,6 +53,9 @@ vector<sc_bv<128>> Set_addr::serialize() {
             d.range(pos + 31, pos) =
                 sc_bv<32>(g_addr_label_table.addRecord(
                     prim_context->datapass_label_->indata[label_idx]));
+
+                    LOG_INFO(QQQ) << name << " serialize of Core " << prim_context->cid << ": "
+                          << "indata[" << label_idx << "]: " << prim_context->datapass_label_->indata[label_idx];
         }
         segments.push_back(d);
     }
@@ -66,6 +72,8 @@ int Set_addr::taskCoreDefault(TaskCoreContext &context) {
     //  将datapass_label的内容复制到target中
     for (int i = 0; i < MAX_SPLIT_NUM; i++) {
         prim_context->datapass_label_->indata[i] = datapass_label.indata[i];
+        LOG_INFO(QQQ) << name << " exec of Core " << prim_context->cid << ": "
+                          << "indata[" << i << "]: " << prim_context->datapass_label_->indata[i];
     }
     prim_context->datapass_label_->outdata = datapass_label.outdata;
 
