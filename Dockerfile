@@ -16,6 +16,7 @@ RUN wget https://gh-proxy.com/github.com/accellera-official/systemc/archive/refs
 FROM ubuntu:22.04
 RUN sed -i 's|archive.ubuntu.com|mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list && \
     sed -i 's|security.ubuntu.com|mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list
+ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ make unzip wget git libcairo2-dev libsfml-dev xorg \
     software-properties-common gnupg ca-certificates
