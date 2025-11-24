@@ -102,6 +102,7 @@ config_helper_pds::config_helper_pds(string filename, sc_event *ev_sig,
     wait_schedule_d = false;
     wait_send_start_prefill = false;
     wait_send_start_decode = false;
+    need_trigger_send_start = false;
 
     ev_sig->notify(0, SC_NS);
 }
@@ -704,14 +705,17 @@ void config_helper_pds::parse_ack_msg(Event_engine *event_engine, int flow_id,
 
         if (coreStatus[cid / tp_size].job_type == JOB_PREFILL) {
             g_recv_ack_cnt_p++;
-            LOG_DEBUG(NETWORK) << "Total " << g_recv_ack_cnt_p << "/"
+            LOG_DEBUG(NETWORK) << "Total " << g_recv_ack_cnt_p << " / "
                                << prefill_core * tp_size;
         } else if (coreStatus[cid / tp_size].job_type == JOB_DECODE) {
             g_recv_ack_cnt_d++;
             LOG_DEBUG(NETWORK)
-                << "Total " << g_recv_ack_cnt_d << "/" << decode_core;
+                << "Total " << g_recv_ack_cnt_d << " / " << decode_core * tp_size;
         }
     }
+
+    LOG_INFO(NETWORK) << "g_recv_ack_cnt_p: " << g_recv_ack_cnt_p << ", prefill_core * tp_size: " << prefill_core * tp_size;
+    LOG_INFO(NETWORK) << "g_recv_ack_cnt_d: " << g_recv_ack_cnt_d << ", decode_core * tp_size: " << decode_core * tp_size;
 
     g_temp_ack_msg.clear();
     // wait(sc_core::sc_time(10, sc_core::SC_NS));
@@ -721,13 +725,13 @@ void config_helper_pds::parse_ack_msg(Event_engine *event_engine, int flow_id,
     if (g_recv_ack_cnt_p >= prefill_core * tp_size) {
         g_recv_ack_cnt_p = 0;
         wait_send_start_prefill = true;
-        notify_event->notify(CYCLE, SC_NS);
+        notify_event->notify(SC_ZERO_TIME);
     }
 
     if (g_recv_ack_cnt_d >= decode_core * tp_size) {
         g_recv_ack_cnt_d = 0;
         wait_send_start_decode = true;
-        notify_event->notify(CYCLE, SC_NS);
+        notify_event->notify(SC_ZERO_TIME);
     }
 }
 

@@ -1,7 +1,7 @@
 {
   "mode": "sched_pds",
   "requests": {
-    "count": 100,
+    "count": 10,
     "seq_len": 296,
     "eof_chance": 0.006,
     "arrival": [
