@@ -21,7 +21,7 @@
         "dram_config_file": "../DRAMSys/configs/hbm3-example.json"
     },
     "log": {
-        "log_level": 0,
+        "log_level": 1,
         "verbose_debug": false,
         "colored": false
     }
