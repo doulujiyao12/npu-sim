@@ -14,11 +14,11 @@ int Set_batch::taskCoreDefault(TaskCoreContext &context) {
                             << " auto pd enabled, overriding stage info.";
             prim_context->batch_info_.push_back(
                 Stage(prim_context->loop_cnt % auto_pd, PD_PHASE(DECODE), 1));
-        } else if (auto_pd)
+        } else if (auto_pd > 1)
             prim_context->batch_info_.push_back(Stage(
                 prim_context->loop_cnt % auto_pd, stage.type, stage.token_num));
         else
-            prim_context->batch_info_.push_back(stage);
+            prim_context->batch_info_.push_back(Stage(stage.req_id, stage.type, stage.token_num));
     }
 
     return 0;

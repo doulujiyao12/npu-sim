@@ -26,7 +26,7 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
         initialize();
         initializeDefault();
     }
-    
+
     auto &p = param_value;
 
     int mem_time = 0;
@@ -260,14 +260,6 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
         CoreHWConfig *hardware_config = GetCoreHWConfig(prim_context->cid);
         ExuConfig *exu = hardware_config->exu;
         SfuConfig *sfu = hardware_config->sfu;
-
-        LOG_INFO(PRIM) << name << " of Core " << prim_context->cid << ": "
-                       << "B: " << p["B"] << ", C: " << p["C"]
-                       << ", OC: " << p["OC"] << ", T: " << p["T"]
-                       << ", slice_x: " << p["slice_x"]
-                       << ", slice_y: " << p["slice_y"]
-                       << "exu_x: " << exu->x_dims << ", exu_y: " << exu->y_dims
-                       << "COMP_UTIL " << HW_COMP_UTIL;
 
         if (exu->type == MAC_Array) {
             uint64_t ops = (uint64_t)p["B"] * p["T"] * p["C"] * p["OC"] * 2;
