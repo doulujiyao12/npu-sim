@@ -356,7 +356,7 @@ void config_helper_pd::generate_prims(int i) {
     }
 
     // TODO: 其他decoder模型适配？
-    set_global_vars(T);
+    set_global_vars(T, tp_size);
 
     // lambda函数
     auto add_recv = [&](int &prim_seq, bool start, int recv_tag, int recv_cnt,
@@ -595,7 +595,7 @@ void config_helper_pd::parse_done_msg(Event_engine *event_engine,
     }
 }
 
-void config_helper_pd::set_global_vars(int T) {
+void config_helper_pd::set_global_vars(int T, int tp_size) {
     int C = heads * head_size;
     vtable = {{"B", 1},
               {"T", T},
@@ -614,6 +614,45 @@ void config_helper_pd::set_global_vars(int T) {
               {"4BTC", 4 * T * C},
               {"3C-R", C * (2 + heads / kv_heads) / (heads / kv_heads)},
               {"CHUNK", prefill_iters}};
+
+    // 根据 tp_size 生成对应的除以 2 的幂次方的版本
+    // tp_size 一定是 2 的幂，所以可以计算需要生成多少个版本
+    int log2_tp_size = 0;
+    int temp_tp_size = tp_size;
+    while (temp_tp_size > 1) {
+        log2_tp_size++;
+        temp_tp_size /= 2;
+    }
+
+    // 为所有涉及 T 的参数生成除以 2、4、8 等的版本
+    for (int i = 1; i <= log2_tp_size; i++) {
+        int divisor = 1 << i;  // 2, 4, 8, ...
+        string suffix = "/" + to_string(divisor);
+        
+        // T 的版本
+        vtable.push_back({"T" + suffix, T / divisor});
+        
+        // BTC 相关参数的版本
+        vtable.push_back({"BTC" + suffix, (T * C) / divisor});
+        vtable.push_back({"2BTC" + suffix, (2 * T * C) / divisor});
+        vtable.push_back({"3BTC" + suffix, (3 * T * C) / divisor});
+        vtable.push_back({"4BTC" + suffix, (4 * T * C) / divisor});
+    }
+
+    // 为所有涉及 C 的参数生成除以 2、4、8 等的版本
+    for (int i = 1; i <= log2_tp_size; i++) {
+        int divisor = 1 << i;  // 2, 4, 8, ...
+        string suffix = "/" + to_string(divisor);
+        
+        // C 的版本
+        vtable.push_back({"C" + suffix, C / divisor});
+        
+        // 3C 相关参数的版本
+        vtable.push_back({"3C" + suffix, (3 * C) / divisor});
+        vtable.push_back({"4C" + suffix, (4 * C) / divisor});
+        vtable.push_back({"3CC" + suffix, (3 * C * C) / divisor});
+        vtable.push_back({"3C-R" + suffix, (C * (2 + heads / kv_heads) / (heads / kv_heads)) / divisor});
+    }
 
     for (auto &pair : vtable) {
         if (pair.second == 0)

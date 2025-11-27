@@ -6,6 +6,7 @@
 #include "utils/memory_utils.h"
 #include "utils/prim_utils.h"
 #include "utils/system_utils.h"
+#include <sys/types.h>
 
 REGISTER_PRIM(Attention_f);
 
@@ -19,7 +20,7 @@ void Attention_f::initialize() {
 
 void Attention_f::taskCore(TaskCoreContext &context, string prim_name,
                            u_int64_t &dram_time, u_int64_t &exu_ops,
-                           u_int64_t &sfu_ops) {
+                           u_int64_t &sfu_ops, u_int64_t &vec_ops) {
     // 写入preatt中间结果
     int temp_sram_addr = 0;
     int temp_sram_addr_prior = 0;   
@@ -55,7 +56,7 @@ void Attention_f::taskCore(TaskCoreContext &context, string prim_name,
                            temp_sram_addr_prior, dram_time);
 
     auto &p = param_value;
-    exu_ops = (uint64_t)p["B"] * p["NH"] * p["T"] * (p["T"] - 1) / 2 *
-              (4 * p["C"] / p["NH"] + 5);
-    sfu_ops = 0;
+    exu_ops = 0;
+    sfu_ops = (uint64_t)p["B"] * p["NH"] * p["T"] * p["T"];
+    vec_ops = (uint64_t)p["B"] * p["C"] * p["T"] * p["T"] * 4 + (u_int64_t)p["B"] * p["NH"] * p["T"] * p["T"] * 2;
 }

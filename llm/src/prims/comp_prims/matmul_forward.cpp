@@ -24,7 +24,7 @@ void Matmul_f::initialize() {
 
 void Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
                         u_int64_t &dram_time, u_int64_t &exu_ops,
-                        u_int64_t &sfu_ops) {
+                        u_int64_t &sfu_ops, u_int64_t &vec_ops) {
     LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
                     << " read weight";
 
@@ -57,11 +57,11 @@ void Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
 
     auto &p = param_value;
 
-    if (SPEC_USE_PERF_GEMM) {
+    if (p["T"] > 4) {
         ExuConfig *exu = GetCoreHWConfig(context.cid)->exu;
 
         uint64_t weight_tile_x = (p["C"] + exu->x_dims - 1) / exu->x_dims;
-        uint64_t weight_tile_y = (p["OC"] + exu->y_dims - 1) / exu->y_dims;
+        uint64_t weight_tile_y = (p["OC"] + exu->x_dims - 1) / exu->x_dims;
 
         uint64_t padding_input_x =
             (p["T"] * p["B"]) > exu->x_dims ? p["T"] * p["B"] : exu->x_dims;
@@ -71,7 +71,7 @@ void Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
             weight_tile_y;
 
         uint64_t performance_comp =
-            performance_cycle * exu->y_dims * exu->x_dims * HW_COMP_UTIL;
+            performance_cycle * exu->x_dims * exu->x_dims * HW_COMP_UTIL;
 
         LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
                         << " performance_cycle " << performance_cycle
@@ -92,11 +92,11 @@ void Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
 
         exu_ops = performance_cycle;
         sfu_ops = 0;
+        vec_ops = 0;
     } else {
-        // 计算overlap并写回output数据
-        exu_ops = (uint64_t)p["B"] * p["OC"] * p["T"] * p["C"] * 2;
-        if (p["T"] <= 4)
-            exu_ops *= GetCoreHWConfig(context.cid)->exu->x_dims / 4;
+        // 当token数较少时，使用vector core 
+        exu_ops = 0;
         sfu_ops = 0;
+        vec_ops = (uint64_t)p["B"] * p["OC"] * p["T"] * p["C"] * 2;
     }
 }

@@ -9,10 +9,10 @@ class ExuConfig {
 public:
     Etype type; // exu type
     int x_dims; // exu x array
-    int y_dims; // exu y array
+    int count; // systolic array count
 
-    ExuConfig() : type(MAC_Array), x_dims(128), y_dims(128) {}
-    ExuConfig(Etype t, int x, int y) : type(t), x_dims(x), y_dims(y) {}
+    ExuConfig() : type(MAC_Array), x_dims(128), count(1) {}
+    ExuConfig(Etype t, int x, int cnt) : type(t), x_dims(x), count(cnt) {}
 };
 
 class SfuConfig {
@@ -22,6 +22,15 @@ public:
 
     SfuConfig() : type(Linear), x_dims(16) {}
     SfuConfig(Sftype t, int x) : type(t), x_dims(x) {}
+};
+
+class VectorConfig {
+public:
+    int x_dims;
+    int count;
+
+    VectorConfig() : x_dims(64), count(1) {}
+    VectorConfig(int x, int cnt) : x_dims(x), count(cnt) {}
 };
 
 
@@ -116,6 +125,7 @@ public:
     int id;
     ExuConfig *exu;
     SfuConfig *sfu;
+    VectorConfig *vec;
 
     string dram_config; // DRAM配置文件名
     int dram_bw;
@@ -124,7 +134,7 @@ public:
     void printSelf() {
         // cout << "CoreHWConfig: " << id << endl;
         // cout << "ExuConfig: " << exu->type << " " << exu->x_dims << " "
-        //      << exu->y_dims << endl;
+        //      << exu->x_dims << endl;
         // cout << "SfuConfig: " << sfu->type << " " << sfu->x_dims << endl;
         // cout << "DRAM Config: " << dram_config << " " << dram_bw << " "
         //      << sram_bitwidth << endl;
@@ -134,14 +144,16 @@ public:
         : id(0),
           exu(nullptr),
           sfu(nullptr),
+          vec(nullptr),
           dram_config(""),
           dram_bw(0),
           sram_bitwidth(0) {}
-    CoreHWConfig(int id, ExuConfig *exu, SfuConfig *sfu, string dram_config,
+    CoreHWConfig(int id, ExuConfig *exu, SfuConfig *sfu, VectorConfig *vec, string dram_config,
                  int dram_bw, int sram_bitwidth)
         : id(id),
           exu(exu),
           sfu(sfu),
+          vec(vec),
           dram_config(dram_config),
           dram_bw(dram_bw),
           sram_bitwidth(sram_bitwidth) {}

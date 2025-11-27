@@ -57,6 +57,6 @@ public:
     void iter_start(); // 填充原语，发送在meminterface完成
     void iter_done(vector<Msg> done_msg);
 
-    void set_global_vars(int T);
+    void set_global_vars(int T, int tp_size = 1);
     void printResults();
 };

@@ -22,8 +22,10 @@
         {
             "id": 0,
             "exu_x": 64,
-            "exu_y": 64,
             "sfu_x": 1024,
+            "vec_x": 64,
+            "sa_cnt": 1,
+            "vec_cnt": 1,
             "sram_bitwidth": 64
         }
     ]

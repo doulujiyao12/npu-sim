@@ -19,7 +19,7 @@ void Layernorm_f::initialize() {
 
 void Layernorm_f::taskCore(TaskCoreContext &context, string prim_name,
                            u_int64_t &dram_time, u_int64_t &exu_ops,
-                           u_int64_t &sfu_ops) {
+                           u_int64_t &sfu_ops, u_int64_t &vec_ops) {
     LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
                     << " read weight";
 
@@ -35,5 +35,6 @@ void Layernorm_f::taskCore(TaskCoreContext &context, string prim_name,
 
     auto &p = param_value;
     exu_ops = 0;
-    sfu_ops = (u_int64_t)p["B"] * p["T"] * (8 * p["C"] + 5);
+    sfu_ops = (u_int64_t)p["B"] * p["T"];
+    vec_ops = (u_int64_t)p["B"] * p["T"] * (8 * p["C"] + 3);
 }

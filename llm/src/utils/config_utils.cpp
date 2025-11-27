@@ -97,28 +97,30 @@ void ParseHardwareConfig(json j) {
     for (auto core : config_cores) {
         CoreHWConfig c = core;
         for (int i = sample.id + 1; i < c.id; i++) {
-            ExuConfig *exu = new ExuConfig(MAC_Array, sample.exu->x_dims,
-                                           sample.exu->y_dims);
+            ExuConfig *exu = new ExuConfig(MAC_Array, sample.exu->x_dims, sample.exu->count);
             SfuConfig *sfu = new SfuConfig(Linear, sample.sfu->x_dims);
+            VectorConfig *vec = new VectorConfig(sample.vec->x_dims, sample.vec->count);
             g_core_hw_config.push_back(make_pair(
-                i, new CoreHWConfig(i, exu, sfu, sample.dram_config,
+                i, new CoreHWConfig(i, exu, sfu, vec, sample.dram_config,
                                     sample.dram_bw, sample.sram_bitwidth)));
         }
 
-        ExuConfig *exu = new ExuConfig(MAC_Array, c.exu->x_dims, c.exu->y_dims);
+        ExuConfig *exu = new ExuConfig(MAC_Array, c.exu->x_dims, c.exu->count);
         SfuConfig *sfu = new SfuConfig(Linear, c.sfu->x_dims);
+        VectorConfig *vec = new VectorConfig(c.vec->x_dims, c.vec->count);
         g_core_hw_config.push_back(
-            make_pair(c.id, new CoreHWConfig(c.id, exu, sfu, c.dram_config,
+            make_pair(c.id, new CoreHWConfig(c.id, exu, sfu, vec, c.dram_config,
                                              c.dram_bw, c.sram_bitwidth)));
 
         sample = c;
-        sample.exu = new ExuConfig(MAC_Array, c.exu->x_dims, c.exu->y_dims);
+        sample.exu = new ExuConfig(MAC_Array, c.exu->x_dims, c.exu->count);
         sample.sfu = new SfuConfig(Linear, c.sfu->x_dims);
+        sample.vec = new VectorConfig(c.vec->x_dims, c.vec->count);
     }
 
     for (int i = sample.id + 1; i < GRID_SIZE; i++) {
         ExuConfig *exu =
-            new ExuConfig(MAC_Array, sample.exu->x_dims, sample.exu->y_dims);
+            new ExuConfig(MAC_Array, sample.exu->x_dims);
         SfuConfig *sfu = new SfuConfig(Linear, sample.sfu->x_dims);
         g_core_hw_config.push_back(make_pair(
             i, new CoreHWConfig(i, exu, sfu, sample.dram_config, sample.dram_bw,

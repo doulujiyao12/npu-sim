@@ -151,7 +151,7 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
             uint64_t slices = (uint64_t)p["slice_x"] * p["slice_y"];
             uint64_t base = ops / slices;
             uint64_t exu_div =
-                (uint64_t)exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL;
+                (uint64_t)exu->x_dims * exu->x_dims * 2 * HW_COMP_UTIL;
 
             cycle += base / exu_div * CYCLE;
         } else
@@ -266,7 +266,7 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
             uint64_t slices = (uint64_t)p["slice_x"] * p["slice_y"];
             uint64_t base = ops / slices;
             uint64_t exu_div =
-                (uint64_t)exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL;
+                (uint64_t)exu->x_dims * exu->x_dims * 2 * HW_COMP_UTIL;
 
             cycle += base / exu_div * CYCLE;
         } else

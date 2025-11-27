@@ -22,7 +22,7 @@ void Conv_f::initialize() {
 
 void Conv_f::taskCore(TaskCoreContext &context, string prim_name,
                      u_int64_t &dram_time, u_int64_t &exu_ops,
-                     u_int64_t &sfu_ops) {
+                     u_int64_t &sfu_ops, u_int64_t &vec_ops) {
     auto label_weight = ETERNAL_PREFIX + prim_name + "_w";
     checkStaticData(context, dram_time, data_chunk_addr["weight"],
                     GetFromPairedVector(data_chunk, "weight"), label_weight);
@@ -37,4 +37,5 @@ void Conv_f::taskCore(TaskCoreContext &context, string prim_name,
     int oC = p["F"];
     exu_ops = (uint64_t)p["B"] * p["C"] * p["kY"] * p["kX"] * 2 * oH * oW * oC;
     sfu_ops = 0;
+    vec_ops = 0;
 }
