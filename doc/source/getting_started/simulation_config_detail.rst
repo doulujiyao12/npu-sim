@@ -7,7 +7,7 @@
 
 我们提供了示例配置文件，其中包含对于所有可配置参数的记录。它位于以下目录中：
 
- .. code-block:: console
+.. code-block:: console
 
     ${NPU_SIM_ROOT}/llm/test/simulation_config
 

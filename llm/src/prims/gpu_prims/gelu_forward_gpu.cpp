@@ -12,13 +12,20 @@ void Gelu_f_gpu::initialize() {
         data_byte = 2;
 
     auto &p = param_value;
-    input_size = {data_byte * p["N"]};
+    input_size = {(int)(data_byte * (u_int64_t)p["N"])};
     data_chunk = {
-        {"output", data_byte * p["N"] / (p["slice_x"] * p["slice_y"])}};
+        {"output", (int)(data_byte * (u_int64_t)p["N"] / (p["slice_x"] * p["slice_y"]))}};
 }
 
 
 int Gelu_f_gpu::taskCoreDefault(TaskCoreContext &context) {
+    if (prim_context->auto_pd_ &&
+        prim_context->loop_cnt > prim_context->auto_pd_) {
+        param_value["T"] = 1;
+        initialize();
+        initializeDefault();
+    }
+    
     auto &p = param_value;
 
     int mem_time = 0;

@@ -11,11 +11,14 @@ vector<PrimBase *> g_prim_stash;
 vector<chip_instr_base*> g_chip_prim_stash;
 AddrLabelTable g_addr_label_table;
 DramKVTable** g_dram_kvtable;
+unordered_map<int, int> g_core_remap;
 
 // 记录所有在计算原语中的参数，见test文件夹下的config文件
 vector<pair<string, int>> vtable;
 
 u_int64_t g_data_footprint_in_words;
+
+bool correct_exit = true;
 
 #if DUMMY == 1
 uint32_t *dram_array;

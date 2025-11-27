@@ -23,6 +23,7 @@ public:
     bool busy_d;
     bool wait_send_start_prefill;
     bool wait_send_start_decode;
+    bool need_trigger_send_start; // 是否需要触发start data的发送
     bool wait_schedule_p;
     bool wait_schedule_d;
     int g_recv_ack_cnt_p;

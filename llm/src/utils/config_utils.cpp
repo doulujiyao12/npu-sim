@@ -1,6 +1,7 @@
 #include <regex>
 
 #include "common/config.h"
+#include "defs/global.h"
 #include "defs/spec.h"
 #include "utils/config_utils.h"
 #include "utils/print_utils.h"
@@ -138,7 +139,7 @@ void ParseSimulationConfig(json j) {
         if (conf_operand.contains("use_pref_gemm"))
             SPEC_USE_PERF_GEMM = conf_operand["use_perf_gemm"];
         if (conf_operand.contains("load_static_as_tile"))
-            SPEC_LOAD_STATIC_AS_TILE = conf_operand["load_static_as_tile"];
+            SPEC_LOAD_STATIC = conf_operand["load_static_as_tile"];
     }
 
     if (j.contains("memory")) {
@@ -183,5 +184,64 @@ void ParseSimulationConfig(json j) {
             LogConfig::CONFIG_VERBOSE_DEBUG = conf_log["verbose_debug"];
         if (conf_log.contains("colored"))
             LogConfig::CONFIG_LOG_COLORED = conf_log["colored"];
+    }
+}
+
+void ParseMemorySpec(string filename) {
+    std::ifstream infile(filename);
+
+    if (!infile.is_open()) {
+        LOG_WARN(config_utils.cpp) << "Cannot open file: " << filename;
+        return;
+    }
+
+    std::string line;
+
+    while (std::getline(infile, line)) {
+        if (line.empty())
+            continue;
+
+        std::stringstream ss(line);
+        std::string x_str, y_str;
+
+        if (std::getline(ss, x_str, ':') && std::getline(ss, y_str)) {
+            int x = std::stoi(x_str);
+            int y = std::stoi(y_str);
+            g_core_remap[x] = y;
+            LOG_DEBUG(CONFIG) << "Remap core " << x << " to " << y;
+        }
+    }
+
+    infile.close();
+}
+
+void CoreConfigRemap(vector<pair<int, int>> &source_info, vector<CoreConfig> &coreconfigs) {
+    auto get_or_key = [&](int x) -> int {
+        auto it = g_core_remap.find(x);
+        return (it != g_core_remap.end()) ? it->second : x;
+    };
+
+    for (auto &config : coreconfigs) {
+        int old_id = config.id;
+        config.id = get_or_key(config.id);
+
+        if (config.prim_copy != -1)
+            config.prim_copy = get_or_key(config.prim_copy);
+
+        for (auto &work : config.worklist) {
+            if (work.recv_tag == old_id)
+                work.recv_tag = config.id;
+
+            for (auto &cast : work.cast) {
+                if (cast.tag == cast.dest)
+                    cast.tag = get_or_key(cast.dest);
+
+                cast.dest = get_or_key(cast.dest);
+            }
+        }
+    }
+
+    for (auto &source : source_info) {
+        source.first = get_or_key(source.first);
     }
 }

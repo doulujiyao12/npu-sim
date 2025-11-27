@@ -90,7 +90,7 @@ void config_helper_gpu::fill_queue_config(queue<Msg> *q) {
         for (int i = 0; i < GetDefinedParam("B"); i++)
             batchInfo.push_back(Stage(i + 1, PREFILL, GetDefinedParam("T")));
 
-        PrimBase *set_batch = new Set_batch(batchInfo, true);
+        PrimBase *set_batch = new Set_batch(batchInfo, 1);
         auto segments = set_batch->serialize();
         for (int seg = 0; seg < segments.size(); seg++)
             single_rep.push_back(

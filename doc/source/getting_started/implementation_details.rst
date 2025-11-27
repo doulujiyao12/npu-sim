@@ -17,6 +17,12 @@ NPU-SIM 实现细节与常见问题
 详情请参阅：:doc:`memory_detail`
 
 
+进阶原语书写方法
+------------------
+
+详情请参阅：:doc:`advanced_primitive_detail`
+
+
 附属页面
 ---------------
 
@@ -25,3 +31,4 @@ NPU-SIM 实现细节与常见问题
 
    primitive_detail
    memory_detail
+   advanced_primitive_detail

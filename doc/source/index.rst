@@ -41,6 +41,7 @@
    安装指南 <getting_started/install_npu_sim>
    快速开始 <getting_started/run_npu_sim>
    实现细节 <getting_started/implementation_details>
+   测试分析 <getting_started/experiment_analysis>
 
 .. toctree::
    :maxdepth: 1
@@ -56,3 +57,8 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+
+
+TODO: 添加tp方法、pd serving方法的介绍。搬一点论文里的图。WebApp的图。
+TODO: 还原图。

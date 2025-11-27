@@ -113,6 +113,7 @@ public:
     switch_data() {
         name = "switch_data";
         param_name.insert(param_name.end(), {"IN", "OUT"});
+        skip_input = true;
     }
 };
 

@@ -29,19 +29,24 @@ void Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
                     << " read weight";
 
     auto label_weight = ETERNAL_PREFIX + prim_name + "_w";
-    if (!SPEC_LOAD_STATIC_AS_TILE) {
+    if (SPEC_LOAD_STATIC == "layer") {
+        // 直接加载一整层的权重。这里模拟为读取单个完整tensor。spill时优先排出最旧访问权重。
         checkStaticData(context, dram_time, data_chunk_addr["weight"],
                         GetFromPairedVector(data_chunk, "weight"), label_weight,
                         false);
-    } else {
-        int mac_size = g_core_hw_config[prim_context->cid].second->exu->x_dims *
-                       g_core_hw_config[prim_context->cid].second->exu->y_dims;
+    } else if (SPEC_LOAD_STATIC == "single") {
+        // 加载单个完整权重。这里模拟为读取单个完整tensor。spill时优先排出最新访问权重。
+        checkStaticData(context, dram_time, data_chunk_addr["weight"],
+                        GetFromPairedVector(data_chunk, "weight"), label_weight,
+                        false);
+    } else if (SPEC_LOAD_STATIC == "partial") {
+        // 加载部分权重。这里模拟为分批读取权重的一部分。spill时优先排出最新访问权重。
+        int mac_size = 64 * 1024;
         LOG_DEBUG(MEMORY) << "mac_size " << mac_size;
-        for (int tile = 0; tile < data_size_input[0] / mac_size; tile++) {
-            checkStaticDataTile(context, dram_time, data_chunk_addr["weight"],
-                                GetFromPairedVector(data_chunk, "weight"),
-                                label_weight, false);
-        }
+
+        checkStaticDataTile(context, dram_time, data_chunk_addr["weight"],
+                            GetFromPairedVector(data_chunk, "weight"),
+                            label_weight, false, mac_size);
     }
 
     LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid << " read bias";
@@ -90,6 +95,8 @@ void Matmul_f::taskCore(TaskCoreContext &context, string prim_name,
     } else {
         // 计算overlap并写回output数据
         exu_ops = (uint64_t)p["B"] * p["OC"] * p["T"] * p["C"] * 2;
+        if (p["T"] <= 4)
+            exu_ops *= GetCoreHWConfig(context.cid)->exu->x_dims / 4;
         sfu_ops = 0;
     }
 }

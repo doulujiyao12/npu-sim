@@ -249,7 +249,7 @@ cores : dict[]
 
     **worklist : dict[]**
 
-    按顺序执行的原语列表。每一个worklist中记录了一系列 **计算** 原语（COMP_PRIM）。NPU-SIM会自动在每一个worklist执行前加上一个 **接收** 原语（RECV_PRIM），在worklist执行结束后加上一个 **发送** 原语（SEND_PRIM），因此工作核间的通信流程由 ``worklist`` 数组对工作流程的切割隐式决定。具体原语通信范式可参阅TODO 。
+    按顺序执行的原语列表。每一个worklist中记录了一系列 **计算** 原语（COMP_PRIM）。NPU-SIM会自动在每一个worklist执行前加上一个 **接收** 原语（RECV_PRIM），在worklist执行结束后加上一个 **发送** 原语（SEND_PRIM），因此工作核间的通信流程由 ``worklist`` 数组对工作流程的切割隐式决定。具体原语通信范式可参阅 :doc:`primitive_detail` 。
 
         **recv_cnt : number**
 
@@ -293,7 +293,7 @@ cores : dict[]
 
             **sram_address : dict**
 
-            指定计算原语在SRAM中的输入输出标签，具体内存读写与标签管理范式可参考 TODO。
+            指定计算原语在SRAM中的输入输出标签，具体内存读写与标签管理范式可参考 :doc:`memory_detail` 。
 
                 **indata : string**
 
@@ -432,7 +432,7 @@ cores : dict[]
 .. admonition:: 示例3
     :class: tip
 
-    需确保每一个计算原语的输入标签都曾经作为某个其他计算原语的输出标签出现过（相关内存读取与标签管理范式可参阅 TODO）。在示例中， ``layernorm1_in`` 标签就曾作为 ``parse_input`` 原语的输出标签出现过。
+    需确保每一个计算原语的输入标签都曾经作为某个其他计算原语的输出标签出现过（相关内存读取与标签管理范式可参阅 :doc:`memory_detail` ）。在示例中， ``layernorm1_in`` 标签就曾作为 ``parse_input`` 原语的输出标签出现过。
 
     .. code-block:: json
 

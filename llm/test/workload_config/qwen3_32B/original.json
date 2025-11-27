@@ -94,7 +94,7 @@
                   }
                 },
                 {
-                  "type": "rope_forward",
+                  "type": "rope_forward_pd",
                   "B": "B",
                   "T": "T",
                   "C": "3C-R",
@@ -108,7 +108,7 @@
                   }
                 },
                 {
-                  "type": "Attention_f",
+                  "type": "Attention_f_pd",
                   "B": "B",
                   "T": "T",
                   "C": "3C-R",

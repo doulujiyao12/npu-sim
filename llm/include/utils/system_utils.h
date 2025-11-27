@@ -12,7 +12,7 @@ CoreHWConfig *GetCoreHWConfig(int id);
 int CeilingDivision(int a, int b);
 
 void InitGrid(string workload_config_path, string hardware_config_path,
-              string simulation_config_path);
+              string simulation_config_path, string mapping_config_path);
 void InitGlobalMembers();
 void SystemCleanup();
 

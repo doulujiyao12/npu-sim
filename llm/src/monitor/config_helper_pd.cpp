@@ -24,9 +24,9 @@ config_helper_pd::config_helper_pd(string filename, sc_event *ev_sig,
     int req_cnt = config_reqs["count"];
     heads = config_model["heads"];
     head_size = config_model["head_size"];
-    eof_chance = config_model["eof_chance"];
+    eof_chance = config_reqs["eof_chance"];
     model_stage = config_model["stage"];
-    batch_size = config_model["batch"];
+    batch_size = 1;
     kv_heads = config_model["kv_heads"];
     if (config_model.contains("prefill_iters"))
         prefill_iters = config_model["prefill_iters"];
@@ -422,10 +422,13 @@ void config_helper_pd::generate_prims(int i) {
                             prim->prim_context->datapass_label_->outdata;
                     }
 
-                    temp_config.push_back(Msg(false, MSG_TYPE::CONFIG,
-                                              ++prim_seq, core_id,
-                                              set_addr->serialize()[0]));
-                    auto segments = prim->serialize();
+                    auto segments = set_addr->serialize();
+                    for (int seg = 0; seg < segments.size(); seg++)
+                        temp_config.push_back(
+                            Msg(false, MSG_TYPE::CONFIG, ++prim_seq, core_id,
+                                seg == segments.size() - 1, segments[seg]));
+
+                    segments = prim->serialize();
                     for (int seg = 0; seg < segments.size(); seg++)
                         temp_config.push_back(
                             Msg(false, MSG_TYPE::CONFIG, ++prim_seq, core_id,
@@ -639,7 +642,7 @@ void config_helper_pd::printResults() {
     // 设置输出格式，避免科学计数法
     file << fixed << setprecision(6); // 设置小数点后6位精度，可根据需要调整
 
-    file << "*" << g_workload_config << "*\n";
+    file << "*" << "*\n";
     for (int i = 0; i < token_record.size(); i++) {
         file << "Request " << i << ": \n";
         for (int j = 0; j < token_record[i].size(); j++) {

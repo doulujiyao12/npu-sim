@@ -52,7 +52,7 @@ int CeilingDivision(int a, int b) {
 }
 
 void InitGrid(string workload_config_path, string hardware_config_path,
-              string simulation_config_path) {
+              string simulation_config_path, string mapping_config_path) {
     json j1;
     ifstream jfile1(workload_config_path);
 
@@ -81,6 +81,8 @@ void InitGrid(string workload_config_path, string hardware_config_path,
 
     jfile3 >> j3;
     ParseSimulationConfig(j3);
+
+    ParseMemorySpec(mapping_config_path);
 }
 
 void SystemCleanup() {

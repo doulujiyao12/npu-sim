@@ -105,7 +105,7 @@ public:
                          string label_name, bool use_pf = false);
     void checkStaticDataTile(TaskCoreContext &context, uint64_t &dram_time,
                              uint64_t label_global_addr, int data_size_label,
-                             string label_name, bool use_pf = false);
+                             string label_name, bool use_pf = false, int mac_size = 128);
     void prefReadData(TaskCoreContext &context, uint64_t &dram_time,
                       int data_size_label, string label_name);
 
@@ -136,6 +136,7 @@ public:
     int fetch_index; // 用于记录取权重需要偏移的offset
 
     virtual GpuBase *clone() = 0;
+    void initializeDefault();
 
     // 原语解析函数
     vector<sc_bv<128>> serialize();
@@ -153,7 +154,6 @@ public:
 private:
     void parseCompose(json j);
     void parseAddress(json j);
-    void initializeDefault();
 };
 
 

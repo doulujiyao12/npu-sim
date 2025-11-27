@@ -33,9 +33,27 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
 
     int chunk_ratio = need_multiply ? 1 : p["chunk"];
     auto label_weight = ETERNAL_PREFIX + prim_name + "_w";
-    checkStaticData(context, dram_time, data_chunk_addr["weight"],
-                    GetFromPairedVector(data_chunk, "weight") / chunk_ratio,
-                    label_weight);
+
+    if (SPEC_LOAD_STATIC == "layer") {
+        // 直接加载一整层的权重。这里模拟为读取单个完整tensor。spill时优先排出最旧访问权重。
+        checkStaticData(context, dram_time, data_chunk_addr["weight"],
+                        GetFromPairedVector(data_chunk, "weight") / chunk_ratio,
+                        label_weight, false);
+    } else if (SPEC_LOAD_STATIC == "single") {
+        // 加载单个完整权重。这里模拟为读取单个完整tensor。spill时优先排出最新访问权重。
+        checkStaticData(context, dram_time, data_chunk_addr["weight"],
+                        GetFromPairedVector(data_chunk, "weight") / chunk_ratio,
+                        label_weight, false);
+    } else if (SPEC_LOAD_STATIC == "partial") {
+        // 加载部分权重。这里模拟为分批读取权重的一部分。spill时优先排出最新访问权重。
+        int mac_size = 64 * 1024;
+        LOG_DEBUG(MEMORY) << "mac_size " << mac_size;
+
+        checkStaticDataTile(context, dram_time, data_chunk_addr["weight"],
+                            GetFromPairedVector(data_chunk, "weight") /
+                                chunk_ratio,
+                            label_weight, false, mac_size);
+    }
 
     auto label_bias = ETERNAL_PREFIX + prim_name + "_b";
     checkStaticData(context, dram_time, data_chunk_addr["bias"],
@@ -129,7 +147,11 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         }
 
         exu_ops = performance_comp;
+        sfu_ops = 0;
     } else {
         exu_ops = (u_int64_t)p["B"] * p["T"] * p["C"] * p["OC"] * 2;
+        sfu_ops = 0;
+        if (p["T"] <= 4)
+            exu_ops *= GetCoreHWConfig(context.cid)->exu->x_dims / 4;
     }
 }

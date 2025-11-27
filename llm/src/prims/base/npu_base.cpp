@@ -561,40 +561,47 @@ void NpuBase::checkStaticData(TaskCoreContext &context, uint64_t &dram_time,
 void NpuBase::checkStaticDataTile(TaskCoreContext &context, uint64_t &dram_time,
                                   uint64_t label_global_addr,
                                   int data_size_label, string label_name,
-                                  bool use_pf) {
-#if USE_NB_DRAMSYS == 0
-    auto wc = context.wc;
-#endif
+                                  bool use_pf, int mac_size) {
     auto sram_addr = context.sram_addr;
     int sram_offset = *sram_addr;
-
-#if DUMMY == 1
     float *dram_start = nullptr;
-#else
-    float *dram_start = (float *)(dram_array[cid]);
-    float *inp = dram_start + inp_offset;
-    float *out = dram_start + out_offset;
-#endif
+
+    int load_size = 64 * 1024;
 
     AddrPosKey sc_key;
-    int mac_size = 128;
-    for (auto core : g_core_hw_config) {
-        if (core.first == context.cid)
-            mac_size = core.second->exu->x_dims * core.second->exu->y_dims;
-    }
+    int flag = prim_context->sram_pos_locator_->findPair(label_name, sc_key);
+    if (flag == -1) {
+        LOG_DEBUG(MEMORY)
+            << name << " of Core " << context.cid
+            << " weight label does not exist in SRAM, need to fetch";
 
-    for (int i = 0; i < data_size_label / mac_size; i++) {
-        sram_first_write_generic(context, data_byte * mac_size,
-                                 label_global_addr + i * mac_size, dram_time,
-                                 dram_start);
-        sc_key = AddrPosKey(*sram_addr, data_byte * mac_size);
-        prim_context->sram_pos_locator_->addPair(label_name, sc_key, context,
-                                                 dram_time);
-        if (use_pf == false) {
-            sram_read_generic(context, data_byte * mac_size, sram_offset,
-                              dram_time);
+        int size = 0;
+        for (int tile = 0; tile < data_size_label / load_size; tile++) {
+            sram_first_write_generic(context, data_byte * load_size,
+                                     label_global_addr, dram_time, dram_start);
+            size += load_size * data_byte;
+
+            sc_key = AddrPosKey(*sram_addr, size);
+            prim_context->sram_pos_locator_->addPairByTile(label_name, sc_key,
+                                                           context, dram_time);
+        }
+    } else if (flag > 0) {
+        LOG_DEBUG(MEMORY) << name << " of Core " << context.cid
+                          << " weight label spilled, need to fetch back";
+
+        int size = data_size_label * data_byte - flag;
+        for (int tile = 0; tile < flag / load_size; tile++) {
+            sram_first_write_generic(context, data_byte * load_size,
+                                     label_global_addr, dram_time, dram_start);
+            size += load_size * data_byte;
+
+            sc_key.size = size;
+            prim_context->sram_pos_locator_->addPairByTile(label_name, sc_key,
+                                                           context, dram_time);
         }
     }
+
+    sram_read_generic(context, data_byte * data_size_label, sram_offset, dram_time);
 }
 
 
@@ -627,14 +634,12 @@ void NpuBase::writeOutputData(TaskCoreContext &context, uint64_t exu_flops,
         // 因为dram 已经wait 过了，所以额外的 overlap_time = 0
         overlap_time = 0;
         LOG_INFO(PRIM) << name << " of Core " << context.cid << ": dram_time "
-                        << dram_time  << ", compute cycle " 
-                       << cycle ;
+                       << dram_time << ", compute cycle " << cycle;
 
     } else {
         overlap_time = cycle - dram_time;
         LOG_INFO(PRIM) << name << " of Core " << context.cid << ": dram_time "
-                        << dram_time  << ", compute cycle "
-                        << cycle ;
+                       << dram_time << ", compute cycle " << cycle;
     }
 
     // 写入out
