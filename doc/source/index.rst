@@ -43,7 +43,13 @@
    实现细节 <getting_started/implementation_details>
    测试分析 <getting_started/experiment_analysis>
 
+.. toctree::
+   :maxdepth: 1
+   :caption: 背景知识
 
+   众核数据流架构 <architecture_trends/significance>
+   主流架构分析 <architecture_trends/product_landscape>
+   架构发展趋势 <architecture_trends/convergence>
 
 Indices and tables
 ==================
