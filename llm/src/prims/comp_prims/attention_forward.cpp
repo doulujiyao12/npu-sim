@@ -56,7 +56,7 @@ void Attention_f::taskCore(TaskCoreContext &context, string prim_name,
                            temp_sram_addr_prior, dram_time);
 
     auto &p = param_value;
-    exu_ops = 0;
+    exu_ops = (uint64_t)p["B"] * p["C"] * p["T"] * p["T"] * 4;
     sfu_ops = (uint64_t)p["B"] * p["NH"] * p["T"] * p["T"];
-    vec_ops = (uint64_t)p["B"] * p["C"] * p["T"] * p["T"] * 4 + (u_int64_t)p["B"] * p["NH"] * p["T"] * p["T"] * 2;
+    vec_ops = (u_int64_t)p["B"] * p["NH"] * p["T"] * p["T"] * 2;
 }

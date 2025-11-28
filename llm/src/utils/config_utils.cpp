@@ -120,10 +120,11 @@ void ParseHardwareConfig(json j) {
 
     for (int i = sample.id + 1; i < GRID_SIZE; i++) {
         ExuConfig *exu =
-            new ExuConfig(MAC_Array, sample.exu->x_dims);
+            new ExuConfig(MAC_Array, sample.exu->x_dims, sample.exu->count);
         SfuConfig *sfu = new SfuConfig(Linear, sample.sfu->x_dims);
+        VectorConfig *vec = new VectorConfig(sample.vec->x_dims, sample.vec->count);
         g_core_hw_config.push_back(make_pair(
-            i, new CoreHWConfig(i, exu, sfu, sample.dram_config, sample.dram_bw,
+            i, new CoreHWConfig(i, exu, sfu, vec, sample.dram_config, sample.dram_bw,
                                 sample.sram_bitwidth)));
     }
 

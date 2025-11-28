@@ -130,8 +130,7 @@ void attention_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
     sram_read_generic_temp(context, data_byte * data_chunk_addr["att"],
                            temp_sram_addr_prior, dram_time);
 
-    exu_ops = 0;
+    exu_ops = (uint64_t)p["B"] * p["C"] * p["T"] * p["T"] * 4;
     sfu_ops = (uint64_t)p["B"] * p["NH"] * p["T"] * p["T"];
-    vec_ops = (uint64_t)p["B"] * p["C"] * p["T"] * p["T"] * 4 +
-              (u_int64_t)p["B"] * p["NH"] * p["T"] * p["T"] * 2;
+    vec_ops = (u_int64_t)p["B"] * p["NH"] * p["T"] * p["T"] * 2;
 }

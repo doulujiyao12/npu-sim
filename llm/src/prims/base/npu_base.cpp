@@ -228,8 +228,8 @@ int NpuBase::taskCoreDefault(TaskCoreContext &context) {
 
     // 计算overlap并写回output数据
     if (!skip_output)
-        writeOutputData(context, exu_flops, sfu_flops, dram_time, overlap_time,
-                        out_size, data_chunk_addr["output"]);
+        writeOutputData(context, exu_flops, sfu_flops, vec_flops, dram_time,
+                        overlap_time, out_size, data_chunk_addr["output"]);
 
     return overlap_time;
 }
@@ -622,18 +622,22 @@ void NpuBase::writeOutputData(TaskCoreContext &context, uint64_t exu_flops,
                     << exu_flops << " sfu_flops " << sfu_flops << " vec_flops "
                     << vec_flops;
 
+    int exu_cycle = 0;
     if (exu->type == MAC_Array)
-        cycle +=
-            exu_flops / (exu->x_dims * exu->x_dims * 2 * HW_COMP_UTIL) * CYCLE;
+        exu_cycle +=
+            exu_flops /
+            (exu->x_dims * exu->x_dims * 2 * exu->count * HW_COMP_UTIL) * CYCLE;
     else
         assert(false && "Unsupported tile type");
 
+    int sfu_cycle = 0;
     if (sfu->type == Linear)
-        cycle += sfu_flops / sfu->x_dims * CYCLE;
+        sfu_cycle += sfu_flops / sfu->x_dims * CYCLE;
     else
         assert(false && "Unsupported tile type");
 
-    cycle += vec_flops / vec->x_dims * CYCLE;
+    int vec_cycle = vec_flops / vec->x_dims * vec->count * CYCLE;
+    cycle += max(exu_cycle, max(sfu_cycle, vec_cycle));
 
 #if USE_SRAM == 1
     if (dram_time > cycle) {
