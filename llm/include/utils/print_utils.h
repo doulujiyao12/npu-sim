@@ -1,5 +1,6 @@
 #pragma once
 #include "defs/enums.h"
+#include "defs/global.h"
 #include "systemc.h"
 #include <chrono>
 #include <iomanip>
@@ -74,8 +75,10 @@ public:
         std::lock_guard<std::mutex> lock(mu);
         std::cout << final.str() << std::endl;
 
-        if (level == LogLevel::LOG_ERROR)
+        if (level == LogLevel::LOG_ERROR) {
+            correct_exit = false;
             sc_stop();
+        }
     }
 
     template <typename T> Logger &operator<<(const T &val) {

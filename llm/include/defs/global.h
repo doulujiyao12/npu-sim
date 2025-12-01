@@ -34,6 +34,9 @@ class SfuConfig;
 class CoreHWConfig;
 extern vector<pair<int, CoreHWConfig *>> g_core_hw_config;
 
+// 重新映射计算核的编号表
+extern unordered_map<int, int> g_core_remap;
+
 // 输出流，用于打印
 extern std::unordered_map<int, std::ofstream *> g_log_streams;
 
@@ -41,6 +44,8 @@ extern std::unordered_map<int, std::ofstream *> g_log_streams;
 extern vector<pair<string, int>> vtable;
 
 extern u_int64_t g_data_footprint_in_words;
+
+extern bool correct_exit; // 程序是否正常退出
 
 // 模拟dram数组
 #if DUMMY == 1

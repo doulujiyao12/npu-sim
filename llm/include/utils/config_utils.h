@@ -1,4 +1,5 @@
 #pragma once
+#include "common/config.h"
 #include "nlohmann/json.hpp"
 #include "utils/print_utils.h"
 
@@ -8,6 +9,9 @@ int GetDefinedParam(string var);
 void ParseSimulationType(json j);
 void ParseSimulationConfig(json j);
 void ParseHardwareConfig(json j);
+void ParseMemorySpec(string filename);
+void CoreConfigRemap(
+    vector<pair<int, int>> &source_info, vector<CoreConfig> &coreconfigs);
 
 template <typename T> void SetParamFromJson(json j, string field, T *target) {
     if (j.contains(field)) {

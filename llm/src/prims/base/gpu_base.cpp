@@ -5,7 +5,7 @@
 #include "utils/system_utils.h"
 
 vector<sc_bv<128>> GpuBase::serialize() {
-    LOG_DEBUG(CONFIG) << "Start serialize " << name;
+    LOG_DEBUG(CONFIG_DEBUG) << "Start serialize " << name;
 
     vector<sc_bv<128>> segments;
 
@@ -29,6 +29,8 @@ vector<sc_bv<128>> GpuBase::serialize() {
         int pos = 8;
         for (int i = 0; i < 4 && it != vec.end(); i++, it++, pos += 30) {
             d.range(pos + 29, pos) = sc_bv<30>(it->second);
+            LOG_DEBUG(CONFIG_DEBUG) << "In serialize " << name << ": " << it->first
+                              << " = " << it->second;
         }
 
         segments.push_back(d);
@@ -38,7 +40,7 @@ vector<sc_bv<128>> GpuBase::serialize() {
 }
 
 void GpuBase::deserialize(vector<sc_bv<128>> segments) {
-    LOG_DEBUG(CONFIG) << "Start deserialize " << name;
+    LOG_DEBUG(CONFIG_DEBUG) << "Start deserialize " << name;
 
     // 解析metadata
     auto buffer = segments[0];
@@ -63,6 +65,8 @@ void GpuBase::deserialize(vector<sc_bv<128>> segments) {
                 break;
             param_value[vec[index]] =
                 buffer.range(29 + j * 30, j * 30 + 8).to_uint64();
+            LOG_DEBUG(CONFIG_DEBUG) << "In deserialize " << name << ": " << vec[index]
+                              << " = " << param_value[vec[index]];
         }
     }
 

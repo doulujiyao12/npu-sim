@@ -12,14 +12,21 @@ void matmul_forward_gpu_pd::initialize() {
         data_byte = 2;
 
     auto &p = param_value;
-    input_size = {data_byte * p["B"] * p["T"] * p["C"]};
-    data_chunk = {{"weight", data_byte * p["C"] * p["OC"]},
-                  {"bias", data_byte * p["C"]},
-                  {"output", data_byte * p["B"] * p["T"] * p["oC"] /
-                                 (3 * p["slice_x"] * p["slice_y"])}};
+    input_size = {(int)(data_byte * (u_int64_t)p["B"] * p["T"] * p["C"])};
+    data_chunk = {{"weight", (int)(data_byte * (u_int64_t)p["C"] * p["OC"])},
+                  {"bias",(int)( data_byte * (u_int64_t)p["C"])},
+                  {"output", (int)(data_byte * (u_int64_t)p["B"] * p["T"] * p["OC"] /
+                                 (3 * p["slice_x"] * p["slice_y"]))}};
 }
 
 int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
+    if (prim_context->auto_pd_ &&
+        prim_context->loop_cnt > prim_context->auto_pd_) {
+        param_value["T"] = 1;
+        initialize();
+        initializeDefault();
+    }
+
     auto &p = param_value;
 
     int mem_time = 0;
@@ -48,7 +55,7 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
     AddrPosKey b_key = AddrPosKey(0, GetFromPairedVector(data_chunk, "bias"));
     prim_context->gpu_pos_locator_->fetchPair(label_bias, b_key);
 
-    int overlap_time = 0;
+    u_int64_t overlap_time = 0;
     AddrPosKey out_key;
 
 #if USE_L1L2_CACHE == 1
@@ -83,15 +90,17 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
             switch (p["job_type"]) {
             case JOB_PREFILL:
             case JOB_BOTH:
-                size = data_byte * p["B"] * p["OC"] * stage.token_num /
+                size = data_byte * p["OC"] * stage.token_num /
                        (p["slice_y"] * p["slice_x"]) / 3;
                 break;
             case JOB_DECODE:
-                size = data_byte * p["B"] * p["OC"] * 1 /
-                       (p["slice_y"] * p["slice_x"]) / 3;
+                size =
+                    data_byte * p["OC"] * 1 / (p["slice_y"] * p["slice_x"]) / 3;
                 break;
             default:
-                assert(false && "Unsupported job type");
+                LOG_ERROR(matmul_forward_gpu_pd.cpp)
+                    << name << " of Core " << prim_context->cid << ", job "
+                    << p["job_type"] << " is not supported";
             }
 
             char format_label_k[100];
@@ -131,17 +140,21 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
                               GetFromPairedVector(data_chunk, "output") *
                                   fetch_index,
                           GetFromPairedVector(data_chunk, "output"), mem_time);
-        int cycle = 0;
+        u_int64_t cycle = 0;
 
         CoreHWConfig *hardware_config = GetCoreHWConfig(prim_context->cid);
         ExuConfig *exu = hardware_config->exu;
         SfuConfig *sfu = hardware_config->sfu;
 
-        if (exu->type == MAC_Array)
-            cycle += (p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
-                      (p["slice_x"] * p["slice_y"])) /
-                     (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
-        else
+        if (exu->type == MAC_Array) {
+            uint64_t ops = (uint64_t)p["B"] * p["T"] * p["C"] * p["OC"] * 2;
+            uint64_t slices = (uint64_t)p["slice_x"] * p["slice_y"];
+            uint64_t base = ops / slices;
+            uint64_t exu_div =
+                (uint64_t)exu->x_dims * exu->x_dims * 2 * HW_COMP_UTIL;
+
+            cycle += base / exu_div * CYCLE;
+        } else
             assert(false && "Unsupported tile type");
 
         if (sfu->type == Linear)
@@ -192,12 +205,12 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
             switch (p["job_type"]) {
             case JOB_PREFILL:
             case JOB_BOTH:
-                size = data_byte * p["B"] * p["OC"] * stage.token_num /
+                size = data_byte * p["OC"] * stage.token_num /
                        (p["slice_y"] * p["slice_x"]) / 3;
                 break;
             case JOB_DECODE:
-                size = data_byte * p["B"] * p["OC"] * 1 /
-                       (p["slice_y"] * p["slice_x"]) / 3;
+                size =
+                    data_byte * p["OC"] * 1 / (p["slice_y"] * p["slice_x"]) / 3;
                 break;
             default:
                 assert(false && "Unsupported job type");
@@ -207,6 +220,7 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
             sprintf(format_label_k, "%s%s%sk#%d", prefix.c_str(),
                     ETERNAL_PREFIX, KVCACHE_PREFIX, stage.req_id);
             string label_k = format_label_k;
+            // cout << "a label_k: " << label_k << endl;
 
             char format_label_v[1000];
             sprintf(format_label_v, "%s%s%sv#%d", prefix.c_str(),
@@ -241,17 +255,21 @@ int matmul_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
                                   fetch_index,
                           GetFromPairedVector(data_chunk, "output"), mem_time);
 
-        int cycle = 0;
+        u_int64_t cycle = 0;
 
         CoreHWConfig *hardware_config = GetCoreHWConfig(prim_context->cid);
         ExuConfig *exu = hardware_config->exu;
         SfuConfig *sfu = hardware_config->sfu;
 
-        if (exu->type == MAC_Array)
-            cycle += (p["B"] * p["T"] * p["C"] * p["OC"] * 2 /
-                      (p["slice_x"] * p["slice_y"])) /
-                     (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
-        else
+        if (exu->type == MAC_Array) {
+            uint64_t ops = (uint64_t)p["B"] * p["T"] * p["C"] * p["OC"] * 2;
+            uint64_t slices = (uint64_t)p["slice_x"] * p["slice_y"];
+            uint64_t base = ops / slices;
+            uint64_t exu_div =
+                (uint64_t)exu->x_dims * exu->x_dims * 2 * HW_COMP_UTIL;
+
+            cycle += base / exu_div * CYCLE;
+        } else
             assert(false && "Unsupported tile type");
 
         if (sfu->type == Linear)

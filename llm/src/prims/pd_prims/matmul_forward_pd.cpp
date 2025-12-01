@@ -17,7 +17,7 @@ void matmul_forward_pd::initialize() {
 
 void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
                                  u_int64_t &dram_time, u_int64_t &exu_ops,
-                                 u_int64_t &sfu_ops) {
+                                 u_int64_t &sfu_ops, u_int64_t &vec_ops) {
     // 空转一轮，直接退出（PD模式）
     auto &p = param_value;
     if (p["T"] == 0)
@@ -33,9 +33,27 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
 
     int chunk_ratio = need_multiply ? 1 : p["chunk"];
     auto label_weight = ETERNAL_PREFIX + prim_name + "_w";
-    checkStaticData(context, dram_time, data_chunk_addr["weight"],
-                    GetFromPairedVector(data_chunk, "weight") / chunk_ratio,
-                    label_weight);
+
+    if (SPEC_LOAD_STATIC == "layer") {
+        // 直接加载一整层的权重。这里模拟为读取单个完整tensor。spill时优先排出最旧访问权重。
+        checkStaticData(context, dram_time, data_chunk_addr["weight"],
+                        GetFromPairedVector(data_chunk, "weight") / chunk_ratio,
+                        label_weight, false);
+    } else if (SPEC_LOAD_STATIC == "single") {
+        // 加载单个完整权重。这里模拟为读取单个完整tensor。spill时优先排出最新访问权重。
+        checkStaticData(context, dram_time, data_chunk_addr["weight"],
+                        GetFromPairedVector(data_chunk, "weight") / chunk_ratio,
+                        label_weight, false);
+    } else if (SPEC_LOAD_STATIC == "partial") {
+        // 加载部分权重。这里模拟为分批读取权重的一部分。spill时优先排出最新访问权重。
+        int mac_size = 64 * 1024;
+        LOG_DEBUG(MEMORY) << "mac_size " << mac_size;
+
+        checkStaticDataTile(context, dram_time, data_chunk_addr["weight"],
+                            GetFromPairedVector(data_chunk, "weight") /
+                                chunk_ratio,
+                            label_weight, false, mac_size);
+    }
 
     auto label_bias = ETERNAL_PREFIX + prim_name + "_b";
     checkStaticData(context, dram_time, data_chunk_addr["bias"],
@@ -96,11 +114,11 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
             prim_context->decode_done_.push_back(false);
     }
 
-    if (SPEC_USE_PERF_GEMM) {
+    if (p["T"] > 4) {
         ExuConfig *exu = GetCoreHWConfig(context.cid)->exu;
 
         uint64_t weight_tile_x = (p["C"] + exu->x_dims - 1) / exu->x_dims;
-        uint64_t weight_tile_y = (p["OC"] + exu->y_dims - 1) / exu->y_dims;
+        uint64_t weight_tile_y = (p["OC"] + exu->x_dims - 1) / exu->x_dims;
 
         uint64_t padding_input_x =
             (p["B"] * p["T"]) > exu->x_dims ? p["B"] * p["T"] : exu->x_dims;
@@ -110,7 +128,7 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
             weight_tile_y;
 
         uint64_t performance_comp =
-            performance_cycle * exu->y_dims * exu->x_dims * HW_COMP_UTIL;
+            performance_cycle * exu->x_dims * exu->x_dims * HW_COMP_UTIL;
         LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
                         << " performance_cycle " << performance_cycle;
 
@@ -129,7 +147,14 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         }
 
         exu_ops = performance_comp;
+        sfu_ops = 0;
     } else {
-        exu_ops = (u_int64_t)p["B"] * p["T"] * p["C"] * p["OC"] * 2;
+        // 当token数较少时，使用vector core
+        exu_ops = 0;
+        sfu_ops = 0;
+        vec_ops = (uint64_t)p["B"] * p["OC"] * p["T"] * p["C"] * 2;
     }
+
+    LOG_INFO(PRIM) << name << "of Core " << prim_context->cid << " matmul_pd "
+                   << exu_ops << " " << sfu_ops << " " << vec_ops;
 }

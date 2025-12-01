@@ -24,10 +24,12 @@ config_helper_pd::config_helper_pd(string filename, sc_event *ev_sig,
     int req_cnt = config_reqs["count"];
     heads = config_model["heads"];
     head_size = config_model["head_size"];
-    eof_chance = config_model["eof_chance"];
+    eof_chance = config_reqs["eof_chance"];
     model_stage = config_model["stage"];
-    batch_size = config_model["batch"];
+    batch_size = 1;
     kv_heads = config_model["kv_heads"];
+    hidden_size = config_model["hidden_size"];
+    intermediate_size = config_model["intermediate_size"];
     if (config_model.contains("prefill_iters"))
         prefill_iters = config_model["prefill_iters"];
     else
@@ -356,7 +358,7 @@ void config_helper_pd::generate_prims(int i) {
     }
 
     // TODO: 其他decoder模型适配？
-    set_global_vars(T);
+    set_global_vars(T, tp_size);
 
     // lambda函数
     auto add_recv = [&](int &prim_seq, bool start, int recv_tag, int recv_cnt,
@@ -422,10 +424,13 @@ void config_helper_pd::generate_prims(int i) {
                             prim->prim_context->datapass_label_->outdata;
                     }
 
-                    temp_config.push_back(Msg(false, MSG_TYPE::CONFIG,
-                                              ++prim_seq, core_id,
-                                              set_addr->serialize()[0]));
-                    auto segments = prim->serialize();
+                    auto segments = set_addr->serialize();
+                    for (int seg = 0; seg < segments.size(); seg++)
+                        temp_config.push_back(
+                            Msg(false, MSG_TYPE::CONFIG, ++prim_seq, core_id,
+                                seg == segments.size() - 1, segments[seg]));
+
+                    segments = prim->serialize();
                     for (int seg = 0; seg < segments.size(); seg++)
                         temp_config.push_back(
                             Msg(false, MSG_TYPE::CONFIG, ++prim_seq, core_id,
@@ -440,13 +445,14 @@ void config_helper_pd::generate_prims(int i) {
                 CompBase *last_comp = (CompBase *)work.prims.back();
 
                 // 发送原语，遵循work中的cast，编号和tag需要自定义
-                for (auto ca : work.cast) {
+                for (int c = 0; c < work.cast.size(); c++) {
+                    auto ca = work.cast[c];
                     int next_id = ca.dest + i;
                     Send_prim *send_req =
                         new Send_prim(SEND_TYPE::SEND_REQ, next_id, ca.tag + i);
                     Recv_prim *recv_ack = new Recv_prim(RECV_TYPE::RECV_ACK);
-                    Send_prim *send_data =
-                        new Send_prim(SEND_TYPE::SEND_DATA, next_id, ca.tag + i);
+                    Send_prim *send_data = new Send_prim(SEND_TYPE::SEND_DATA,
+                                                         next_id, ca.tag + i);
 
                     CalculatePacketNum(
                         last_comp->out_size, ca.weight, last_comp->data_byte,
@@ -461,7 +467,7 @@ void config_helper_pd::generate_prims(int i) {
                                               ++prim_seq, core_id,
                                               recv_ack->serialize()[0]));
                     temp_config.push_back(Msg(
-                        core_id != i &&
+                        core_id != i && c == work.cast.size() - 1 &&
                             w ==
                                 template_cores[core_id - i].worklist.size() - 1,
                         MSG_TYPE::CONFIG, ++prim_seq, core_id,
@@ -592,12 +598,19 @@ void config_helper_pd::parse_done_msg(Event_engine *event_engine,
     }
 }
 
-void config_helper_pd::set_global_vars(int T) {
+void config_helper_pd::set_global_vars(int T, int tp_size) {
     int C = heads * head_size;
+    int P = hidden_size;
+    int J = intermediate_size;
     vtable = {{"B", 1},
               {"T", T},
+              {"chunk", 1},
               {"T/2", T / 2},
               {"C", C},
+              {"P", P},
+              {"J", J},
+              {"BTP", T * P},
+              {"BTJ", T * J},
               {"NH", heads},
               {"DH", head_size},
               {"R", heads / kv_heads},
@@ -611,6 +624,52 @@ void config_helper_pd::set_global_vars(int T) {
               {"4BTC", 4 * T * C},
               {"3C-R", C * (2 + heads / kv_heads) / (heads / kv_heads)},
               {"CHUNK", prefill_iters}};
+
+    // 根据 tp_size 生成对应的除以 2 的幂次方的版本
+    // tp_size 一定是 2 的幂，所以可以计算需要生成多少个版本
+    int log2_tp_size = 0;
+    int temp_tp_size = tp_size;
+    while (temp_tp_size > 1) {
+        log2_tp_size++;
+        temp_tp_size /= 2;
+    }
+
+    // 为所有涉及 T 的参数生成除以 2、4、8 等的版本
+    for (int i = 1; i <= log2_tp_size; i++) {
+        int divisor = 1 << i; // 2, 4, 8, ...
+        string suffix = "/" + to_string(divisor);
+
+        // T 的版本
+        vtable.push_back({"T" + suffix, T / divisor});
+        vtable.push_back({"NH" + suffix, heads / divisor});
+        vtable.push_back({"P" + suffix, P / divisor});
+        vtable.push_back({"J" + suffix, J / divisor});
+
+        // BTC 相关参数的版本
+        vtable.push_back({"BTC" + suffix, (T * C) / divisor});
+        vtable.push_back({"2BTC" + suffix, (2 * T * C) / divisor});
+        vtable.push_back({"3BTC" + suffix, (3 * T * C) / divisor});
+        vtable.push_back({"4BTC" + suffix, (4 * T * C) / divisor});
+        vtable.push_back({"BTP" + suffix, (T * P) / divisor});
+        vtable.push_back({"BTJ" + suffix, (T * J) / divisor});
+    }
+
+    // 为所有涉及 C 的参数生成除以 2、4、8 等的版本
+    for (int i = 1; i <= log2_tp_size; i++) {
+        int divisor = 1 << i; // 2, 4, 8, ...
+        string suffix = "/" + to_string(divisor);
+
+        // C 的版本
+        vtable.push_back({"C" + suffix, C / divisor});
+
+        // 3C 相关参数的版本
+        vtable.push_back({"3C" + suffix, (3 * C) / divisor});
+        vtable.push_back({"4C" + suffix, (4 * C) / divisor});
+        vtable.push_back({"3CC" + suffix, (3 * C * C) / divisor});
+        vtable.push_back(
+            {"3C-R" + suffix,
+             (C * (2 + heads / kv_heads) / (heads / kv_heads)) / divisor});
+    }
 
     for (auto &pair : vtable) {
         if (pair.second == 0)
@@ -629,17 +688,20 @@ void config_helper_pd::printResults() {
                 << endl;
         outfile.close();
     } else
-        LOG_ERROR(config_helper_pd.cpp) << "Failed to open file simulation_result_df_pd.txt";
+        LOG_ERROR(config_helper_pd.cpp)
+            << "Failed to open file simulation_result_df_pd.txt";
 
     ofstream file("token_records.txt", ios::app);
 
     if (!file.is_open())
-        LOG_ERROR(config_helper_pd.cpp) << "Failed to open file token_records.txt";
+        LOG_ERROR(config_helper_pd.cpp)
+            << "Failed to open file token_records.txt";
 
     // 设置输出格式，避免科学计数法
     file << fixed << setprecision(6); // 设置小数点后6位精度，可根据需要调整
 
-    file << "*" << g_workload_config << "*\n";
+    file << "*"
+         << "*\n";
     for (int i = 0; i < token_record.size(); i++) {
         file << "Request " << i << ": \n";
         for (int j = 0; j < token_record[i].size(); j++) {

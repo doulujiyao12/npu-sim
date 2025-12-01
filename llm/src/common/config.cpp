@@ -67,7 +67,6 @@ void from_json(const json &j, CoreConfig &c) {
     SetParamFromJson<int>(j, "send_global_mem", &(c.send_global_mem), -1);
     SetParamFromJson<int>(j, "loop", &(c.loop), 1);
 
-
     if (j.contains("worklist")) {
         for (int i = 0; i < j["worklist"].size(); i++) {
             CoreJob cjob = j["worklist"][i];
@@ -120,11 +119,11 @@ void from_json(const json &j, StreamConfig &c) {
         auto prims = j["prims"];
         for (auto prim : prims) {
             string type = prim.at("type");
-            LOG_DEBUG(CONFIG) << "Start parsing prim " << type;
+            LOG_DEBUG(CONFIG_DEBUG) << "Start parsing prim " << type;
             GpuBase *p =
                 (GpuBase *)(PrimFactory::getInstance().createPrim(type));
             p->parseJson(prim);
-            LOG_DEBUG(CONFIG) << "Parsing done for prim " << type;
+            LOG_DEBUG(CONFIG_DEBUG) << "Parsing done for prim " << type;
 
             c.prims.push_back((PrimBase *)p);
         }
@@ -142,14 +141,19 @@ void from_json(const json &j, StreamConfig &c) {
 void from_json(const json &j, CoreHWConfig &c) {
     SetParamFromJson<int>(j, "id", &(c.id));
 
-    int exu_x, exu_y;
+    int exu_x, sa_cnt;
     SetParamFromJson<int>(j, "exu_x", &exu_x, 128);
-    SetParamFromJson<int>(j, "exu_y", &exu_y, 128);
-    c.exu = new ExuConfig(MAC_Array, exu_x, exu_y);
+    SetParamFromJson<int>(j, "sa_cnt", &sa_cnt, 1);
+    c.exu = new ExuConfig(MAC_Array, exu_x, sa_cnt);
 
     int sfu_x;
     SetParamFromJson<int>(j, "sfu_x", &sfu_x, 2048);
     c.sfu = new SfuConfig(Linear, sfu_x);
+
+    int vec_x, vec_cnt;
+    SetParamFromJson<int>(j, "vec_x", &vec_x, 64);
+    SetParamFromJson<int>(j, "vec_cnt", &vec_cnt, 1);
+    c.vec = new VectorConfig(vec_x, vec_cnt);
 
     SetParamFromJson<int>(j, "sram_bitwidth", &(c.sram_bitwidth), 128);
     SetParamFromJson<string>(j, "dram_config", &(c.dram_config),

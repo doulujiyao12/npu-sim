@@ -1,6 +1,8 @@
 # 设置CMake的最低版本要求
 cmake_minimum_required(VERSION 3.10)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # 定义项目名称
 project(npusim_project LANGUAGES CXX)
 
@@ -48,7 +50,7 @@ message(STATUS "Source files: ${SRC_FILES}")
 # find_package(Cairo REQUIRED)
 # include_directories(${CAIRO_INCLUDE_DIRS})
 
-option(BUILD_DEBUG_TARGETS "Build debug versions of executables" ON)
+option(BUILD_DEBUG_TARGETS "Build debug versions of executables" OFF)
 # 设置 L1/L2 缓存大小（支持命令行传入，带默认值）
 set(L1CACHESIZE ${L1CACHESIZE} CACHE STRING "L1 Cache Size in bytes")
 set(L2CACHESIZE ${L2CACHESIZE} CACHE STRING "L2 Cache Size in bytes")

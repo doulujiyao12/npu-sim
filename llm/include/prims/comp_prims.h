@@ -8,7 +8,8 @@
 class Attention_f : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
 
     Attention_f() {
@@ -21,7 +22,8 @@ public:
 class Batchnorm_f : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
 
     Batchnorm_f() {
@@ -34,7 +36,8 @@ public:
 class Conv_f : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
 
     Conv_f() {
@@ -48,7 +51,8 @@ public:
 class Dummy_p : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
 
     Dummy_p() { name = "Dummy_p"; }
@@ -57,7 +61,8 @@ public:
 class gate_forward : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
 
     gate_forward() {
@@ -69,7 +74,8 @@ public:
 class Gelu_f : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
 
     Gelu_f() {
@@ -82,7 +88,8 @@ public:
 class Layernorm_f : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
 
     Layernorm_f() {
@@ -95,12 +102,12 @@ public:
 class Matmul_f : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
     Matmul_f() {
         name = "Matmul_f";
-        param_name.insert(param_name.end(),
-                          {"B", "T", "C", "OC"});
+        param_name.insert(param_name.end(), {"B", "T", "C", "OC"});
     }
 };
 
@@ -108,11 +115,13 @@ public:
 class switch_data : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
     switch_data() {
         name = "switch_data";
         param_name.insert(param_name.end(), {"IN", "OUT"});
+        skip_input = true;
     }
 };
 
@@ -120,7 +129,8 @@ public:
 class Max_pool : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
     Max_pool() {
         name = "Max_pool";
@@ -133,7 +143,8 @@ public:
 class Merge_conv : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
 
     Merge_conv() {
@@ -146,7 +157,8 @@ public:
 class Merge_matmul : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
 
     Merge_matmul() {
@@ -159,7 +171,8 @@ public:
 class Relu_f : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
     Relu_f() {
         name = "Relu_f";
@@ -171,7 +184,8 @@ public:
 class Residual_f : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
 
     Residual_f() {
@@ -184,7 +198,8 @@ public:
 class rmsnorm_forward : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
     rmsnorm_forward() {
         name = "rmsnorm_forward";
@@ -196,7 +211,8 @@ public:
 class rope_forward : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
 
     rope_forward() {
@@ -209,7 +225,8 @@ public:
 class silu_forward : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
     silu_forward() {
         name = "silu_forward";
@@ -221,7 +238,8 @@ public:
 class Split_conv : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
 
     Split_conv() {
@@ -235,7 +253,8 @@ public:
 class Split_matmul : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
 
     Split_matmul() {
@@ -248,7 +267,8 @@ public:
 class swiglu_forward : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
     swiglu_forward() {
         name = "swiglu_forward";
@@ -262,7 +282,8 @@ public:
     int data_packet_id; // 已经发送的包数量
 
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
 
     Send_global_memory() {
@@ -277,7 +298,8 @@ public:
 class Recv_global_memory : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
 
     Recv_global_memory() {
@@ -289,7 +311,8 @@ public:
 class parse_input : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
 
     parse_input() {
@@ -302,7 +325,8 @@ public:
 class parse_output : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,
-                 u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops);
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
     void initialize();
 
     parse_output() {

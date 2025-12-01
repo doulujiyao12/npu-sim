@@ -15,14 +15,21 @@ void attention_forward_gpu_pd::initialize() {
         data_byte = 2;
 
     auto &p = param_value;
-    data_size_input = {data_byte * p["B"] * p["T"] * p["C"]};
-    data_chunk = {{"preatt", data_byte * p["B"] * p["NH"] * p["T"] * p["T"]},
-                  {"att", data_byte * p["B"] * p["NH"] * p["T"] * p["T"]},
-                  {"output", data_byte * p["B"] * p["NH"] * p["T"] * p["C"] /
-                                 (p["slice_x"] * p["slice_y"])}};
+    data_size_input = {(int)(data_byte * (u_int64_t)p["B"] * p["T"] * p["C"])};
+    data_chunk = {{"preatt", (int)(data_byte * (u_int64_t)p["B"] * p["NH"] * p["T"] * p["T"])},
+                  {"att", (int)(data_byte * (u_int64_t)p["B"] * p["NH"] * p["T"] * p["T"])},
+                  {"output", (int)(data_byte * (u_int64_t)p["B"] * p["NH"] * p["T"] * p["C"] /
+                                 (p["slice_x"] * p["slice_y"]))}};
 }
 
 int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
+    if (prim_context->auto_pd_ &&
+        prim_context->loop_cnt > prim_context->auto_pd_) {
+        param_value["T"] = 1;
+        initialize();
+        initializeDefault();
+    }
+
     auto &p = param_value;
 
     int mem_time = 0;
@@ -65,6 +72,7 @@ int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
         sprintf(format_label_k, "%s%s%sk#%d", result.c_str(), ETERNAL_PREFIX,
                 KVCACHE_PREFIX, stage.req_id);
         string label_k = format_label_k;
+        // cout << "b label_k: " << label_k << endl;
 
         char format_label_v[1000];
         sprintf(format_label_v, "%s%s%sv#%d", result.c_str(), ETERNAL_PREFIX,
@@ -85,38 +93,39 @@ int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
             v_key.pos +
                 v_key.size / (p["slice_x"] * p["slice_y"]) * fetch_index,
             v_key.size / (p["slice_x"] * p["slice_y"]), mem_time, true);
+        break;
     }
 
     auto data_size_preatt = GetFromPairedVector(data_chunk, "preatt");
     auto data_size_att = GetFromPairedVector(data_chunk, "att");
 
-    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
-                    << " write preatt";
-    gpu_write_generic(
-        context,
-        p_key.pos +
-            data_size_preatt / (p["slice_x"] * p["slice_y"]) * fetch_index,
-        data_size_preatt / (p["slice_x"] * p["slice_y"]), mem_time);
+    // LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+    //                 << " write preatt";
+    // gpu_write_generic(
+    //     context,
+    //     p_key.pos +
+    //         data_size_preatt / (p["slice_x"] * p["slice_y"]) * fetch_index,
+    //     data_size_preatt / (p["slice_x"] * p["slice_y"]), mem_time);
 
-    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
-                    << " read preatt";
-    gpu_read_generic(
-        context,
-        p_key.pos +
-            data_size_preatt / (p["slice_x"] * p["slice_y"]) * fetch_index,
-        data_size_preatt / (p["slice_x"] * p["slice_y"]), mem_time);
+    // LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
+    //                 << " read preatt";
+    // gpu_read_generic(
+    //     context,
+    //     p_key.pos +
+    //         data_size_preatt / (p["slice_x"] * p["slice_y"]) * fetch_index,
+    //     data_size_preatt / (p["slice_x"] * p["slice_y"]), mem_time);
 
-    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid << " write att";
-    gpu_write_generic(
-        context,
-        a_key.pos + data_size_att / (p["slice_x"] * p["slice_y"]) * fetch_index,
-        data_size_att / (p["slice_x"] * p["slice_y"]), mem_time);
+    // LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid << " write att";
+    // gpu_write_generic(
+    //     context,
+    //     a_key.pos + data_size_att / (p["slice_x"] * p["slice_y"]) * fetch_index,
+    //     data_size_att / (p["slice_x"] * p["slice_y"]), mem_time);
 
-    LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid << " write att";
-    gpu_read_generic(context,
-                     a_key.pos + data_size_att / (p["slice_x"] * p["slice_y"]) *
-                                     fetch_index,
-                     data_size_att / (p["slice_x"] * p["slice_y"]), mem_time);
+    // LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid << " write att";
+    // gpu_read_generic(context,
+    //                  a_key.pos + data_size_att / (p["slice_x"] * p["slice_y"]) *
+    //                                  fetch_index,
+    //                  data_size_att / (p["slice_x"] * p["slice_y"]), mem_time);
 
     // Q
     gpu_read_generic(context,
@@ -135,7 +144,7 @@ int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
 
     gpu_write_generic(context, out_key.pos,
                       GetFromPairedVector(data_chunk, "output"), mem_time);
-    int cycle = 0;
+    u_int64_t cycle = 0;
     int cid = context.cid;
 
     CoreHWConfig *hardware_config = GetCoreHWConfig(cid);
@@ -143,9 +152,9 @@ int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
     SfuConfig *sfu = hardware_config->sfu;
 
     if (exu->type == MAC_Array)
-        cycle += p["B"] * p["NH"] * p["T"] * (p["T"] - 1) / 2 *
+        cycle += (u_int64_t)p["B"] * p["NH"] * p["T"] * (p["T"] - 1) / 2 *
                  (4 * p["C"] / p["NH"] + 5) / (p["slice_x"] * p["slice_y"]) /
-                 (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
+                 (exu->x_dims * exu->x_dims * 2 * HW_COMP_UTIL) * CYCLE;
     else
         assert(false && "Unsupported tile type");
 

@@ -54,5 +54,5 @@ public:
     void iter_start();
     void iter_done(vector<Msg> done_msg);
 
-    void set_global_vars(int T);
+    void set_global_vars(int T, int tp_size = 1);
 };

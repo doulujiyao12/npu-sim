@@ -19,6 +19,7 @@ config_helper_pds::config_helper_pds(string filename, sc_event *ev_sig,
 
     // 收集相关参数
     auto config_reqs = j["requests"];
+    auto config_model = j["model"];
     int req_cnt = config_reqs["count"];
     for (int i = 0; i < req_cnt; i++) {
         vector<double> v;
@@ -26,20 +27,20 @@ config_helper_pds::config_helper_pds(string filename, sc_event *ev_sig,
     }
 
 
-    heads = config_reqs["heads"];
-    head_size = config_reqs["head_size"];
-    kv_heads = config_reqs["kv_heads"];
+    heads = config_model["heads"];
+    head_size = config_model["head_size"];
+    kv_heads = config_model["kv_heads"];
     eof_chance = config_reqs["eof_chance"];
     // prefill 的 pp 阶数
-    prefill_stage = config_reqs["prefill_stage"];
-    decode_stage = config_reqs["decode_stage"];
+    prefill_stage = config_model["prefill_stage"];
+    decode_stage = config_model["decode_stage"];
     // 总共参与prefill的核数，pp * dp 不包括 tp 的数量
-    prefill_core = config_reqs["prefill_cores"];
-    decode_core = config_reqs["decode_cores"];
-    batch_size = config_reqs["batch_size"];
+    prefill_core = config_model["prefill_cores"];
+    decode_core = config_model["decode_cores"];
+    batch_size = 1;
     // prefill_iter 表示 prefill 的 chunk 数量
-    if (config_reqs.contains("prefill_iters"))
-        prefill_iters = config_reqs["prefill_iters"];
+    if (config_model.contains("prefill_iters"))
+        prefill_iters = config_model["prefill_iters"];
     else
         prefill_iters = 4;
 
@@ -101,6 +102,7 @@ config_helper_pds::config_helper_pds(string filename, sc_event *ev_sig,
     wait_schedule_d = false;
     wait_send_start_prefill = false;
     wait_send_start_decode = false;
+    need_trigger_send_start = false;
 
     ev_sig->notify(0, SC_NS);
 }
@@ -117,13 +119,15 @@ void config_helper_pds::fill_queue_config(queue<Msg> *q) {
     temp_config.clear();
 }
 
+
+// 每一拍都是config ack start done
 void config_helper_pds::fill_queue_start(queue<Msg> *q) {
     // 只有在stage 1的core进行prefill的时候，才需要发送start data
     // 在调用这个函数的时候，已经完成对core的config发放
     LOG_INFO(NETWORK) << "Config helper start START data distribution";
     if (!wait_send_start_prefill && !wait_send_start_decode)
         return;
-
+    // 为什么这里 start 都需要发
     for (auto status : coreStatus) {
         int index = status.id / GRID_X;
         int total_pkg = 0;
@@ -194,6 +198,7 @@ void config_helper_pds::iter_done(PD_JOB type) {
     for (auto msg : done_msg) {
         int id = msg.source_ / tp_size;
         // 不是prefil 和 decoding 最后一个核发过来的
+        // 比如最开始几拍，可能只有前面几个stage core 会有 done 信号
         if (id < prefill_core && stage_index[id] != prefill_stage ||
             id >= prefill_core && stage_index[id] != decode_stage)
             continue;
@@ -237,7 +242,7 @@ void config_helper_pds::iter_done(PD_JOB type) {
                              << setprecision(
                                     6); // 设置小数点后6位精度，可根据需要调整
 
-                        file << "*" << g_workload_config << "*\n";
+                        file << "*" << "*\n";
                         for (int i = 0; i < token_record.size(); i++) {
                             file << "Request " << i << ": \n";
                             for (int j = 0; j < token_record[i].size(); j++) {
@@ -277,7 +282,8 @@ void config_helper_pds::iter_start(PD_JOB type) {
             int id = status.id / tp_size;
             if (id >= prefill_core)
                 continue;
-
+            // prefill 和 decoding 中分别的stage id
+            // 如果都不是第一个
             if (stage_index[id] != 1)
                 temp_stage.push_back(
                     make_pair(id, coreStatus[id - 1].batchInfo));
@@ -298,7 +304,7 @@ void config_helper_pds::iter_start(PD_JOB type) {
 
                 // 最后一个阶段的prefill是否完成，于第一阶段的prefill核没有关系，直接跳过
 
-                // 如果此时还没有被分配任务，则需要分配一个prefill。优先寻找已经在做prefill但是没有完全分发完毕的请求
+                // 如果还能放进来新的 prefill， 说明上一个stage已经有prefill 的 req都被放完了
                 if (done < batch_size) {
                     for (auto &req : requestRecords) {
                         sc_core::sc_time arv_time(req.arrival_time,
@@ -456,7 +462,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
     }
 
     // TODO: 其他decoder模型适配？
-    set_global_vars(T);
+    set_global_vars(T, tp_size);
 
     // lambda函数
     auto add_recv = [&](int &prim_seq, bool start, int recv_tag, int recv_cnt,
@@ -533,10 +539,13 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
                                 prim->prim_context->datapass_label_->outdata;
                         }
 
-                        temp_config.push_back(Msg(false, MSG_TYPE::CONFIG,
-                                                  ++prim_seq, core_id,
-                                                  set_addr->serialize()[0]));
-                        auto segments = prim->serialize();
+                        auto segments = set_addr->serialize();
+                        for (int seg = 0; seg < segments.size(); seg++)
+                            temp_config.push_back(Msg(
+                                false, MSG_TYPE::CONFIG, ++prim_seq, core_id,
+                                seg == segments.size() - 1, segments[seg]));
+
+                        segments = prim->serialize();
                         for (int seg = 0; seg < segments.size(); seg++)
                             temp_config.push_back(Msg(
                                 false, MSG_TYPE::CONFIG, ++prim_seq, core_id,
@@ -686,7 +695,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
 
 void config_helper_pds::parse_ack_msg(Event_engine *event_engine, int flow_id,
                                       sc_event *notify_event) {
-    event_engine->add_event(this->name(), "Waiting Recv Ack", "B",
+    event_engine->add_event(this->name(), "Waiting_Recv_Ack", "B",
                             Trace_event_util());
 
     for (auto m : g_temp_ack_msg) {
@@ -696,14 +705,17 @@ void config_helper_pds::parse_ack_msg(Event_engine *event_engine, int flow_id,
 
         if (coreStatus[cid / tp_size].job_type == JOB_PREFILL) {
             g_recv_ack_cnt_p++;
-            LOG_DEBUG(NETWORK) << "Total " << g_recv_ack_cnt_p << "/"
+            LOG_DEBUG(NETWORK) << "Total " << g_recv_ack_cnt_p << " / "
                                << prefill_core * tp_size;
         } else if (coreStatus[cid / tp_size].job_type == JOB_DECODE) {
             g_recv_ack_cnt_d++;
             LOG_DEBUG(NETWORK)
-                << "Total " << g_recv_ack_cnt_d << "/" << decode_core;
+                << "Total " << g_recv_ack_cnt_d << " / " << decode_core * tp_size;
         }
     }
+
+    LOG_INFO(NETWORK) << "g_recv_ack_cnt_p: " << g_recv_ack_cnt_p << ", prefill_core * tp_size: " << prefill_core * tp_size;
+    LOG_INFO(NETWORK) << "g_recv_ack_cnt_d: " << g_recv_ack_cnt_d << ", decode_core * tp_size: " << decode_core * tp_size;
 
     g_temp_ack_msg.clear();
     // wait(sc_core::sc_time(10, sc_core::SC_NS));
@@ -713,19 +725,19 @@ void config_helper_pds::parse_ack_msg(Event_engine *event_engine, int flow_id,
     if (g_recv_ack_cnt_p >= prefill_core * tp_size) {
         g_recv_ack_cnt_p = 0;
         wait_send_start_prefill = true;
-        notify_event->notify(CYCLE, SC_NS);
+        notify_event->notify(SC_ZERO_TIME);
     }
 
     if (g_recv_ack_cnt_d >= decode_core * tp_size) {
         g_recv_ack_cnt_d = 0;
         wait_send_start_decode = true;
-        notify_event->notify(CYCLE, SC_NS);
+        notify_event->notify(SC_ZERO_TIME);
     }
 }
 
 void config_helper_pds::parse_done_msg(Event_engine *event_engine,
                                        sc_event *notify_event) {
-    event_engine->add_event(this->name(), "Waiting Core busy", "B",
+    event_engine->add_event(this->name(), "Waiting_Core_busy", "B",
                             Trace_event_util());
 
     for (auto m : g_temp_done_msg) {
@@ -746,7 +758,7 @@ void config_helper_pds::parse_done_msg(Event_engine *event_engine,
         }
     }
     g_temp_done_msg.clear();
-    event_engine->add_event(this->name(), "Waiting Core busy", "E",
+    event_engine->add_event(this->name(), "Waiting_Core_busy", "E",
                             Trace_event_util(), sc_time(2, SC_NS));
 
     if (g_recv_done_cnt_p >= prefill_core) {
@@ -768,7 +780,7 @@ void config_helper_pds::parse_done_msg(Event_engine *event_engine,
     }
 }
 
-void config_helper_pds::set_global_vars(int T) {
+void config_helper_pds::set_global_vars(int T, int tp_size) {
     int C = heads * head_size;
     vtable = {{"B", 1},
               {"T", T},
@@ -787,6 +799,45 @@ void config_helper_pds::set_global_vars(int T) {
               {"4BTC", 4 * T * C},
               {"3C-R", C * (2 + heads / kv_heads) / (heads / kv_heads)},
               {"CHUNK", prefill_iters}};
+
+    // 根据 tp_size 生成对应的除以 2 的幂次方的版本
+    // tp_size 一定是 2 的幂，所以可以计算需要生成多少个版本
+    int log2_tp_size = 0;
+    int temp_tp_size = tp_size;
+    while (temp_tp_size > 1) {
+        log2_tp_size++;
+        temp_tp_size /= 2;
+    }
+
+    // 为所有涉及 T 的参数生成除以 2、4、8 等的版本
+    for (int i = 1; i <= log2_tp_size; i++) {
+        int divisor = 1 << i;  // 2, 4, 8, ...
+        string suffix = "/" + to_string(divisor);
+        
+        // T 的版本
+        vtable.push_back({"T" + suffix, T / divisor});
+        
+        // BTC 相关参数的版本
+        vtable.push_back({"BTC" + suffix, (T * C) / divisor});
+        vtable.push_back({"2BTC" + suffix, (2 * T * C) / divisor});
+        vtable.push_back({"3BTC" + suffix, (3 * T * C) / divisor});
+        vtable.push_back({"4BTC" + suffix, (4 * T * C) / divisor});
+    }
+
+    // 为所有涉及 C 的参数生成除以 2、4、8 等的版本
+    for (int i = 1; i <= log2_tp_size; i++) {
+        int divisor = 1 << i;  // 2, 4, 8, ...
+        string suffix = "/" + to_string(divisor);
+        
+        // C 的版本
+        vtable.push_back({"C" + suffix, C / divisor});
+        
+        // 3C 相关参数的版本
+        vtable.push_back({"3C" + suffix, (3 * C) / divisor});
+        vtable.push_back({"4C" + suffix, (4 * C) / divisor});
+        vtable.push_back({"3CC" + suffix, (3 * C * C) / divisor});
+        vtable.push_back({"3C-R" + suffix, (C * (2 + heads / kv_heads) / (heads / kv_heads)) / divisor});
+    }
 
     for (auto &pair : vtable) {
         if (pair.second == 0)

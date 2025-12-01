@@ -12,14 +12,21 @@ void Layernorm_f_gpu::initialize() {
         data_byte = 2;
 
     auto &p = param_value;
-    data_size_input = {data_byte * p["B"] * p["T"] * p["C"]};
-    data_chunk = {{"weight", data_byte * p["C"]},
-                  {"bias", data_byte * p["C"]},
-                  {"output", data_byte * p["B"] * p["T"] * p["C"] /
-                                 (p["slice_x"] * p["slice_y"])}};
+    data_size_input = {(int)(data_byte * (u_int64_t)p["B"] * p["T"] * p["C"])};
+    data_chunk = {{"weight", (int)(data_byte * (u_int64_t)p["C"])},
+                  {"bias", (int)(data_byte * (u_int64_t)p["C"])},
+                  {"output", (int)(data_byte * (u_int64_t)p["B"] * p["T"] * p["C"] /
+                                 (p["slice_x"] * p["slice_y"]))}};
 }
 
 int Layernorm_f_gpu::taskCoreDefault(TaskCoreContext &context) {
+    if (prim_context->auto_pd_ &&
+        prim_context->loop_cnt > prim_context->auto_pd_) {
+        param_value["T"] = 1;
+        initialize();
+        initializeDefault();
+    }
+    
     auto &p = param_value;
 
     int mem_time = 0;
@@ -98,7 +105,7 @@ int Layernorm_f_gpu::taskCoreDefault(TaskCoreContext &context) {
     SfuConfig *sfu = hardware_config->sfu;
 
     if (exu->type == MAC_Array)
-        cycle += 0 / (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
+        cycle += 0 / (exu->x_dims * exu->x_dims * 2 * HW_COMP_UTIL) * CYCLE;
     else
         assert(false && "Unsupported tile type");
 

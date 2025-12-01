@@ -71,8 +71,10 @@ html_theme_options = {
     "repository_url": "https://gitee.com/doulujiyao/npu-sim",
     "repository_provider": "github",
     "use_repository_button": True,
+    'collapse_navigation': False,
+    'navigation_depth': 4
 }
-extensions = ["sphinx_markdown_tables", "sphinx.ext.napoleon", "sphinx.ext.viewcode", "sphinx.ext.intersphinx", "sphinx_copybutton",
+extensions = ["sphinx.ext.napoleon", "sphinx.ext.viewcode", "sphinx.ext.intersphinx", "sphinx_copybutton",
 "sphinx.ext.autodoc", "sphinx.ext.autosummary", "sphinxarg.ext", "sphinxcontrib.redoc", "myst_parser"]
     # "sphinx.ext.napoleon",
     # "sphinx.ext.viewcode",

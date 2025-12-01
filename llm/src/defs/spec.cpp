@@ -3,10 +3,6 @@
 
 SIM_MODE SYSTEM_MODE = SIM_DATAFLOW;
 
-std::string g_workload_config;
-std::string g_hardware_config;
-std::string g_simulation_config;
-
 int GRID_X = 4;
 int GRID_Y;
 int GRID_SIZE;
@@ -15,9 +11,9 @@ int CORE_PER_SM;
 bool SPEC_USE_BEHA_NOC = true;
 bool SPEC_USE_BEHA_SRAM = true;
 bool SPEC_USE_BEHA_DRAM = true;
-bool SPEC_USE_PERF_GEMM = true;
+bool SPEC_USE_PERF_GEMM = false;
 bool SPEC_KVCACHE_SPILL = false;
-bool SPEC_LOAD_STATIC_AS_TILE = false;
+std::string SPEC_LOAD_STATIC = "layer";
 std::string SPEC_TTF_FILE = "../font/NotoSansDisplay-Bold.ttf";
 bool SPEC_USE_DRAMSYS = true;
 bool SPEC_FAST_WARMUP = true;

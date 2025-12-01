@@ -7,7 +7,8 @@
 
 config_helper_gpu_pd::config_helper_gpu_pd(string filename, sc_event *ev_sig,
                                            int config_chip_id) {
-    cout << "Loading config file: " << filename << endl;
+    LOG_INFO(CONFIG) << "Loading config file " << filename;
+
     json j;
     ifstream jfile(filename);
     jfile >> j;
@@ -71,7 +72,8 @@ void config_helper_gpu_pd::fill_queue_config(queue<Msg> *q) {
 }
 
 void config_helper_gpu_pd::fill_queue_start(queue<Msg> *q) {
-    cout << "GPU fill start queue, phase " << prim_index << "\n";
+    LOG_INFO(NETWORK) << "Config helper start START data distribution, phase "
+                      << prim_index;
 
     // 如果是第一个原语且有prefill任务，则需要预先发送数据
     bool has_prefill = false;
@@ -124,8 +126,9 @@ void config_helper_gpu_pd::iter_done(vector<Msg> done_msg) {
                     stage.type = record.phase = PD_DONE;
 
                     if (++decode_done == requestRecords.size()) {
-                        cout << "All reqs done.\n";
-                        cout << "[CATCH TEST] " << sc_time_stamp() << endl;
+                        LOG_INFO(SYSTEM) << "All requests finished";
+                        LOG_INFO(CATCH_TEST) << "Catch test finished";
+
                         ofstream outfile("simulation_result.txt", ios::app);
                         if (outfile.is_open()) {
                             outfile << "[CATCH TEST] " << sc_time_stamp()
@@ -135,9 +138,8 @@ void config_helper_gpu_pd::iter_done(vector<Msg> done_msg) {
                                     << endl;
                             outfile.close();
                         } else {
-                            cout << "Error: Unable to open file for writing "
-                                    "timestamp."
-                                 << endl;
+                            LOG_ERROR(config_helper_gpu_pd.cpp)
+                                << "Failed to open simulation_result_gpu.txt";
                         }
                         sc_stop();
                     }
@@ -185,7 +187,6 @@ void config_helper_gpu_pd::iter_start() {
 
         // 如果此时还放得下，则优先从idle_decode中取
         bool new_reqs = true;
-        cout << "[GPU PD SCHEDULE] Now credit: " << credit << endl;
 
         while (credit < HW_CORE_CREDIT) {
             if (idle_decode.size()) {
@@ -194,8 +195,6 @@ void config_helper_gpu_pd::iter_start() {
                 idle_decode.pop();
                 credit += 1;
                 new_stage.push_back(Stage(req_id, DECODE, 1));
-                cout << "[GPU PD SCHEDULE] Push in new request DECODE "
-                     << req_id << endl;
             }
 
             else if (HW_CORE_CREDIT - credit >= HW_PD_RATIO &&
@@ -227,8 +226,6 @@ void config_helper_gpu_pd::iter_start() {
 
                         if (++req.prefill_distribute < req.prefill_iters)
                             unfinished_prefill.push(req.id);
-                        cout << "[GPU PD SCHEDULE] Push in new request PREFILL "
-                             << req.id << endl;
                         new_reqs = true;
                         break;
                     }
@@ -238,18 +235,19 @@ void config_helper_gpu_pd::iter_start() {
         }
 
         // 开始生成原语，填入prim_list中
-        cout << "<<<<<<SCHEDULE ITER>>>>>>\n";
+        LOG_DEBUG(SCHEDULE) << "Schedule for this iteration";
         iter_status.batchInfo = new_stage;
         generate_prims();
 
         for (auto stage : iter_status.batchInfo) {
-            cout << "REQ: " << stage.req_id << ", TYPE: " << stage.type
-                 << ", finished iter: "
-                 << ((requestRecords[stage.req_id].phase == PREFILL)
-                         ? requestRecords[stage.req_id].prefill_counter
-                         : requestRecords[stage.req_id].decode_counter)
-                 << ", iter count "
-                 << requestRecords[stage.req_id].prefill_iters << endl;
+            LOG_DEBUG(SCHEDULE)
+                << "    REQ: " << stage.req_id << ", TYPE: " << stage.type
+                << ", finished iter: "
+                << ((requestRecords[stage.req_id].phase == PREFILL)
+                        ? requestRecords[stage.req_id].prefill_counter
+                        : requestRecords[stage.req_id].decode_counter)
+                << ", iter count "
+                << requestRecords[stage.req_id].prefill_iters;
         }
     }
 
@@ -260,15 +258,13 @@ void config_helper_gpu_pd::iter_start() {
         // 如果当前iter没有任何core有工作，则不发放config
         temp_config.clear();
         busy = false;
-        cout << "[SCHEDULE] Complete idle.\n";
+        LOG_DEBUG(SCHEDULE) << "Complete idle";
     } else
         busy = true;
 }
 
 void config_helper_gpu_pd::generate_prims() {
     // 根据iter_status填满prim_list，这里不包含任何收发原语，只有计算原语
-    cout << "[GPU PDS SCHEDULE] Generate iteration pass prims.\n";
-
     int B = 1, NH = heads, T = 0, C = heads * head_size;
     for (auto stage : iter_status.batchInfo) {
         auto record = requestRecords[stage.req_id];
@@ -282,14 +278,12 @@ void config_helper_gpu_pd::generate_prims() {
         }
     }
 
-    set_global_vars(T);
+    set_global_vars(T, 1);
     StreamConfig stream = json_template;
     prim_list = stream.prims;
 }
 
 void config_helper_gpu_pd::generate_prims(int i) {
-    cout << "[GPU PD SCHEDULE] Generate prims for index " << i << ".\n";
-
     GpuBase *prim = (GpuBase *)prim_list[i];
     int sms = prim->req_sm;
 
@@ -323,11 +317,14 @@ void config_helper_gpu_pd::generate_prims(int i) {
             }
             label->outdata = prim->prim_context->datapass_label_->outdata;
 
-            temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, c,
-                                      set_addr->serialize()[0]));
+            auto segments = set_addr->serialize();
+            for (int seg = 0; seg < segments.size(); seg++)
+                temp_config.push_back(
+                    Msg(false, MSG_TYPE::CONFIG, ++prim_seq, c,
+                        seg == segments.size() - 1, segments[seg]));
 
             prim->fetch_index = c + r * GRID_SIZE;
-            auto segments = prim->serialize();
+            segments = prim->serialize();
             for (int seg = 0; seg < segments.size(); seg++)
                 temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
                                           c, seg == segments.size() - 1,
@@ -344,22 +341,62 @@ void config_helper_gpu_pd::generate_prims(int i) {
     }
 }
 
-void config_helper_gpu_pd::set_global_vars(int T) {
+void config_helper_gpu_pd::set_global_vars(int T, int tp_size) {
+    int C = heads * head_size;
     vtable.clear();
     vtable.push_back(make_pair("B", 1));
     vtable.push_back(make_pair("T", T));
-    vtable.push_back(make_pair("C", heads * head_size));
+    vtable.push_back(make_pair("C", C));
     vtable.push_back(make_pair("NH", heads));
     vtable.push_back(make_pair("DH", head_size));
     vtable.push_back(make_pair("R", heads / kv_heads));
-    vtable.push_back(make_pair("3C", 3 * heads * head_size));
-    vtable.push_back(make_pair("4C", 4 * heads * head_size));
-    vtable.push_back(make_pair("BTC", T * heads * head_size));
-    vtable.push_back(make_pair("2BTC", 2 * T * heads * head_size));
-    vtable.push_back(make_pair("3BTC", 3 * T * heads * head_size));
-    vtable.push_back(make_pair("4BTC", 4 * T * heads * head_size));
+    vtable.push_back(make_pair("3C", 3 * C));
+    vtable.push_back(make_pair("4C", 4 * C));
+    vtable.push_back(make_pair("BTC", T * C));
+    vtable.push_back(make_pair("2BTC", 2 * T * C));
+    vtable.push_back(make_pair("3BTC", 3 * T * C));
+    vtable.push_back(make_pair("4BTC", 4 * T * C));
     vtable.push_back(make_pair("CR", head_size * kv_heads));
     vtable.push_back(make_pair("3CR", 3 * kv_heads * head_size));
+
+    // 根据 tp_size 生成对应的除以 2 的幂次方的版本
+    // tp_size 一定是 2 的幂，所以可以计算需要生成多少个版本
+    int log2_tp_size = 0;
+    int temp_tp_size = tp_size;
+    while (temp_tp_size > 1) {
+        log2_tp_size++;
+        temp_tp_size /= 2;
+    }
+
+    // 为所有涉及 T 的参数生成除以 2、4、8 等的版本
+    for (int i = 1; i <= log2_tp_size; i++) {
+        int divisor = 1 << i;  // 2, 4, 8, ...
+        string suffix = "/" + to_string(divisor);
+        
+        // T 的版本
+        vtable.push_back(make_pair("T" + suffix, T / divisor));
+        
+        // BTC 相关参数的版本
+        vtable.push_back(make_pair("BTC" + suffix, (T * C) / divisor));
+        vtable.push_back(make_pair("2BTC" + suffix, (2 * T * C) / divisor));
+        vtable.push_back(make_pair("3BTC" + suffix, (3 * T * C) / divisor));
+        vtable.push_back(make_pair("4BTC" + suffix, (4 * T * C) / divisor));
+    }
+
+    // 为所有涉及 C 的参数生成除以 2、4、8 等的版本
+    for (int i = 1; i <= log2_tp_size; i++) {
+        int divisor = 1 << i;  // 2, 4, 8, ...
+        string suffix = "/" + to_string(divisor);
+        
+        // C 的版本
+        vtable.push_back(make_pair("C" + suffix, C / divisor));
+        
+        // 3C 相关参数的版本
+        vtable.push_back(make_pair("3C" + suffix, (3 * C) / divisor));
+        vtable.push_back(make_pair("4C" + suffix, (4 * C) / divisor));
+        vtable.push_back(make_pair("3CR" + suffix, (3 * kv_heads * head_size) / divisor));
+        vtable.push_back(make_pair("CR" + suffix, (head_size * kv_heads) / divisor));
+    }
 }
 
 void config_helper_gpu_pd::parse_ack_msg(Event_engine *event_engine,
@@ -367,12 +404,14 @@ void config_helper_gpu_pd::parse_ack_msg(Event_engine *event_engine,
     event_engine->add_event(this->name(), "Waiting Recv Ack", "B",
                             Trace_event_util());
 
+    // 计算本iter参与计算的core数量
+    int sms = ((GpuBase *)prim_list[prim_index])->req_sm;
+    int attend_cores = sms >= GRID_SIZE ? GRID_SIZE : sms;
+
     for (auto m : g_temp_ack_msg) {
         int cid = m.source_;
-        cout << sc_time_stamp()
-             << ": Config helper PD: received ack packet from " << cid
-             << ". total " << g_recv_ack_cnt + 1 << "/" << coreconfigs.size()
-             << ".\n";
+        LOG_DEBUG(NETWORK) << "Config helper <- ACK <- " << cid << ", total "
+                           << g_recv_ack_cnt + 1 << " / " << attend_cores;
 
         g_recv_ack_cnt++;
     }
@@ -381,9 +420,6 @@ void config_helper_gpu_pd::parse_ack_msg(Event_engine *event_engine,
     event_engine->add_event(this->name(), "Waiting Recv Ack", "E",
                             Trace_event_util());
 
-    // 计算本iter参与计算的core数量
-    int sms = ((GpuBase *)prim_list[prim_index])->req_sm;
-    int attend_cores = sms >= GRID_SIZE ? GRID_SIZE : sms;
     if (g_recv_ack_cnt >= attend_cores) {
         g_recv_ack_cnt = 0;
         notify_event->notify(CYCLE, SC_NS);
@@ -395,11 +431,14 @@ void config_helper_gpu_pd::parse_done_msg(Event_engine *event_engine,
     event_engine->add_event(this->name(), "Waiting Core busy", "B",
                             Trace_event_util());
 
+    // 计算本iter参与计算的core数量
+    int sms = ((GpuBase *)prim_list[prim_index])->req_sm;
+    int attend_cores = sms >= GRID_SIZE ? GRID_SIZE : sms;
+
     for (auto m : g_temp_done_msg) {
         int cid = m.source_;
-        cout << sc_time_stamp()
-             << ": Config helper GPU PDS: received done packet from " << cid
-             << endl;
+        LOG_DEBUG(NETWORK) << "Config helper <- DONE <- " << cid << ", total "
+                           << g_recv_done_cnt + 1 << " / " << attend_cores;
 
         g_recv_done_cnt++;
         g_done_msg.push_back(m);
@@ -408,9 +447,6 @@ void config_helper_gpu_pd::parse_done_msg(Event_engine *event_engine,
     event_engine->add_event(this->name(), "Waiting Core busy", "E",
                             Trace_event_util());
 
-    // 计算本iter参与计算的core数量
-    int sms = ((GpuBase *)prim_list[prim_index])->req_sm;
-    int attend_cores = sms >= GRID_SIZE ? GRID_SIZE : sms;
     if (g_recv_done_cnt >= attend_cores) {
         iter_done(g_done_msg);
 

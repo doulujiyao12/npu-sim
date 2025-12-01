@@ -14,7 +14,7 @@ void rmsnorm_forward::initialize() {
 
 void rmsnorm_forward::taskCore(TaskCoreContext &context, string prim_name,
                                u_int64_t &dram_time, u_int64_t &exu_ops,
-                               u_int64_t &sfu_ops) {
+                               u_int64_t &sfu_ops, u_int64_t &vec_ops) {
     // 读入weight数据
     LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
                     << " read weight";
@@ -24,6 +24,7 @@ void rmsnorm_forward::taskCore(TaskCoreContext &context, string prim_name,
                     GetFromPairedVector(data_chunk, "weight"), label_weight);
 
     auto &p = param_value;
-    exu_ops = (u_int64_t)p["B"] * p["T"] * (4 * p["C"] + 3);
-    sfu_ops = 0;
+    exu_ops = 0;
+    sfu_ops = (u_int64_t)p["N"];
+    vec_ops = (u_int64_t)p["B"] * p["T"] * (4 * p["C"] + 1);
 }
