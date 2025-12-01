@@ -22,6 +22,7 @@ project = 'npu-sim'
 copyright = '2025, dahu feng'
 author = 'dahu feng'
 language = 'zh_CN'
+locale_dirs = ['../locale/']
 
 # The full version, including alpha/beta/rc tags
 release = 'v0.1'
