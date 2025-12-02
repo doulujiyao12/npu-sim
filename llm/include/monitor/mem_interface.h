@@ -24,7 +24,7 @@ public:
 
     sc_in<bool> start_i;
     sc_out<bool> preparations_done_o;
-
+    
     PRO_PHASE phase;
     // 所有host ack 包都已经收到了
     sc_event ev_switch_phase;
@@ -40,6 +40,8 @@ public:
     sc_event ev_recv_ack;
     sc_event ev_recv_done;
     sc_event ev_req_handler; // 在PD模式中用于在正确的时刻分发所有请求
+    sc_event ev_catch_dis_start; // PDS模式专用，用于捕捉时间上相近的两次ack接收完成事件
+    bool need_trigger_send_start; // PDS模式专用，用于记录是否需要触发send start事件
 
     /* -----------------Write helper---------------------- */
     // 由write_helper进行统一写入，此信号指示是否开始写
@@ -74,6 +76,7 @@ public:
     void switch_phase();
 
     void req_handler(); // 仅PD模式使用
+    void catch_ev_dis_start(); // PDS模式专用，用于捕捉时间上相近的两次ack接收完成事件
 
     void clear_write_buffer();
 

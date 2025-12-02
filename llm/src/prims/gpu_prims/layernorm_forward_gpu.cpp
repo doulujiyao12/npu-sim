@@ -105,7 +105,7 @@ int Layernorm_f_gpu::taskCoreDefault(TaskCoreContext &context) {
     SfuConfig *sfu = hardware_config->sfu;
 
     if (exu->type == MAC_Array)
-        cycle += 0 / (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
+        cycle += 0 / (exu->x_dims * exu->x_dims * 2 * HW_COMP_UTIL) * CYCLE;
     else
         assert(false && "Unsupported tile type");
 

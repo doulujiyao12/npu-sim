@@ -154,7 +154,7 @@ int attention_forward_gpu_pd::taskCoreDefault(TaskCoreContext &context) {
     if (exu->type == MAC_Array)
         cycle += (u_int64_t)p["B"] * p["NH"] * p["T"] * (p["T"] - 1) / 2 *
                  (4 * p["C"] / p["NH"] + 5) / (p["slice_x"] * p["slice_y"]) /
-                 (exu->x_dims * exu->y_dims * 2 * HW_COMP_UTIL) * CYCLE;
+                 (exu->x_dims * exu->x_dims * 2 * HW_COMP_UTIL) * CYCLE;
     else
         assert(false && "Unsupported tile type");
 

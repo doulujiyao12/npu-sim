@@ -7,6 +7,5 @@ PointerAlignment: Right
 ConstructorInitializerAllOnOneLineOrOnePerLine:	true
 MaxEmptyLinesToKeep: 2
 SortIncludes:	true
-SpaceAfterAssignmentOperators:	true
 SpaceBeforeAssignmentOperators:	true
 AccessModifierOffset: -4

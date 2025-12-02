@@ -1,7 +1,7 @@
 {
     "x": 8,
     "noc": {
-        "noc_payload_per_cycle": 20
+        "noc_payload_per_cycle": 1
     },
     "operand": {
         "comp_util": 0.7,
@@ -24,7 +24,7 @@
             "exu_x": 64,
             "exu_y": 64,
             "sfu_x": 1024,
-            "sram_bitwidth": 256,
+            "sram_bitwidth": 64,
             "dram_bw": 32
         },
         {
@@ -32,7 +32,7 @@
             "exu_x": 32,
             "exu_y": 32,
             "sfu_x": 512,
-            "sram_bitwidth": 128,
+            "sram_bitwidth": 32,
             "dram_bw": 32
         }
     ]

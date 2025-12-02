@@ -38,8 +38,8 @@ public:
     // 数据块信息
     vector<int> data_size_input;          // 必填，在initialize()中
     vector<pair<string, int>> data_chunk; // 必填，在initialize()中
-    int input_size;                       // 可以推算，在initializeDefault()中
-    int out_size;                         // 可以推算，initializeDefault()中
+    int input_size; // 可以推算，在initializeDefault()中
+    int out_size;   // 可以推算，initializeDefault()中
 
     // 参数信息
     vector<string> param_name; // 必填，在构造函数中
@@ -86,7 +86,7 @@ public:
     int taskCoreDefault(TaskCoreContext &context);
     virtual void taskCore(TaskCoreContext &context, string prim_name,
                           u_int64_t &dram_time, u_int64_t &exu_ops,
-                          u_int64_t &sfu_ops) = 0;
+                          u_int64_t &sfu_ops, u_int64_t &vec_ops) = 0;
 
     // 原语解析函数
     vector<sc_bv<128>> serialize();
@@ -105,7 +105,8 @@ public:
                          string label_name, bool use_pf = false);
     void checkStaticDataTile(TaskCoreContext &context, uint64_t &dram_time,
                              uint64_t label_global_addr, int data_size_label,
-                             string label_name, bool use_pf = false, int mac_size = 128);
+                             string label_name, bool use_pf = false,
+                             int mac_size = 128);
     void prefReadData(TaskCoreContext &context, uint64_t &dram_time,
                       int data_size_label, string label_name);
 
@@ -116,9 +117,9 @@ private:
     void checkInputData(TaskCoreContext &context, uint64_t &dram_time,
                         uint64_t inp_global_addr, vector<int> data_size_input);
     void writeOutputData(TaskCoreContext &context, uint64_t exu_flops,
-                         uint64_t sfu_flops, uint64_t dram_time,
-                         uint64_t &overlap_time, int data_size_out,
-                         uint64_t out_global_addr);
+                         uint64_t sfu_flops, u_int64_t vec_flops,
+                         uint64_t dram_time, uint64_t &overlap_time,
+                         int data_size_out, uint64_t out_global_addr);
 
     void parseAddress(json j);   // dram 地址
     void parseSramLabel(json j); // sram 标签

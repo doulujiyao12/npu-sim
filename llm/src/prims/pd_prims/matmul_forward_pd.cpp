@@ -17,7 +17,7 @@ void matmul_forward_pd::initialize() {
 
 void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
                                  u_int64_t &dram_time, u_int64_t &exu_ops,
-                                 u_int64_t &sfu_ops) {
+                                 u_int64_t &sfu_ops, u_int64_t &vec_ops) {
     // 空转一轮，直接退出（PD模式）
     auto &p = param_value;
     if (p["T"] == 0)
@@ -114,11 +114,11 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
             prim_context->decode_done_.push_back(false);
     }
 
-    if (SPEC_USE_PERF_GEMM) {
+    if (p["T"] > 4) {
         ExuConfig *exu = GetCoreHWConfig(context.cid)->exu;
 
         uint64_t weight_tile_x = (p["C"] + exu->x_dims - 1) / exu->x_dims;
-        uint64_t weight_tile_y = (p["OC"] + exu->y_dims - 1) / exu->y_dims;
+        uint64_t weight_tile_y = (p["OC"] + exu->x_dims - 1) / exu->x_dims;
 
         uint64_t padding_input_x =
             (p["B"] * p["T"]) > exu->x_dims ? p["B"] * p["T"] : exu->x_dims;
@@ -128,7 +128,7 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
             weight_tile_y;
 
         uint64_t performance_comp =
-            performance_cycle * exu->y_dims * exu->x_dims * HW_COMP_UTIL;
+            performance_cycle * exu->x_dims * exu->x_dims * HW_COMP_UTIL;
         LOG_DEBUG(PRIM) << name << " of Core " << prim_context->cid
                         << " performance_cycle " << performance_cycle;
 
@@ -149,9 +149,12 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         exu_ops = performance_comp;
         sfu_ops = 0;
     } else {
-        exu_ops = (u_int64_t)p["B"] * p["T"] * p["C"] * p["OC"] * 2;
+        // 当token数较少时，使用vector core
+        exu_ops = 0;
         sfu_ops = 0;
-        if (p["T"] <= 4)
-            exu_ops *= GetCoreHWConfig(context.cid)->exu->x_dims / 4;
+        vec_ops = (uint64_t)p["B"] * p["OC"] * p["T"] * p["C"] * 2;
     }
+
+    LOG_INFO(PRIM) << name << "of Core " << prim_context->cid << " matmul_pd "
+                   << exu_ops << " " << sfu_ops << " " << vec_ops;
 }

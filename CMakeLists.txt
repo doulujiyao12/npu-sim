@@ -1,6 +1,8 @@
 # 设置CMake的最低版本要求
 cmake_minimum_required(VERSION 3.10)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # 定义项目名称
 project(npusim_project LANGUAGES CXX)
 

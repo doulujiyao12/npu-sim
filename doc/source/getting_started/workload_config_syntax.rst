@@ -162,6 +162,14 @@ model : dict
 
     模型注意力头维度。
 
+    **hidden_size : number**
+
+    模型隐藏层维度。
+
+    **intermediate_size**
+
+    模型中间层维度。
+
     **prefill_iters : number**
 
     使用Chunked Prefill优化，将Prefill工作拆分为均等chunk的个数。如果希望关闭Chunked Prefill，则设置为1。

@@ -443,6 +443,14 @@ void Controller::controllerMethod()
     // the future
     sc_time timeForNextTrigger = scMaxTime;
     sc_time localTime;
+    
+    // Check if controller is completely idle (no payloads and no pending requests)
+    // When completely idle, we skip future refresh triggers to avoid unnecessary
+    // frequent triggers during long compute delays in WorkerCore
+    bool isCompletelyIdle = (totalNumberOfPayloads == 0) && 
+                           (transToAcquire.payload == nullptr) &&
+                           (transToRelease.payload == nullptr || transToRelease.arrival > sc_time_stamp());
+    
     for (auto& it : bankMachines)
     {
         it->evaluate();
@@ -464,13 +472,20 @@ void Controller::controllerMethod()
         tlm_generic_payload* trans = std::get<CommandTuple::Payload>(commandTuple);
         if (command != Command::NOP)
         {
+            // Always consider immediate refresh commands (NOP means no refresh needed now)
             localTime = checker->timeToSatisfyConstraints(command, *trans);
             if (!(localTime == sc_time_stamp() && readyCmdBlocked))
                 timeForNextTrigger = std::min(timeForNextTrigger, localTime);
         }
         else
         {
-            timeForNextTrigger = std::min(timeForNextTrigger, it->getTimeForNextTrigger());
+            // Only consider future refresh triggers if controller is not completely idle.
+            // This avoids unnecessary frequent triggers when the controller is idle and
+            // waiting for long compute delays in WorkerCore (e.g., during comp_prim execution).
+            if (!isCompletelyIdle)
+            {
+                timeForNextTrigger = std::min(timeForNextTrigger, it->getTimeForNextTrigger());
+            }
         }
     }
     for (auto& it : powerDownManagers)

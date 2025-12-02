@@ -278,7 +278,7 @@ void config_helper_gpu_pd::generate_prims() {
         }
     }
 
-    set_global_vars(T);
+    set_global_vars(T, 1);
     StreamConfig stream = json_template;
     prim_list = stream.prims;
 }
@@ -317,11 +317,14 @@ void config_helper_gpu_pd::generate_prims(int i) {
             }
             label->outdata = prim->prim_context->datapass_label_->outdata;
 
-            temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq, c,
-                                      set_addr->serialize()[0]));
+            auto segments = set_addr->serialize();
+            for (int seg = 0; seg < segments.size(); seg++)
+                temp_config.push_back(
+                    Msg(false, MSG_TYPE::CONFIG, ++prim_seq, c,
+                        seg == segments.size() - 1, segments[seg]));
 
             prim->fetch_index = c + r * GRID_SIZE;
-            auto segments = prim->serialize();
+            segments = prim->serialize();
             for (int seg = 0; seg < segments.size(); seg++)
                 temp_config.push_back(Msg(false, MSG_TYPE::CONFIG, ++prim_seq,
                                           c, seg == segments.size() - 1,
@@ -338,22 +341,62 @@ void config_helper_gpu_pd::generate_prims(int i) {
     }
 }
 
-void config_helper_gpu_pd::set_global_vars(int T) {
+void config_helper_gpu_pd::set_global_vars(int T, int tp_size) {
+    int C = heads * head_size;
     vtable.clear();
     vtable.push_back(make_pair("B", 1));
     vtable.push_back(make_pair("T", T));
-    vtable.push_back(make_pair("C", heads * head_size));
+    vtable.push_back(make_pair("C", C));
     vtable.push_back(make_pair("NH", heads));
     vtable.push_back(make_pair("DH", head_size));
     vtable.push_back(make_pair("R", heads / kv_heads));
-    vtable.push_back(make_pair("3C", 3 * heads * head_size));
-    vtable.push_back(make_pair("4C", 4 * heads * head_size));
-    vtable.push_back(make_pair("BTC", T * heads * head_size));
-    vtable.push_back(make_pair("2BTC", 2 * T * heads * head_size));
-    vtable.push_back(make_pair("3BTC", 3 * T * heads * head_size));
-    vtable.push_back(make_pair("4BTC", 4 * T * heads * head_size));
+    vtable.push_back(make_pair("3C", 3 * C));
+    vtable.push_back(make_pair("4C", 4 * C));
+    vtable.push_back(make_pair("BTC", T * C));
+    vtable.push_back(make_pair("2BTC", 2 * T * C));
+    vtable.push_back(make_pair("3BTC", 3 * T * C));
+    vtable.push_back(make_pair("4BTC", 4 * T * C));
     vtable.push_back(make_pair("CR", head_size * kv_heads));
     vtable.push_back(make_pair("3CR", 3 * kv_heads * head_size));
+
+    // 根据 tp_size 生成对应的除以 2 的幂次方的版本
+    // tp_size 一定是 2 的幂，所以可以计算需要生成多少个版本
+    int log2_tp_size = 0;
+    int temp_tp_size = tp_size;
+    while (temp_tp_size > 1) {
+        log2_tp_size++;
+        temp_tp_size /= 2;
+    }
+
+    // 为所有涉及 T 的参数生成除以 2、4、8 等的版本
+    for (int i = 1; i <= log2_tp_size; i++) {
+        int divisor = 1 << i;  // 2, 4, 8, ...
+        string suffix = "/" + to_string(divisor);
+        
+        // T 的版本
+        vtable.push_back(make_pair("T" + suffix, T / divisor));
+        
+        // BTC 相关参数的版本
+        vtable.push_back(make_pair("BTC" + suffix, (T * C) / divisor));
+        vtable.push_back(make_pair("2BTC" + suffix, (2 * T * C) / divisor));
+        vtable.push_back(make_pair("3BTC" + suffix, (3 * T * C) / divisor));
+        vtable.push_back(make_pair("4BTC" + suffix, (4 * T * C) / divisor));
+    }
+
+    // 为所有涉及 C 的参数生成除以 2、4、8 等的版本
+    for (int i = 1; i <= log2_tp_size; i++) {
+        int divisor = 1 << i;  // 2, 4, 8, ...
+        string suffix = "/" + to_string(divisor);
+        
+        // C 的版本
+        vtable.push_back(make_pair("C" + suffix, C / divisor));
+        
+        // 3C 相关参数的版本
+        vtable.push_back(make_pair("3C" + suffix, (3 * C) / divisor));
+        vtable.push_back(make_pair("4C" + suffix, (4 * C) / divisor));
+        vtable.push_back(make_pair("3CR" + suffix, (3 * kv_heads * head_size) / divisor));
+        vtable.push_back(make_pair("CR" + suffix, (head_size * kv_heads) / divisor));
+    }
 }
 
 void config_helper_gpu_pd::parse_ack_msg(Event_engine *event_engine,

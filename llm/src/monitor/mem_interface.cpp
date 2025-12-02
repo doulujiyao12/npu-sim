@@ -105,11 +105,16 @@ void MemInterface::init() {
     sensitive << ev_req_handler;
     dont_initialize();
 
+    SC_THREAD(catch_ev_dis_start);
+    sensitive << ev_catch_dis_start;
+    dont_initialize();
+
     SC_THREAD(switch_phase);
     sensitive << ev_switch_phase;
     dont_initialize();
 
     flow_id = 0;
+    need_trigger_send_start = false;
 };
 
 MemInterface::~MemInterface() {
@@ -262,6 +267,7 @@ void MemInterface::distribute_start_data() {
                                 Trace_event_util());
 
         config_helper->fill_queue_start(write_buffer);
+        need_trigger_send_start = false;
 
         ev_write.notify(CYCLE, SC_NS);
         wait(write_done.posedge_event());
@@ -269,6 +275,10 @@ void MemInterface::distribute_start_data() {
                                 Trace_event_util());
 
         LOG_INFO(MEM_INTF) << "End start data distribution";
+
+        if (need_trigger_send_start) 
+            ev_dis_start.notify(CYCLE, SC_NS);
+        
         wait();
     }
 }
@@ -312,10 +322,12 @@ void MemInterface::recv_ack() {
             notify_event = &ev_switch_phase;
             break;
         case SIM_PD:
-        case SIM_PDS:
         case SIM_GPU_PD:
             // 无需send weight 直接 start
             notify_event = &ev_dis_start;
+            break;
+        case SIM_PDS:
+            notify_event = &ev_catch_dis_start;
             break;
         }
 
@@ -469,6 +481,16 @@ void MemInterface::catch_host_channel_available_i() {
         wait();
     }
 }
+
+void MemInterface::catch_ev_dis_start() {
+    while (true) {
+        ev_dis_start.notify(0, SC_NS);
+        need_trigger_send_start = true;
+
+        wait();
+    }
+}
+
 // 只有DATAFLOW 和 GPU 模式有 weight data 模式
 void MemInterface::switch_phase() {
     while (true) {
