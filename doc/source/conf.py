@@ -21,7 +21,8 @@ from sphinx.ext import autodoc
 project = 'npu-sim'
 copyright = '2025, dahu feng'
 author = 'dahu feng'
-language = 'zh_CN'
+language = 'en'
+gettext_compact = False
 locale_dirs = ['../locale/']
 
 # The full version, including alpha/beta/rc tags
