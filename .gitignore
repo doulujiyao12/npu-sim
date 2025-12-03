@@ -24,6 +24,8 @@ aaa.cpp
 /DRAMSys/configs/memspec/JEDEC_4Gb_DDR4-1866_8bit_DF.json
 # /doc/make.bat
 # /doc/Makefile
+/doc/translate_openrouter.py
+/doc/translate.py
 
 !**/CMakeLists.txt
 !CMakeLists.txt
@@ -31,3 +33,4 @@ aaa.cpp
 ./DRAMSys/configs/memspec/JEDEC_4Gb_DDR4-1866_8bit_DF.json
 ./DRAMSys/configs/addressmapping/am_ddr4_8x4Gbx8_df.json
 */compile_commands.json
+doc/source/_build/
