@@ -148,6 +148,7 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
 
         exu_ops = performance_comp;
         sfu_ops = 0;
+        vec_ops = 0;
     } else {
         // 当token数较少时，使用vector core
         exu_ops = 0;

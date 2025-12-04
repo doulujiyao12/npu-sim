@@ -1,5 +1,5 @@
 {
-    "x": 8,
+    "x": 6,
     "noc": {
         "noc_payload_per_cycle": 20
     },
@@ -24,9 +24,10 @@
             "exu_x": 64,
             "sfu_x": 1024,
             "vec_x": 64,
-            "sa_cnt": 1,
-            "vec_cnt": 1,
-            "sram_bitwidth": 64
-        }
+            "sa_cnt": 16,
+            "vec_cnt": 128,
+            "sram_bitwidth": 4096,
+            "dram_bw": 296
+        }   
     ]
 }
