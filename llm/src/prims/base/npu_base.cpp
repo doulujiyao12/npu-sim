@@ -636,7 +636,7 @@ void NpuBase::writeOutputData(TaskCoreContext &context, uint64_t exu_flops,
     else
         assert(false && "Unsupported tile type");
 
-    int vec_cycle = vec_flops / vec->x_dims * vec->count * CYCLE;
+    int vec_cycle = vec_flops / vec->x_dims / vec->count * CYCLE;
     cycle += max(exu_cycle, max(sfu_cycle, vec_cycle));
 
 #if USE_SRAM == 1
