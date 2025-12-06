@@ -133,7 +133,7 @@ void SramPosLocator::addPairByTile(std::string &key, AddrPosKey value,
                           << " to dram";
     }
 
-    // sram_spill_back_generic(context, spill_limit, 1024, dram_time);
+    sram_spill_back_generic(context, spill_limit, 1024, dram_time);
 }
 
 
@@ -278,10 +278,10 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
         // spill in nb_dcache utils
         LOG_DEBUG(MEMORY) << "Core " << cid << " spill to address "
                           << data_map[min_label].dram_addr;
-        // sram_spill_back_generic(context, spill_size,
-        //                         data_map[min_label].dram_addr, dram_time);
+        sram_spill_back_generic(context, spill_size,
+                                data_map[min_label].dram_addr, dram_time);
 #else
-        // sram_spill_back_generic(context, spill_size, 1024, dram_time);
+        sram_spill_back_generic(context, spill_size, 1024, dram_time);
 #endif
     }
     sc_time end_nbdram = sc_time_stamp();
