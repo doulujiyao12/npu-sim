@@ -594,6 +594,12 @@ void config_helper_pd::parse_done_msg(Event_engine *event_engine,
 
         g_done_msg.clear();
         g_recv_done_cnt = 0;
+
+        for (PrimBase *p : g_prim_stash) {
+            delete p;
+        }
+        g_prim_stash.clear();
+
         notify_event->notify(CYCLE, SC_NS);
     }
 }

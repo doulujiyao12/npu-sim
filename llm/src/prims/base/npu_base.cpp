@@ -266,7 +266,7 @@ void NpuBase::checkInputData(TaskCoreContext &context, uint64_t &dram_time,
                                                                     1);
             }
 
-            LOG_DEBUG(MEMORY)
+            LOG_INFO(MEMORY)
                 << name << " of Core " << context.cid << " read label "
                 << prim_context->datapass_label_->indata[p].c_str()
                 << " from DRAM";
