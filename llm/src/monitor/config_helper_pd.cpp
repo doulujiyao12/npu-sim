@@ -511,6 +511,7 @@ void config_helper_pd::generate_prims(int i) {
             send_data->output_label = output_label;
             g_prim_stash.push_back(recv_data_2);
             g_prim_stash.push_back(send_req);
+            g_prim_stash.push_back(recv_ack);
             g_prim_stash.push_back(send_data);
 
             int output_size = max(int(C * T * B), 1);
