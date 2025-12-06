@@ -21,13 +21,13 @@
     "cores": [
         {
             "id": 0,
-            "exu_x": 32,
+            "exu_x": 64,
             "sfu_x": 1024,
             "vec_x": 128,
-            "sa_cnt": 10,
-            "vec_cnt": 32,
+            "sa_cnt": 4,
+            "vec_cnt": 40,
             "sram_bitwidth": 4096,
-            "dram_bw": 400
+            "dram_bw": 533
         }   
     ]
 }

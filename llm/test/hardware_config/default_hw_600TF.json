@@ -5,12 +5,12 @@
     },
     "operand": {
         "comp_util": 0.7,
-        "core_credit": 1,
-        "pd_ratio": 1
+        "core_credit": 8,
+        "pd_ratio": 5
     },
     "memory": {
         "beha_dram_util": 0.7,
-        "dram_default_bitwidth": 64,
+        "dram_default_bitwidth": 32,
         "sram_size": 33554432
     },
     "gpu": {
@@ -23,10 +23,11 @@
             "id": 0,
             "exu_x": 64,
             "sfu_x": 1024,
-            "vec_x": 64,
-            "sa_cnt": 2,
-            "vec_cnt": 4,
-            "sram_bitwidth": 512
-        }
+            "vec_x": 128,
+            "sa_cnt": 8,
+            "vec_cnt": 64,
+            "sram_bitwidth": 4096,
+            "dram_bw": 533
+        }   
     ]
 }

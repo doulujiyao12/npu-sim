@@ -1,21 +1,21 @@
 {
     "mode": "sched_pd",
     "requests": {
-        "count": 1,
-        "seq_len": 512,
-        "eof_chance": 0.5,
+        "count": 150,
+        "seq_len": 300,
+        "eof_chance": 0.01,
         "arrival": [
             1
         ]
     },
     "model": {
-        "heads": 20,
-        "stage": 7,
+        "heads": 32,
+        "stage": 9,
         "batch": 1,
-        "kv_heads": 5,
+        "kv_heads": 8,
         "head_size": 128,
-        "hidden_size": 2560,
-        "intermediate_size": 9728,
+        "hidden_size": 4096,
+        "intermediate_size": 12288,
         "prefill_iters": 1
     },
     "chips": [

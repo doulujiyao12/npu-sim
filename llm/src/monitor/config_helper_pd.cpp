@@ -609,6 +609,11 @@ void config_helper_pd::set_global_vars(int T, int tp_size) {
               {"C", C},
               {"P", P},
               {"J", J},
+              {"PJ", P * J},
+              {"JP", J * P},
+              {"CP", C * P},
+              {"PC", P * C},
+              {"3PC", 3 * P * C},
               {"BTP", T * P},
               {"BTJ", T * J},
               {"NH", heads},
@@ -644,6 +649,11 @@ void config_helper_pd::set_global_vars(int T, int tp_size) {
         vtable.push_back({"NH" + suffix, heads / divisor});
         vtable.push_back({"P" + suffix, P / divisor});
         vtable.push_back({"J" + suffix, J / divisor});
+        vtable.push_back({"JP" + suffix, J * P / divisor});
+        vtable.push_back({"PJ" + suffix, J * P / divisor});
+        vtable.push_back({"CP" + suffix, J * P / divisor});
+        vtable.push_back({"PC" + suffix, J * P / divisor});
+        vtable.push_back({"3PC" + suffix, 3 * C * P / divisor});
 
         // BTC 相关参数的版本
         vtable.push_back({"BTC" + suffix, (T * C) / divisor});
