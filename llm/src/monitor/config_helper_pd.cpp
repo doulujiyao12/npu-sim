@@ -394,6 +394,7 @@ void config_helper_pd::generate_prims(int i) {
 
         // 每个核生成一个set_batch
         PrimBase *set_batch = new Set_batch(status.batchInfo);
+        g_prim_stash.push_back(set_batch);
         auto segments = set_batch->serialize();
         for (int seg = 0; seg < segments.size(); seg++)
             temp_config.push_back(
@@ -453,6 +454,9 @@ void config_helper_pd::generate_prims(int i) {
                     Recv_prim *recv_ack = new Recv_prim(RECV_TYPE::RECV_ACK);
                     Send_prim *send_data = new Send_prim(SEND_TYPE::SEND_DATA,
                                                          next_id, ca.tag + i);
+                    g_prim_stash.push_back(send_req);
+                    g_prim_stash.push_back(recv_ack);
+                    g_prim_stash.push_back(send_data);
 
                     CalculatePacketNum(
                         last_comp->out_size, ca.weight, last_comp->data_byte,
@@ -505,6 +509,9 @@ void config_helper_pd::generate_prims(int i) {
             Send_prim *send_data =
                 new Send_prim(SEND_TYPE::SEND_DATA, send_dest, send_tag);
             send_data->output_label = output_label;
+            g_prim_stash.push_back(recv_data_2);
+            g_prim_stash.push_back(send_req);
+            g_prim_stash.push_back(send_data);
 
             int output_size = max(int(C * T * B), 1);
             CalculatePacketNum(output_size, 1, 1, send_data->max_packet,
@@ -537,6 +544,7 @@ void config_helper_pd::generate_prims(int i) {
 
             // tp组的第一个核需要向memInterface发送DONE信号
             PrimBase *send_done = new Send_prim(SEND_TYPE::SEND_DONE);
+            g_prim_stash.push_back(send_done);
             Msg m = Msg(true, MSG_TYPE::CONFIG, ++prim_seq, core_id,
                         send_done->serialize()[0]);
             m.refill_ = false;
