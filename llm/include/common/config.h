@@ -160,6 +160,7 @@ public:
     ~CoreHWConfig() {
         delete exu;
         delete sfu;
+        delete vec;
     }
 };
 

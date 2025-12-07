@@ -90,6 +90,10 @@ void SystemCleanup() {
     for (auto p : g_prim_stash)
         delete p;
 
+    for (auto p : g_core_hw_config) {
+        delete p.second;
+    }
+
     delete[] dram_array;
 #if DCACHE == 1
     delete[] dcache_tags;

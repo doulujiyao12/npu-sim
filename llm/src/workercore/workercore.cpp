@@ -297,6 +297,7 @@ void WorkerCoreExecutor::worker_core_execute() {
                 Recv_prim *rp = (Recv_prim *)p;
                 if (rp->type == RECV_CONF || rp->type == RECV_WEIGHT) {
                     flag = true;
+                    delete p;
                 }
             }
 

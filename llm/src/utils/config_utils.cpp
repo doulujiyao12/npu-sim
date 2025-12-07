@@ -130,6 +130,10 @@ void ParseHardwareConfig(json j) {
 
     for (auto core : g_core_hw_config)
         core.second->printSelf();
+
+    delete sample.exu;
+    delete sample.sfu;
+    delete sample.vec;
 }
 
 void ParseSimulationConfig(json j) {
