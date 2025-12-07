@@ -97,9 +97,11 @@ void ParseHardwareConfig(json j) {
     for (auto core : config_cores) {
         CoreHWConfig c = core;
         for (int i = sample.id + 1; i < c.id; i++) {
-            ExuConfig *exu = new ExuConfig(MAC_Array, sample.exu->x_dims, sample.exu->count);
+            ExuConfig *exu =
+                new ExuConfig(MAC_Array, sample.exu->x_dims, sample.exu->count);
             SfuConfig *sfu = new SfuConfig(Linear, sample.sfu->x_dims);
-            VectorConfig *vec = new VectorConfig(sample.vec->x_dims, sample.vec->count);
+            VectorConfig *vec =
+                new VectorConfig(sample.vec->x_dims, sample.vec->count);
             g_core_hw_config.push_back(make_pair(
                 i, new CoreHWConfig(i, exu, sfu, vec, sample.dram_config,
                                     sample.dram_bw, sample.sram_bitwidth)));
@@ -112,13 +114,12 @@ void ParseHardwareConfig(json j) {
             make_pair(c.id, new CoreHWConfig(c.id, exu, sfu, vec, c.dram_config,
                                              c.dram_bw, c.sram_bitwidth)));
 
-        
-        sample = c;
         delete sample.exu;
-        sample.exu = new ExuConfig(MAC_Array, c.exu->x_dims, c.exu->count);
         delete sample.sfu;
-        sample.sfu = new SfuConfig(Linear, c.sfu->x_dims);
         delete sample.vec;
+        sample = c;
+        sample.exu = new ExuConfig(MAC_Array, c.exu->x_dims, c.exu->count);
+        sample.sfu = new SfuConfig(Linear, c.sfu->x_dims);
         sample.vec = new VectorConfig(c.vec->x_dims, c.vec->count);
     }
 
@@ -126,10 +127,11 @@ void ParseHardwareConfig(json j) {
         ExuConfig *exu =
             new ExuConfig(MAC_Array, sample.exu->x_dims, sample.exu->count);
         SfuConfig *sfu = new SfuConfig(Linear, sample.sfu->x_dims);
-        VectorConfig *vec = new VectorConfig(sample.vec->x_dims, sample.vec->count);
+        VectorConfig *vec =
+            new VectorConfig(sample.vec->x_dims, sample.vec->count);
         g_core_hw_config.push_back(make_pair(
-            i, new CoreHWConfig(i, exu, sfu, vec, sample.dram_config, sample.dram_bw,
-                                sample.sram_bitwidth)));
+            i, new CoreHWConfig(i, exu, sfu, vec, sample.dram_config,
+                                sample.dram_bw, sample.sram_bitwidth)));
     }
 
     for (auto core : g_core_hw_config)
@@ -222,7 +224,8 @@ void ParseMemorySpec(string filename) {
     infile.close();
 }
 
-void CoreConfigRemap(vector<pair<int, int>> &source_info, vector<CoreConfig> &coreconfigs) {
+void CoreConfigRemap(vector<pair<int, int>> &source_info,
+                     vector<CoreConfig> &coreconfigs) {
     auto get_or_key = [&](int x) -> int {
         auto it = g_core_remap.find(x);
         return (it != g_core_remap.end()) ? it->second : x;
