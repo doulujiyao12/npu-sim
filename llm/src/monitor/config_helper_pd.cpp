@@ -412,7 +412,7 @@ void config_helper_pd::generate_prims(int i) {
 
                 // work的所有计算原语
                 for (int p = 0; p < work.prims.size(); p++) {
-                    auto prim = work.prims[p];
+                    auto &prim = work.prims[p];
                     PrimBase *set_addr =
                         PrimFactory::getInstance().createPrim("Set_addr");
                     auto label = set_addr->prim_context->datapass_label_;
@@ -601,13 +601,13 @@ void config_helper_pd::parse_done_msg(Event_engine *event_engine,
     if (g_recv_done_cnt >= coreStatus.size()) {
         iter_done(g_done_msg);
 
-        g_done_msg.clear();
-        g_recv_done_cnt = 0;
-
         for (PrimBase *p : g_prim_stash) {
             delete p;
         }
         g_prim_stash.clear();
+
+        g_done_msg.clear();
+        g_recv_done_cnt = 0;
 
         notify_event->notify(CYCLE, SC_NS);
     }

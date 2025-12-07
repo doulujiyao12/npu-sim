@@ -1,6 +1,8 @@
+#include "common/system.h"
 #include "systemc.h"
 #include <deque>
 #include <iostream>
+#include <memory>
 #include <queue>
 #include <string>
 #include <typeinfo>
@@ -142,7 +144,7 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
     sram_addr = new int(0);
 
     // 初始化PrimCoreContext
-    core_context = new PrimCoreContext(cid);
+    core_context = make_shared<PrimCoreContext>(cid);
 
     send_done = true;
     send_last_packet = false;
@@ -197,12 +199,14 @@ void WorkerCoreExecutor::end_of_elaboration() {
 
 void WorkerCoreExecutor::worker_core_execute() {
     while (true) {
-        PrimBase *p = nullptr; // 下一个要执行的原语
+        PrimBase *p = nullptr;    // 下一个要执行的原语
+        bool conf_delete = false; // 是否自动填充了一个recv_conf原语
 
         if (prim_queue.size() == 0) {
             // 队列中没有指令，意味着现在是初始状态或者所有原语都被执行完了（假设所有原语只做一轮），默认作recv，直到config发进来
             p = new Recv_prim(RECV_TYPE::RECV_CONF);
             prim_queue.emplace_front(p);
+            conf_delete = true;
         } else {
             p = prim_queue.front();
         }
@@ -304,6 +308,9 @@ void WorkerCoreExecutor::worker_core_execute() {
             if (!flag)
                 prim_queue.emplace_back(p);
         }
+
+        if (conf_delete)
+            delete p;
 
         prim_queue.pop_front();
         wait(CYCLE, SC_NS);
@@ -532,6 +539,4 @@ WorkerCoreExecutor::~WorkerCoreExecutor() {
     delete sram_writer;
     delete g_dram_kvtable;
     delete g_dram_kvtable[cid];
-
-    delete core_context;
 }

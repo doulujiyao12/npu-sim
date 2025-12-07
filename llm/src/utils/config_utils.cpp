@@ -112,9 +112,13 @@ void ParseHardwareConfig(json j) {
             make_pair(c.id, new CoreHWConfig(c.id, exu, sfu, vec, c.dram_config,
                                              c.dram_bw, c.sram_bitwidth)));
 
+        
         sample = c;
+        delete sample.exu;
         sample.exu = new ExuConfig(MAC_Array, c.exu->x_dims, c.exu->count);
+        delete sample.sfu;
         sample.sfu = new SfuConfig(Linear, c.sfu->x_dims);
+        delete sample.vec;
         sample.vec = new VectorConfig(c.vec->x_dims, c.vec->count);
     }
 
