@@ -5,8 +5,8 @@
     },
     "operand": {
         "comp_util": 0.7,
-        "core_credit": 8,
-        "pd_ratio": 5
+        "core_credit": 5,
+        "pd_ratio": 4
     },
     "memory": {
         "beha_dram_util": 0.7,
