@@ -32,8 +32,10 @@ class RouterUnit : public sc_module {
 public:
     int rid;
 
-    // 从core发送过来：用于控制core_is_ready
+    // 从core发送过来：用于控制core_is_ready（数据信道）
     sc_in<bool> core_busy_i;
+    // 从core发送过来：用于控制控制信道的core_is_ready
+    sc_in<bool> ctrl_core_busy_i;
 
     // 传递数据的真正信道
     sc_out<sc_bv<256>> channel_o[DIRECTIONS];
@@ -42,7 +44,6 @@ public:
     // 输入，输出缓存区
     queue<sc_bv<256>> buffer_i[DIRECTIONS];
     queue<sc_bv<256>> buffer_o[DIRECTIONS];
-    queue<sc_bv<256>> side_buffer_o[DIRECTIONS];
 
     // 通道未满的握手信号，只有收到该信号为true，才可向目标发送数据，input信号缺少的一个由core_is_ready担任
     sc_out<bool> channel_avail_o[DIRECTIONS];
@@ -77,9 +78,35 @@ public:
     sc_out<sc_bv<256>> *host_channel_o;
 
     queue<sc_bv<256>> *host_buffer_i;
-    queue<sc_bv<256>> *host_buffer_o;
+    queue<sc_bv<256>> *host_buffer_o;        // 数据信道：只存数据包
+    queue<sc_bv<256>> *host_ctrl_buffer_o;   // 控制信道：只存控制包 qzl
 
     sc_out<bool> *host_channel_avail_o;
+    /* ------------------------------------------------- */
+
+    /* ---------------Control Channel------------------- */
+    // 控制信道 - 用于传输 ACK/REQ/DONE 信号//qzl添加
+    sc_out<sc_bv<256>> ctrl_channel_o[DIRECTIONS];
+    sc_in<sc_bv<256>> ctrl_channel_i[DIRECTIONS];
+
+    // 控制信道缓冲区
+    queue<sc_bv<256>> ctrl_buffer_i[DIRECTIONS];
+    queue<sc_bv<256>> ctrl_buffer_o[DIRECTIONS];
+
+    // 控制信道空闲信号
+    sc_out<bool> ctrl_channel_avail_o[DIRECTIONS];
+    sc_in<bool> ctrl_channel_avail_i[DIRECTIONS - 1];
+
+    // 控制信道发送使能信号
+    sc_out<bool> ctrl_sent_o[DIRECTIONS];
+    sc_in<bool> ctrl_sent_i[DIRECTIONS];
+
+    // Host 控制信道接口 (仅边缘 router)
+    //sc_in<bool> *host_ctrl_sent_i;
+    sc_out<bool> *host_ctrl_sent_o;
+    //sc_in<sc_bv<256>> *host_ctrl_channel_i;
+    sc_out<sc_bv<256>> *host_ctrl_channel_o;
+    //sc_out<bool> *host_ctrl_channel_avail_o;
     /* ------------------------------------------------- */
 
     // 触发execute函数的信号

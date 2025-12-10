@@ -57,6 +57,13 @@ void MemInterface::init() {
 
     host_channel_avail_i = new sc_in<bool>[GRID_X];
 
+    // 初始化控制信道接口 qzl
+    host_ctrl_sent_i = new sc_in<bool>[GRID_X];
+    //host_ctrl_sent_o = new sc_out<bool>[GRID_X];
+    host_ctrl_channel_i = new sc_in<sc_bv<256>>[GRID_X];
+    //host_ctrl_channel_o = new sc_out<sc_bv<256>>[GRID_X];
+    //host_ctrl_channel_avail_i = new sc_in<bool>[GRID_X];
+
     write_buffer = new queue<Msg>[GRID_X];
 
     phase = PRO_CONF;
@@ -77,9 +84,9 @@ void MemInterface::init() {
     sensitive << ev_dis_start;
     dont_initialize();
 
-    SC_THREAD(catch_host_data_sent_i);
+    SC_THREAD(catch_host_ctrl_sent_i);//qzl
     for (int i = 0; i < GRID_X; i++) {
-        sensitive << host_data_sent_i[i].pos();
+        sensitive << host_ctrl_sent_i[i].pos();
     }
     dont_initialize();
 
@@ -124,6 +131,12 @@ MemInterface::~MemInterface() {
     delete[] host_channel_avail_i;
     delete[] host_channel_i;
     delete[] host_channel_o;
+
+    delete[] host_ctrl_sent_i;//qzl
+    //delete[] host_ctrl_sent_o;
+    delete[] host_ctrl_channel_i;
+    //delete[] host_ctrl_channel_o;
+    //delete[] host_ctrl_channel_avail_i;
 
     delete[] write_buffer;
 
@@ -286,8 +299,8 @@ void MemInterface::distribute_start_data() {
 void MemInterface::recv_helper() {
     while (true) {
         for (int i = 0; i < GRID_X; i++) {
-            if (host_data_sent_i[i].read()) {
-                sc_bv<256> d = host_channel_i[i].read();
+            if (host_ctrl_sent_i[i].read()) {//qzl添加
+                sc_bv<256> d = host_ctrl_channel_i[i].read();//
                 Msg m = DeserializeMsg(d);
 
                 if (m.msg_type_ == ACK) {
@@ -402,7 +415,7 @@ void MemInterface::write_helper() {
                 break;
 
             if (all_block)
-                wait(ev_host_channel_available);
+                wait(ev_host_channel_available);//qzl没改
             else {
                 wait(CYCLE, SC_NS);
             }
@@ -466,13 +479,13 @@ void MemInterface::req_handler() {
     }
 }
 
-void MemInterface::catch_host_data_sent_i() {
-    while (true) {
-        ev_recv_helper.notify(CYCLE, SC_NS);
+// void MemInterface::catch_host_data_sent_i() {
+//     while (true) {
+//         ev_recv_helper.notify(CYCLE, SC_NS);
 
-        wait();
-    }
-}
+//         wait();
+//     }
+// }qzl
 
 void MemInterface::catch_host_channel_available_i() {
     while (true) {
@@ -481,6 +494,14 @@ void MemInterface::catch_host_channel_available_i() {
         wait();
     }
 }
+
+void MemInterface::catch_host_ctrl_sent_i() {
+    while (true) {
+        ev_recv_helper.notify(CYCLE, SC_NS);
+
+        wait();
+    }
+}//qzl
 
 void MemInterface::catch_ev_dis_start() {
     while (true) {

@@ -95,11 +95,11 @@ void WorkerCoreExecutor::send_logic() {
                     break;
                 }
             }
-
             else if (prim->type == SEND_REQ) {
                 // [发送方] 发送一个req包，发送完之后结束此原语，进入 RECV_ACK
-                if (!channel_avail_i.read())
-                    wait(ev_channel_avail_i);
+                // REQUEST 是控制消息，使用控制信道qzl
+                if (!ctrl_channel_avail_i.read())
+                    wait(ev_ctrl_channel_avail_i);
 
                 send_buffer =
                     Msg(MSG_TYPE::REQUEST, prim->des_id, prim->tag_id, cid);
@@ -116,8 +116,9 @@ void WorkerCoreExecutor::send_logic() {
             else if (prim->type == SEND_DONE) {
                 // [执行核]
                 // 在计算图的汇节点执行完毕之后，给host发送一份DONE数据包，标志任务完成
-                if (!channel_avail_i.read())
-                    wait(ev_channel_avail_i);
+                // DONE 是控制消息，使用控制信道qzl
+                if (!ctrl_channel_avail_i.read())
+                    wait(ev_ctrl_channel_avail_i);
 
                 send_buffer = Msg(MSG_TYPE::DONE, GRID_SIZE, cid);
 
@@ -314,7 +315,7 @@ void WorkerCoreExecutor::send_para_logic() {
                     Send_prim *s_prim = (Send_prim *)prim;
                     // [发送方] 发送一个req包，发送完之后结束此原语，进入
                     // RECV_ACK
-                    if (channel_avail_i.read() &&
+                    if (ctrl_channel_avail_i.read() &&
                         atomic_helper_lock(sc_time_stamp(), 3)) {
                         // 可以发送数据
                         send_buffer = Msg(MSG_TYPE::REQUEST, s_prim->des_id,
@@ -334,7 +335,7 @@ void WorkerCoreExecutor::send_para_logic() {
                     Send_prim *s_prim = (Send_prim *)prim;
                     // [执行核]
                     // 在计算图的汇节点执行完毕之后，给host发送一份DONE数据包，标志任务完成
-                    if (channel_avail_i.read() &&
+                    if (ctrl_channel_avail_i.read() &&
                         atomic_helper_lock(sc_time_stamp(), 3)) {
                         // 可以发送数据
                         send_buffer = Msg(MSG_TYPE::DONE, GRID_SIZE, cid);
@@ -397,7 +398,7 @@ void WorkerCoreExecutor::send_para_logic() {
         wait();
     }
 }
-
+//qzl添加
 void WorkerCoreExecutor::recv_logic() {
     while (true) {
         Recv_prim *prim = (Recv_prim *)prim_queue.front();
@@ -427,7 +428,7 @@ void WorkerCoreExecutor::recv_logic() {
                 // [发送方] 接收来自接收方的ack包，收到之后结束此原语，进入
                 // SEND_DATA 或 SEND_SRAM
                 while (!msg_buffer_[MSG_TYPE::ACK].size())
-                    wait(ev_recv_msg_type_[MSG_TYPE::ACK]);
+                    wait(ev_recv_msg_type_[MSG_TYPE::ACK]);//qzl疑惑
 
                 // 接收到数据包
                 Msg m = msg_buffer_[MSG_TYPE::ACK].front();
@@ -461,9 +462,10 @@ void WorkerCoreExecutor::recv_logic() {
                 // 复制到SRAM中
                 // 如果是end包，则将recv_index归零，表示开始接收下一个core传来的数据（如果有的话）
                 if (temp.is_end_) {
+                    // ACK 是控制消息，使用控制信道qzl
                     while (!atomic_helper_lock(sc_time_stamp(), 3) ||
-                           !channel_avail_i.read()) {
-                        wait(CYCLE, SC_NS);
+                           !ctrl_channel_avail_i.read()) {
+                            wait(CYCLE, SC_NS);//qzl疑惑
                     }
 
                     // 向host发送一个ack包
@@ -568,9 +570,10 @@ void WorkerCoreExecutor::recv_logic() {
                 // [所有人]
                 // 在模拟开始时接收配置，接收完毕之后发送一个ACK包给host，此原语需要对prim_queue进行压入，此原语执行完毕之后，进入RECV_DATA
                 if (wait_send) {
+                    // ACK 是控制消息，使用控制信道
                     while (!atomic_helper_lock(sc_time_stamp(), 3) ||
-                           !channel_avail_i.read()) {
-                        wait(CYCLE, SC_NS);
+                           !ctrl_channel_avail_i.read()) {
+                            wait(CYCLE, SC_NS);//qzl
                     }
 
                     // 正在等待向host发送ack包
@@ -647,7 +650,7 @@ void WorkerCoreExecutor::task_logic() {
         wait();
     }
 }
-
+//qzl添加
 void WorkerCoreExecutor::req_logic() {
     queue<int> ack_queue;
 
@@ -676,10 +679,11 @@ void WorkerCoreExecutor::req_logic() {
                 }
 
                 // 发送ack包
+                // ACK 是控制消息，使用控制信道
                 while (ack_queue.size()) {
                     while (!atomic_helper_lock(sc_time_stamp(), 3) ||
-                           !channel_avail_i.read()) {
-                        wait(CYCLE, SC_NS);
+                           !ctrl_channel_avail_i.read()) {
+                            wait(CYCLE, SC_NS);//qzl
                     }
 
                     int des = ack_queue.front();
