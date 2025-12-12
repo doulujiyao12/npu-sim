@@ -66,9 +66,6 @@ public:
     int output_lock[5];
     int output_lock_ref[5];
 
-    vector<Msg>
-        req_queue; // 用于存放req。当req需要的信道被上锁时，会被存放在这里。
-
     /* -----------------Host-Interface------------------ */
     // 只有位置最靠边缘的router才会注册这些端口
     sc_in<bool> *host_data_sent_i;
@@ -79,13 +76,13 @@ public:
 
     queue<sc_bv<256>> *host_buffer_i;
     queue<sc_bv<256>> *host_buffer_o;        // 数据信道：只存数据包
-    queue<sc_bv<256>> *host_ctrl_buffer_o;   // 控制信道：只存控制包 qzl
+    queue<sc_bv<256>> *host_ctrl_buffer_o;   // 控制信道：只存控制包
 
     sc_out<bool> *host_channel_avail_o;
     /* ------------------------------------------------- */
 
     /* ---------------Control Channel------------------- */
-    // 控制信道 - 用于传输 ACK/REQ/DONE 信号//qzl添加
+    // 控制信道 - 用于传输 ACK/REQ/DONE 信号
     sc_out<sc_bv<256>> ctrl_channel_o[DIRECTIONS];
     sc_in<sc_bv<256>> ctrl_channel_i[DIRECTIONS];
 
@@ -102,11 +99,8 @@ public:
     sc_in<bool> ctrl_sent_i[DIRECTIONS];
 
     // Host 控制信道接口 (仅边缘 router)
-    //sc_in<bool> *host_ctrl_sent_i;
     sc_out<bool> *host_ctrl_sent_o;
-    //sc_in<sc_bv<256>> *host_ctrl_channel_i;
     sc_out<sc_bv<256>> *host_ctrl_channel_o;
-    //sc_out<bool> *host_ctrl_channel_avail_o;
     /* ------------------------------------------------- */
 
     // 触发execute函数的信号

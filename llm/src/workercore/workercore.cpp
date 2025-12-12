@@ -105,7 +105,7 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
     sensitive << data_sent_i.pos();
     dont_initialize();
 
-    // qzl添加: 控制信道相关线程
+    //  控制信道相关线程
     SC_THREAD(catch_ctrl_channel_avail_i);
     sensitive << ctrl_channel_avail_i.pos();
     dont_initialize();
@@ -207,7 +207,6 @@ void WorkerCoreExecutor::end_of_elaboration() {
     // 在构造函数之后设置信号的初始值
     data_sent_o.write(false);
     core_busy_o.write(false);
-    // 控制信道初始化qzl
     ctrl_sent_o.write(false);
     ctrl_core_busy_o.write(false);
 }
@@ -347,7 +346,7 @@ PrimBase *WorkerCoreExecutor::parse_prim(vector<sc_bv<128>> segments) {
     return task;
 }
 
-// qzl修改: 数据信道接收
+// 数据信道接收
 void WorkerCoreExecutor::poll_buffer_i() {
     MSG_TYPE block_mark = MSG_TYPE::MSG_TYPE_NUM;
 
@@ -382,7 +381,7 @@ void WorkerCoreExecutor::poll_buffer_i() {
     }
 }
 
-// qzl添加: 控制信道接收
+// 控制信道接收
 void WorkerCoreExecutor::poll_ctrl_buffer_i() {
     while (true) {
         if (!ctrl_sent_i.read()) {
@@ -421,7 +420,7 @@ void WorkerCoreExecutor::poll_ctrl_buffer_i() {
     }
 }
 
-// qzl添加: 捕获控制信道空闲信号
+// 捕获控制信道空闲信号
 void WorkerCoreExecutor::catch_ctrl_channel_avail_i() {
     while (true) {
         ev_ctrl_channel_avail_i.notify(CYCLE, SC_NS);
@@ -429,7 +428,7 @@ void WorkerCoreExecutor::catch_ctrl_channel_avail_i() {
     }
 }
 
-// qzl添加: 捕获控制信道发送信号
+// 捕获控制信道发送信号
 void WorkerCoreExecutor::catch_ctrl_sent_i() {
     while (true) {
         ev_ctrl_sent_i.notify(CYCLE, SC_NS);
@@ -543,7 +542,7 @@ bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status,
 }
 // data_sent_o pos trigger router && later router can self trigger if
 // data_sent_o is true 是否拉低不重要，只要 data_sent_o 是高就能发送
-// qzl修改: 根据消息类型选择数据信道或控制信道
+// 根据消息类型选择数据信道或控制信道
 void WorkerCoreExecutor::send_helper() {
     while (true) {
         bool flag = SPEC_ROUTER_PIPE ? (send_helper_write >= 1)
@@ -551,7 +550,7 @@ void WorkerCoreExecutor::send_helper() {
 
         if (flag) {
             auto ser = SerializeMsg(send_buffer);
-            // qzl: 根据消息类型选择信道
+            // 根据消息类型选择信道
             if (send_buffer.IsControlMsg()) {
                 // 控制消息走控制信道
                 ctrl_channel_o.write(ser);

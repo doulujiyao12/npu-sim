@@ -60,7 +60,7 @@ public:
 
     bool operator<(const Msg &other) const { return other.seq_id_ < seq_id_; }
 
-    // qzl添加: 判断消息是否为控制信号 (ACK/REQ/DONE)
+    //判断消息是否为控制信号 (ACK/REQ/DONE)
     bool IsControlMsg() const {
         return msg_type_ == ACK || msg_type_ == REQUEST || msg_type_ == DONE;
     }

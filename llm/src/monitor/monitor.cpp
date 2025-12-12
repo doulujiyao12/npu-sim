@@ -44,21 +44,19 @@ Monitor::~Monitor() {
     delete[] host_channel_i;
     delete[] host_channel_o;
 
-    // 清理控制信道信号//qzl添加
+    // 清理控制信道信号
     delete[] rc_ctrl_channel;
     delete[] rc_ctrl_sent;
-    delete[] ctrl_core_busy;//qzl
+    delete[] ctrl_core_busy;
     for (int i = 0; i < DIRECTIONS; i++) {
         delete[] ctrl_channel[i];
         delete[] ctrl_channel_avail[i];
         delete[] ctrl_sent[i];
     }
 
-    //delete[] host_ctrl_channel_avail;
+
     delete[] host_ctrl_sent_i;
-    //delete[] host_ctrl_sent_o;
     delete[] host_ctrl_channel_i;
-    //delete[] host_ctrl_channel_o;
 
     delete routerMonitor;
     delete workerCores;
@@ -169,16 +167,14 @@ void Monitor::init() {
         data_sent[i] = new sc_signal<bool>[GRID_SIZE];
     }
 
-    // 初始化控制信道信号//qzl添加
+    // 初始化控制信道信号
     rc_ctrl_channel = new sc_signal<sc_bv<256>>[GRID_SIZE];
     rc_ctrl_sent = new sc_signal<bool>[GRID_SIZE];
     ctrl_core_busy = new sc_signal<bool>[GRID_SIZE];
 
-    //host_ctrl_channel_avail = new sc_signal<bool>[GRID_X];
+   
     host_ctrl_sent_i = new sc_signal<bool>[GRID_X];
-    //host_ctrl_sent_o = new sc_signal<bool>[GRID_X];
     host_ctrl_channel_i = new sc_signal<sc_bv<256>>[GRID_X];
-    //host_ctrl_channel_o = new sc_signal<sc_bv<256>>[GRID_X];
 
     for (int i = 0; i < DIRECTIONS; i++) {
         ctrl_channel[i] = new sc_signal<sc_bv<256>>[GRID_SIZE];
@@ -191,7 +187,7 @@ void Monitor::init() {
         int rid = i * GRID_X; // 边缘core的id
         RouterUnit *ru = routerMonitor->routers[rid];
 
-        // 数据信道连接//qzl添加
+        // 数据信道连接
         memInterface->host_channel_avail_i[i](host_channel_avail[i]);
         (*ru->host_channel_avail_o)(host_channel_avail[i]);
         memInterface->host_data_sent_i[i](host_data_sent_i[i]);
@@ -203,17 +199,11 @@ void Monitor::init() {
         memInterface->host_channel_o[i](host_channel_o[i]);
         (*ru->host_channel_i)(host_channel_o[i]);
 
-        // 控制信道连接//qzl添加
-        // memInterface->host_ctrl_channel_avail_i[i](host_ctrl_channel_avail[i]);
-        // (*ru->host_ctrl_channel_avail_o)(host_ctrl_channel_avail[i]);
+        // 控制信道连接
         memInterface->host_ctrl_sent_i[i](host_ctrl_sent_i[i]);
         (*ru->host_ctrl_sent_o)(host_ctrl_sent_i[i]);
-        // memInterface->host_ctrl_sent_o[i](host_ctrl_sent_o[i]);
-        // (*ru->host_ctrl_sent_i)(host_ctrl_sent_o[i]);
         memInterface->host_ctrl_channel_i[i](host_ctrl_channel_i[i]);
         (*ru->host_ctrl_channel_o)(host_ctrl_channel_i[i]);
-        // memInterface->host_ctrl_channel_o[i](host_ctrl_channel_o[i]);
-        // (*ru->host_ctrl_channel_i)(host_ctrl_channel_o[i]);
     }
 
     // core & router
@@ -227,9 +217,9 @@ void Monitor::init() {
 
         // 控制信道 core busy 信号（独立于数据信道）
         ru->ctrl_core_busy_i(ctrl_core_busy[i]);
-        wc->ctrl_core_busy_o(ctrl_core_busy[i]);//qzl
+        wc->ctrl_core_busy_o(ctrl_core_busy[i]);
 
-        // 数据信道连接//qzl添加
+        // 数据信道连接
         ru->channel_avail_o[CENTER](channel_avail[CENTER][i]);
         wc->channel_avail_i(channel_avail[CENTER][i]);
         ru->data_sent_o[CENTER](data_sent[CENTER][i]);
@@ -242,7 +232,7 @@ void Monitor::init() {
         ru->channel_i[CENTER](rc_channel[i]);
         wc->channel_o(rc_channel[i]);
 
-        // 控制信道连接//qzl添加
+        // 控制信道连接
         ru->ctrl_channel_avail_o[CENTER](ctrl_channel_avail[CENTER][i]);
         wc->ctrl_channel_avail_i(ctrl_channel_avail[CENTER][i]);
         ru->ctrl_sent_o[CENTER](ctrl_sent[CENTER][i]);
@@ -264,7 +254,7 @@ void Monitor::init() {
             Directions input_dir = GetOpposeDirection(Directions(i));
             int input_source = GetInputSource(Directions(i), j);
 
-            // 数据信道连接//qzl添加
+            // 数据信道连接
             pos->channel_o[i](channel[i][j]);
             pos->channel_i[i](channel[input_dir][input_source]);
 
@@ -274,7 +264,7 @@ void Monitor::init() {
             pos->data_sent_o[i](data_sent[i][j]);
             pos->data_sent_i[i](data_sent[input_dir][input_source]);
 
-            // 控制信道连接//qzl添加
+            // 控制信道连接
             pos->ctrl_channel_o[i](ctrl_channel[i][j]);
             pos->ctrl_channel_i[i](ctrl_channel[input_dir][input_source]);
 
