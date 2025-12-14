@@ -42,3 +42,4 @@
 
    workload_config_script
    workload_config_syntax
+   workload_faq

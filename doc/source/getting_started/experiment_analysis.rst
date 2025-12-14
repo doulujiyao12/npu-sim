@@ -39,4 +39,3 @@
    simulator_validation
    tp_mapping
    llm_serving
-   chip_design_lesson

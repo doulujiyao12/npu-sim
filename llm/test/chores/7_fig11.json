@@ -1,25 +1,25 @@
 {
   "mode": "sched_pds",
   "requests": {
-    "count": 300,
-    "seq_len": 1780,
-    "eof_chance": 0.4,
+    "count": 2,
+    "seq_len": 128,
+    "eof_chance": 0.5,
     "arrival": [
       1
     ]
   },
   "model": {
-    "heads": 20,
+    "heads": 5,
     "kv_heads": 5,
     "prefill_stage": 7,
     "decode_stage": 7,
-    "prefill_cores": 42,
-    "decode_cores": 21,
+    "prefill_cores": 14,
+    "decode_cores": 49,
     "batch_size": 1,
     "head_size": 64,
     "prefill_iters": 1,
-    "hidden_size": 1280,
-    "intermediate_size": 5000
+    "hidden_size": 500,
+    "intermediate_size": 500
   },
   "chips": [
     {
