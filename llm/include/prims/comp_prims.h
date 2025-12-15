@@ -107,7 +107,7 @@ public:
     void initialize();
     Matmul_f() {
         name = "Matmul_f";
-        param_name.insert(param_name.end(), {"B", "T", "C", "OC", "NH", "DH"});
+        param_name.insert(param_name.end(), {"B", "T", "C", "OC"});
     }
 };
 
@@ -120,7 +120,7 @@ public:
     void initialize();
     Matmul_f_mla() {
         name = "Matmul_f_mla";
-        param_name.insert(param_name.end(), {"B", "T", "C", "OC"});
+        param_name.insert(param_name.end(), {"B", "T", "C", "OC", "NH", "DH"});
     }
 };
 
