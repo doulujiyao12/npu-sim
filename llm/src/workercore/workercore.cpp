@@ -107,6 +107,17 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
     sensitive << data_sent_i.pos();
     dont_initialize();
 
+    //  控制信道相关线程
+    SC_THREAD(catch_ctrl_channel_avail_i);
+    sensitive << ctrl_channel_avail_i.pos();
+    dont_initialize();
+
+    SC_THREAD(catch_ctrl_sent_i);
+    sensitive << ctrl_sent_i.pos();
+    dont_initialize();
+
+    SC_THREAD(poll_ctrl_buffer_i);
+
     SC_THREAD(next_write_clear);
     sensitive << ev_next_write_clear;
     dont_initialize();
@@ -137,6 +148,9 @@ WorkerCoreExecutor::WorkerCoreExecutor(const sc_module_name &n, int s_cid,
     dont_initialize();
 
     SC_THREAD(req_logic);
+    // req_logic 只处理 REQUEST 消息，只需要监听：
+    // 1. ev_recv_msg_type_[REQUEST] - 收到 REQUEST 时触发（数据信道或控制信道都会触发）
+    // 2. ev_prim_recv_notice - 执行 recv_data 原语时触发，需要检查是否有匹配的 REQUEST
     sensitive << ev_recv_msg_type_[MSG_TYPE::REQUEST] << ev_prim_recv_notice;
     dont_initialize();
 
@@ -195,6 +209,8 @@ void WorkerCoreExecutor::end_of_elaboration() {
     // 在构造函数之后设置信号的初始值
     data_sent_o.write(false);
     core_busy_o.write(false);
+    ctrl_sent_o.write(false);
+    ctrl_core_busy_o.write(false);
 }
 
 void WorkerCoreExecutor::worker_core_execute() {
@@ -285,7 +301,7 @@ void WorkerCoreExecutor::worker_core_execute() {
 
             // 发送信号让send发送最后一个包
             if (prim_queue.size() >= 2 &&
-                !prim_queue[1]->prim_type & COMP_PRIM) {
+                !(prim_queue[1]->prim_type & COMP_PRIM)) {
                 send_last_packet = true;
                 ev_send_last_packet.notify(CYCLE, SC_NS);
             }
@@ -337,6 +353,7 @@ PrimBase *WorkerCoreExecutor::parse_prim(vector<sc_bv<128>> segments) {
     return task;
 }
 
+// 数据信道接收
 void WorkerCoreExecutor::poll_buffer_i() {
     MSG_TYPE block_mark = MSG_TYPE::MSG_TYPE_NUM;
 
@@ -371,6 +388,61 @@ void WorkerCoreExecutor::poll_buffer_i() {
     }
 }
 
+// 控制信道接收
+void WorkerCoreExecutor::poll_ctrl_buffer_i() {
+    while (true) {
+        if (!ctrl_sent_i.read()) {
+            // 控制信道空闲时，检查当前所有控制消息类型的 buffer 是否有空间
+            // 控制消息包括 REQUEST、ACK、DONE，它们不会被 IsBlockableMsgType 标记
+            // 如果任何一个控制消息类型的 buffer 满了，就设置 busy
+            if (msg_buffer_[MSG_TYPE::REQUEST].size() >= MAX_BUFFER_PACKET_SIZE ||
+                msg_buffer_[MSG_TYPE::ACK].size() >= MAX_BUFFER_PACKET_SIZE ||
+                msg_buffer_[MSG_TYPE::DONE].size() >= MAX_BUFFER_PACKET_SIZE) {
+                ctrl_core_busy_o.write(true);
+            } else {
+                ctrl_core_busy_o.write(false);
+            }
+
+            wait(ev_ctrl_sent_i);
+            continue;
+        }
+
+        Msg m = DeserializeMsg(ctrl_channel_i.read());
+        msg_buffer_[m.msg_type_].push(m);
+        ev_ctrl_msg_recv.notify(0, SC_NS);
+        // 同时触发对应消息类型的event，兼容原有逻辑
+        ev_recv_msg_type_[m.msg_type_].notify(0, SC_NS);
+
+        // 检查所有控制消息类型的 buffer 是否满
+        // 如果任何一个满了，就设置 busy，阻止接收更多消息
+        if (msg_buffer_[MSG_TYPE::REQUEST].size() >= MAX_BUFFER_PACKET_SIZE ||
+            msg_buffer_[MSG_TYPE::ACK].size() >= MAX_BUFFER_PACKET_SIZE ||
+            msg_buffer_[MSG_TYPE::DONE].size() >= MAX_BUFFER_PACKET_SIZE) {
+            ctrl_core_busy_o.write(true);
+        } else {
+            ctrl_core_busy_o.write(false);
+        }
+
+        wait(CYCLE, SC_NS);
+    }
+}
+
+// 捕获控制信道空闲信号
+void WorkerCoreExecutor::catch_ctrl_channel_avail_i() {
+    while (true) {
+        ev_ctrl_channel_avail_i.notify(CYCLE, SC_NS);
+        wait();
+    }
+}
+
+// 捕获控制信道发送信号
+void WorkerCoreExecutor::catch_ctrl_sent_i() {
+    while (true) {
+        ev_ctrl_sent_i.notify(CYCLE, SC_NS);
+        wait();
+    }
+}
+
 /*
  在workercore executor中添加了一把锁，用于lock住write helper，
  因为同时运行send和recv原语会在同一个时钟周期内access write helper函数
@@ -397,6 +469,7 @@ status = 1 2 都只出现一次
 
 
 */
+
 bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status,
                                             bool force) {
     bool res;
@@ -476,6 +549,7 @@ bool WorkerCoreExecutor::atomic_helper_lock(sc_time try_time, int status,
 }
 // data_sent_o pos trigger router && later router can self trigger if
 // data_sent_o is true 是否拉低不重要，只要 data_sent_o 是高就能发送
+// 根据消息类型选择数据信道或控制信道
 void WorkerCoreExecutor::send_helper() {
     while (true) {
         bool flag = SPEC_ROUTER_PIPE ? (send_helper_write >= 1)
@@ -483,11 +557,23 @@ void WorkerCoreExecutor::send_helper() {
 
         if (flag) {
             auto ser = SerializeMsg(send_buffer);
-            channel_o.write(ser);
-            data_sent_o.write(true);
+            // 根据消息类型选择信道
+            if (send_buffer.IsControlMsg()) {
+                // 控制消息走控制信道
+                ctrl_channel_o.write(ser);
+                ctrl_sent_o.write(true);
+                data_sent_o.write(false);
+            } else {
+                // 数据消息走数据信道
+                channel_o.write(ser);
+                data_sent_o.write(true);
+                ctrl_sent_o.write(false);
+            }
             ev_next_write_clear.notify(CYCLE, SC_NS);
-        } else
+        } else {
             data_sent_o.write(false);
+            ctrl_sent_o.write(false);
+        }
 
         wait();
     }
