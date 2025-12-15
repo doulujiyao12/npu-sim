@@ -22,6 +22,13 @@ public:
 
     sc_in<bool> *host_channel_avail_i;
 
+    /* ---------------Control Channel------------------- */
+    // Host 控制信道接口//
+    sc_in<bool> *host_ctrl_sent_i;
+
+    sc_in<sc_bv<256>> *host_ctrl_channel_i;
+    /* ------------------------------------------------- */
+
     sc_in<bool> start_i;
     sc_out<bool> preparations_done_o;
     
@@ -75,6 +82,10 @@ public:
     void write_helper();
     void switch_phase();
 
+    // 控制信道相关
+    void catch_host_ctrl_sent_i(); 
+    void catch_host_ctrl_channel_available_i(); 
+    //
     void req_handler(); // 仅PD模式使用
     void catch_ev_dis_start(); // PDS模式专用，用于捕捉时间上相近的两次ack接收完成事件
 

@@ -23,14 +23,17 @@ RouterMonitor::~RouterMonitor() {
 RouterUnit::RouterUnit(const sc_module_name &n, int rid,
                        Event_engine *event_engine)
     : sc_module(n), rid(rid), event_engine(event_engine) {
+   
     host_data_sent_i = nullptr;
     host_data_sent_o = nullptr;
     host_channel_i = nullptr;
     host_channel_o = nullptr;
     host_buffer_i = nullptr;
     host_buffer_o = nullptr;
+    host_ctrl_buffer_o = nullptr;  
     host_channel_avail_o = nullptr;
-
+    host_ctrl_sent_o = nullptr;
+    host_ctrl_channel_o = nullptr;
     // 初始全部通道均未上锁
     for (int i = 0; i < DIRECTIONS; i++) {
         input_lock[i] = 0;
@@ -39,17 +42,22 @@ RouterUnit::RouterUnit(const sc_module_name &n, int rid,
         output_lock_ref[i] = 0;
     }
 
+
     if (IsMarginCore(rid)) {
         host_buffer_i = new queue<sc_bv<256>>;
-        host_buffer_o = new queue<sc_bv<256>>;
+        host_buffer_o = new queue<sc_bv<256>>;       
+        host_ctrl_buffer_o = new queue<sc_bv<256>>;  
         host_channel_i = new sc_in<sc_bv<256>>;
         host_channel_o = new sc_out<sc_bv<256>>;
         host_data_sent_i = new sc_in<bool>;
         host_data_sent_o = new sc_out<bool>;
         host_channel_avail_o = new sc_out<bool>;
+        host_ctrl_sent_o = new sc_out<bool>;
+        host_ctrl_channel_o = new sc_out<sc_bv<256>>;
     }
 
     SC_THREAD(trans_next_trigger);
+    // 数据信道触发信号
     sensitive << data_sent_i[WEST].pos() << data_sent_i[EAST].pos()
               << data_sent_i[CENTER].pos() << data_sent_i[SOUTH].pos()
               << data_sent_i[NORTH].pos();
@@ -58,6 +66,13 @@ RouterUnit::RouterUnit(const sc_module_name &n, int rid,
     sensitive << channel_avail_i[WEST].pos() << channel_avail_i[EAST].pos()
               << channel_avail_i[SOUTH].pos() << channel_avail_i[NORTH].pos();
     sensitive << core_busy_i.neg();
+    // 控制信道触发信号
+    sensitive << ctrl_sent_i[WEST].pos() << ctrl_sent_i[EAST].pos()
+              << ctrl_sent_i[CENTER].pos() << ctrl_sent_i[SOUTH].pos()
+              << ctrl_sent_i[NORTH].pos();
+    sensitive << ctrl_channel_avail_i[WEST].pos() << ctrl_channel_avail_i[EAST].pos()
+              << ctrl_channel_avail_i[SOUTH].pos() << ctrl_channel_avail_i[NORTH].pos();
+    sensitive << ctrl_core_busy_i.neg();
     dont_initialize();
 
     SC_THREAD(router_execute);
@@ -70,11 +85,14 @@ void RouterUnit::end_of_elaboration() {
     for (int i = 0; i < DIRECTIONS; i++) {
         channel_avail_o[i].write(true);
         data_sent_o[i].write(false);
+        ctrl_channel_avail_o[i].write(true);
+        ctrl_sent_o[i].write(false);
     }
 
     if (IsMarginCore(rid)) {
         host_channel_avail_o->write(true);
         host_data_sent_o->write(false);
+        host_ctrl_sent_o->write(false);
     }
 }
 
@@ -86,9 +104,12 @@ void RouterUnit::router_execute() {
         for (int i = 0; i < DIRECTIONS; i++) {
             channel_avail_o[i].write(false);
             data_sent_o[i].write(false);
+            ctrl_channel_avail_o[i].write(false);
+            ctrl_sent_o[i].write(false);
         }
 
-        // [input] 4方向+cores
+        // ==================== 数据信道输入 ====================
+        // [input] 4方向+cores - 数据信道
         for (int i = 0; i < DIRECTIONS; i++) {
             if (data_sent_i[i].read()) {
                 // move the data into the buffer
@@ -96,6 +117,21 @@ void RouterUnit::router_execute() {
                 Msg tt = DeserializeMsg(temp);
 
                 buffer_i[i].emplace(temp);
+
+                // need trigger again
+                flag_trigger = true;
+            }
+        }
+
+        // ==================== 控制信道输入 ====================
+        // [ctrl input] 4方向+cores - 控制信道
+        for (int i = 0; i < DIRECTIONS; i++) {
+            if (ctrl_sent_i[i].read()) {
+                // move the control data into the ctrl buffer
+                sc_bv<256> temp = ctrl_channel_i[i].read();
+                Msg tt = DeserializeMsg(temp);
+
+                ctrl_buffer_i[i].emplace(temp);
 
                 // need trigger again
                 flag_trigger = true;
@@ -119,7 +155,8 @@ void RouterUnit::router_execute() {
             }
         }
 
-        // [output] 4方向
+        // ==================== 数据信道输出 ====================
+        // [output] 4方向 - 数据信道
         for (int i = 0; i < DIRECTIONS - 1; i++) {
             // global update once
             data_sent_o[i].write(false);
@@ -144,7 +181,32 @@ void RouterUnit::router_execute() {
             flag_trigger = true;
         }
 
-        // [output] host
+        // ==================== 控制信道输出 ====================
+        // [ctrl output] 4方向 - 控制信道
+        for (int i = 0; i < DIRECTIONS - 1; i++) {
+            // global update once
+            ctrl_sent_o[i].write(false);
+            // 控制信道输出方向的buffer是否为满
+            if (ctrl_channel_avail_i[i].read() == false)
+                continue;
+
+            // 对应控制信道输出的buffer非空
+            if (!ctrl_buffer_o[i].size())
+                continue;
+
+            sc_bv<256> temp = ctrl_buffer_o[i].front();
+            ctrl_buffer_o[i].pop();
+
+            Msg tt = DeserializeMsg(temp);
+
+            ctrl_channel_o[i].write(temp);
+            ctrl_sent_o[i].write(true);
+
+            // need trigger again
+            flag_trigger = true;
+        }
+
+        // [output] host - 数据信道
         // if IsMarginCore
         if (host_channel_i) {
             host_data_sent_o->write(false);
@@ -161,7 +223,24 @@ void RouterUnit::router_execute() {
             }
         }
 
-        // [output] core
+        // [ctrl output] host - 控制信道 
+        // if IsMarginCore 控制消息发送到host
+        if (host_ctrl_channel_o) {
+            host_ctrl_sent_o->write(false);
+            // 输出到host方向上的控制buffer非空
+            if (host_ctrl_buffer_o->size()) {
+                sc_bv<256> temp = host_ctrl_buffer_o->front();
+                host_ctrl_buffer_o->pop();
+
+                host_ctrl_channel_o->write(temp);
+                host_ctrl_sent_o->write(true);
+
+                // need trigger again
+                flag_trigger = true;
+            }
+        }
+
+        // [output] core - 数据信道
         // 输出到本地core内部的
         data_sent_o[CENTER].write(false);
         // 输出到本地core内的buffer非空
@@ -177,6 +256,28 @@ void RouterUnit::router_execute() {
 
                 channel_o[CENTER].write(temp);
                 data_sent_o[CENTER].write(true);
+            }
+
+            // need trigger again
+            flag_trigger = true;
+        }
+
+        // [ctrl output] core - 控制信道
+        // 输出控制消息到本地core
+        ctrl_sent_o[CENTER].write(false);
+        // 控制信道输出到本地core内的buffer非空
+        if (ctrl_buffer_o[CENTER].size()) {
+            // 控制信道的core接受队列是否满（独立于数据信道）
+            if (!ctrl_core_busy_i.read()) {
+                // move the ctrl data out of the buffer
+                sc_bv<256> temp = ctrl_buffer_o[CENTER].front();
+
+                ctrl_buffer_o[CENTER].pop();
+
+                Msg tt = DeserializeMsg(temp);
+
+                ctrl_channel_o[CENTER].write(temp);
+                ctrl_sent_o[CENTER].write(true);
             }
 
             // need trigger again
@@ -200,30 +301,36 @@ void RouterUnit::router_execute() {
             }
         }
 
-        // [input -> output] REQUEST
-        // 检查req_queue中的所有元素。假设A向B发送req，则检查B->A的输出信道是否上锁。如果不上锁/或上锁且tag相同，且buffer未满，则可以搬运至输出信道。
-        for (auto it = req_queue.begin(); it != req_queue.end();) {
-            auto req = *it;
-            int des = req.des_;
-            int source = req.source_;
-            Directions next = GetNextHop(des, source);
+        // ==================== 控制信道路由 ====================
+        // [ctrl input -> ctrl output] 4方向+core - 控制信道路由
+        for (int i = 0; i < DIRECTIONS; i++) {
+            if (!ctrl_buffer_i[i].size())
+                continue;
 
-            if (output_lock[next] == -1 || output_lock[next] == req.tag_id_) {
-                if (buffer_o[CENTER].size() < MAX_BUFFER_PACKET_SIZE) {
-                    LOG_INFO(NETWORK) << "Router " << rid << " -> req -> core";
+            sc_bv<256> temp = ctrl_buffer_i[i].front();
+            Msg m = DeserializeMsg(temp);
+            Directions out = GetNextHop(m.des_, rid);
 
-                    it = req_queue.erase(it);
-                    buffer_o[CENTER].emplace(SerializeMsg(req));
-                    flag_trigger = true;
+            // 控制信道不需要上锁机制，直接检查buffer是否满
+            // REQUEST包和其他控制消息（ACK/DONE）一样直接流动，不需要req_queue
+            if (out == HOST) {
+                if (host_ctrl_buffer_o->size() >= MAX_BUFFER_PACKET_SIZE)
                     continue;
-                }
+                ctrl_buffer_i[i].pop();
+                host_ctrl_buffer_o->emplace(temp);
+            } else {
+                if (ctrl_buffer_o[out].size() >= MAX_BUFFER_PACKET_SIZE)
+                    continue;
+                ctrl_buffer_i[i].pop();
+                ctrl_buffer_o[out].emplace(temp);
             }
 
-            ++it;
+            flag_trigger = true;
         }
 
+        // ==================== 数据信道路由 ====================
         // FIX input -> output 的仲裁
-        // [input -> output] 4方向+core
+        // [input -> output] 4方向+core - 数据信道
         for (int i = 0; i < DIRECTIONS; i++) {
             if (!buffer_i[i].size())
                 continue;
@@ -232,16 +339,7 @@ void RouterUnit::router_execute() {
             Msg m = DeserializeMsg(temp);
             Directions out = GetNextHop(m.des_, rid);
 
-            // 是否能发送 不能发送的情况是上锁了以后，并且tag一样
-            // 注意：REQUEST包若终点为本core，则会优先进入req_buffer；否则按照正常数据流转
-            if (m.msg_type_ == REQUEST && m.des_ == rid) {
-                buffer_i[i].pop();
-                req_queue.push_back(m);
 
-                LOG_DEBUG(NETWORK)
-                    << "Router " << rid << " <- REQ <- " << m.source_;
-                continue;
-            }
 
             if (m.des_ != GRID_SIZE && output_lock[out] != -1 &&
                 output_lock[out] !=
@@ -257,7 +355,7 @@ void RouterUnit::router_execute() {
                     MAX_BUFFER_PACKET_SIZE) // 如果不发往host，但通道已满：continue
                 continue;
 
-            // [ACK] 非发往host的ACK包，需要上锁或者增加refcnt
+
             // FIX 上锁应该在第一个DATA 包
             if (m.msg_type_ == DATA && m.seq_id_ == 1 && m.des_ != GRID_SIZE &&
                 m.source_ != GRID_SIZE) {
@@ -331,16 +429,21 @@ void RouterUnit::router_execute() {
             }
         }
 
-        // 检查是否有剩余的req，需要重复触发
-        if (req_queue.size())
-            flag_trigger = true;
-
-        // [SIGNALS] 4方向
+        // [SIGNALS] 5方向 - 数据信道
         for (int i = 0; i < DIRECTIONS; i++) {
             if (buffer_i[i].size() < MAX_BUFFER_PACKET_SIZE) {
                 channel_avail_o[i].write(true);
             } else {
                 channel_avail_o[i].write(false);
+            }
+        }
+
+        // [CTRL SIGNALS] 5方向 - 控制信道
+        for (int i = 0; i < DIRECTIONS; i++) {
+            if (ctrl_buffer_i[i].size() < MAX_BUFFER_PACKET_SIZE) {
+                ctrl_channel_avail_o[i].write(true);
+            } else {
+                ctrl_channel_avail_o[i].write(false);
             }
         }
 
@@ -373,10 +476,13 @@ RouterUnit::~RouterUnit() {
     if (host_buffer_i) {
         delete host_buffer_i;
         delete host_buffer_o;
+        delete host_ctrl_buffer_o; 
         delete host_channel_i;
         delete host_channel_o;
         delete host_data_sent_i;
         delete host_data_sent_o;
         delete host_channel_avail_o;
+        delete host_ctrl_sent_o;
+        delete host_ctrl_channel_o;
     }
 }

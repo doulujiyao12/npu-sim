@@ -100,8 +100,10 @@ public:
     int send_helper_write; // 用于指示send
                            // helper是要向data_sent_o写入true还是false
 
-    // 向router传递：是否可以向core传递信息
+    // 向router传递：是否可以向core传递信息（数据信道）
     sc_out<bool> core_busy_o;
+    // 向router传递：控制信道是否可以向core传递信息
+    sc_out<bool> ctrl_core_busy_o;
 
     // 传递数据的真正信道
     sc_in<sc_bv<256>> channel_i;
@@ -116,6 +118,23 @@ public:
     sc_in<bool> channel_avail_i;
     sc_event
         ev_channel_avail_i; // 当channel_avail_i的电平由低改为高，则触发这个event
+
+    /* ---------------Control Channel------------------- */
+    // 控制信道 - 用于传输 ACK/REQ/DONE 信号
+    sc_in<sc_bv<256>> ctrl_channel_i;
+    sc_out<sc_bv<256>> ctrl_channel_o;
+
+    // 控制信道发送使能信号
+    sc_in<bool> ctrl_sent_i;
+    sc_event ev_ctrl_sent_i;
+    sc_out<bool> ctrl_sent_o;
+
+    // 控制信道空闲信号
+    sc_in<bool> ctrl_channel_avail_i;
+    sc_event ev_ctrl_channel_avail_i;
+
+    sc_event ev_ctrl_msg_recv;  // 收到控制消息时触发
+    /* ------------------------------------------------- */
 
     Event_engine *event_engine;
 
@@ -160,6 +179,12 @@ public:
     void catch_channel_avail_i();
     void catch_data_sent_i();
     void next_write_clear();
+    
+    // 控制信道相关方法
+    void catch_ctrl_channel_avail_i();
+    void catch_ctrl_sent_i();
+    void poll_ctrl_buffer_i();    // 轮询控制信道输入
+    void ctrl_send_helper();      // 控制信道发送辅助
 
     void worker_core_execute();
     void switch_prim_block();

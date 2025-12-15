@@ -28,6 +28,23 @@ public:
     sc_signal<sc_bv<256>> *host_channel_i;
     sc_signal<sc_bv<256>> *host_channel_o;
 
+    /* ---------------Control Channel Signals------------------- */
+    // Router-Router 控制信道信号//qzl添加
+    sc_signal<sc_bv<256>> *ctrl_channel[DIRECTIONS];
+    sc_signal<bool> *ctrl_channel_avail[DIRECTIONS];
+    sc_signal<bool> *ctrl_sent[DIRECTIONS];
+    sc_signal<bool> *ctrl_core_busy;  
+
+    // Router-Core 控制信道信号
+    sc_signal<sc_bv<256>> *rc_ctrl_channel;
+    sc_signal<bool> *rc_ctrl_sent;
+
+    // Host-Router 控制信道信号
+
+    sc_signal<bool> *host_ctrl_sent_i;
+    sc_signal<sc_bv<256>> *host_ctrl_channel_i;
+    /* --------------------------------------------------------- */
+
     sc_signal<bool> star;
     sc_signal<bool> config_done;
     sc_out<bool> start_o;
