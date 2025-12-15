@@ -1,9 +1,9 @@
 {
   "mode": "sched_pd",
   "requests": {
-    "count": 300,
+    "count": 2,
     "seq_len": 200,
-    "eof_chance": 0.01,
+    "eof_chance": 0.5,
     "arrival": [
       1
     ]
