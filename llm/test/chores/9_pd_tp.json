@@ -9,11 +9,11 @@
         ]
     },
     "model": {
-        "heads": 5,
+        "heads": 20,
         "stage": 9,
         "batch": 1,
-        "kv_heads": 8,
-        "head_size": 128,
+        "kv_heads": 5,
+        "head_size": 64,
         "hidden_size": 500,
         "intermediate_size": 500,
         "prefill_iters": 1
