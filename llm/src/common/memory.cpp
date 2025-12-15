@@ -281,7 +281,9 @@ void SramPosLocator::addPair(std::string &key, AddrPosKey value,
         sram_spill_back_generic(context, spill_size,
                                 data_map[min_label].dram_addr, dram_time);
 #else
-        sram_spill_back_generic(context, spill_size, 1024, dram_time);
+        std::string tail = min_label.substr(min_label.size() - 2);
+        if (tail != "_w" && tail != "_b")
+            sram_spill_back_generic(context, spill_size, 1024, dram_time);
 #endif
     }
     sc_time end_nbdram = sc_time_stamp();
@@ -485,7 +487,7 @@ int SramPosLocator::rearrangeAll(TaskCoreContext &context) {
         u_int64_t temp_addr = 0;
         LOG_DEBUG(MEMORY) << "Core " << cid << " SRAM key " << record.first
                           << " size " << size << " spilled size " << spill_size;
-                          
+
         addPair(record.first, record.second, context, temp_addr);
 
         if (temp_pos != *(context.sram_addr)) {

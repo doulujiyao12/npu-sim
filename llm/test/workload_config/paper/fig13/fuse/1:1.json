@@ -14,6 +14,8 @@
     "batch": 1,
     "kv_heads": 5,
     "head_size": 64,
+    "hidden_size": 1280,
+    "intermediate_size": 5000,
     "prefill_iters": 1
   },
   "chips": [

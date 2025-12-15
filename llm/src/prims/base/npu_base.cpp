@@ -266,7 +266,7 @@ void NpuBase::checkInputData(TaskCoreContext &context, uint64_t &dram_time,
                                                                     1);
             }
 
-            LOG_DEBUG(MEMORY)
+            LOG_INFO(MEMORY)
                 << name << " of Core " << context.cid << " read label "
                 << prim_context->datapass_label_->indata[p].c_str()
                 << " from DRAM";
@@ -519,7 +519,8 @@ void NpuBase::checkStaticData(TaskCoreContext &context, uint64_t &dram_time,
 #endif
     } else if (flag > 0) {
         LOG_DEBUG(MEMORY) << name << " of Core " << context.cid
-                          << " weight label spilled, need to fetch back";
+                          << " weight label spilled, need to fetch back, flag "
+                          << flag;
 #if USE_SRAM_MANAGER == 1
         sram_first_write_generic(context, flag, label_global_addr, dram_time,
                                  dram_start, label_name, true,
@@ -636,7 +637,7 @@ void NpuBase::writeOutputData(TaskCoreContext &context, uint64_t exu_flops,
     else
         assert(false && "Unsupported tile type");
 
-    int vec_cycle = vec_flops / vec->x_dims * vec->count * CYCLE;
+    int vec_cycle = vec_flops / (vec->x_dims * vec->count) * CYCLE;
     cycle += max(exu_cycle, max(sfu_cycle, vec_cycle));
 
 #if USE_SRAM == 1

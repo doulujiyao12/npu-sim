@@ -30,6 +30,8 @@ config_helper_pds::config_helper_pds(string filename, sc_event *ev_sig,
     heads = config_model["heads"];
     head_size = config_model["head_size"];
     kv_heads = config_model["kv_heads"];
+    hidden_size = config_model["hidden_size"];
+    intermediate_size = config_model["intermediate_size"];
     eof_chance = config_reqs["eof_chance"];
     // prefill 的 pp 阶数
     prefill_stage = config_model["prefill_stage"];
@@ -242,7 +244,8 @@ void config_helper_pds::iter_done(PD_JOB type) {
                              << setprecision(
                                     6); // 设置小数点后6位精度，可根据需要调整
 
-                        file << "*" << "*\n";
+                        file << "*"
+                             << "*\n";
                         for (int i = 0; i < token_record.size(); i++) {
                             file << "Request " << i << ": \n";
                             for (int j = 0; j < token_record[i].size(); j++) {
@@ -304,7 +307,8 @@ void config_helper_pds::iter_start(PD_JOB type) {
 
                 // 最后一个阶段的prefill是否完成，于第一阶段的prefill核没有关系，直接跳过
 
-                // 如果还能放进来新的 prefill， 说明上一个stage已经有prefill 的 req都被放完了
+                // 如果还能放进来新的 prefill， 说明上一个stage已经有prefill 的
+                // req都被放完了
                 if (done < batch_size) {
                     for (auto &req : requestRecords) {
                         sc_core::sc_time arv_time(req.arrival_time,
@@ -507,6 +511,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
         // 每个核生成一个set_batch
         // 如果本迭代没有工作，且不为tp组的第一个核，则作为最后一个原语
         PrimBase *set_batch = new Set_batch(status.batchInfo);
+        g_prim_stash.push_back(set_batch);
         auto segments = set_batch->serialize();
         for (int seg = 0; seg < segments.size(); seg++)
             temp_config.push_back(
@@ -570,6 +575,9 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
                     Recv_prim *recv_ack = new Recv_prim(RECV_TYPE::RECV_ACK);
                     Send_prim *send_data = new Send_prim(SEND_TYPE::SEND_DATA,
                                                          next_id, ca.tag + i);
+                    g_prim_stash.push_back(send_req);
+                    g_prim_stash.push_back(recv_ack);
+                    g_prim_stash.push_back(send_data);
 
                     CalculatePacketNum(
                         last_comp->out_size, ca.weight, last_comp->data_byte,
@@ -638,6 +646,10 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
             Send_prim *send_data =
                 new Send_prim(SEND_TYPE::SEND_DATA, send_dest, send_tag);
             send_data->output_label = output_label;
+            g_prim_stash.push_back(recv_data_2);
+            g_prim_stash.push_back(send_req);
+            g_prim_stash.push_back(recv_ack);
+            g_prim_stash.push_back(send_data);
 
             int output_size = max(int(C * T * B), 1);
             CalculatePacketNum(output_size, 1, 1, send_data->max_packet,
@@ -685,6 +697,7 @@ void config_helper_pds::generate_prims(int i, vector<Msg> &temp_buffer) {
 
             // tp组的第一个核需要向memInterface发送DONE信号
             PrimBase *send_done = new Send_prim(SEND_TYPE::SEND_DONE);
+            g_prim_stash.push_back(send_done);
             Msg m = Msg(true, MSG_TYPE::CONFIG, ++prim_seq, core_id,
                         send_done->serialize()[0]);
             m.refill_ = false;
@@ -709,13 +722,15 @@ void config_helper_pds::parse_ack_msg(Event_engine *event_engine, int flow_id,
                                << prefill_core * tp_size;
         } else if (coreStatus[cid / tp_size].job_type == JOB_DECODE) {
             g_recv_ack_cnt_d++;
-            LOG_DEBUG(NETWORK)
-                << "Total " << g_recv_ack_cnt_d << " / " << decode_core * tp_size;
+            LOG_DEBUG(NETWORK) << "Total " << g_recv_ack_cnt_d << " / "
+                               << decode_core * tp_size;
         }
     }
 
-    LOG_INFO(NETWORK) << "g_recv_ack_cnt_p: " << g_recv_ack_cnt_p << ", prefill_core * tp_size: " << prefill_core * tp_size;
-    LOG_INFO(NETWORK) << "g_recv_ack_cnt_d: " << g_recv_ack_cnt_d << ", decode_core * tp_size: " << decode_core * tp_size;
+    LOG_INFO(NETWORK) << "g_recv_ack_cnt_p: " << g_recv_ack_cnt_p
+                      << ", prefill_core * tp_size: " << prefill_core * tp_size;
+    LOG_INFO(NETWORK) << "g_recv_ack_cnt_d: " << g_recv_ack_cnt_d
+                      << ", decode_core * tp_size: " << decode_core * tp_size;
 
     g_temp_ack_msg.clear();
     // wait(sc_core::sc_time(10, sc_core::SC_NS));
@@ -752,8 +767,8 @@ void config_helper_pds::parse_done_msg(Event_engine *event_engine,
             g_done_msg_p.push_back(m);
         } else if (coreStatus[cid / tp_size].job_type == JOB_DECODE) {
             g_recv_done_cnt_d++;
-            LOG_DEBUG(NETWORK) << "  Total " << g_recv_done_cnt_d << " / "
-                               << decode_core;
+            LOG_DEBUG(NETWORK)
+                << "  Total " << g_recv_done_cnt_d << " / " << decode_core;
             g_done_msg_d.push_back(m);
         }
     }
@@ -764,6 +779,11 @@ void config_helper_pds::parse_done_msg(Event_engine *event_engine,
     if (g_recv_done_cnt_p >= prefill_core) {
         iter_done(JOB_PREFILL);
 
+        for (PrimBase *p : g_prim_stash) {
+            delete p;
+        }
+        g_prim_stash.clear();
+
         g_done_msg_p.clear();
         g_recv_done_cnt_p = 0;
         wait_schedule_p = true;
@@ -772,6 +792,11 @@ void config_helper_pds::parse_done_msg(Event_engine *event_engine,
 
     if (g_recv_done_cnt_d >= decode_core) {
         iter_done(JOB_DECODE);
+
+        for (PrimBase *p : g_prim_stash) {
+            delete p;
+        }
+        g_prim_stash.clear();
 
         g_done_msg_d.clear();
         g_recv_done_cnt_d = 0;
@@ -782,10 +807,22 @@ void config_helper_pds::parse_done_msg(Event_engine *event_engine,
 
 void config_helper_pds::set_global_vars(int T, int tp_size) {
     int C = heads * head_size;
+    int P = hidden_size;
+    int J = intermediate_size;
     vtable = {{"B", 1},
               {"T", T},
+              {"chunk", 1},
               {"T/2", T / 2},
               {"C", C},
+              {"P", P},
+              {"J", J},
+              {"PJ", P * J},
+              {"JP", J * P},
+              {"CP", C * P},
+              {"PC", P * C},
+              {"3PC", 3 * P * C},
+              {"BTP", T * P},
+              {"BTJ", T * J},
               {"NH", heads},
               {"DH", head_size},
               {"R", heads / kv_heads},
@@ -811,32 +848,44 @@ void config_helper_pds::set_global_vars(int T, int tp_size) {
 
     // 为所有涉及 T 的参数生成除以 2、4、8 等的版本
     for (int i = 1; i <= log2_tp_size; i++) {
-        int divisor = 1 << i;  // 2, 4, 8, ...
+        int divisor = 1 << i; // 2, 4, 8, ...
         string suffix = "/" + to_string(divisor);
-        
+
         // T 的版本
         vtable.push_back({"T" + suffix, T / divisor});
-        
+        vtable.push_back({"NH" + suffix, heads / divisor});
+        vtable.push_back({"P" + suffix, P / divisor});
+        vtable.push_back({"J" + suffix, J / divisor});
+        vtable.push_back({"JP" + suffix, J * P / divisor});
+        vtable.push_back({"PJ" + suffix, J * P / divisor});
+        vtable.push_back({"CP" + suffix, J * P / divisor});
+        vtable.push_back({"PC" + suffix, J * P / divisor});
+        vtable.push_back({"3PC" + suffix, 3 * C * P / divisor});
+
         // BTC 相关参数的版本
         vtable.push_back({"BTC" + suffix, (T * C) / divisor});
         vtable.push_back({"2BTC" + suffix, (2 * T * C) / divisor});
         vtable.push_back({"3BTC" + suffix, (3 * T * C) / divisor});
         vtable.push_back({"4BTC" + suffix, (4 * T * C) / divisor});
+        vtable.push_back({"BTP" + suffix, (T * P) / divisor});
+        vtable.push_back({"BTJ" + suffix, (T * J) / divisor});
     }
 
     // 为所有涉及 C 的参数生成除以 2、4、8 等的版本
     for (int i = 1; i <= log2_tp_size; i++) {
-        int divisor = 1 << i;  // 2, 4, 8, ...
+        int divisor = 1 << i; // 2, 4, 8, ...
         string suffix = "/" + to_string(divisor);
-        
+
         // C 的版本
         vtable.push_back({"C" + suffix, C / divisor});
-        
+
         // 3C 相关参数的版本
         vtable.push_back({"3C" + suffix, (3 * C) / divisor});
         vtable.push_back({"4C" + suffix, (4 * C) / divisor});
         vtable.push_back({"3CC" + suffix, (3 * C * C) / divisor});
-        vtable.push_back({"3C-R" + suffix, (C * (2 + heads / kv_heads) / (heads / kv_heads)) / divisor});
+        vtable.push_back(
+            {"3C-R" + suffix,
+             (C * (2 + heads / kv_heads) / (heads / kv_heads)) / divisor});
     }
 
     for (auto &pair : vtable) {

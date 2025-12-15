@@ -27,7 +27,7 @@
 #endif
 
 #ifndef SRAM_BLOCK_SIZE
-#define SRAM_BLOCK_SIZE 64 // byte
+#define SRAM_BLOCK_SIZE 1024 // byte
 #endif
 
 #ifndef USE_SRAM_MANAGER
@@ -35,7 +35,7 @@
 #endif
 
 #ifndef USE_NB_DRAMSYS
-#define USE_NB_DRAMSYS 1
+#define USE_NB_DRAMSYS 1     
 #endif
 
 #ifndef USE_L1L2_CACHE

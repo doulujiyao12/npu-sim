@@ -1,6 +1,8 @@
 #pragma once
+#include "common/system.h"
 #include "systemc.h"
 #include <functional>
+#include <memory>
 #include <unordered_map>
 
 #include "prims/base.h"
@@ -31,7 +33,7 @@ public:
         if (it != creators_.end()) {
             PrimBase *prim = it->second();
             if (need_init)
-                prim->prim_context = new PrimCoreContext();
+                prim->prim_context = make_shared<PrimCoreContext>();
 
             g_prim_stash.push_back(prim);
             return prim;

@@ -10,7 +10,7 @@
 
 在测试中，我们主要采用两大类的芯片硬件配置：大核模式，即计算核总数相对较少，但每一个计算核具有较强的算力、内存等硬件配置；小核模式，与大核模式相反，包含较多且各硬件指标较低的计算核。具体的参数自由配置空间参见下表。
 
-TODO：表格图片
+.. image:: ../../images/core_config.png
 
 仿真器验证与仿真耗时
 ---------------------
@@ -30,10 +30,6 @@ TODO：表格图片
 
       请参阅 :doc:`llm_serving`
 
-    - **芯片设计的总结与思考**
-      
-      请参阅 :doc:`chip_design_lesson`
-
 附属页面
 -------------
 
@@ -43,4 +39,3 @@ TODO：表格图片
    simulator_validation
    tp_mapping
    llm_serving
-   chip_design_lesson

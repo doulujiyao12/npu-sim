@@ -394,6 +394,7 @@ void config_helper_pd::generate_prims(int i) {
 
         // 每个核生成一个set_batch
         PrimBase *set_batch = new Set_batch(status.batchInfo);
+        g_prim_stash.push_back(set_batch);
         auto segments = set_batch->serialize();
         for (int seg = 0; seg < segments.size(); seg++)
             temp_config.push_back(
@@ -411,7 +412,7 @@ void config_helper_pd::generate_prims(int i) {
 
                 // work的所有计算原语
                 for (int p = 0; p < work.prims.size(); p++) {
-                    auto prim = work.prims[p];
+                    auto &prim = work.prims[p];
                     PrimBase *set_addr =
                         PrimFactory::getInstance().createPrim("Set_addr");
                     auto label = set_addr->prim_context->datapass_label_;
@@ -453,6 +454,9 @@ void config_helper_pd::generate_prims(int i) {
                     Recv_prim *recv_ack = new Recv_prim(RECV_TYPE::RECV_ACK);
                     Send_prim *send_data = new Send_prim(SEND_TYPE::SEND_DATA,
                                                          next_id, ca.tag + i);
+                    g_prim_stash.push_back(send_req);
+                    g_prim_stash.push_back(recv_ack);
+                    g_prim_stash.push_back(send_data);
 
                     CalculatePacketNum(
                         last_comp->out_size, ca.weight, last_comp->data_byte,
@@ -505,6 +509,10 @@ void config_helper_pd::generate_prims(int i) {
             Send_prim *send_data =
                 new Send_prim(SEND_TYPE::SEND_DATA, send_dest, send_tag);
             send_data->output_label = output_label;
+            g_prim_stash.push_back(recv_data_2);
+            g_prim_stash.push_back(send_req);
+            g_prim_stash.push_back(recv_ack);
+            g_prim_stash.push_back(send_data);
 
             int output_size = max(int(C * T * B), 1);
             CalculatePacketNum(output_size, 1, 1, send_data->max_packet,
@@ -537,6 +545,7 @@ void config_helper_pd::generate_prims(int i) {
 
             // tp组的第一个核需要向memInterface发送DONE信号
             PrimBase *send_done = new Send_prim(SEND_TYPE::SEND_DONE);
+            g_prim_stash.push_back(send_done);
             Msg m = Msg(true, MSG_TYPE::CONFIG, ++prim_seq, core_id,
                         send_done->serialize()[0]);
             m.refill_ = false;
@@ -592,8 +601,14 @@ void config_helper_pd::parse_done_msg(Event_engine *event_engine,
     if (g_recv_done_cnt >= coreStatus.size()) {
         iter_done(g_done_msg);
 
+        for (PrimBase *p : g_prim_stash) {
+            delete p;
+        }
+        g_prim_stash.clear();
+
         g_done_msg.clear();
         g_recv_done_cnt = 0;
+
         notify_event->notify(CYCLE, SC_NS);
     }
 }
@@ -609,6 +624,11 @@ void config_helper_pd::set_global_vars(int T, int tp_size) {
               {"C", C},
               {"P", P},
               {"J", J},
+              {"PJ", P * J},
+              {"JP", J * P},
+              {"CP", C * P},
+              {"PC", P * C},
+              {"3PC", 3 * P * C},
               {"BTP", T * P},
               {"BTJ", T * J},
               {"NH", heads},
@@ -644,6 +664,11 @@ void config_helper_pd::set_global_vars(int T, int tp_size) {
         vtable.push_back({"NH" + suffix, heads / divisor});
         vtable.push_back({"P" + suffix, P / divisor});
         vtable.push_back({"J" + suffix, J / divisor});
+        vtable.push_back({"JP" + suffix, J * P / divisor});
+        vtable.push_back({"PJ" + suffix, J * P / divisor});
+        vtable.push_back({"CP" + suffix, J * P / divisor});
+        vtable.push_back({"PC" + suffix, J * P / divisor});
+        vtable.push_back({"3PC" + suffix, 3 * C * P / divisor});
 
         // BTC 相关参数的版本
         vtable.push_back({"BTC" + suffix, (T * C) / divisor});

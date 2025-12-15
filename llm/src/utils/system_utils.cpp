@@ -87,8 +87,13 @@ void InitGrid(string workload_config_path, string hardware_config_path,
 
 void SystemCleanup() {
     // 清理所有原语
-    for (auto p : g_prim_stash)
+    for (auto p : g_prim_stash) {
         delete p;
+    }
+
+    for (auto p : g_core_hw_config) {
+        delete p.second;
+    }
 
     delete[] dram_array;
 #if DCACHE == 1

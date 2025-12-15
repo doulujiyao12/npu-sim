@@ -7,16 +7,16 @@ REGISTER_PRIM(attention_forward_pd);
 void attention_forward_pd::initialize() {
     auto &p = param_value;
     data_size_input = {p["B"] * p["T"] * p["C"]};
-    data_chunk = {{"preatt", p["B"] * p["NH"] * p["T"] * p["T"]},
-                  {"att", p["B"] * p["NH"] * p["T"] * p["T"]},
-                  {"output", p["B"] * p["T"] * p["NH"] * p["DH"]}};
+    data_chunk = {{"preatt", p["B"] * p["NH"] * p["T"] * p["T"]},//Q*K之后
+                  {"att", p["B"] * p["NH"] * p["T"] * p["T"]},//softmax之后
+                  {"output", p["B"] * p["T"] * p["NH"] * p["DH"]}};//乘以V之后
 }
 
 void attention_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
                                     u_int64_t &dram_time, u_int64_t &exu_ops,
                                     u_int64_t &sfu_ops, u_int64_t &vec_ops) {
     auto &p = param_value;
-    int cur_tokens = 0;
+    int cur_tokens = 0;//当前已经处理的token数量
 
     // 查找kvcache! 需要使用相应的kvcache label 读出KV
     // 根据batchInfo进行，逻辑和普通prefill和decode相同
@@ -36,7 +36,7 @@ void attention_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
             LOG_ERROR(attention_forward_pd.cpp)
                 << name << " of Core " << context.cid << " cannot find "
                 << label_decode_k;
-        } else if (flag > 0) {
+        } else if (flag > 0) {//需要将数据从 DRAM 加载到 SRAM
 #if USE_SRAM_MANAGER == 1
             sram_first_write_generic(context, flag, kcache.dram_addr, dram_time,
                                      nullptr, label_decode_k, true,
