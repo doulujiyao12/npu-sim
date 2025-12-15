@@ -38,6 +38,18 @@
 
   详情请参阅：:doc:`mapping_config_detail`
 
+使用图形化前端界面
+--------------------
+
+我们提供了图形化前端界面，在运行配置时可同步显示 tracing 文件，便于更好地了解各个算子的执行情况与核心之间的通信模式。
+
+.. raw:: html
+
+   <video width="640" height="360" controls>
+     <source src="https://github.com/doulujiyao12/npu-sim/blob/master/doc/images/gui_video.mp4" type="video/mp4">
+     Your browser does not support the video tag.
+   </video>
+
 
 附属页面
 --------

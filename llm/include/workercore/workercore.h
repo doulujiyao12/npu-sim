@@ -15,6 +15,7 @@
 #include "memory/sram_writer.h"
 #include "trace/Event_engine.h"
 #include "unit_module/sram_manager/sram_manager.h"
+#include <memory>
 
 class WorkerCoreExecutor;
 
@@ -50,7 +51,7 @@ public:
 
 class WorkerCoreExecutor : public sc_module {
 public:
-    PrimCoreContext *core_context; // 存储元数据
+    shared_ptr<PrimCoreContext> core_context; // 存储元数据
 
     uint64_t MaxDramAddr; // 当前核最大的 dram 地址
     unsigned int defaultDataLength;

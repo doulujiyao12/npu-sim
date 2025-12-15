@@ -15,9 +15,10 @@ public:
     int decode_done;                // 收到decode的eof完成次数
     vector<Msg> temp_config;        // 存放所有还没有发出去的config
     vector<queue<int>> idle_decode; // 由于超过credit而需要被stall的decode
-    queue<int> req_decode;          // 做完prefill之后，等待进行decode的请求
-    
-    vector<vector<double>> token_record; // 记录每一个req的每一个token的处理完毕时间
+    queue<int> req_decode; // 做完prefill之后，等待进行decode的请求
+
+    vector<vector<double>>
+        token_record; // 记录每一个req的每一个token的处理完毕时间
 
     bool busy_p; // 此次iteration是否已经开始
     bool busy_d;
@@ -44,6 +45,8 @@ public:
     int head_size;
     int kv_heads;
     int prefill_iters;
+    int hidden_size;
+    int intermediate_size;
 
     int tp_size;
 

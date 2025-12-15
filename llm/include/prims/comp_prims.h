@@ -112,6 +112,19 @@ public:
 };
 
 
+class Matmul_f_mla : public NpuBase {
+public:
+    void taskCore(TaskCoreContext &context, string prim_name,
+                  u_int64_t &dram_time, u_int64_t &exu_ops, u_int64_t &sfu_ops,
+                  u_int64_t &vec_ops);
+    void initialize();
+    Matmul_f_mla() {
+        name = "Matmul_f_mla";
+        param_name.insert(param_name.end(), {"B", "T", "C", "OC", "NH", "DH"});
+    }
+};
+
+
 class switch_data : public NpuBase {
 public:
     void taskCore(TaskCoreContext &context, string prim_name,

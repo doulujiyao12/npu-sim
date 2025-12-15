@@ -6,13 +6,14 @@
 #include "systemc.h"
 
 #include "nlohmann/json.hpp"
+#include <memory>
 #include <vector>
 
 using json = nlohmann::json;
 
 class PrimBase {
 public:
-    PrimCoreContext *prim_context;
+    shared_ptr<PrimCoreContext> prim_context;
 
     int prim_type;
     string name;
@@ -28,6 +29,7 @@ public:
     PrimBase() {
         name = "PrimBase";
         prim_type = NORM_PRIM;
+        prim_context = nullptr;
     }
     virtual ~PrimBase() = default;
 };

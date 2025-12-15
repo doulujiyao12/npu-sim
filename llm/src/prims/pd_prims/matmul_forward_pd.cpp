@@ -144,7 +144,7 @@ void matmul_forward_pd::taskCore(TaskCoreContext &context, string prim_name,
         }
     }
 
-    exu_ops = performance_comp;
+    exu_ops = performance_comp * 2;
     sfu_ops = 0;
     vec_ops = (uint64_t)p["B"] * p["OC"] * p["T"] * p["C"] * 2;
 
